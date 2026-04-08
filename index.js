@@ -135,8 +135,21 @@ async function handleMessage(rawPhone, incomingText) {
   const upper = text.toUpperCase();
 
   // ── Check if this is an Ops team member ─────────────────────────────────
+  // Global commands — always handled as teacher, even for ops users
+  if (upper === 'RESET' || upper === 'START OVER') {
+    await db.clearSession(phone);
+    return (
+      `🔄 Session cleared.\n\n` +
+      `Welcome to *TAKMIL Assessment Bot*! 🌟\n\n` +
+      `Please enter your *PIN* (provided by your Ops coordinator) to begin.`
+    );
+  }
+
+  // ── Check if this is an Ops command (ops members can also be teachers)
   const isOps = await db.isOpsPhone(phone);
-  if (isOps) {
+  const isOpsCommand = upper.startsWith('APPROVE') || upper.startsWith('REJECT') || 
+                       upper === 'PENDING' || upper === 'STATS' || upper === 'OPS HELP';
+  if (isOps && isOpsCommand) {
     return handleOpsMessage(phone, text, upper);
   }
 
