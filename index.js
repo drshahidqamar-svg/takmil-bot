@@ -27,9 +27,7 @@ const PASS_THRESHOLD = 80;
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function shuffleOptions(question) {
-  // Handle both 'correct_answer' and 'answer' column names
-  const correctAnswer = (question.correct_answer || question.answer || 'A').toUpperCase();
-  
+  const correctAnswer = (question.correct_option || 'A').toUpperCase();
   const opts = [
     { label: 'A', text: question.option_a },
     { label: 'B', text: question.option_b },
@@ -48,13 +46,14 @@ function shuffleOptions(question) {
     option_b: opts[1].text,
     option_c: opts[2].text,
     option_d: opts[3].text,
-    correct_answer: newCorrect,
+    correct_option: newCorrect,
   };
 }
 function formatQuestion(q, index, total) {
+  const questionText = q.question_text || q.q_text_english || q.q_text_urdu || '';
   return (
     `📝 *Question ${index + 1} of ${total}*\n\n` +
-    `${q.question_text || q.question}\n\n` +
+    `${questionText}\n\n` +
     `A) ${q.option_a}\n` +
     `B) ${q.option_b}\n` +
     `C) ${q.option_c}\n` +
@@ -246,15 +245,14 @@ async function handleConfirmation(phone, text, session) {
   }
 
   // Shuffle and embed full question data into answers array
-  const shuffled = questions.map(shuffleOptions);
   const answersPayload = shuffled.map(q => ({
-    id:            q.id,
-    question_text: q.question_text,
+    id:            q.question_id,
+    question_text: q.q_text_english || q.q_text_urdu || '',
     option_a:      q.option_a,
     option_b:      q.option_b,
     option_c:      q.option_c,
     option_d:      q.option_d,
-    correct:       q.correct_answer,
+    correct:       q.correct_option,
     chosen:        null,
   }));
 
