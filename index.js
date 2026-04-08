@@ -54,7 +54,7 @@ function shuffleOptions(question) {
 function formatQuestion(q, index, total) {
   return (
     `📝 *Question ${index + 1} of ${total}*\n\n` +
-    `${q.question_text}\n\n` +
+    `${q.question_text || q.question}\n\n` +
     `A) ${q.option_a}\n` +
     `B) ${q.option_b}\n` +
     `C) ${q.option_c}\n` +
