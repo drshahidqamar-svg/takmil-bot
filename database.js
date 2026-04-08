@@ -248,7 +248,7 @@ async function clearSession(phone) {
 
 async function getRandomQuestions(level, subject, count = 10) {
   const result = await pool.query(`
-    SELECT id, question_text, option_a, option_b, option_c, option_d, correct_answer, topic
+    SELECT *
     FROM questions
     WHERE level = $1 AND subject = $2
     ORDER BY RANDOM()
