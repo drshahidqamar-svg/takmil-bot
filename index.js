@@ -135,11 +135,8 @@ async function handleMessage(rawPhone, incomingText) {
   const upper = text.toUpperCase();
 
   // ── Check if this is an Ops team member ─────────────────────────────────
-// ── Check if this is an Ops command (ops members can also be teachers)
   const isOps = await db.isOpsPhone(phone);
-  const isOpsCommand = upper.startsWith('APPROVE') || upper.startsWith('REJECT') || 
-                       upper === 'PENDING' || upper === 'STATS' || upper === 'OPS HELP';
-  if (isOps && isOpsCommand) {
+  if (isOps) {
     return handleOpsMessage(phone, text, upper);
   }
 
@@ -279,7 +276,7 @@ async function handleSessionConfirmation(phone, text, session) {
   // Store serialized shuffled questions in session
   await db.upsertSession(phone, {
     state: STATE.IN_ASSESSMENT,
-    question_ids: `{${questionIds.join(',')}}`,
+    question_ids: questionIds,
     current_index: 0,
     answers: JSON.stringify(shuffledQuestions.map(q => ({
       id: q.id,
@@ -327,7 +324,8 @@ async function handleAssessmentAnswer(phone, text, session) {
   const newScore = session.score + (isCorrect ? 1 : 0);
 
   const newIndex = currentIdx + 1;
-  const total = session.question_ids.length;
+  const ids = Array.isArray(session.question_ids) ? session.question_ids : JSON.parse(session.question_ids || '[]');
+  const total = ids.length;
 
   if (newIndex < total) {
     // More questions remain
