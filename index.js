@@ -508,7 +508,10 @@ function escapeXml(str) {
 // ── Admin API ─────────────────────────────────────────────────────────────────
 
 app.get('/', (req, res) => res.json({ status: 'ok', service: 'TAKMIL Bot', version: '2.0' }));
-
+app.get('/admin/debug/question', async (req, res) => {
+  const r = await db.pool.query('SELECT * FROM questions LIMIT 1');
+  res.json(r.rows[0]);
+});
 app.post('/admin/pins/generate', async (req, res) => {
   const { schoolId, level, subject, cohortSize, issuedBy } = req.body;
   if (!schoolId || !level || !subject)
