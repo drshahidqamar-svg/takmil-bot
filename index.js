@@ -27,13 +27,16 @@ const PASS_THRESHOLD = 80;
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function shuffleOptions(question) {
+  // Handle both 'correct_answer' and 'answer' column names
+  const correctAnswer = (question.correct_answer || question.answer || 'A').toUpperCase();
+  
   const opts = [
     { label: 'A', text: question.option_a },
     { label: 'B', text: question.option_b },
     { label: 'C', text: question.option_c },
     { label: 'D', text: question.option_d },
   ];
-  const correctText = opts.find(o => o.label === question.correct_answer.toUpperCase()).text;
+  const correctText = opts.find(o => o.label === correctAnswer).text;
   for (let i = opts.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [opts[i], opts[j]] = [opts[j], opts[i]];
@@ -48,7 +51,6 @@ function shuffleOptions(question) {
     correct_answer: newCorrect,
   };
 }
-
 function formatQuestion(q, index, total) {
   return (
     `📝 *Question ${index + 1} of ${total}*\n\n` +
