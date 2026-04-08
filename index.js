@@ -135,8 +135,11 @@ async function handleMessage(rawPhone, incomingText) {
   const upper = text.toUpperCase();
 
   // ── Check if this is an Ops team member ─────────────────────────────────
+// ── Check if this is an Ops command (ops members can also be teachers)
   const isOps = await db.isOpsPhone(phone);
-  if (isOps) {
+  const isOpsCommand = upper.startsWith('APPROVE') || upper.startsWith('REJECT') || 
+                       upper === 'PENDING' || upper === 'STATS' || upper === 'OPS HELP';
+  if (isOps && isOpsCommand) {
     return handleOpsMessage(phone, text, upper);
   }
 
