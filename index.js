@@ -13,7 +13,16 @@ const {
 } = require('./database');
 
 const app    = express();
-const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken  = process.env.TWILIO_AUTH_TOKEN;
+
+if (!accountSid || !authToken) {
+  console.error('ERROR: Twilio credentials missing from environment variables');
+  console.error('TWILIO_ACCOUNT_SID:', accountSid ? 'SET' : 'MISSING');
+  console.error('TWILIO_AUTH_TOKEN:', authToken ? 'SET' : 'MISSING');
+}
+
+const client = twilio(accountSid, authToken);
 
 app.use(express.urlencoded({ extended: false }));
 
