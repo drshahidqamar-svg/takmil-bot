@@ -253,7 +253,7 @@ async function handleConfirmation(phone, text, session) {
     option_b:      q.option_b,
     option_c:      q.option_c,
     option_d:      q.option_d,
-    correct:       q.correct_option,
+    correct:       q.correct_answer,
     chosen:        null,
   }));
 
