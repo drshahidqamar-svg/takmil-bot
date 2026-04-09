@@ -34,19 +34,20 @@ function shuffleOptions(question) {
     { label: 'C', text: question.option_c },
     { label: 'D', text: question.option_d },
   ];
-  const correctText = opts.find(o => o.label === correctOption).text;
+  // Save correct text BEFORE shuffling
+  const correctText = opts.find(o => o.label === correctOption)?.text;
+  // Shuffle
   for (let i = opts.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [opts[i], opts[j]] = [opts[j], opts[i]];
   }
-  const newCorrectLabel = opts.find(o => o.text === correctText).label;
   return {
     ...question,
     option_a: opts[0].text,
     option_b: opts[1].text,
     option_c: opts[2].text,
     option_d: opts[3].text,
-    shuffled_correct: newCorrectLabel,
+    correct_text: correctText,  // store the TEXT not the label
   };
 }
 function formatQuestion(q, index, total) {
@@ -253,7 +254,8 @@ async function handleConfirmation(phone, text, session) {
     option_b:      q.option_b,
     option_c:      q.option_c,
     option_d:      q.option_d,
-    correct:       q.shuffled_correct,
+    correct_text:  q.correct_text,
+    correct:       null,
     chosen:        null,
   }));
 
@@ -306,7 +308,9 @@ async function handleAnswer(phone, text, session) {
   }
 
   answers[idx].chosen = answer;
-  const isCorrect = answer === answers[idx].correct;
+  // Map chosen label to its text, compare against stored correct text
+  const chosenText = answers[idx][`option_${answer.toLowerCase()}`];
+  const isCorrect = chosenText === answers[idx].correct_text;
   const newScore  = (session.score || 0) + (isCorrect ? 1 : 0);
   const newIndex  = idx + 1;
 
