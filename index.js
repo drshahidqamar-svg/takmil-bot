@@ -79,12 +79,13 @@ function parseAnswers(raw) {
 async function sendWhatsApp(to, body) {
   try {
     const toNum = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
-    await twilioClient.messages.create({ from: FROM_NUMBER, to: toNum, body });
+    console.log(`📤 Sending WhatsApp to ${toNum} from ${FROM_NUMBER}`);
+    const msg = await twilioClient.messages.create({ from: FROM_NUMBER, to: toNum, body });
+    console.log(`✅ Sent! SID: ${msg.sid} Status: ${msg.status}`);
   } catch (err) {
-    console.error('❌ Twilio send error:', err.message);
+    console.error(`❌ Twilio send error to ${to}:`, err.message, err.code);
   }
 }
-
 async function notifyOpsTeam(req, schoolName, session) {
   const ops = await db.getOpsTeam();
   if (!ops.length) { console.warn('⚠️  No ops team members found'); return; }
