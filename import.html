@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Bulk Import</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00956A; --green-dim: #00956A15;
+    --amber: #D97706; --amber-dim: #D9770615;
+    --red: #DC2626; --red-dim: #DC262615;
+    --blue: #2563EB; --blue-dim: #2563EB15;
+    --bg: #F0F4F8; --surface: #FFFFFF; --surface2: #F8FAFC;
+    --border: #E2E8F0; --text: #0F172A; --text-dim: #1E293B; --text-muted: #475569;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+  .topbar {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:16px 32px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .logo { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; }
+  .logo span { color:var(--green); }
+  .back-link { font-size:13px; color:var(--green); text-decoration:none; font-weight:500; }
+
+  .container { max-width:900px; margin:0 auto; padding:32px 24px; }
+
+  h1 { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; margin-bottom:6px; }
+  .subtitle { color:var(--text-muted); font-size:14px; margin-bottom:28px; }
+
+  .card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden; margin-bottom:20px;
+  }
+  .card-header {
+    padding:16px 20px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .card-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; }
+  .card-body { padding:24px; }
+
+  /* Drop zone */
+  .drop-zone {
+    border:2px dashed var(--border); border-radius:10px;
+    padding:48px 24px; text-align:center; cursor:pointer;
+    transition:all 0.2s; background:var(--surface2);
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color:var(--green); background:var(--green-dim);
+  }
+  .drop-icon { font-size:40px; margin-bottom:12px; }
+  .drop-title { font-size:15px; font-weight:500; margin-bottom:6px; }
+  .drop-sub { font-size:12px; color:var(--text-muted); }
+  #file-input { display:none; }
+
+  /* Import type selector */
+  .import-tabs { display:flex; gap:10px; margin-bottom:20px; }
+  .import-tab {
+    flex:1; padding:12px; border-radius:8px; border:2px solid var(--border);
+    background:var(--surface2); cursor:pointer; text-align:center;
+    transition:all 0.15s; font-size:13px; font-weight:500;
+  }
+  .import-tab.active { border-color:var(--green); background:var(--green-dim); color:var(--green); }
+  .import-tab .tab-icon { font-size:20px; margin-bottom:4px; }
+
+  /* Preview table */
+  .preview-wrap { max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th {
+    position:sticky; top:0; background:var(--surface2);
+    padding:8px 12px; text-align:left; border-bottom:1px solid var(--border);
+    font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1px;
+    text-transform:uppercase; color:var(--text-muted);
+  }
+  td { padding:8px 12px; border-bottom:1px solid var(--border); color:var(--text-dim); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:var(--bg); }
+
+  /* Stats row */
+  .stats-row { display:flex; gap:12px; margin-bottom:16px; }
+  .stat-pill {
+    flex:1; padding:12px 16px; border-radius:8px; border:1px solid var(--border);
+    text-align:center; background:var(--surface2);
+  }
+  .stat-val { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; }
+  .stat-lbl { font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; }
+  .green .stat-val { color:var(--green); }
+  .amber .stat-val { color:var(--amber); }
+  .blue .stat-val { color:var(--blue); }
+
+  /* Buttons */
+  .btn {
+    padding:10px 20px; border-radius:8px; border:none;
+    cursor:pointer; font-size:14px; font-family:'DM Sans',sans-serif;
+    font-weight:500; transition:all 0.15s; display:inline-flex;
+    align-items:center; gap:6px;
+  }
+  .btn-primary { background:var(--green); color:#fff; }
+  .btn-primary:hover { background:#007a57; }
+  .btn-primary:disabled { background:#94A3B8; cursor:not-allowed; }
+  .btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  .btn-ghost:hover { background:var(--bg); }
+
+  /* Progress */
+  .progress-wrap { margin:16px 0; }
+  .progress-bar { height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--green); border-radius:4px; transition:width 0.3s; }
+  .progress-label { font-size:12px; color:var(--text-muted); margin-top:6px; font-family:'DM Mono',monospace; }
+
+  /* Log */
+  .log-box {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; padding:16px; max-height:200px;
+    overflow-y:auto; font-family:'DM Mono',monospace; font-size:12px;
+    line-height:1.6;
+  }
+  .log-success { color:var(--green); }
+  .log-error { color:var(--red); }
+  .log-info { color:var(--text-muted); }
+  .log-warn { color:var(--amber); }
+
+  /* Badge */
+  .badge {
+    display:inline-flex; align-items:center; padding:2px 8px;
+    border-radius:12px; font-size:11px; font-family:'DM Mono',monospace;
+  }
+  .badge-green { background:var(--green-dim); color:var(--green); }
+  .badge-amber { background:var(--amber-dim); color:var(--amber); }
+  .badge-red { background:var(--red-dim); color:var(--red); }
+
+  .hidden { display:none; }
+  .actions { display:flex; gap:10px; align-items:center; margin-top:16px; }
+
+  /* Sheet selector */
+  .sheet-list { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .sheet-chip {
+    padding:6px 12px; border-radius:6px; border:1px solid var(--border);
+    background:var(--surface2); font-size:12px; cursor:pointer;
+    font-family:'DM Mono',monospace; transition:all 0.15s;
+  }
+  .sheet-chip.selected { background:var(--blue-dim); border-color:var(--blue); color:var(--blue); }
+
+  .format-note {
+    background:var(--blue-dim); border:1px solid var(--blue)33;
+    border-radius:8px; padding:12px 16px; font-size:12px;
+    color:var(--text-dim); margin-bottom:20px; line-height:1.7;
+  }
+  .format-note strong { color:var(--blue); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">TAKMIL <span>Import</span></div>
+  <a href="/dashboard" class="back-link">← Back to Dashboard</a>
+</div>
+
+<div class="container">
+  <h1>Bulk Import Tool</h1>
+  <p class="subtitle">Import questions, schools, or students from Excel in one click.</p>
+
+  <!-- Import type -->
+  <div class="import-tabs">
+    <div class="import-tab active" onclick="setType('questions', this)">
+      <div class="tab-icon">📝</div>
+      Questions
+    </div>
+    <div class="import-tab" onclick="setType('schools', this)">
+      <div class="tab-icon">🏫</div>
+      Schools
+    </div>
+    <div class="import-tab" onclick="setType('students', this)">
+      <div class="tab-icon">👦</div>
+      Students
+    </div>
+  </div>
+
+  <!-- Format guide -->
+  <div class="format-note" id="format-note">
+    <strong>Questions format</strong> — Required columns:
+    <code>question_id, level, subject, q_text_english, option_a, option_b, option_c, option_d, correct_option, topic_tag</code><br>
+    Each sheet in your Excel = one level/subject combination. All sheets will be imported together.
+    <strong>correct_option</strong> must be A, B, C, or D.
+  </div>
+
+  <!-- Upload card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Step 1 — Upload Excel File</div>
+    </div>
+    <div class="card-body">
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+           ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+        <div class="drop-icon">📂</div>
+        <div class="drop-title">Click to choose or drag & drop your Excel file</div>
+        <div class="drop-sub">.xlsx files only — all sheets will be read</div>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx" onchange="handleFile(this.files[0])">
+    </div>
+  </div>
+
+  <!-- Preview card (hidden until file loaded) -->
+  <div class="card hidden" id="preview-card">
+    <div class="card-header">
+      <div class="card-title">Step 2 — Preview</div>
+      <div id="file-name" style="font-size:12px;color:var(--text-muted);font-family:'DM Mono',monospace;"></div>
+    </div>
+    <div class="card-body">
+      <div class="stats-row">
+        <div class="stat-pill green">
+          <div class="stat-val" id="stat-total">0</div>
+          <div class="stat-lbl">Total Rows</div>
+        </div>
+        <div class="stat-pill blue">
+          <div class="stat-val" id="stat-sheets">0</div>
+          <div class="stat-lbl">Sheets</div>
+        </div>
+        <div class="stat-pill amber">
+          <div class="stat-val" id="stat-valid">0</div>
+          <div class="stat-lbl">Valid</div>
+        </div>
+      </div>
+
+      <!-- Sheet selector -->
+      <div id="sheet-selector" class="hidden">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Sheets found — all selected:</div>
+        <div class="sheet-list" id="sheet-list"></div>
+      </div>
+
+      <!-- Preview table -->
+      <div class="preview-wrap">
+        <table id="preview-table">
+          <thead id="preview-head"></thead>
+          <tbody id="preview-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Validation errors -->
+      <div id="validation-errors" class="hidden" style="margin-top:12px;"></div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="import-btn" onclick="startImport()">
+          Import to Database
+        </button>
+        <button class="btn btn-ghost" onclick="resetTool()">Clear</button>
+        <div id="import-status" style="font-size:13px;color:var(--text-muted);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress card -->
+  <div class="card hidden" id="progress-card">
+    <div class="card-header"><div class="card-title">Step 3 — Importing...</div></div>
+    <div class="card-body">
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+        <div class="progress-label" id="progress-label">Preparing...</div>
+      </div>
+      <div class="log-box" id="log-box"></div>
+    </div>
+  </div>
+
+  <!-- Result card -->
+  <div class="card hidden" id="result-card">
+    <div class="card-header"><div class="card-title">Import Complete</div></div>
+    <div class="card-body">
+      <div class="stats-row">
+        <div class="stat-pill green">
+          <div class="stat-val" id="res-inserted">0</div>
+          <div class="stat-lbl">Inserted</div>
+        </div>
+        <div class="stat-pill amber">
+          <div class="stat-val" id="res-skipped">0</div>
+          <div class="stat-lbl">Skipped (duplicate)</div>
+        </div>
+        <div class="stat-pill" style="border-color:var(--red)33">
+          <div class="stat-val" id="res-errors" style="color:var(--red)">0</div>
+          <div class="stat-lbl">Errors</div>
+        </div>
+      </div>
+      <div class="actions">
+        <a href="/dashboard" class="btn btn-primary">View Dashboard</a>
+        <button class="btn btn-ghost" onclick="resetTool()">Import Another File</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let parsedData = [];
+let importType = 'questions';
+let allSheets = [];
+
+// ── Type selection ───────────────────────────────────────────────────────────
+function setType(type, el) {
+  importType = type;
+  document.querySelectorAll('.import-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+
+  const notes = {
+    questions: '<strong>Questions format</strong> — Required columns: <code>question_id, level, subject, q_text_english, option_a, option_b, option_c, option_d, correct_option, topic_tag</code><br>Each sheet in your Excel = one level/subject combination. <strong>correct_option</strong> must be A, B, C, or D.',
+    schools: '<strong>Schools format</strong> — Required columns: <code>name, province, district, contact_name, contact_phone</code><br>One school per row. Province options: Punjab, Sindh, KPK, Balochistan, Gilgit-Baltistan, AJK, ICT.',
+    students: '<strong>Students format</strong> — Required columns: <code>school_id, name, gender, age, level</code><br>school_id must match an existing school in the database.'
+  };
+  document.getElementById('format-note').innerHTML = notes[type];
+  resetTool();
+}
+
+// ── Drag & drop ──────────────────────────────────────────────────────────────
+function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+function handleDragLeave(e) { document.getElementById('drop-zone').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+}
+
+// ── File parsing ─────────────────────────────────────────────────────────────
+function handleFile(file) {
+  if (!file || !file.name.endsWith('.xlsx')) {
+    alert('Please upload a .xlsx file');
+    return;
+  }
+
+  document.getElementById('file-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const wb = XLSX.read(e.target.result, { type: 'array' });
+
+    if (importType === 'questions') {
+      parseQuestionsWorkbook(wb, file.name);
+    } else {
+      parseSingleSheet(wb, file.name);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseQuestionsWorkbook(wb, fileName) {
+  parsedData = [];
+  allSheets = wb.SheetNames.filter(s => s !== 'SUMMARY');
+
+  for (const sheetName of allSheets) {
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    const valid = rows.filter(r => r.question_id && r.q_text_english && r.correct_option);
+    parsedData.push(...valid.map(r => ({ ...r, _sheet: sheetName })));
+  }
+
+  showPreview(parsedData, allSheets);
+}
+
+function parseSingleSheet(wb, fileName) {
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  parsedData = XLSX.utils.sheet_to_json(ws, { defval: '' });
+  showPreview(parsedData, [wb.SheetNames[0]]);
+}
+
+// ── Preview ──────────────────────────────────────────────────────────────────
+function showPreview(data, sheets) {
+  if (!data.length) { alert('No valid data found in file.'); return; }
+
+  // Stats
+  document.getElementById('stat-total').textContent = data.length;
+  document.getElementById('stat-sheets').textContent = sheets.length;
+
+  // Validate
+  const { valid, errors } = validateData(data);
+  document.getElementById('stat-valid').textContent = valid;
+
+  // Sheet chips
+  if (sheets.length > 1) {
+    const sheetList = document.getElementById('sheet-list');
+    sheetList.innerHTML = sheets.map(s =>
+      `<div class="sheet-chip selected">${s}</div>`
+    ).join('');
+    document.getElementById('sheet-selector').classList.remove('hidden');
+  }
+
+  // Table preview (first 10 rows)
+  const cols = Object.keys(data[0]).filter(k => k !== '_sheet');
+  const head = document.getElementById('preview-head');
+  const body = document.getElementById('preview-body');
+
+  head.innerHTML = `<tr>${cols.slice(0, 7).map(c => `<th>${c}</th>`).join('')}</tr>`;
+  body.innerHTML = data.slice(0, 10).map(row => `
+    <tr>${cols.slice(0, 7).map(c => `<td>${String(row[c] || '').slice(0, 40)}</td>`).join('')}</tr>
+  `).join('');
+
+  // Validation errors
+  if (errors.length) {
+    const errEl = document.getElementById('validation-errors');
+    errEl.innerHTML = `<div style="color:var(--amber);font-size:12px;font-family:'DM Mono',monospace;">
+      ⚠️ ${errors.length} rows have warnings (missing fields). They will be skipped.<br>
+      ${errors.slice(0, 3).join('<br>')}
+      ${errors.length > 3 ? `<br>...and ${errors.length - 3} more` : ''}
+    </div>`;
+    errEl.classList.remove('hidden');
+  }
+
+  document.getElementById('preview-card').classList.remove('hidden');
+}
+
+function validateData(data) {
+  let valid = 0, errors = [];
+  const required = importType === 'questions'
+    ? ['question_id', 'q_text_english', 'correct_option', 'option_a', 'option_b', 'option_c', 'option_d']
+    : importType === 'schools' ? ['name'] : ['school_id', 'name'];
+
+  data.forEach((row, i) => {
+    const missing = required.filter(f => !row[f]);
+    if (missing.length) {
+      errors.push(`Row ${i + 2}: missing ${missing.join(', ')}`);
+    } else {
+      valid++;
+    }
+  });
+  return { valid, errors };
+}
+
+// ── Import ───────────────────────────────────────────────────────────────────
+async function startImport() {
+  document.getElementById('import-btn').disabled = true;
+  document.getElementById('progress-card').classList.remove('hidden');
+
+  const logBox = document.getElementById('log-box');
+  const fill = document.getElementById('progress-fill');
+  const label = document.getElementById('progress-label');
+
+  let inserted = 0, skipped = 0, errors = 0;
+
+  // Chunk data into batches of 50
+  const BATCH = 50;
+  const total = parsedData.length;
+  const batches = [];
+  for (let i = 0; i < total; i += BATCH) batches.push(parsedData.slice(i, i + BATCH));
+
+  logBox.innerHTML = `<div class="log-info">Starting import of ${total} records in ${batches.length} batches...</div>`;
+
+  const endpoint = importType === 'questions' ? '/admin/import/questions'
+    : importType === 'schools' ? '/admin/import/schools'
+    : '/admin/import/students';
+
+  for (let b = 0; b < batches.length; b++) {
+    const batch = batches[b];
+    const pct = Math.round(((b + 1) / batches.length) * 100);
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows: batch })
+      });
+      const result = await res.json();
+
+      inserted += result.inserted || 0;
+      skipped += result.skipped || 0;
+      errors += result.errors || 0;
+
+      fill.style.width = pct + '%';
+      label.textContent = `Batch ${b + 1}/${batches.length} — ${inserted} inserted, ${skipped} skipped`;
+
+      const msg = result.inserted > 0
+        ? `<div class="log-success">✓ Batch ${b + 1}: ${result.inserted} inserted${result.skipped > 0 ? `, ${result.skipped} skipped` : ''}</div>`
+        : `<div class="log-warn">~ Batch ${b + 1}: ${result.skipped} already exist (skipped)</div>`;
+      logBox.innerHTML += msg;
+      logBox.scrollTop = logBox.scrollHeight;
+
+    } catch (err) {
+      errors += batch.length;
+      logBox.innerHTML += `<div class="log-error">✗ Batch ${b + 1} failed: ${err.message}</div>`;
+    }
+
+    await new Promise(r => setTimeout(r, 100));
+  }
+
+  fill.style.width = '100%';
+  label.textContent = 'Complete!';
+  logBox.innerHTML += `<div class="log-success" style="margin-top:8px;font-weight:500;">━━━ Done: ${inserted} inserted | ${skipped} skipped | ${errors} errors ━━━</div>`;
+
+  // Show result
+  document.getElementById('res-inserted').textContent = inserted;
+  document.getElementById('res-skipped').textContent = skipped;
+  document.getElementById('res-errors').textContent = errors;
+  document.getElementById('result-card').classList.remove('hidden');
+}
+
+function resetTool() {
+  parsedData = [];
+  allSheets = [];
+  document.getElementById('file-input').value = '';
+  document.getElementById('preview-card').classList.add('hidden');
+  document.getElementById('progress-card').classList.add('hidden');
+  document.getElementById('result-card').classList.add('hidden');
+  document.getElementById('sheet-selector').classList.add('hidden');
+  document.getElementById('validation-errors').classList.add('hidden');
+  document.getElementById('import-btn').disabled = false;
+  document.getElementById('log-box').innerHTML = '';
+  document.getElementById('sheet-list').innerHTML = '';
+}
+</script>
+</body>
+</html>
