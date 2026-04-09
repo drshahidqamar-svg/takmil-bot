@@ -677,10 +677,10 @@ app.post('/admin/import/questions', async (req, res) => {
       // Use INSERT ... ON CONFLICT DO NOTHING to skip duplicates
       const result = await db.pool.query(`
         INSERT INTO questions
-          (question_id, level, subject, q_text_english, option_a, option_b, option_c, option_d, correct_option, topic_tag, active, difficulty)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,1,1)
-        ON CONFLICT (question_id) DO NOTHING
-      `, [questionId, level, subject, qText, optA, optB, optC, optD, correctOpt, topicTag]);
+          (level, subject, question_text, option_a, option_b, option_c, option_d, correct_answer, topic)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        ON CONFLICT DO NOTHING
+      `, [level, subject, qText, optA, optB, optC, optD, correctOpt, topicTag]);
 
       if (result.rowCount > 0) inserted++;
       else skipped++;
