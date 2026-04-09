@@ -27,16 +27,14 @@ const PASS_THRESHOLD = 80;
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function shuffleOptions(question) {
-  const correctOption = (question.correct_option || 'A').toUpperCase();
+  const correctOption = (question.correct_option || question.correct_answer || 'A').toUpperCase();
   const opts = [
     { label: 'A', text: question.option_a },
     { label: 'B', text: question.option_b },
     { label: 'C', text: question.option_c },
     { label: 'D', text: question.option_d },
   ];
-  // Save correct text BEFORE shuffling
   const correctText = opts.find(o => o.label === correctOption)?.text;
-  // Shuffle
   for (let i = opts.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [opts[i], opts[j]] = [opts[j], opts[i]];
@@ -47,14 +45,15 @@ function shuffleOptions(question) {
     option_b: opts[1].text,
     option_c: opts[2].text,
     option_d: opts[3].text,
-    correct_text: correctText,  // store the TEXT not the label
+    correct_text: correctText,
+    shuffled_correct: opts.find(o => o.text === correctText)?.label,
   };
 }
+
 function formatQuestion(q, index, total) {
-  const questionText = q.question_text || q.q_text_english || q.q_text_urdu || '';
   return (
     `📝 *Question ${index + 1} of ${total}*\n\n` +
-    `${questionText}\n\n` +
+    `${q.question_text}\n\n` +
     `A) ${q.option_a}\n` +
     `B) ${q.option_b}\n` +
     `C) ${q.option_c}\n` +
@@ -79,13 +78,12 @@ function parseAnswers(raw) {
 async function sendWhatsApp(to, body) {
   try {
     const toNum = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
-    console.log(`📤 Sending WhatsApp to ${toNum} from ${FROM_NUMBER}`);
-    const msg = await twilioClient.messages.create({ from: FROM_NUMBER, to: toNum, body });
-    console.log(`✅ Sent! SID: ${msg.sid} Status: ${msg.status}`);
+    await twilioClient.messages.create({ from: FROM_NUMBER, to: toNum, body });
   } catch (err) {
-    console.error(`❌ Twilio send error to ${to}:`, err.message, err.code);
+    console.error('❌ Twilio send error:', err.message);
   }
 }
+
 async function notifyOpsTeam(req, schoolName, session) {
   const ops = await db.getOpsTeam();
   if (!ops.length) { console.warn('⚠️  No ops team members found'); return; }
@@ -249,14 +247,13 @@ async function handleConfirmation(phone, text, session) {
   // Shuffle and embed full question data into answers array
   const shuffled = questions.map(shuffleOptions);
   const answersPayload = shuffled.map(q => ({
-    id:            q.question_id,
-    question_text: q.q_text_english || q.q_text_urdu || '',
+    id:            q.id,
+    question_text: q.question_text,
     option_a:      q.option_a,
     option_b:      q.option_b,
     option_c:      q.option_c,
     option_d:      q.option_d,
-    correct_text:  q.correct_text,
-    correct:       null,
+    correct:       q.correct_answer,
     chosen:        null,
   }));
 
@@ -309,9 +306,7 @@ async function handleAnswer(phone, text, session) {
   }
 
   answers[idx].chosen = answer;
-  // Map chosen label to its text, compare against stored correct text
-  const chosenText = answers[idx][`option_${answer.toLowerCase()}`];
-  const isCorrect = chosenText === answers[idx].correct_text;
+  const isCorrect = answer === answers[idx].correct;
   const newScore  = (session.score || 0) + (isCorrect ? 1 : 0);
   const newIndex  = idx + 1;
 
@@ -512,10 +507,7 @@ function escapeXml(str) {
 // ── Admin API ─────────────────────────────────────────────────────────────────
 
 app.get('/', (req, res) => res.json({ status: 'ok', service: 'TAKMIL Bot', version: '2.0' }));
-app.get('/admin/debug/question', async (req, res) => {
-  const r = await db.pool.query('SELECT * FROM questions LIMIT 1');
-  res.json(r.rows[0]);
-});
+
 app.post('/admin/pins/generate', async (req, res) => {
   const { schoolId, level, subject, cohortSize, issuedBy } = req.body;
   if (!schoolId || !level || !subject)
@@ -574,33 +566,31 @@ app.get('/admin/analytics', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
-// ── PASTE THESE ROUTES INTO index.js BEFORE THE STARTUP SECTION ──────────────
-// Add after the existing /admin/analytics route
+// ── Dashboard & extra admin routes ───────────────────────────────────────────
 
 const path = require('path');
 
-// Serve dashboard
+// Serve dashboard HTML
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
-// List schools
+// List all schools
 app.get('/admin/schools/list', async (req, res) => {
   try {
-    const r = await db.pool.query('SELECT * FROM schools ORDER BY id DESC');
+    const r = await db.pool.query('SELECT * FROM schools ORDER BY created_at DESC');
     res.json(r.rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// List PINs
+// List recent PINs
 app.get('/admin/pins/list', async (req, res) => {
   try {
     const r = await db.pool.query(`
       SELECT p.*, s.name AS school_name
       FROM pins p
       LEFT JOIN schools s ON s.id = p.school_id
-      ORDER BY p.created_at DESC LIMIT 50
+      ORDER BY p.created_at DESC LIMIT 100
     `);
     res.json(r.rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -622,7 +612,7 @@ app.get('/admin/advancements/all', async (req, res) => {
 // List ops team
 app.get('/admin/ops/list', async (req, res) => {
   try {
-    const r = await db.pool.query('SELECT * FROM ops_team ORDER BY id');
+    const r = await db.pool.query('SELECT * FROM ops_team ORDER BY created_at ASC');
     res.json(r.rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -639,6 +629,16 @@ app.get('/admin/reassessments/list', async (req, res) => {
     res.json(r.rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// Debug question columns (keep for troubleshooting)
+app.get('/admin/debug/question', async (req, res) => {
+  try {
+    const r = await db.pool.query('SELECT * FROM questions LIMIT 1');
+    res.json(r.rows[0] || {});
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Start ─────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3000;
 
