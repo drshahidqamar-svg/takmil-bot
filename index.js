@@ -27,26 +27,26 @@ const PASS_THRESHOLD = 80;
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function shuffleOptions(question) {
-  const correctAnswer = (question.correct_option || 'A').toUpperCase();
+  const correctOption = (question.correct_option || 'A').toUpperCase();
   const opts = [
     { label: 'A', text: question.option_a },
     { label: 'B', text: question.option_b },
     { label: 'C', text: question.option_c },
     { label: 'D', text: question.option_d },
   ];
-  const correctText = opts.find(o => o.label === correctAnswer).text;
+  const correctText = opts.find(o => o.label === correctOption).text;
   for (let i = opts.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [opts[i], opts[j]] = [opts[j], opts[i]];
   }
-  const newCorrect = opts.find(o => o.text === correctText).label;
+  const newCorrectLabel = opts.find(o => o.text === correctText).label;
   return {
     ...question,
     option_a: opts[0].text,
     option_b: opts[1].text,
     option_c: opts[2].text,
     option_d: opts[3].text,
-    correct_option: newCorrect,
+    shuffled_correct: newCorrectLabel,
   };
 }
 function formatQuestion(q, index, total) {
@@ -253,7 +253,7 @@ async function handleConfirmation(phone, text, session) {
     option_b:      q.option_b,
     option_c:      q.option_c,
     option_d:      q.option_d,
-    correct:       q.correct_answer,
+    correct:       q.shuffled_correct,
     chosen:        null,
   }));
 
