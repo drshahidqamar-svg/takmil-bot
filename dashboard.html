@@ -7,21 +7,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --green: #00C48C;
-    --green-dim: #00C48C22;
-    --amber: #FFB547;
-    --amber-dim: #FFB54722;
-    --red: #FF6B6B;
-    --red-dim: #FF6B6B22;
-    --blue: #4DA6FF;
-    --blue-dim: #4DA6FF22;
-    --bg: #0A0D12;
-    --surface: #12161E;
-    --surface2: #1A2030;
-    --border: #ffffff0f;
-    --text: #F0F4FF;
-    --text-dim: #8895AA;
-    --text-muted: #4A5568;
+    --green: #00956A;
+    --green-dim: #00956A15;
+    --amber: #D97706;
+    --amber-dim: #D9770615;
+    --red: #DC2626;
+    --red-dim: #DC262615;
+    --blue: #2563EB;
+    --blue-dim: #2563EB15;
+    --bg: #F0F4F8;
+    --surface: #FFFFFF;
+    --surface2: #F8FAFC;
+    --border: #E2E8F0;
+    --text: #1A202C;
+    --text-dim: #4A5568;
+    --text-muted: #94A3B8;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -98,7 +98,7 @@
     margin-bottom: 2px;
   }
 
-  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item:hover { background: var(--bg); color: var(--text); }
   .nav-item.active { background: var(--green-dim); color: var(--green); }
   .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
 
@@ -150,8 +150,8 @@
 
   .btn-primary { background: var(--green); color: #000; }
   .btn-primary:hover { background: #00d99a; }
-  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-  .btn-ghost:hover { background: #1f2a3a; }
+  .btn-ghost { background: #FFFFFF; color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--bg); }
   .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid var(--red)33; }
 
   .content { padding: 32px; }
@@ -263,7 +263,7 @@
   }
 
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--surface2); }
+  tr:hover td { background: var(--bg); }
 
   .badge {
     display: inline-flex;
@@ -296,7 +296,7 @@
   label { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; letter-spacing: 1px; }
 
   input, select, textarea {
-    background: var(--surface2);
+    background: #FFFFFF;
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 10px 14px;
@@ -311,7 +311,7 @@
     border-color: var(--green);
   }
 
-  select option { background: var(--surface2); }
+  select option { background: #FFFFFF; }
 
   /* Modal */
   .modal-overlay {
@@ -429,7 +429,7 @@
   /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 </style>
 </head>
 <body>
