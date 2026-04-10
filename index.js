@@ -687,8 +687,8 @@ app.post('/admin/import/questions', async (req, res) => {
     } catch (err) {
       console.error('Question import error:', err.message, row.question_id);
       errors++;
+      if (errors === 1) return res.json({ inserted, skipped, errors, firstError: err.message });
     }
-  }
 
   res.json({ inserted, skipped, errors });
 });
