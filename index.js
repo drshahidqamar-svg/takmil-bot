@@ -657,6 +657,7 @@ app.post('/admin/import/questions', async (req, res) => {
 
   for (const row of rows) {
     try {
+      const questionId = String(row.question_id || '').trim();
       const level      = parseInt(row.level) || 1;
       const subject    = String(row.subject || '').trim();
       const qText      = String(row.q_text_english || '').trim();
@@ -670,9 +671,9 @@ app.post('/admin/import/questions', async (req, res) => {
       if (!qText || !optA || !optB || !optC || !optD) { skipped++; continue; }
 
       await db.pool.query(
-        `INSERT INTO questions (level, subject, q_text_english, option_a, option_b, option_c, option_d, correct_option, topic_tag)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [level, subject, qText, optA, optB, optC, optD, correctOpt, topicTag]
+        `INSERT INTO questions (question_id, level, subject, q_text_english, option_a, option_b, option_c, option_d, correct_option, topic_tag)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        [questionId, level, subject, qText, optA, optB, optC, optD, correctOpt, topicTag]
       );
       inserted++;
     } catch (err) {
