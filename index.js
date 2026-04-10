@@ -657,23 +657,24 @@ app.post('/admin/import/questions', async (req, res) => {
 
   for (const row of rows) {
     try {
-      const questionId = String(row.question_id || '').trim();
-      const level      = parseInt(row.level) || 1;
-      const subject    = String(row.subject || '').trim();
-      const qText      = String(row.q_text_english || '').trim();
-      const optA       = String(row.option_a || '').trim();
-      const optB       = String(row.option_b || '').trim();
-      const optC       = String(row.option_c || '').trim();
-      const optD       = String(row.option_d || '').trim();
-      const correctOpt = String(row.correct_option || 'A').trim().toUpperCase();
-      const topicTag   = String(row.topic_tag || '').trim();
+      const questionId  = String(row.question_id || '').trim();
+      const level       = parseInt(row.level) || 1;
+      const subject     = String(row.subject || '').trim();
+      const qText       = String(row.q_text_english || '').trim();
+      const qTextUrdu   = String(row.q_text_urdu || row.q_text_english || '').trim();
+      const optA        = String(row.option_a || '').trim();
+      const optB        = String(row.option_b || '').trim();
+      const optC        = String(row.option_c || '').trim();
+      const optD        = String(row.option_d || '').trim();
+      const correctOpt  = String(row.correct_option || 'A').trim().toUpperCase();
+      const topicTag    = String(row.topic_tag || '').trim();
 
       if (!qText || !optA || !optB || !optC || !optD) { skipped++; continue; }
 
       await db.pool.query(
-        `INSERT INTO questions (question_id, level, subject, q_text_english, option_a, option_b, option_c, option_d, correct_option, topic_tag)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-        [questionId, level, subject, qText, optA, optB, optC, optD, correctOpt, topicTag]
+        `INSERT INTO questions (question_id, level, subject, q_text_english, q_text_urdu, option_a, option_b, option_c, option_d, correct_option, topic_tag)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [questionId, level, subject, qText, qTextUrdu, optA, optB, optC, optD, correctOpt, topicTag]
       );
       inserted++;
     } catch (err) {
