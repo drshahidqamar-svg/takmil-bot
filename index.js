@@ -653,46 +653,36 @@ app.post('/admin/import/questions', async (req, res) => {
   const { rows } = req.body;
   if (!rows || !Array.isArray(rows)) return res.status(400).json({ error: 'rows array required' });
 
-  let inserted = 0, skipped = 0, errors = 0;
+  let inserted = 0, skipped = 0, errors = 0, lastError = '';
 
   for (const row of rows) {
     try {
-      // Map Excel columns to DB columns
-      const questionId  = String(row.question_id || '').trim();
-      const level       = parseInt(row.level) || 1;
-      const subject     = String(row.subject || '').trim();
-      const qText       = String(row.q_text_english || '').trim();
-      const optA        = String(row.option_a || '').trim();
-      const optB        = String(row.option_b || '').trim();
-      const optC        = String(row.option_c || '').trim();
-      const optD        = String(row.option_d || '').trim();
-      const correctOpt  = String(row.correct_option || 'A').trim().toUpperCase();
-      const topicTag    = String(row.topic_tag || '').trim();
+      const level      = parseInt(row.level) || 1;
+      const subject    = String(row.subject || '').trim();
+      const qText      = String(row.q_text_english || '').trim();
+      const optA       = String(row.option_a || '').trim();
+      const optB       = String(row.option_b || '').trim();
+      const optC       = String(row.option_c || '').trim();
+      const optD       = String(row.option_d || '').trim();
+      const correctOpt = String(row.correct_option || 'A').trim().toUpperCase();
+      const topicTag   = String(row.topic_tag || '').trim();
 
-      if (!questionId || !qText || !optA || !optB || !optC || !optD) {
-        skipped++;
-        continue;
-      }
+      if (!qText || !optA || !optB || !optC || !optD) { skipped++; continue; }
 
-    
-      const result = await db.pool.query(`
-        INSERT INTO questions
-          (level, subject, q_text_english, option_a, option_b, option_c, option_d, correct_option, topic_tag)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-      `, [level, subject, qText, optA, optB, optC, optD, correctOpt, topicTag]);
-
-      if (result.rowCount > 0) inserted++;
-      else skipped++;
-
+      await db.pool.query(
+        `INSERT INTO questions (level, subject, q_text_english, option_a, option_b, option_c, option_d, correct_option, topic_tag)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [level, subject, qText, optA, optB, optC, optD, correctOpt, topicTag]
+      );
+      inserted++;
     } catch (err) {
-      console.error('Question import error:', err.message, row.question_id);
+      lastError = err.message;
       errors++;
-      if (errors === 1) return res.json({ inserted, skipped, errors, firstError: err.message });
     }
+  }
 
-  res.json({ inserted, skipped, errors });
+  res.json({ inserted, skipped, errors, lastError });
 });
-
 // ── Bulk import: Schools ─────────────────────────────────────────────────────
 app.post('/admin/import/schools', async (req, res) => {
   const { rows } = req.body;
