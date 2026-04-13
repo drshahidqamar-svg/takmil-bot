@@ -39,6 +39,7 @@ function shuffleOptions(question) {
     const j = Math.floor(Math.random() * (i + 1));
     [opts[i], opts[j]] = [opts[j], opts[i]];
   }
+  const newLabel = opts.find(o => o.text === correctText)?.label || 'A';
   return {
     ...question,
     option_a: opts[0].text,
@@ -46,7 +47,7 @@ function shuffleOptions(question) {
     option_c: opts[2].text,
     option_d: opts[3].text,
     correct_text: correctText,
-    shuffled_correct: opts.find(o => o.text === correctText)?.label,
+    shuffled_correct: newLabel,
   };
 }
 
@@ -306,7 +307,8 @@ async function handleAnswer(phone, text, session) {
   }
 
   answers[idx].chosen = answer;
-  const isCorrect = answer === answers[idx].shuffled_correct;
+  const chosenText = answers[idx][`option_${answer.toLowerCase()}`];
+  const isCorrect = chosenText === answers[idx].correct_text;
   const newScore  = (session.score || 0) + (isCorrect ? 1 : 0);
   const newIndex  = idx + 1;
 
