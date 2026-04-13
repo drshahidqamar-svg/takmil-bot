@@ -559,7 +559,17 @@ app.get('/admin/advancements/pending', async (req, res) => {
     res.json(r.rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
-
+app.get('/admin/assessments/all', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT a.*, s.name AS school_name
+      FROM assessments a
+      LEFT JOIN schools s ON s.id = a.school_id
+      ORDER BY a.completed_at DESC
+    `);
+    res.json(r.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 app.get('/admin/analytics', async (req, res) => {
   try {
     const summary   = await db.getAnalyticsSummary();
