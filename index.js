@@ -306,7 +306,7 @@ async function handleAnswer(phone, text, session) {
   }
 
   answers[idx].chosen = answer;
-  const isCorrect = answer === answers[idx].correct;
+  const isCorrect = answer === answers[idx].shuffled_correct;
   const newScore  = (session.score || 0) + (isCorrect ? 1 : 0);
   const newIndex  = idx + 1;
 
