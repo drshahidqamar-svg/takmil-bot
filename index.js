@@ -3,7 +3,6 @@ const express = require('express');
 const twilio = require('twilio');
 const db = require('./database');
 const path = require('path');
-
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
