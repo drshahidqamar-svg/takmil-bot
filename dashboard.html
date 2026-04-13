@@ -461,6 +461,9 @@
     <div class="nav-item" onclick="showTab('reassessments', this)">
       <span class="icon">📅</span> Reassessments
     </div>
+    <div class="nav-item" onclick="showTab('assessments', this)">
+      <span class="icon">📋</span> All Assessments
+    </div>
   </nav>
   <div class="sidebar-footer">
     TAKMIL Bot v2.0<br>
@@ -592,7 +595,15 @@
         </div>
       </div>
     </div>
-
+  <!-- ASSESSMENTS TAB -->
+    <div id="tab-assessments" class="tab-content">
+      <div class="card">
+        <div class="card-header"><div class="card-title">All Assessments</div></div>
+        <div id="assessments-detail-table">
+          <div class="loading"><div class="spinner"></div> Loading...</div>
+        </div>
+      </div>
+    </div>
     <!-- REASSESSMENTS TAB -->
     <div id="tab-reassessments" class="tab-content">
       <div class="card">
@@ -771,9 +782,8 @@ function loadTab(tab) {
     advancements: loadAdvancements,
     ops: loadOps,
     reassessments: loadReassessments,
+    assessments: loadAssessments,
   };
-  if (loaders[tab]) loaders[tab]();
-}
 
 function refreshAll() {
   const active = document.querySelector('.nav-item.active');
@@ -997,7 +1007,31 @@ async function loadReassessments() {
     el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>';
   }
 }
-
+async function loadAssessments() {
+  const el = document.getElementById('assessments-detail-table');
+  try {
+    const data = await api('/admin/assessments/all');
+    if (!data.length) {
+      el.innerHTML = '<div class="empty-state"><div class="icon">📋</div>No assessments yet</div>';
+      return;
+    }
+    el.innerHTML = `<table>
+      <tr><th>#</th><th>School</th><th>Subject</th><th>Level</th><th>Score</th><th>Result</th><th>Teacher Phone</th><th>Date</th></tr>
+      ${data.map(a => `<tr>
+        <td style="font-family:'DM Mono',monospace;color:var(--text-muted)">${a.id}</td>
+        <td style="color:var(--text);font-weight:500">${a.school_name || '—'}</td>
+        <td>${a.subject}</td>
+        <td>Level ${a.level}</td>
+        <td><span style="font-family:'DM Mono',monospace;color:${a.score_pct >= 80 ? 'var(--green)' : 'var(--amber)'};font-weight:500">${a.correct_answers}/${a.total_questions} (${a.score_pct}%)</span></td>
+        <td><span class="badge ${a.passed ? 'badge-green' : 'badge-amber'}">${a.passed ? 'PASSED' : 'BELOW 80%'}</span></td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px">${a.teacher_phone}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${fmtDate(a.completed_at)}</td>
+      </tr>`).join('')}
+    </table>`;
+  } catch {
+    el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>';
+  }
+}
 // ── Modals ───────────────────────────────────────────────────────────────────
 function openModal(id) {
   document.getElementById(id).classList.add('open');
