@@ -246,7 +246,7 @@ async function handleConfirmation(phone, text, session) {
   }
 
   // Shuffle and embed full question data into answers array
-  const answersPayload = shuffled.map(q => ({
+  const answersPayload = shuffledQuestions.map(q => ({
     id:            q.question_id || q.id,
     question_text: q.q_text_english || q.q_text_urdu || q.question_text || 'Question not available',
     option_a:      q.option_a,
