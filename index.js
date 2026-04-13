@@ -422,13 +422,11 @@ async function handleAnswer(phone, text, session) {
       answers_detail  = $4::jsonb,
       recommendation  = $5,
       completed_at    = NOW()
-    WHERE teacher_phone = $6
-      AND completed_at IS NULL
-      AND id = (
-        SELECT id FROM student_assessments
-        WHERE teacher_phone = $6
-        ORDER BY id DESC LIMIT 1
-      )
+    WHERE id = (
+      SELECT id FROM student_assessments
+      WHERE teacher_phone = $6
+      ORDER BY id DESC LIMIT 1
+    )
   `, [newScore, scorePct, passed, JSON.stringify(answers), recommendation, phone]);
 
   // Get student name from latest record
@@ -484,6 +482,15 @@ async function finishSession(phone, session) {
     FROM student_assessments
     WHERE teacher_phone = $1 AND pin_id = $2
     ORDER BY id ASC
+  `, [phone, session.pin_id]);
+
+  // Get all students with their answers from session history
+  const studentsRec = await db.pool.query(`
+    SELECT sa.*, a.answers as session_answers
+    FROM student_assessments sa
+    LEFT JOIN sessions a ON a.phone = $1
+    WHERE sa.teacher_phone = $1 AND sa.pin_id = $2
+    ORDER BY sa.id ASC
   `, [phone, session.pin_id]);
 
   const students = studentsRec.rows;
