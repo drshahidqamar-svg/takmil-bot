@@ -303,8 +303,7 @@ async function handleStudentName(phone, text, session) {
     option_b:      q.option_b,
     option_c:      q.option_c,
     option_d:      q.option_d,
-    correct:       q.shuffled_correct,
-    correct_text:  q.correct_text,
+    correct: q.shuffled_correct || q.correct_option || q.correct_answer || 'A',
     chosen:        null,
   }));
 
@@ -367,8 +366,7 @@ async function handleAnswer(phone, text, session) {
 
   // Record answer
   answers[idx].chosen = answer;
-  const chosenText = answers[idx][`option_${answer.toLowerCase()}`];
-  const isCorrect  = chosenText === answers[idx].correct_text;
+  const isCorrect = answer === answers[idx].correct;
   const newScore   = (session.score || 0) + (isCorrect ? 1 : 0);
   const newIndex   = idx + 1;
 
