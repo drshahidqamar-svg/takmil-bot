@@ -48,7 +48,7 @@ function shuffleOptions(question) {
     option_c: opts[2].text,
     option_d: opts[3].text,
     correct_text: correctText,
-    shuffled_correct: opts.find(o => o.text === correctText)?.label || 'A',
+    shuffled_correct: ['A','B','C','D'][opts.findIndex(o => o.text === correctText)] || 'A',
   };
 }
 
