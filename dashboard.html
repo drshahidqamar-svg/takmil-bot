@@ -34,7 +34,6 @@
     display: flex;
   }
 
-  /* Sidebar */
   .sidebar {
     width: 240px;
     min-height: 100vh;
@@ -47,386 +46,234 @@
     z-index: 100;
   }
 
-  .logo {
-    padding: 28px 24px;
-    border-bottom: 1px solid var(--border);
-  }
+  .logo { padding: 28px 24px; border-bottom: 1px solid var(--border); }
+  .logo-text { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+  .logo-sub { font-size: 11px; color: #475569; letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; font-family: 'DM Mono', monospace; }
 
-  .logo-text {
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: var(--text);
-  }
-
-  .logo-sub {
-    font-size: 11px;
-    color: #475569;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-top: 3px;
-    font-family: 'DM Mono', monospace;
-  }
-
-  .nav {
-    padding: 16px 12px;
-    flex: 1;
-  }
-
-  .nav-section {
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #475569;
-    font-family: 'DM Mono', monospace;
-    padding: 8px 12px 6px;
-    margin-top: 8px;
-  }
-
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 400;
-    color: #334155;
-    transition: all 0.15s;
-    margin-bottom: 2px;
-  }
-
+  .nav { padding: 16px 12px; flex: 1; }
+  .nav-section { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #475569; font-family: 'DM Mono', monospace; padding: 8px 12px 6px; margin-top: 8px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 400; color: #334155; transition: all 0.15s; margin-bottom: 2px; }
   .nav-item:hover { background: var(--bg); color: var(--text); }
   .nav-item.active { background: var(--green-dim); color: var(--green); }
   .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
 
-  .sidebar-footer {
-    padding: 16px;
-    border-top: 1px solid var(--border);
-    font-size: 11px;
-    color: #475569;
-    font-family: 'DM Mono', monospace;
-  }
+  .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); font-size: 11px; color: #475569; font-family: 'DM Mono', monospace; }
 
-  /* Main */
-  .main {
-    margin-left: 240px;
-    flex: 1;
-    min-height: 100vh;
-  }
+  .main { margin-left: 240px; flex: 1; min-height: 100vh; }
 
-  .topbar {
-    padding: 20px 32px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--surface);
-    position: sticky;
-    top: 0;
-    z-index: 50;
-  }
-
-  .page-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-  }
-
+  .topbar { padding: 20px 32px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface); position: sticky; top: 0; z-index: 50; }
+  .page-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
   .topbar-actions { display: flex; gap: 10px; }
 
-  .btn {
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 500;
-    transition: all 0.15s;
-  }
-
+  .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: all 0.15s; }
   .btn-primary { background: var(--green); color: #000; }
   .btn-primary:hover { background: #00d99a; }
   .btn-ghost { background: #FFFFFF; color: var(--text); border: 1px solid var(--border); }
   .btn-ghost:hover { background: var(--bg); }
   .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid var(--red)33; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
 
   .content { padding: 32px; }
 
-  /* Tabs */
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
-  /* Stats grid */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
-  }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
 
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-  }
-
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
   .stat-card.green::before { background: var(--green); }
   .stat-card.amber::before { background: var(--amber); }
   .stat-card.red::before { background: var(--red); }
   .stat-card.blue::before { background: var(--blue); }
 
-  .stat-label {
-    font-size: 11px;
-    color: #475569;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    font-family: 'DM Mono', monospace;
-    margin-bottom: 10px;
-  }
-
-  .stat-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 32px;
-    font-weight: 800;
-    line-height: 1;
-    margin-bottom: 6px;
-  }
-
+  .stat-label { font-size: 11px; color: #475569; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 10px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
   .stat-card.green .stat-value { color: var(--green); }
   .stat-card.amber .stat-value { color: var(--amber); }
   .stat-card.red .stat-value { color: var(--red); }
   .stat-card.blue .stat-value { color: var(--blue); }
-
   .stat-sub { font-size: 12px; color: #475569; }
 
-  /* Grid 2col */
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
   .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
 
-  /* Card */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  .card-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .card-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
   .card-body { padding: 20px; }
 
-  /* Table */
   table { width: 100%; border-collapse: collapse; }
-
-  th {
-    text-align: left;
-    font-size: 10px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: #334155;
-    font-family: 'DM Mono', monospace;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  td {
-    padding: 12px 16px;
-    font-size: 13px;
-    border-bottom: 1px solid var(--border);
-    color: #1E293B;
-  }
-
+  th { text-align: left; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: #334155; font-family: 'DM Mono', monospace; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); color: #1E293B; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: var(--bg); }
 
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 500;
-    font-family: 'DM Mono', monospace;
-  }
-
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; font-family: 'DM Mono', monospace; }
   .badge-green { background: var(--green-dim); color: var(--green); }
   .badge-amber { background: var(--amber-dim); color: var(--amber); }
   .badge-red { background: var(--red-dim); color: var(--red); }
   .badge-blue { background: var(--blue-dim); color: var(--blue); }
-  .badge-gray { background: #ffffff11; color: #475569; }
+  .badge-gray { background: #F1F5F9; color: #475569; }
 
-  /* Progress bar */
   .progress { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
   .progress-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
   .progress-green { background: var(--green); }
   .progress-amber { background: var(--amber); }
   .progress-red { background: var(--red); }
 
-  /* Form */
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .form-group { display: flex; flex-direction: column; gap: 6px; }
   .form-group.full { grid-column: 1 / -1; }
 
   label { font-size: 12px; color: #475569; font-family: 'DM Mono', monospace; letter-spacing: 1px; }
 
-  input, select, textarea {
-    background: #FFFFFF;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    color: var(--text);
-    font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  input:focus, select:focus, textarea:focus {
-    border-color: var(--green);
-  }
-
+  input, select, textarea { background: #FFFFFF; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--green); }
   select option { background: #FFFFFF; }
 
-  /* Modal */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: #00000088;
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(4px);
-  }
-
+  .modal-overlay { display: none; position: fixed; inset: 0; background: #00000088; z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
   .modal-overlay.open { display: flex; }
-
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    width: 520px;
-    max-width: 90vw;
-    max-height: 85vh;
-    overflow-y: auto;
-  }
-
-  .modal-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 520px; max-width: 90vw; max-height: 85vh; overflow-y: auto; }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .modal-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
   .modal-body { padding: 24px; }
   .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
   .modal-close { background: none; border: none; color: #475569; cursor: pointer; font-size: 20px; }
 
-  /* Toast */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 20px;
-    font-size: 13px;
-    z-index: 999;
-    transform: translateY(100px);
-    opacity: 0;
-    transition: all 0.3s ease;
-    max-width: 320px;
-  }
-
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; font-size: 13px; z-index: 999; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; max-width: 320px; }
   .toast.show { transform: translateY(0); opacity: 1; }
   .toast.success { border-left: 3px solid var(--green); }
   .toast.error { border-left: 3px solid var(--red); }
 
-  /* Loading */
-  .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 48px;
-    color: #475569;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    gap: 10px;
-  }
-
-  .spinner {
-    width: 18px; height: 18px;
-    border: 2px solid var(--border);
-    border-top-color: var(--green);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
+  .loading { display: flex; align-items: center; justify-content: center; padding: 48px; color: #475569; font-family: 'DM Mono', monospace; font-size: 13px; gap: 10px; }
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* PIN display */
-  .pin-display {
-    font-family: 'DM Mono', monospace;
-    font-size: 28px;
-    font-weight: 500;
-    letter-spacing: 8px;
-    color: var(--green);
-    background: var(--green-dim);
-    border: 1px solid var(--green)44;
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    margin: 16px 0;
-  }
-
+  .pin-display { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 500; letter-spacing: 8px; color: var(--green); background: var(--green-dim); border: 1px solid var(--green)44; border-radius: 12px; padding: 20px; text-align: center; margin: 16px 0; }
   .pin-meta { font-size: 12px; color: #475569; text-align: center; font-family: 'DM Mono', monospace; }
 
-  /* Chart bars */
   .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; padding: 0 4px; }
   .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
   .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 1s ease; min-height: 4px; }
   .bar-label { font-size: 10px; color: #475569; font-family: 'DM Mono', monospace; }
   .bar-val { font-size: 11px; color: var(--text-dim); font-family: 'DM Mono', monospace; }
 
-  .empty-state {
-    text-align: center;
-    padding: 40px;
-    color: #475569;
-    font-size: 13px;
-  }
-
+  .empty-state { text-align: center; padding: 40px; color: #475569; font-size: 13px; }
   .empty-state .icon { font-size: 32px; margin-bottom: 12px; }
 
-  /* Scrollbar */
+  /* ── Student Results specific ── */
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .filter-bar input,
+  .filter-bar select {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    height: 36px;
+  }
+
+  .filter-bar input { min-width: 180px; }
+  .filter-bar select { min-width: 130px; }
+
+  .score-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .score-bar-bg {
+    width: 64px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .score-bar-fill { height: 100%; border-radius: 3px; }
+
+  .expand-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 3px 8px;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.15s;
+  }
+
+  .expand-btn:hover { background: var(--bg); color: var(--text); }
+
+  .answers-row { display: none; }
+  .answers-row.open { display: table-row; }
+
+  .answers-panel {
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    padding: 16px 20px;
+  }
+
+  .answers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .answer-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  .answer-item.correct { border-left: 3px solid var(--green); }
+  .answer-item.wrong { border-left: 3px solid var(--red); }
+
+  .answer-q { color: var(--text-muted); margin-bottom: 6px; line-height: 1.4; }
+  .answer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+  .answer-chosen { font-family: 'DM Mono', monospace; font-size: 11px; }
+  .answer-chosen.correct-ans { color: var(--green); font-weight: 500; }
+  .answer-chosen.wrong-ans { color: var(--red); }
+  .answer-correct-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--green); }
+
+  .live-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--green-dim);
+    color: var(--green);
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .live-dot {
+    width: 5px;
+    height: 5px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -434,7 +281,6 @@
 </head>
 <body>
 
-<!-- Sidebar -->
 <aside class="sidebar">
   <div class="logo">
     <div class="logo-text">TAKMIL</div>
@@ -444,6 +290,10 @@
     <div class="nav-section">Analytics</div>
     <div class="nav-item active" onclick="showTab('analytics', this)">
       <span class="icon">📊</span> Dashboard
+    </div>
+    <div class="nav-section">Students</div>
+    <div class="nav-item" onclick="showTab('students', this)">
+      <span class="icon">👤</span> Student Results
     </div>
     <div class="nav-section">Management</div>
     <div class="nav-item" onclick="showTab('schools', this)">
@@ -466,12 +316,11 @@
     </div>
   </nav>
   <div class="sidebar-footer">
-    TAKMIL Bot v2.0<br>
+    TAKMIL Bot v3.0<br>
     <span id="live-time"></span>
   </div>
 </aside>
 
-<!-- Main -->
 <main class="main">
   <div class="topbar">
     <div class="page-title" id="page-title">Dashboard</div>
@@ -510,9 +359,7 @@
 
       <div class="grid-2">
         <div class="card">
-          <div class="card-header">
-            <div class="card-title">Pass / Fail Rate</div>
-          </div>
+          <div class="card-header"><div class="card-title">Pass / Fail Rate</div></div>
           <div class="card-body">
             <div style="display:flex; gap:24px; margin-bottom:20px;">
               <div>
@@ -542,6 +389,71 @@
       <div class="card">
         <div class="card-header"><div class="card-title">Score by Level</div></div>
         <div class="card-body" id="level-chart">
+          <div class="loading"><div class="spinner"></div> Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STUDENT RESULTS TAB -->
+    <div id="tab-students" class="tab-content">
+      <div class="stats-grid" id="student-stats">
+        <div class="stat-card green">
+          <div class="stat-label">Total Students</div>
+          <div class="stat-value" id="st-total">—</div>
+          <div class="stat-sub">Assessed</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Passed</div>
+          <div class="stat-value" id="st-passed">—</div>
+          <div class="stat-sub">Score ≥ 80%</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label">Avg Score</div>
+          <div class="stat-value" id="st-avg">—</div>
+          <div class="stat-sub">All students</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Pass Rate</div>
+          <div class="stat-value" id="st-rate">—</div>
+          <div class="stat-sub">This view</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" id="f-search" placeholder="🔍  Search student name..." oninput="applyFilters()">
+        <select id="f-subject" onchange="applyFilters()">
+          <option value="">All Subjects</option>
+          <option value="Math">Math</option>
+          <option value="English">English</option>
+          <option value="Urdu">Urdu</option>
+        </select>
+        <select id="f-level" onchange="applyFilters()">
+          <option value="">All Levels</option>
+          <option value="1">Level 1</option>
+          <option value="2">Level 2</option>
+          <option value="3">Level 3</option>
+        </select>
+        <select id="f-result" onchange="applyFilters()">
+          <option value="">All Results</option>
+          <option value="passed">Passed</option>
+          <option value="failed">Needs Reassessment</option>
+        </select>
+        <select id="f-province" onchange="applyFilters()">
+          <option value="">All Provinces</option>
+          <option value="Punjab">Punjab</option>
+          <option value="Sindh">Sindh</option>
+          <option value="KPK">KPK</option>
+          <option value="Balochistan">Balochistan</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Student Assessments</div>
+          <div style="font-size:12px;color:var(--text-muted);font-family:'DM Mono',monospace" id="st-count-label"></div>
+        </div>
+        <div id="students-table">
           <div class="loading"><div class="spinner"></div> Loading...</div>
         </div>
       </div>
@@ -595,7 +507,8 @@
         </div>
       </div>
     </div>
-  <!-- ASSESSMENTS TAB -->
+
+    <!-- ASSESSMENTS TAB -->
     <div id="tab-assessments" class="tab-content">
       <div class="card">
         <div class="card-header"><div class="card-title">All Assessments</div></div>
@@ -604,6 +517,7 @@
         </div>
       </div>
     </div>
+
     <!-- REASSESSMENTS TAB -->
     <div id="tab-reassessments" class="tab-content">
       <div class="card">
@@ -628,17 +542,13 @@
       <div id="pin-result" style="display:none">
         <div class="pin-display" id="pin-value"></div>
         <div class="pin-meta" id="pin-expires"></div>
-        <div style="margin-top:16px;font-size:13px;color:var(--text-muted);text-align:center;">
-          Send this PIN to the teacher via WhatsApp. Valid for 24 hours.
-        </div>
+        <div style="margin-top:16px;font-size:13px;color:var(--text-muted);text-align:center;">Send this PIN to the teacher via WhatsApp. Valid for 24 hours.</div>
       </div>
       <div id="pin-form">
         <div class="form-grid">
           <div class="form-group full">
             <label>SCHOOL</label>
-            <select id="pin-school">
-              <option value="">Loading schools...</option>
-            </select>
+            <select id="pin-school"><option value="">Loading schools...</option></select>
           </div>
           <div class="form-group">
             <label>LEVEL</label>
@@ -754,11 +664,11 @@
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-const API = '';  // same origin
+const API = '';
+let allStudentData = [];
 
 // ── Navigation ──────────────────────────────────────────────────────────────
 function showTab(tab, el) {
@@ -767,16 +677,18 @@ function showTab(tab, el) {
   document.getElementById('tab-' + tab).classList.add('active');
   el.classList.add('active');
   const titles = {
-    analytics: 'Dashboard', schools: 'Schools', pins: 'PIN Manager',
-    advancements: 'Advancements', ops: 'Ops Team', reassessments: 'Reassessments'
+    analytics: 'Dashboard', students: 'Student Results', schools: 'Schools',
+    pins: 'PIN Manager', advancements: 'Advancements', ops: 'Ops Team',
+    reassessments: 'Reassessments', assessments: 'All Assessments'
   };
-  document.getElementById('page-title').textContent = titles[tab];
+  document.getElementById('page-title').textContent = titles[tab] || tab;
   loadTab(tab);
 }
 
 function loadTab(tab) {
   const loaders = {
     analytics: loadAnalytics,
+    students: loadStudentResults,
     schools: loadSchools,
     pins: loadPins,
     advancements: loadAdvancements,
@@ -784,17 +696,22 @@ function loadTab(tab) {
     reassessments: loadReassessments,
     assessments: loadAssessments,
   };
+  if (loaders[tab]) loaders[tab]();
+}
 
 function refreshAll() {
   const active = document.querySelector('.nav-item.active');
-  const tab = active?.textContent?.trim().toLowerCase().replace(/\s+/g, '');
-  const map = { 'dashboard': 'analytics', 'schools': 'schools', 'pinmanager': 'pins',
-    'advancements': 'advancements', 'opsteam': 'ops', 'reassessments': 'reassessments' };
-  loadTab(map[tab] || 'analytics');
+  const text = active?.textContent?.trim().toLowerCase().replace(/\s+/g, '');
+  const map = {
+    'dashboard': 'analytics', 'studentresults': 'students', 'schools': 'schools',
+    'pinmanager': 'pins', 'advancements': 'advancements', 'opsteam': 'ops',
+    'reassessments': 'reassessments', 'allassessments': 'assessments'
+  };
+  loadTab(map[text] || 'analytics');
   toast('Refreshed', 'success');
 }
 
-// ── API calls ────────────────────────────────────────────────────────────────
+// ── API ──────────────────────────────────────────────────────────────────────
 async function api(path, options) {
   const res = await fetch(API + path, options);
   return res.json();
@@ -805,69 +722,221 @@ async function loadAnalytics() {
   try {
     const data = await api('/admin/analytics');
     const s = data.summary;
-
     document.getElementById('stat-total').textContent = s.total_assessments || 0;
     document.getElementById('stat-schools').textContent = s.schools_assessed || 0;
     document.getElementById('stat-avg').textContent = (s.avg_score || 0) + '%';
     document.getElementById('stat-adv').textContent = s.advancements_approved || 0;
     document.getElementById('stat-passed').textContent = s.passed_count || 0;
     document.getElementById('stat-failed').textContent = s.failed_count || 0;
-
     const total = parseInt(s.passed_count || 0) + parseInt(s.failed_count || 0);
     const pct = total > 0 ? Math.round((s.passed_count / total) * 100) : 0;
     document.getElementById('pass-bar').style.width = pct + '%';
     document.getElementById('pass-pct').textContent = pct + '% pass rate';
 
-    // Subject chart
     const subjEl = document.getElementById('subject-chart');
     if (data.bySubject?.length) {
       const colors = { Math: 'var(--green)', English: 'var(--blue)', Urdu: 'var(--amber)' };
-      const maxScore = 100;
-      subjEl.innerHTML = `
-        <div class="bar-chart">
-          ${data.bySubject.map(s => `
-            <div class="bar-wrap">
-              <div class="bar-val">${s.avg_score}%</div>
-              <div class="bar" style="background:${colors[s.subject]||'var(--green)'};height:${(s.avg_score/maxScore)*100}px"></div>
-              <div class="bar-label">${s.subject}</div>
-              <div class="bar-label">${s.count} tests</div>
-            </div>
-          `).join('')}
-        </div>`;
+      subjEl.innerHTML = `<div class="bar-chart">
+        ${data.bySubject.map(s => `
+          <div class="bar-wrap">
+            <div class="bar-val">${s.avg_score}%</div>
+            <div class="bar" style="background:${colors[s.subject]||'var(--green)'};height:${(s.avg_score/100)*100}px"></div>
+            <div class="bar-label">${s.subject}</div>
+            <div class="bar-label">${s.count} tests</div>
+          </div>`).join('')}
+      </div>`;
     } else {
       subjEl.innerHTML = '<div class="empty-state"><div class="icon">📊</div>No data yet</div>';
     }
 
-    // Level chart
     const lvlEl = document.getElementById('level-chart');
     if (data.byLevel?.length) {
-      lvlEl.innerHTML = `
-        <table>
-          <tr><th>Level</th><th>Assessments</th><th>Avg Score</th><th>Passed</th><th>Pass Rate</th></tr>
-          ${data.byLevel.map(l => {
-            const rate = l.count > 0 ? Math.round((l.passed / l.count) * 100) : 0;
-            return `<tr>
-              <td><span style="font-family:'DM Mono',monospace">Level ${l.level}</span></td>
-              <td>${l.count}</td>
-              <td><span style="color:${l.avg_score >= 80 ? 'var(--green)' : 'var(--amber)'}">${l.avg_score}%</span></td>
-              <td>${l.passed}</td>
-              <td>
-                <div style="display:flex;align-items:center;gap:8px">
-                  <div class="progress" style="width:80px">
-                    <div class="progress-fill ${rate >= 80 ? 'progress-green' : 'progress-amber'}" style="width:${rate}%"></div>
-                  </div>
-                  <span style="font-size:12px;color:var(--text-muted)">${rate}%</span>
+      lvlEl.innerHTML = `<table>
+        <tr><th>Level</th><th>Assessments</th><th>Avg Score</th><th>Passed</th><th>Pass Rate</th></tr>
+        ${data.byLevel.map(l => {
+          const rate = l.count > 0 ? Math.round((l.passed / l.count) * 100) : 0;
+          return `<tr>
+            <td><span style="font-family:'DM Mono',monospace">Level ${l.level}</span></td>
+            <td>${l.count}</td>
+            <td><span style="color:${l.avg_score >= 80 ? 'var(--green)' : 'var(--amber)'}">${l.avg_score}%</span></td>
+            <td>${l.passed}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="progress" style="width:80px">
+                  <div class="progress-fill ${rate >= 80 ? 'progress-green' : 'progress-amber'}" style="width:${rate}%"></div>
                 </div>
-              </td>
-            </tr>`;
-          }).join('')}
-        </table>`;
+                <span style="font-size:12px;color:var(--text-muted)">${rate}%</span>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </table>`;
     } else {
       lvlEl.innerHTML = '<div class="empty-state"><div class="icon">📈</div>No level data yet</div>';
     }
-  } catch (err) {
-    console.error(err);
+  } catch (err) { console.error(err); }
+}
+
+// ── Student Results ──────────────────────────────────────────────────────────
+async function loadStudentResults() {
+  const el = document.getElementById('students-table');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+  try {
+    const data = await api('/admin/students/results');
+    allStudentData = data;
+    renderStudentTable(data);
+  } catch {
+    el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load student results</div>';
   }
+}
+
+function applyFilters() {
+  const search = document.getElementById('f-search').value.toLowerCase();
+  const subject = document.getElementById('f-subject').value;
+  const level = document.getElementById('f-level').value;
+  const result = document.getElementById('f-result').value;
+  const province = document.getElementById('f-province').value;
+
+  let filtered = allStudentData.filter(s => {
+    if (search && !s.student_name?.toLowerCase().includes(search) && !s.school_name?.toLowerCase().includes(search)) return false;
+    if (subject && s.subject !== subject) return false;
+    if (level && String(s.level) !== level) return false;
+    if (result === 'passed' && !s.passed) return false;
+    if (result === 'failed' && s.passed) return false;
+    if (province && s.province !== province) return false;
+    return true;
+  });
+
+  renderStudentTable(filtered);
+}
+
+function clearFilters() {
+  document.getElementById('f-search').value = '';
+  document.getElementById('f-subject').value = '';
+  document.getElementById('f-level').value = '';
+  document.getElementById('f-result').value = '';
+  document.getElementById('f-province').value = '';
+  renderStudentTable(allStudentData);
+}
+
+function renderStudentTable(data) {
+  const el = document.getElementById('students-table');
+
+  // Stats
+  const passed = data.filter(s => s.passed).length;
+  const avg = data.length > 0
+    ? Math.round(data.reduce((sum, s) => sum + parseFloat(s.score_pct || 0), 0) / data.length)
+    : 0;
+  const rate = data.length > 0 ? Math.round((passed / data.length) * 100) : 0;
+
+  document.getElementById('st-total').textContent = data.length;
+  document.getElementById('st-passed').textContent = passed;
+  document.getElementById('st-avg').textContent = avg + '%';
+  document.getElementById('st-rate').textContent = rate + '%';
+  document.getElementById('st-count-label').textContent = data.length + ' records';
+
+  if (!data.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">👤</div>No students match your filters</div>';
+    return;
+  }
+
+  // Real phone number for live indicator
+  const REAL_PHONE = '+16024305897';
+
+  el.innerHTML = `<table>
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>School</th>
+        <th>Province</th>
+        <th>Subject</th>
+        <th>Level</th>
+        <th>Score</th>
+        <th>Result</th>
+        <th>Date</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="student-tbody">
+      ${data.map((s, i) => {
+        const score = parseFloat(s.score_pct || 0);
+        const barColor = score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)';
+        const isLive = s.teacher_phone === REAL_PHONE;
+        const hasAnswers = s.answers_detail && s.answers_detail.length > 0;
+
+        return `
+          <tr id="row-${i}">
+            <td style="font-weight:500;color:var(--text)">
+              ${s.student_name || '—'}
+              ${isLive ? `<span class="live-tag"><span class="live-dot"></span>LIVE</span>` : ''}
+            </td>
+            <td style="font-size:12px;color:var(--text-muted);max-width:160px">${s.school_name || '—'}</td>
+            <td><span class="badge badge-gray" style="font-size:10px">${s.province || '—'}</span></td>
+            <td>${s.subject || '—'}</td>
+            <td style="font-family:'DM Mono',monospace;font-size:12px">L${s.level}</td>
+            <td>
+              <div class="score-cell">
+                <div class="score-bar-bg">
+                  <div class="score-bar-fill" style="width:${score}%;background:${barColor}"></div>
+                </div>
+                <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:${barColor}">${score.toFixed(0)}%</span>
+                <span style="font-size:11px;color:var(--text-muted)">${s.correct_answers}/${s.total_questions}</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge ${s.passed ? 'badge-green' : 'badge-amber'}">
+                ${s.passed ? '✓ Passed' : 'Reassess'}
+              </span>
+            </td>
+            <td style="font-size:12px;color:var(--text-muted)">${fmtDate(s.completed_at)}</td>
+            <td>
+              ${hasAnswers
+                ? `<button class="expand-btn" onclick="toggleAnswers(${i})" id="btn-${i}">▼ Answers</button>`
+                : `<span style="font-size:11px;color:var(--text-muted)">—</span>`}
+            </td>
+          </tr>
+          ${hasAnswers ? `
+          <tr id="answers-${i}" class="answers-row">
+            <td colspan="9" style="padding:0;border-bottom:1px solid var(--border)">
+              <div class="answers-panel">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <div style="font-size:12px;font-weight:500;color:var(--text)">
+                    ${s.student_name} · ${s.subject} Level ${s.level} · ${s.correct_answers}/${s.total_questions} correct
+                  </div>
+                  <div style="font-size:11px;color:var(--text-muted)">${s.recommendation || ''}</div>
+                </div>
+                <div class="answers-grid">
+                  ${s.answers_detail.map((a, qi) => {
+                    const correct = a.chosen === a.correct;
+                    const chosenText = a['option_' + a.chosen?.toLowerCase()] || a.chosen;
+                    const correctText = a['option_' + a.correct?.toLowerCase()] || a.correct;
+                    return `
+                      <div class="answer-item ${correct ? 'correct' : 'wrong'}">
+                        <div class="answer-q">Q${qi+1}: ${a.question_text?.split('\n')[0] || '—'}</div>
+                        <div class="answer-row">
+                          <span class="answer-chosen ${correct ? 'correct-ans' : 'wrong-ans'}">
+                            ${a.chosen}: ${chosenText}
+                          </span>
+                          ${!correct
+                            ? `<span class="answer-correct-label">✓ ${a.correct}: ${correctText}</span>`
+                            : `<span style="font-size:10px;color:var(--green)">✓ correct</span>`}
+                        </div>
+                      </div>`;
+                  }).join('')}
+                </div>
+              </div>
+            </td>
+          </tr>` : ''}`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function toggleAnswers(i) {
+  const row = document.getElementById('answers-' + i);
+  const btn = document.getElementById('btn-' + i);
+  const isOpen = row.classList.toggle('open');
+  btn.textContent = isOpen ? '▲ Answers' : '▼ Answers';
 }
 
 // ── Schools ──────────────────────────────────────────────────────────────────
@@ -875,10 +944,7 @@ async function loadSchools() {
   const el = document.getElementById('schools-table');
   try {
     const data = await api('/admin/schools/list');
-    if (!data.length) {
-      el.innerHTML = '<div class="empty-state"><div class="icon">🏫</div>No schools added yet</div>';
-      return;
-    }
+    if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="icon">🏫</div>No schools added yet</div>'; return; }
     el.innerHTML = `<table>
       <tr><th>#</th><th>School Name</th><th>Province</th><th>District</th><th>Contact</th><th>Added</th></tr>
       ${data.map(s => `<tr>
@@ -890,9 +956,7 @@ async function loadSchools() {
         <td style="font-size:12px;color:var(--text-muted)">${fmtDate(s.created_at)}</td>
       </tr>`).join('')}
     </table>`;
-  } catch {
-    el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>';
-  }
+  } catch { el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>'; }
 }
 
 // ── PINs ─────────────────────────────────────────────────────────────────────
@@ -900,10 +964,7 @@ async function loadPins() {
   const el = document.getElementById('pins-table');
   try {
     const data = await api('/admin/pins/list');
-    if (!data.length) {
-      el.innerHTML = '<div class="empty-state"><div class="icon">🔑</div>No PINs generated yet</div>';
-      return;
-    }
+    if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="icon">🔑</div>No PINs generated yet</div>'; return; }
     el.innerHTML = `<table>
       <tr><th>PIN</th><th>School</th><th>Subject</th><th>Level</th><th>Cohort</th><th>Status</th><th>Expires</th></tr>
       ${data.map(p => {
@@ -921,9 +982,7 @@ async function loadPins() {
         </tr>`;
       }).join('')}
     </table>`;
-  } catch {
-    el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>';
-  }
+  } catch { el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>'; }
 }
 
 // ── Advancements ─────────────────────────────────────────────────────────────
@@ -931,18 +990,14 @@ async function loadAdvancements() {
   const el = document.getElementById('advancements-table');
   try {
     const data = await api('/admin/advancements/all');
-    if (!data.length) {
-      el.innerHTML = '<div class="empty-state"><div class="icon">🎓</div>No advancement requests yet</div>';
-      return;
-    }
+    if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="icon">🎓</div>No advancement requests yet</div>'; return; }
     el.innerHTML = `<table>
       <tr><th>#</th><th>School</th><th>Subject</th><th>Level</th><th>Score</th><th>Status</th><th>Approved By</th><th>Date</th></tr>
       ${data.map(r => {
         const badgeClass = r.status === 'APPROVED' ? 'badge-green' : r.status === 'REJECTED' ? 'badge-red' : 'badge-amber';
         return `<tr>
           <td style="font-family:'DM Mono',monospace;color:var(--text-muted)">${r.id}</td>
-          <td>${r.school_name}</td>
-          <td>${r.subject}</td>
+          <td>${r.school_name}</td><td>${r.subject}</td>
           <td>${r.level} → ${parseInt(r.level)+1}</td>
           <td><span style="color:${r.score_pct >= 80 ? 'var(--green)' : 'var(--amber)'};font-family:'DM Mono',monospace">${r.score_pct}%</span></td>
           <td><span class="badge ${badgeClass}">${r.status}</span></td>
@@ -951,9 +1006,7 @@ async function loadAdvancements() {
         </tr>`;
       }).join('')}
     </table>`;
-  } catch {
-    el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>';
-  }
+  } catch { el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>'; }
 }
 
 // ── Ops ──────────────────────────────────────────────────────────────────────
@@ -961,10 +1014,7 @@ async function loadOps() {
   const el = document.getElementById('ops-table');
   try {
     const data = await api('/admin/ops/list');
-    if (!data.length) {
-      el.innerHTML = '<div class="empty-state"><div class="icon">👥</div>No ops members added yet</div>';
-      return;
-    }
+    if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="icon">👥</div>No ops members added yet</div>'; return; }
     el.innerHTML = `<table>
       <tr><th>Name</th><th>WhatsApp</th><th>Role</th><th>Status</th><th>Added</th></tr>
       ${data.map(o => `<tr>
@@ -975,9 +1025,7 @@ async function loadOps() {
         <td style="font-size:12px;color:var(--text-muted)">${fmtDate(o.created_at)}</td>
       </tr>`).join('')}
     </table>`;
-  } catch {
-    el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>';
-  }
+  } catch { el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>'; }
 }
 
 // ── Reassessments ────────────────────────────────────────────────────────────
@@ -985,53 +1033,43 @@ async function loadReassessments() {
   const el = document.getElementById('reassessments-table');
   try {
     const data = await api('/admin/reassessments/list');
-    if (!data.length) {
-      el.innerHTML = '<div class="empty-state"><div class="icon">📅</div>No reassessments scheduled</div>';
-      return;
-    }
+    if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📅</div>No reassessments scheduled</div>'; return; }
     el.innerHTML = `<table>
       <tr><th>School</th><th>Subject</th><th>Level</th><th>Scheduled Date</th><th>Reason</th><th>Status</th></tr>
       ${data.map(r => {
         const isPast = new Date(r.scheduled_date) < new Date();
         return `<tr>
-          <td>${r.school_name}</td>
-          <td>${r.subject}</td>
-          <td>Level ${r.level}</td>
+          <td>${r.school_name}</td><td>${r.subject}</td><td>Level ${r.level}</td>
           <td style="font-family:'DM Mono',monospace;color:${isPast ? 'var(--red)' : 'var(--amber)'}">${r.scheduled_date}</td>
           <td style="font-size:12px;color:var(--text-muted)">${r.reason || '—'}</td>
           <td><span class="badge ${r.completed ? 'badge-green' : isPast ? 'badge-red' : 'badge-amber'}">${r.completed ? 'Done' : isPast ? 'Overdue' : 'Upcoming'}</span></td>
         </tr>`;
       }).join('')}
     </table>`;
-  } catch {
-    el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>';
-  }
+  } catch { el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>'; }
 }
+
+// ── All Assessments ──────────────────────────────────────────────────────────
 async function loadAssessments() {
   const el = document.getElementById('assessments-detail-table');
   try {
     const data = await api('/admin/assessments/all');
-    if (!data.length) {
-      el.innerHTML = '<div class="empty-state"><div class="icon">📋</div>No assessments yet</div>';
-      return;
-    }
+    if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📋</div>No assessments yet</div>'; return; }
     el.innerHTML = `<table>
       <tr><th>#</th><th>School</th><th>Subject</th><th>Level</th><th>Score</th><th>Result</th><th>Teacher Phone</th><th>Date</th></tr>
       ${data.map(a => `<tr>
         <td style="font-family:'DM Mono',monospace;color:var(--text-muted)">${a.id}</td>
         <td style="color:var(--text);font-weight:500">${a.school_name || '—'}</td>
-        <td>${a.subject}</td>
-        <td>Level ${a.level}</td>
+        <td>${a.subject}</td><td>Level ${a.level}</td>
         <td><span style="font-family:'DM Mono',monospace;color:${a.score_pct >= 80 ? 'var(--green)' : 'var(--amber)'};font-weight:500">${a.correct_answers}/${a.total_questions} (${a.score_pct}%)</span></td>
         <td><span class="badge ${a.passed ? 'badge-green' : 'badge-amber'}">${a.passed ? 'PASSED' : 'BELOW 80%'}</span></td>
         <td style="font-family:'DM Mono',monospace;font-size:12px">${a.teacher_phone}</td>
         <td style="font-size:12px;color:var(--text-muted)">${fmtDate(a.completed_at)}</td>
       </tr>`).join('')}
     </table>`;
-  } catch {
-    el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>';
-  }
+  } catch { el.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Failed to load</div>'; }
 }
+
 // ── Modals ───────────────────────────────────────────────────────────────────
 function openModal(id) {
   document.getElementById(id).classList.add('open');
@@ -1045,15 +1083,12 @@ function openModal(id) {
   }
 }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 async function loadSchoolsDropdown() {
   try {
     const data = await api('/admin/schools/list');
-    const sel = document.getElementById('pin-school');
-    sel.innerHTML = data.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    document.getElementById('pin-school').innerHTML = data.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   } catch {
     document.getElementById('pin-school').innerHTML = '<option>Failed to load</option>';
   }
@@ -1066,25 +1101,19 @@ async function generatePin() {
   const subject = document.getElementById('pin-subject').value;
   const cohortSize = document.getElementById('pin-cohort').value;
   const issuedBy = document.getElementById('pin-issuedby').value || 'Admin';
-
   if (!schoolId) { toast('Please select a school', 'error'); return; }
-
   try {
     const data = await api('/admin/pins/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ schoolId, level, subject, cohortSize, issuedBy })
     });
-
     document.getElementById('pin-value').textContent = data.pin;
     document.getElementById('pin-expires').textContent = `Expires: ${new Date(data.expiresAt).toLocaleString()}`;
     document.getElementById('pin-result').style.display = 'block';
     document.getElementById('pin-form').style.display = 'none';
     document.getElementById('pin-footer').innerHTML = `<button class="btn btn-ghost" onclick="closeModal('pin-modal')">Close</button>`;
     toast('PIN generated: ' + data.pin, 'success');
-  } catch {
-    toast('Failed to generate PIN', 'error');
-  }
+  } catch { toast('Failed to generate PIN', 'error'); }
 }
 
 async function addSchool() {
@@ -1093,42 +1122,28 @@ async function addSchool() {
   const district = document.getElementById('school-district').value;
   const contactName = document.getElementById('school-contact-name').value;
   const contactPhone = document.getElementById('school-contact-phone').value;
-
   if (!name) { toast('School name required', 'error'); return; }
-
   try {
     await api('/admin/schools', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, province, district, contactName, contactPhone })
     });
-    closeModal('school-modal');
-    loadSchools();
-    toast('School added successfully', 'success');
-  } catch {
-    toast('Failed to add school', 'error');
-  }
+    closeModal('school-modal'); loadSchools(); toast('School added successfully', 'success');
+  } catch { toast('Failed to add school', 'error'); }
 }
 
 async function addOps() {
   const phone = document.getElementById('ops-phone').value;
   const name = document.getElementById('ops-name').value;
   const role = document.getElementById('ops-role').value;
-
   if (!phone || !name) { toast('Phone and name required', 'error'); return; }
-
   try {
     await api('/admin/ops', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, name, role })
     });
-    closeModal('ops-modal');
-    loadOps();
-    toast('Ops member added', 'success');
-  } catch {
-    toast('Failed to add ops member', 'error');
-  }
+    closeModal('ops-modal'); loadOps(); toast('Ops member added', 'success');
+  } catch { toast('Failed to add ops member', 'error'); }
 }
 
 // ── Utils ────────────────────────────────────────────────────────────────────
@@ -1144,17 +1159,14 @@ function fmtDate(d) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// Clock
 setInterval(() => {
   document.getElementById('live-time').textContent = new Date().toLocaleTimeString();
 }, 1000);
 
-// Close modal on overlay click
 document.querySelectorAll('.modal-overlay').forEach(el => {
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
 });
 
-// Init
 loadAnalytics();
 </script>
 </body>
