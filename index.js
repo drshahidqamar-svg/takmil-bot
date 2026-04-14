@@ -426,8 +426,7 @@ async function handleAnswer(phone, text, session) {
       WHERE teacher_phone = $6
       ORDER BY id DESC LIMIT 1
     )
-  `, [newScore, scorePct, passed, JSON.stringify(answers), recommendation, phone]);
-
+ `, [newScore, scorePct, passed, JSON.stringify(finalSession.answers || answers), recommendation, phone]);
   // Get student name from latest record
   const studentRec = await db.pool.query(`
     SELECT student_name FROM student_assessments
@@ -475,13 +474,6 @@ async function handleStudentComplete(phone, text, session) {
 // ── Finish session ───────────────────────────────────────────────────────────
 
 async function finishSession(phone, session) {
-  // Get all students from this session
-  const studentsRec = await db.pool.query(`
-    SELECT student_name, score_pct, passed, recommendation
-    FROM student_assessments
-    WHERE teacher_phone = $1 AND pin_id = $2
-    ORDER BY id ASC
-  `, [phone, session.pin_id]);
 
   // Get all students with their answers from session history
   const studentsRec = await db.pool.query(`
