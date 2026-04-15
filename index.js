@@ -19,6 +19,7 @@ const STATE = {
   CONFIRMING_SESSION:    'CONFIRMING_SESSION',
   AWAITING_STUDENT_NAME: 'AWAITING_STUDENT_NAME',
   IN_ASSESSMENT:         'IN_ASSESSMENT',
+  IN_FINAL_ASSESSMENT:   'IN_FINAL_ASSESSMENT',
   STUDENT_COMPLETE:      'STUDENT_COMPLETE',
   SESSION_COMPLETE:      'SESSION_COMPLETE',
 };
@@ -76,7 +77,21 @@ function parseAnswers(raw) {
   }
   return [];
 }
-
+// ── FINAL ASSESSMENT: load 2 random questions per level ──────────────────
+async function loadFinalAssessmentQuestions(subject) {
+  const levels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+  let all = [];
+  for (const lvl of levels) {
+    const res = await db.pool.query(
+      `SELECT * FROM questions
+       WHERE subject = $1 AND topic_tag = 'final_assessment' AND level = $2
+       ORDER BY RANDOM() LIMIT 2`,
+      [subject, lvl]
+    );
+    all = all.concat(res.rows);
+  }
+  return all;
+}
 async function sendWhatsApp(to, body) {
   try {
     const toNum = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
@@ -179,6 +194,7 @@ async function handleMessage(rawPhone, incomingText) {
     case STATE.CONFIRMING_SESSION:    return handleConfirmation(phone, text, session);
     case STATE.AWAITING_STUDENT_NAME: return handleStudentName(phone, text, session);
     case STATE.IN_ASSESSMENT:         return handleAnswer(phone, text, session);
+    case STATE.IN_FINAL_ASSESSMENT:   return handleFinalAnswer(phone, text, session);
     case STATE.STUDENT_COMPLETE:      return handleStudentComplete(phone, text, session);
     case STATE.SESSION_COMPLETE:
       return `✅ Session complete.\n\nSend *RESET* to start a new session.`;
@@ -200,6 +216,27 @@ async function handlePinEntry(phone, text) {
     return `❌ *Invalid or expired PIN.*\n\nPlease check your PIN and try again. PINs are valid for 24 hours.`;
   }
 
+  // ── Final Assessment detection (level = 0) ───────────────────────────────
+  if (parseInt(pin.level) === 0) {
+    await db.upsertSession(phone, {
+      state:               STATE.CONFIRMING_SESSION,
+      pin_id:              pin.id,
+      school_id:           pin.school_id,
+      level:               0,
+      subject:             pin.subject,
+      is_final_assessment: true,
+    });
+    return (
+      `✅ *PIN Accepted!*\n\n` +
+      `📋 *FINAL ASSESSMENT*\n` +
+      `🏫 School: ${pin.school_name}\n` +
+      `📚 Subject: ${pin.subject}\n` +
+      `🎯 Covers: All Levels (L1–L11)\n` +
+      `📝 Questions: 22 (2 per level)\n\n` +
+      `Reply *YES* to begin or *NO* to cancel.`
+    );
+  }
+
   await db.upsertSession(phone, {
     state:            STATE.CONFIRMING_SESSION,
     pin_id:           pin.id,
@@ -218,8 +255,6 @@ async function handlePinEntry(phone, text) {
     `Each student will answer *${QUESTIONS_PER_SESSION} questions* individually.\n\n` +
     `Reply *YES* to begin or *NO* to cancel.`
   );
-}
-
 // ── Session confirmation ─────────────────────────────────────────────────────
 
 async function handleConfirmation(phone, text, session) {
@@ -338,7 +373,50 @@ async function handleStudentName(phone, text, session) {
       (pin_id, school_id, teacher_phone, student_name, level, subject, answers_detail)
     VALUES ($1, $2, $3, $4, $5, $6, '[]'::jsonb)
   `, [session.pin_id, session.school_id, phone, studentName, session.level, session.subject]);
+// ── Final Assessment flow ─────────────────────────────────────────────────
+  if (session.is_final_assessment) {
+    const finalQs = await loadFinalAssessmentQuestions(session.subject);
+    if (!finalQs || finalQs.length < 22) {
+      return `⚠️ Final Assessment questions not found. Please import the Final Assessment xlsx first.`;
+    }
+    const shuffled = finalQs.map(shuffleOptions);
+    const answersPayload = shuffled.map(q => ({
+      id:            q.question_id || q.id,
+      level:         q.level,
+      question_text: q.q_text_english || q.question_text || 'Question not available',
+      option_a: q.option_a, option_b: q.option_b,
+      option_c: q.option_c, option_d: q.option_d,
+      correct: q.shuffled_correct || q.correct_option || 'A',
+      chosen: null,
+    }));
 
+    await db.pool.query(`
+      UPDATE sessions SET
+        state         = $1,
+        current_index = 0,
+        answers       = $2::jsonb,
+        score         = 0,
+        updated_at    = NOW()
+      WHERE phone = $3
+    `, [STATE.IN_FINAL_ASSESSMENT, JSON.stringify(answersPayload), phone]);
+
+    await db.pool.query(`
+      INSERT INTO student_assessments
+        (pin_id, school_id, teacher_phone, student_name, level, subject, answers_detail)
+      VALUES ($1,$2,$3,$4,0,$5,'[]'::jsonb)
+    `, [session.pin_id, session.school_id, phone, studentName, session.subject]);
+
+    const q1 = answersPayload[0];
+    return (
+      `👤 *Student: ${studentName}*\n` +
+      `📋 *FINAL ASSESSMENT — ${session.subject}*\n` +
+      `22 questions across all levels\n\n` +
+      `📝 *Question 1 of 22* _(Level ${q1.level})_\n\n` +
+      `${q1.question_text}\n\n` +
+      `A) ${q1.option_a}\nB) ${q1.option_b}\nC) ${q1.option_c}\nD) ${q1.option_d}\n\n` +
+      `_Reply with A, B, C, or D_`
+    );
+  }
   return (
     `👤 *Student: ${studentName}*\n\n` +
     `📝 *Question 1 of ${QUESTIONS_PER_SESSION}*\n\n` +
@@ -452,7 +530,103 @@ async function handleAnswer(phone, text, session) {
     `or send *DONE* to finish the session.`
   );
 }
+// ── Final Assessment answer handler ──────────────────────────────────────────
 
+async function handleFinalAnswer(phone, text, session) {
+  const answers = parseAnswers(session.answers);
+  const total   = answers.length; // 22
+  const idx     = session.current_index;
+
+  const answer = normalizeAnswer(text);
+  if (!answer) {
+    return `Please reply *A*, *B*, *C*, or *D*.\n\n_Question ${idx + 1} of ${total} is still waiting._`;
+  }
+
+  answers[idx].chosen  = answer;
+  const isCorrect      = answer === answers[idx].correct;
+  const newScore       = (session.score || 0) + (isCorrect ? 1 : 0);
+  const newIndex       = idx + 1;
+
+  if (newIndex < total) {
+    await db.pool.query(`
+      UPDATE sessions SET current_index=$1, answers=$2::jsonb, score=$3, updated_at=NOW()
+      WHERE phone=$4
+    `, [newIndex, JSON.stringify(answers), newScore, phone]);
+
+    const next = answers[newIndex];
+    return (
+      `${isCorrect ? '✅' : '❌'} *Answer recorded.*\n\n` +
+      `📝 *Question ${newIndex + 1} of ${total}* _(Level ${next.level})_\n\n` +
+      `${next.question_text}\n\n` +
+      `A) ${next.option_a}\nB) ${next.option_b}\nC) ${next.option_c}\nD) ${next.option_d}\n\n` +
+      `_Reply with A, B, C, or D_`
+    );
+  }
+
+  // ── All 22 done ───────────────────────────────────────────────────────────
+  const scorePct = Math.round((newScore / total) * 100);
+  const passed   = scorePct >= PASS_THRESHOLD;
+
+  // Build per-level breakdown
+  const levelScores = {};
+  for (const a of answers) {
+    if (!levelScores[a.level]) levelScores[a.level] = { score: 0, total: 0 };
+    levelScores[a.level].total++;
+    if (a.chosen === a.correct) levelScores[a.level].score++;
+  }
+  let breakdown = '';
+  for (let lvl = 1; lvl <= 11; lvl++) {
+    const ls  = levelScores[lvl] || { score: 0, total: 2 };
+    const bar = ls.score === 2 ? '🟢' : ls.score === 1 ? '🟡' : '🔴';
+    breakdown += `${bar} L${lvl}: ${ls.score}/${ls.total}\n`;
+  }
+
+  await db.pool.query(`
+    UPDATE sessions SET state=$1, current_index=$2, answers=$3::jsonb, score=$4, updated_at=NOW()
+    WHERE phone=$5
+  `, [STATE.STUDENT_COMPLETE, newIndex, JSON.stringify(answers), newScore, phone]);
+
+  // Save to student_assessments
+  const recommendation = passed ? `✅ Completed Final Assessment` : `📚 Needs review`;
+  await db.pool.query(`
+    UPDATE student_assessments SET
+      correct_answers=$1, score_pct=$2, passed=$3,
+      answers_detail=$4::jsonb, recommendation=$5, completed_at=NOW()
+    WHERE id=(SELECT id FROM student_assessments WHERE teacher_phone=$6 ORDER BY id DESC LIMIT 1)
+  `, [newScore, scorePct, passed, JSON.stringify(answers), recommendation, phone]);
+
+  // Save to assessments table for dashboard
+  await db.pool.query(`
+    INSERT INTO assessments (pin_id, school_id, teacher_phone, level, subject,
+      total_questions, correct_answers, score_pct, passed, answers_detail, completed_at)
+    VALUES ($1,$2,$3,0,$4,$5,$6,$7,$8,$9::jsonb,NOW())
+  `, [session.pin_id, session.school_id, phone, session.subject,
+      total, newScore, scorePct, passed, JSON.stringify(levelScores)]);
+
+  const studentRec = await db.pool.query(
+    `SELECT student_name FROM student_assessments WHERE teacher_phone=$1 ORDER BY id DESC LIMIT 1`,
+    [phone]
+  );
+  const studentName = studentRec.rows[0]?.student_name || 'Student';
+
+  const countRec = await db.pool.query(
+    `SELECT COUNT(*) AS cnt FROM student_assessments WHERE teacher_phone=$1 AND pin_id=$2`,
+    [phone, session.pin_id]
+  );
+  const studentsCount = parseInt(countRec.rows[0]?.cnt || 0);
+
+  return (
+    `🎓 *${studentName} — FINAL ASSESSMENT COMPLETE!*\n\n` +
+    `Score: *${newScore}/${total} (${scorePct}%)*\n` +
+    `Result: *${passed ? '✅ PASSED' : '❌ NEEDS REVIEW'}*\n\n` +
+    `📊 *Level Breakdown:*\n${breakdown}\n` +
+    `🟢 Strong  🟡 Partial  🔴 Needs Work\n\n` +
+    `─────────────────\n` +
+    `👥 Students assessed: *${studentsCount}*\n\n` +
+    `Type the *next student's name* to continue\n` +
+    `or send *DONE* to finish.`
+  );
+}
 // ── Student complete state ───────────────────────────────────────────────────
 
 async function handleStudentComplete(phone, text, session) {
