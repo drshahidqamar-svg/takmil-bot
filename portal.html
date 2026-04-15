@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TAKMIL — Student Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:      #01411C;
+    --green-mid:  #026B2F;
+    --green-lite: #04A344;
+    --gold:       #F5C842;
+    --gold-dark:  #D4A017;
+    --white:      #FFFFFF;
+    --off-white:  #F7F9F4;
+    --text:       #1A2E1A;
+    --text-light: #4A6B4A;
+    --red:        #D93025;
+    --radius:     20px;
+    --shadow:     0 8px 40px rgba(1,65,28,0.18);
+    --shadow-sm:  0 4px 16px rgba(1,65,28,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--off-white);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+
+  /* ── Background pattern ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(4,163,68,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 85% 80%, rgba(1,65,28,0.10) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(245,200,66,0.05) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Screens ── */
+  .screen {
+    display: none; flex-direction: column; align-items: center;
+    width: 100%; max-width: 680px; position: relative; z-index: 1;
+  }
+  .screen.active { display: flex; animation: fadeUp 0.4s ease; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--white);
+    border-radius: 28px;
+    padding: 40px 36px;
+    width: 100%;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(1,65,28,0.08);
+  }
+
+  /* ── Logo / Header ── */
+  .logo-wrap {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .logo-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, var(--green), var(--green-lite));
+    border-radius: 20px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 36px; margin-bottom: 12px;
+    box-shadow: 0 8px 24px rgba(1,65,28,0.3);
+  }
+  .logo-title {
+    font-size: 32px; font-weight: 900; color: var(--green);
+    letter-spacing: -0.5px; line-height: 1;
+  }
+  .logo-sub {
+    font-size: 14px; color: var(--text-light); margin-top: 4px;
+    font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+  }
+  .logo-urdu {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    font-size: 18px; color: var(--green-mid);
+    margin-top: 6px; direction: rtl;
+  }
+
+  /* ── Form elements ── */
+  .field-label {
+    font-size: 13px; font-weight: 700; color: var(--text-light);
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px;
+    display: block;
+  }
+  .field-label .urdu {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    font-size: 16px; direction: rtl; display: block;
+    color: var(--green-mid); letter-spacing: 0; text-transform: none;
+    margin-top: 2px;
+  }
+
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 18px 20px;
+    font-size: 22px; font-family: 'Outfit', sans-serif; font-weight: 700;
+    border: 2.5px solid #DCE8DC;
+    border-radius: var(--radius);
+    outline: none;
+    color: var(--text);
+    background: var(--off-white);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 4px;
+  }
+  input[type="text"] { letter-spacing: 0; }
+  input:focus {
+    border-color: var(--green-lite);
+    box-shadow: 0 0 0 4px rgba(4,163,68,0.12);
+    background: white;
+  }
+  input::placeholder { color: #B0C8B0; letter-spacing: 0; font-weight: 400; }
+
+  .field-group { margin-bottom: 20px; }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    width: 100%;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--green), var(--green-mid));
+    color: white;
+    font-size: 20px; font-weight: 800;
+    border: none; border-radius: var(--radius);
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(1,65,28,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin-top: 8px;
+    position: relative; overflow: hidden;
+  }
+  .btn-primary:active { transform: scale(0.97); box-shadow: 0 2px 12px rgba(1,65,28,0.25); }
+  .btn-primary::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 2px solid var(--green);
+    color: var(--green);
+    font-size: 16px; font-weight: 700;
+    padding: 14px 28px;
+    border-radius: 14px; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn-secondary:active { background: var(--green); color: white; }
+
+  /* ── Error message ── */
+  .error-msg {
+    background: #FEE8E7; border: 1px solid #F5C6C3;
+    color: var(--red); border-radius: 12px;
+    padding: 12px 16px; font-size: 14px; font-weight: 600;
+    margin-top: 12px; display: none; text-align: center;
+  }
+  .error-msg.show { display: block; animation: shake 0.4s ease; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  /* ── Progress bar ── */
+  .progress-wrap {
+    width: 100%; margin-bottom: 24px;
+  }
+  .progress-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .progress-label {
+    font-size: 13px; font-weight: 700; color: var(--text-light);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .progress-count {
+    font-size: 20px; font-weight: 900; color: var(--green);
+  }
+  .progress-bar {
+    height: 10px; background: #DCE8DC; border-radius: 10px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-lite), var(--gold));
+    border-radius: 10px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ── Level badge ── */
+  .level-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: var(--green); padding: 6px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 800; letter-spacing: 0.5px;
+    margin-bottom: 20px; box-shadow: 0 2px 8px rgba(212,160,23,0.3);
+  }
+
+  /* ── Question card ── */
+  .question-text-en {
+    font-size: 26px; font-weight: 700; color: var(--text);
+    line-height: 1.4; margin-bottom: 10px;
+  }
+  .question-text-ur {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    font-size: 20px; color: var(--text-light);
+    direction: rtl; text-align: right;
+    margin-bottom: 28px; line-height: 1.8;
+    padding: 10px 14px;
+    background: var(--off-white); border-radius: 12px;
+    border-right: 4px solid var(--green-lite);
+  }
+
+  /* ── Answer buttons ── */
+  .answers-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin-bottom: 24px;
+  }
+  .ans-btn {
+    padding: 20px 16px;
+    border: 3px solid #DCE8DC;
+    border-radius: 20px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+  }
+  .ans-btn:active { transform: scale(0.96); }
+  .ans-btn .ans-label {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--off-white);
+    border-radius: 10px;
+    font-size: 18px; font-weight: 900; color: var(--green);
+    margin-bottom: 8px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .ans-btn .ans-text {
+    font-size: 16px; font-weight: 600; color: var(--text);
+    line-height: 1.3; display: block;
+  }
+  .ans-btn:hover, .ans-btn.selected {
+    border-color: var(--green);
+    background: linear-gradient(135deg, #F0F8F2, #E8F5EC);
+  }
+  .ans-btn.selected .ans-label {
+    background: var(--green); color: white;
+  }
+  .ans-btn.correct {
+    border-color: var(--green-lite);
+    background: linear-gradient(135deg, #E8F8EE, #D4F0DE);
+  }
+  .ans-btn.correct .ans-label { background: var(--green-lite); color: white; }
+  .ans-btn.wrong {
+    border-color: var(--red);
+    background: #FEF0EF;
+  }
+  .ans-btn.wrong .ans-label { background: var(--red); color: white; }
+
+  /* ── Input row ── */
+  .input-row {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 0;
+  }
+  .ans-type-input {
+    flex: 1; padding: 14px 18px;
+    font-size: 20px; font-weight: 700; font-family: 'Outfit', sans-serif;
+    border: 2.5px solid #DCE8DC; border-radius: 14px;
+    outline: none; color: var(--text); background: var(--off-white);
+    transition: border-color 0.2s; text-align: center; letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  .ans-type-input:focus { border-color: var(--green-lite); background: white; }
+
+  /* ── Voice button ── */
+  .voice-btn {
+    width: 58px; height: 58px;
+    background: linear-gradient(135deg, var(--green), var(--green-mid));
+    border: none; border-radius: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; box-shadow: var(--shadow-sm);
+    transition: transform 0.15s, box-shadow 0.15s;
+    flex-shrink: 0;
+  }
+  .voice-btn:active { transform: scale(0.92); }
+  .voice-btn.listening {
+    background: linear-gradient(135deg, #D93025, #E05C54);
+    animation: pulse-mic 1s infinite;
+  }
+  @keyframes pulse-mic {
+    0%,100% { box-shadow: 0 0 0 0 rgba(217,48,37,0.5); }
+    50%      { box-shadow: 0 0 0 12px rgba(217,48,37,0); }
+  }
+
+  /* ── Feedback banner ── */
+  .feedback-banner {
+    padding: 14px 20px; border-radius: 14px;
+    font-size: 18px; font-weight: 700;
+    text-align: center; margin-bottom: 16px;
+    display: none;
+  }
+  .feedback-banner.correct-fb {
+    background: #E8F8EE; color: var(--green); border: 2px solid var(--green-lite);
+    display: block;
+  }
+  .feedback-banner.wrong-fb {
+    background: #FEF0EF; color: var(--red); border: 2px solid #F5A89F;
+    display: block;
+  }
+
+  /* ── Next button ── */
+  .btn-next {
+    width: 100%; padding: 18px;
+    background: linear-gradient(135deg, var(--green), var(--green-mid));
+    color: white; font-size: 18px; font-weight: 800;
+    border: none; border-radius: var(--radius);
+    cursor: pointer; box-shadow: 0 6px 24px rgba(1,65,28,0.3);
+    display: none; margin-top: 8px;
+    transition: transform 0.15s;
+  }
+  .btn-next:active { transform: scale(0.97); }
+  .btn-next.show { display: block; animation: fadeUp 0.3s ease; }
+
+  /* ── Student header strip ── */
+  .student-strip {
+    width: 100%; max-width: 680px;
+    background: var(--green);
+    border-radius: 16px; padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; z-index: 1;
+    box-shadow: var(--shadow-sm);
+  }
+  .student-strip .s-name {
+    font-size: 16px; font-weight: 800; color: white;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .student-strip .s-subject {
+    font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 600;
+  }
+
+  /* ── Results screen ── */
+  .score-ring-wrap { text-align: center; margin: 8px 0 28px; }
+  .score-ring {
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: conic-gradient(var(--green-lite) 0%, var(--green-lite) var(--pct), #DCE8DC var(--pct));
+    display: inline-flex; align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(1,65,28,0.2);
+  }
+  .score-ring::before {
+    content: ''; position: absolute;
+    width: 120px; height: 120px;
+    background: white; border-radius: 50%;
+  }
+  .score-ring-inner {
+    position: relative; z-index: 1; text-align: center;
+  }
+  .score-pct { font-size: 36px; font-weight: 900; color: var(--green); }
+  .score-label { font-size: 12px; font-weight: 700; color: var(--text-light); letter-spacing: 1px; }
+
+  .result-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 24px; border-radius: 50px;
+    font-size: 18px; font-weight: 800;
+    margin: 0 auto 24px; display: flex; justify-content: center;
+  }
+  .result-badge.passed { background: #E8F8EE; color: var(--green); border: 2px solid var(--green-lite); }
+  .result-badge.failed { background: #FEF0EF; color: var(--red); border: 2px solid #F5A89F; }
+
+  .breakdown-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 8px; margin-bottom: 24px;
+  }
+  .breakdown-cell {
+    background: var(--off-white); border-radius: 12px;
+    padding: 10px 6px; text-align: center;
+    border: 2px solid transparent;
+  }
+  .breakdown-cell.strong { border-color: var(--green-lite); background: #F0FAF3; }
+  .breakdown-cell.partial { border-color: var(--gold); background: #FFFBEA; }
+  .breakdown-cell.weak    { border-color: var(--red); background: #FEF5F5; }
+  .breakdown-cell .bc-lvl { font-size: 11px; font-weight: 700; color: var(--text-light); }
+  .breakdown-cell .bc-score { font-size: 18px; font-weight: 900; color: var(--text); }
+  .breakdown-cell .bc-dot { font-size: 16px; }
+
+  .done-msg {
+    text-align: center; padding: 20px;
+    background: linear-gradient(135deg, #F0F8F2, #E8F5EC);
+    border-radius: 16px; border: 2px solid #C8E8D0;
+  }
+  .done-msg .dm-icon { font-size: 40px; margin-bottom: 8px; }
+  .done-msg .dm-text { font-size: 18px; font-weight: 700; color: var(--green); }
+  .done-msg .dm-urdu {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    font-size: 16px; color: var(--text-light);
+    direction: rtl; margin-top: 6px;
+  }
+
+  /* ── Loading screen ── */
+  .loading-wrap { text-align: center; padding: 40px 0; }
+  .spinner {
+    width: 56px; height: 56px;
+    border: 5px solid #DCE8DC;
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 18px; font-weight: 700; color: var(--text-light); }
+
+  /* ── Voice hint ── */
+  .voice-hint {
+    font-size: 12px; color: var(--text-light); text-align: center;
+    margin-top: 10px; font-weight: 600;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 16px 0; color: var(--text-light); font-size: 13px; font-weight: 600;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: #DCE8DC;
+  }
+
+  /* Mobile adjustments */
+  @media (max-width: 480px) {
+    .card { padding: 28px 20px; }
+    .question-text-en { font-size: 20px; }
+    .ans-btn .ans-text { font-size: 14px; }
+    .answers-grid { gap: 10px; }
+    .breakdown-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ SCREEN 1: PIN + NAME ══════════ -->
+<div class="screen active" id="screen-pin">
+  <div class="logo-wrap" style="margin-bottom:20px;">
+    <div class="logo-icon">📚</div>
+    <div class="logo-title">TAKMIL</div>
+    <div class="logo-sub">Student Assessment</div>
+    <div class="logo-urdu">طالب علم کا امتحان</div>
+  </div>
+
+  <div class="card">
+    <div class="field-group">
+      <label class="field-label">
+        Assessment PIN
+        <span class="urdu">امتحان کا پن</span>
+      </label>
+      <input type="password" id="pin-input" placeholder="Enter PIN" maxlength="10" autocomplete="off">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">
+        Student Name
+        <span class="urdu">طالب علم کا نام</span>
+      </label>
+      <input type="text" id="name-input" placeholder="Full name" style="letter-spacing:0;">
+    </div>
+
+    <button class="btn-primary" onclick="startAssessment()">
+      شروع کریں &nbsp;•&nbsp; Start Assessment ▶
+    </button>
+    <div class="error-msg" id="pin-error">Invalid PIN or name too short. Please try again.</div>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN 2: LOADING ══════════ -->
+<div class="screen" id="screen-loading">
+  <div class="card">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loading-text">Loading questions…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN 3: QUESTION ══════════ -->
+<div class="student-strip" id="student-strip" style="display:none;">
+  <div class="s-name">👤 <span id="strip-name"></span></div>
+  <div class="s-subject" id="strip-subject"></div>
+</div>
+
+<div class="screen" id="screen-question">
+  <div class="card">
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span class="progress-label">Progress</span>
+        <span class="progress-count"><span id="q-num">1</span> / <span id="q-total">10</span></span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+
+    <div class="level-badge" id="level-badge">📊 Level 1</div>
+
+    <div class="question-text-en" id="q-text-en"></div>
+    <div class="question-text-ur" id="q-text-ur"></div>
+
+    <div class="answers-grid" id="answers-grid"></div>
+
+    <div class="feedback-banner" id="feedback-banner"></div>
+
+    <div class="divider">or type your answer</div>
+
+    <div class="input-row">
+      <input type="text" class="ans-type-input" id="ans-type" placeholder="A / B / C / D" maxlength="1" autocomplete="off">
+      <button class="voice-btn" id="voice-btn" onclick="toggleVoice()" title="Speak your answer">🎤</button>
+    </div>
+    <div class="voice-hint" id="voice-hint">🎤 Tap mic and say A, B, C, or D</div>
+
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()">
+      Next Question →
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN 4: RESULTS ══════════ -->
+<div class="screen" id="screen-results">
+  <div class="card">
+    <div class="logo-wrap" style="margin-bottom:16px;">
+      <div class="logo-icon">🎓</div>
+      <div class="logo-title" style="font-size:24px;">Assessment Complete!</div>
+      <div class="logo-urdu" style="font-size:16px;">امتحان مکمل ہوگیا</div>
+    </div>
+
+    <div style="text-align:center;margin-bottom:8px;font-size:16px;font-weight:700;color:var(--text-light);">
+      <span id="result-name"></span>
+    </div>
+
+    <div class="score-ring-wrap">
+      <div class="score-ring" id="score-ring" style="--pct:0%">
+        <div class="score-ring-inner">
+          <div class="score-pct" id="result-pct">0%</div>
+          <div class="score-label" id="result-fraction">0/0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-badge" id="result-badge">✅ PASSED</div>
+
+    <div id="breakdown-section" style="display:none;">
+      <div style="font-size:13px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">
+        Level Breakdown
+      </div>
+      <div class="breakdown-grid" id="breakdown-grid"></div>
+    </div>
+
+    <div class="done-msg">
+      <div class="dm-icon">👩‍🏫</div>
+      <div class="dm-text">Please hand the tablet to your teacher</div>
+      <div class="dm-urdu">براہ کرم ٹیبلیٹ استاد کو دیں</div>
+    </div>
+
+    <button class="btn-primary" onclick="resetPortal()" style="margin-top:16px;background:linear-gradient(135deg,#4A6B4A,#2E4E2E);">
+      New Student — نیا طالب علم
+    </button>
+  </div>
+</div>
+
+<script>
+const API = '';  // same origin — Railway serves both portal + API
+
+let session = {
+  sessionId:   null,
+  studentName: '',
+  subject:     '',
+  level:       0,
+  isFinal:     false,
+  questions:   [],
+  answers:     [],
+  currentQ:    0,
+  score:       0,
+};
+
+let recognition = null;
+let listening    = false;
+let answered     = false;
+
+// ── Screen navigation ────────────────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Start assessment ─────────────────────────────────────────────────────────
+async function startAssessment() {
+  const pin  = document.getElementById('pin-input').value.trim();
+  const name = document.getElementById('name-input').value.trim();
+  const err  = document.getElementById('pin-error');
+  err.classList.remove('show');
+
+  if (!pin || pin.length < 4) { err.textContent = 'Please enter a valid PIN.'; err.classList.add('show'); return; }
+  if (!name || name.length < 2) { err.textContent = 'Please enter the student\'s full name.'; err.classList.add('show'); return; }
+
+  show('screen-loading');
+  document.getElementById('loading-text').textContent = 'Loading questions…';
+
+  try {
+    const res = await fetch(`${API}/portal/session/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin, studentName: name })
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      show('screen-pin');
+      document.getElementById('pin-error').textContent = data.error || 'Invalid PIN. Please try again.';
+      document.getElementById('pin-error').classList.add('show');
+      return;
+    }
+
+    session.sessionId   = data.sessionId;
+    session.studentName = name;
+    session.subject     = data.subject;
+    session.level       = data.level;
+    session.isFinal     = data.isFinal;
+    session.questions   = data.questions;
+    session.answers     = new Array(data.questions.length).fill(null);
+    session.currentQ    = 0;
+    session.score       = 0;
+
+    document.getElementById('strip-name').textContent    = name;
+    document.getElementById('strip-subject').textContent = `${data.subject} ${data.isFinal ? '• Final Assessment' : '• Level ' + data.level}`;
+    document.getElementById('student-strip').style.display = 'flex';
+
+    showQuestion(0);
+    show('screen-question');
+
+  } catch (e) {
+    show('screen-pin');
+    document.getElementById('pin-error').textContent = 'Connection error. Please check your internet.';
+    document.getElementById('pin-error').classList.add('show');
+  }
+}
+
+// ── Render question ──────────────────────────────────────────────────────────
+function showQuestion(idx) {
+  answered = false;
+  const q     = session.questions[idx];
+  const total = session.questions.length;
+
+  document.getElementById('q-num').textContent   = idx + 1;
+  document.getElementById('q-total').textContent = total;
+  document.getElementById('progress-fill').style.width = `${(idx / total) * 100}%`;
+  document.getElementById('level-badge').textContent = `📊 Level ${q.level}${session.isFinal ? ' — Final' : ''}`;
+  document.getElementById('q-text-en').textContent = q.question_text;
+
+  // Urdu placeholder (if q_text_urdu available use it, else show English)
+  const urduText = q.q_text_urdu && q.q_text_urdu !== q.question_text ? q.q_text_urdu : '';
+  const urEl = document.getElementById('q-text-ur');
+  if (urduText) { urEl.textContent = urduText; urEl.style.display = 'block'; }
+  else { urEl.style.display = 'none'; }
+
+  // Build answer buttons
+  const grid = document.getElementById('answers-grid');
+  grid.innerHTML = '';
+  const labels = ['A','B','C','D'];
+  const opts   = [q.option_a, q.option_b, q.option_c, q.option_d];
+  opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className   = 'ans-btn';
+    btn.dataset.label = labels[i];
+    btn.innerHTML = `<span class="ans-label">${labels[i]}</span><span class="ans-text">${opt}</span>`;
+    btn.onclick = () => selectAnswer(labels[i]);
+    grid.appendChild(btn);
+  });
+
+  document.getElementById('feedback-banner').className = 'feedback-banner';
+  document.getElementById('feedback-banner').textContent = '';
+  document.getElementById('btn-next').classList.remove('show');
+  document.getElementById('ans-type').value = '';
+
+  setupVoice();
+}
+
+// ── Select answer ────────────────────────────────────────────────────────────
+function selectAnswer(label) {
+  if (answered) return;
+  answered = true;
+  stopVoice();
+
+  const q       = session.questions[session.currentQ];
+  const correct = q.correct;
+  const isRight = label === correct;
+
+  session.answers[session.currentQ] = label;
+  if (isRight) session.score++;
+
+  // Style buttons
+  document.querySelectorAll('.ans-btn').forEach(btn => {
+    if (btn.dataset.label === correct) btn.classList.add('correct');
+    else if (btn.dataset.label === label && !isRight) btn.classList.add('wrong');
+  });
+
+  // Feedback
+  const fb = document.getElementById('feedback-banner');
+  if (isRight) {
+    fb.textContent = '✅ Correct! — درست جواب';
+    fb.className   = 'feedback-banner correct-fb';
+  } else {
+    fb.textContent = `❌ Wrong — Correct answer: ${correct}`;
+    fb.className   = 'feedback-banner wrong-fb';
+  }
+
+  document.getElementById('btn-next').classList.add('show');
+
+  // Auto-advance for last question
+  if (session.currentQ >= session.questions.length - 1) {
+    document.getElementById('btn-next').textContent = '🎓 View Results';
+  }
+}
+
+// ── Next question ────────────────────────────────────────────────────────────
+async function nextQuestion() {
+  const next = session.currentQ + 1;
+  if (next < session.questions.length) {
+    session.currentQ = next;
+    showQuestion(next);
+    window.scrollTo(0, 0);
+  } else {
+    await submitResults();
+  }
+}
+
+// ── Submit results ───────────────────────────────────────────────────────────
+async function submitResults() {
+  show('screen-loading');
+  document.getElementById('loading-text').textContent = 'Saving results…';
+  document.getElementById('student-strip').style.display = 'none';
+
+  try {
+    const res = await fetch(`${API}/portal/session/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: session.sessionId,
+        answers:   session.answers,
+        questions: session.questions.map(q => ({ id: q.id, level: q.level, correct: q.correct }))
+      })
+    });
+    const data = await res.json();
+
+    showResults(data);
+  } catch (e) {
+    // Show results from local calculation if API fails
+    const pct    = Math.round((session.score / session.questions.length) * 100);
+    showResults({ score: session.score, total: session.questions.length, pct, passed: pct >= 80, levelScores: null });
+  }
+}
+
+// ── Show results ─────────────────────────────────────────────────────────────
+function showResults(data) {
+  const pct    = data.pct || Math.round((data.score / data.total) * 100);
+  const passed = data.passed;
+
+  document.getElementById('result-name').textContent = session.studentName;
+  document.getElementById('result-pct').textContent  = pct + '%';
+  document.getElementById('result-fraction').textContent = `${data.score}/${data.total}`;
+  document.getElementById('score-ring').style.setProperty('--pct', pct + '%');
+
+  const badge = document.getElementById('result-badge');
+  if (passed) {
+    badge.textContent = '✅ PASSED — کامیاب';
+    badge.className   = 'result-badge passed';
+  } else {
+    badge.textContent = '📚 NEEDS REVIEW — دوبارہ کوشش کریں';
+    badge.className   = 'result-badge failed';
+  }
+
+  // Level breakdown (final assessment)
+  if (data.levelScores || session.isFinal) {
+    const scores = data.levelScores || buildLocalLevelScores();
+    const grid   = document.getElementById('breakdown-grid');
+    grid.innerHTML = '';
+    for (let lvl = 1; lvl <= 11; lvl++) {
+      const ls  = scores[lvl] || { score: 0, total: 2 };
+      const cls = ls.score === ls.total ? 'strong' : ls.score > 0 ? 'partial' : 'weak';
+      const dot = ls.score === ls.total ? '🟢' : ls.score > 0 ? '🟡' : '🔴';
+      const cell = document.createElement('div');
+      cell.className = `breakdown-cell ${cls}`;
+      cell.innerHTML = `<div class="bc-dot">${dot}</div><div class="bc-lvl">L${lvl}</div><div class="bc-score">${ls.score}/${ls.total}</div>`;
+      grid.appendChild(cell);
+    }
+    document.getElementById('breakdown-section').style.display = 'block';
+  }
+
+  show('screen-results');
+}
+
+function buildLocalLevelScores() {
+  const scores = {};
+  session.questions.forEach((q, i) => {
+    if (!scores[q.level]) scores[q.level] = { score: 0, total: 0 };
+    scores[q.level].total++;
+    if (session.answers[i] === q.correct) scores[q.level].score++;
+  });
+  return scores;
+}
+
+// ── Reset ────────────────────────────────────────────────────────────────────
+function resetPortal() {
+  session = { sessionId:null, studentName:'', subject:'', level:0, isFinal:false, questions:[], answers:[], currentQ:0, score:0 };
+  document.getElementById('name-input').value = '';
+  document.getElementById('ans-type').value   = '';
+  document.getElementById('pin-error').classList.remove('show');
+  document.getElementById('student-strip').style.display = 'none';
+  show('screen-pin');
+  document.getElementById('name-input').focus();
+}
+
+// ── Type input ───────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('ans-type').addEventListener('input', e => {
+    const v = e.target.value.trim().toUpperCase();
+    if (['A','B','C','D'].includes(v)) {
+      selectAnswer(v);
+      e.target.value = '';
+    }
+  });
+
+  document.getElementById('name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') startAssessment();
+  });
+  document.getElementById('pin-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('name-input').focus();
+  });
+});
+
+// ── Voice recognition ────────────────────────────────────────────────────────
+function setupVoice() {
+  const btn = document.getElementById('voice-btn');
+  const hint = document.getElementById('voice-hint');
+  if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+    btn.style.display  = 'none';
+    hint.style.display = 'none';
+    return;
+  }
+  btn.style.display  = 'flex';
+  hint.style.display = 'block';
+}
+
+function toggleVoice() {
+  if (answered) return;
+  if (listening) { stopVoice(); return; }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang          = 'en-US';
+  recognition.continuous    = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    listening = true;
+    document.getElementById('voice-btn').classList.add('listening');
+    document.getElementById('voice-hint').textContent = '🔴 Listening… say A, B, C, or D';
+  };
+
+  recognition.onresult = e => {
+    const said = e.results[0][0].transcript.trim().toUpperCase();
+    const map  = { 'A':['A','AY','EH'], 'B':['B','BE','BEE'], 'C':['C','CE','SEE','SI'], 'D':['D','DE','DEE'] };
+    let matched = null;
+    for (const [lbl, variants] of Object.entries(map)) {
+      if (variants.some(v => said.startsWith(v))) { matched = lbl; break; }
+    }
+    if (['A','B','C','D'].includes(said[0])) matched = said[0];
+    if (matched) selectAnswer(matched);
+    stopVoice();
+  };
+
+  recognition.onerror = () => stopVoice();
+  recognition.onend   = () => stopVoice();
+  recognition.start();
+}
+
+function stopVoice() {
+  listening = false;
+  if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
+  const btn  = document.getElementById('voice-btn');
+  const hint = document.getElementById('voice-hint');
+  if (btn)  btn.classList.remove('listening');
+  if (hint) hint.textContent = '🎤 Tap mic and say A, B, C, or D';
+}
+</script>
+</body>
+</html>
