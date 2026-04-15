@@ -77,7 +77,17 @@ function parseAnswers(raw) {
   }
   return [];
 }
-// ── FINAL ASSESSMENT: load 2 random questions per level ──────────────────
+
+async function sendWhatsApp(to, body) {
+  try {
+    const toNum = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
+    await twilioClient.messages.create({ from: FROM_NUMBER, to: toNum, body });
+  } catch (err) {
+    console.error(`❌ Twilio send error to ${to}:`, err.message);
+  }
+}
+
+// ── Final Assessment: load 2 random questions per level ──────────────────────
 async function loadFinalAssessmentQuestions(subject) {
   const levels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
   let all = [];
@@ -91,14 +101,6 @@ async function loadFinalAssessmentQuestions(subject) {
     all = all.concat(res.rows);
   }
   return all;
-}
-async function sendWhatsApp(to, body) {
-  try {
-    const toNum = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
-    await twilioClient.messages.create({ from: FROM_NUMBER, to: toNum, body });
-  } catch (err) {
-    console.error(`❌ Twilio send error to ${to}:`, err.message);
-  }
 }
 
 async function notifyOpsTeam(req, schoolName, session) {
@@ -142,7 +144,6 @@ async function handleMessage(rawPhone, incomingText) {
   const text  = (incomingText || '').trim();
   const upper = text.toUpperCase();
 
-  // RESET — always first
   if (upper === 'RESET' || upper === 'START OVER') {
     await db.clearSession(phone);
     return (
@@ -152,13 +153,11 @@ async function handleMessage(rawPhone, incomingText) {
     );
   }
 
-  // Ops commands
   const isOps = await db.isOpsPhone(phone);
   const isOpsCmd = upper.startsWith('APPROVE') || upper.startsWith('REJECT') ||
                    upper === 'PENDING' || upper === 'STATS' || upper === 'OPS HELP';
   if (isOps && isOpsCmd) return handleOpsMessage(phone, text, upper);
 
-  // Teacher flow
   let session = await db.getSession(phone);
   if (!session) {
     await db.upsertSession(phone, { state: STATE.AWAITING_PIN });
@@ -238,11 +237,11 @@ async function handlePinEntry(phone, text) {
   }
 
   await db.upsertSession(phone, {
-    state:            STATE.CONFIRMING_SESSION,
-    pin_id:           pin.id,
-    school_id:        pin.school_id,
-    level:            pin.level,
-    subject:          pin.subject,
+    state:     STATE.CONFIRMING_SESSION,
+    pin_id:    pin.id,
+    school_id: pin.school_id,
+    level:     pin.level,
+    subject:   pin.subject,
   });
 
   return (
@@ -255,6 +254,8 @@ async function handlePinEntry(phone, text) {
     `Each student will answer *${QUESTIONS_PER_SESSION} questions* individually.\n\n` +
     `Reply *YES* to begin or *NO* to cancel.`
   );
+}
+
 // ── Session confirmation ─────────────────────────────────────────────────────
 
 async function handleConfirmation(phone, text, session) {
@@ -269,7 +270,6 @@ async function handleConfirmation(phone, text, session) {
 
   await db.activatePin(session.pin_id);
 
-  // Initialize session_students tracking in DB
   await db.pool.query(`
     CREATE TABLE IF NOT EXISTS student_assessments (
       id SERIAL PRIMARY KEY,
@@ -289,7 +289,6 @@ async function handleConfirmation(phone, text, session) {
     )
   `);
 
-  // Store students_assessed count in session
   await db.pool.query(`
     UPDATE sessions SET
       state = $1,
@@ -302,7 +301,7 @@ async function handleConfirmation(phone, text, session) {
 
   return (
     `🚀 *Session Started!*\n` +
-    `${session.subject} | Level ${session.level}\n\n` +
+    `${session.subject} | ${parseInt(session.level) === 0 ? 'Final Assessment' : 'Level ' + session.level}\n\n` +
     `👤 *Enter the name of Student 1:*\n\n` +
     `_Type the student's full name and send_`
   );
@@ -313,7 +312,6 @@ async function handleConfirmation(phone, text, session) {
 async function handleStudentName(phone, text, session) {
   const upper = text.toUpperCase();
 
-  // DONE ends the session
   if (upper === 'DONE' || upper === 'FINISH' || upper === 'END') {
     return await finishSession(phone, session);
   }
@@ -323,58 +321,8 @@ async function handleStudentName(phone, text, session) {
     return `Please enter the student's full name (at least 2 characters).`;
   }
 
-  // Fetch fresh questions for this student
-  const questions = await db.getRandomQuestions(session.level, session.subject, QUESTIONS_PER_SESSION);
-  if (!questions || questions.length < QUESTIONS_PER_SESSION) {
-    return `⚠️ Not enough questions for Level ${session.level} ${session.subject}. Contact your Ops coordinator.`;
-  }
-
-  const shuffledQuestions = questions.map(shuffleOptions);
-  const answersPayload = shuffledQuestions.map(q => ({
-    id:            q.question_id || q.id,
-    question_text: q.q_text_english || q.q_text_urdu || q.question_text || 'Question not available',
-    option_a:      q.option_a,
-    option_b:      q.option_b,
-    option_c:      q.option_c,
-    option_d:      q.option_d,
-    correct: q.shuffled_correct || q.correct_option || q.correct_answer || 'A',
-    chosen:        null,
-  }));
-
-  // Store student name and questions in session
-  await db.pool.query(`
-    UPDATE sessions SET
-      state         = $1,
-      current_index = 0,
-      answers       = $2::jsonb,
-      score         = 0,
-      updated_at    = NOW()
-    WHERE phone = $3
-  `, [STATE.IN_ASSESSMENT, JSON.stringify(answersPayload), phone]);
-
-  // Store student name temporarily in session metadata
-  await db.pool.query(`
-    UPDATE sessions SET started_at = NOW() WHERE phone = $1
-  `, [phone]);
-
-  // Save student name in a way we can retrieve it
-  await db.pool.query(`
-    UPDATE sessions SET subject = $1 WHERE phone = $2
-  `, [session.subject, phone]);
-
-  // Store student name in Redis-like fashion using question_ids field
-  await db.pool.query(`
-    UPDATE sessions SET question_ids = $1::integer[] WHERE phone = $2
-  `, [[studentName.charCodeAt(0)], phone]);
-
-  // Actually store student name properly - use a temp table approach
-  await db.pool.query(`
-    INSERT INTO student_assessments
-      (pin_id, school_id, teacher_phone, student_name, level, subject, answers_detail)
-    VALUES ($1, $2, $3, $4, $5, $6, '[]'::jsonb)
-  `, [session.pin_id, session.school_id, phone, studentName, session.level, session.subject]);
-// ── Final Assessment flow ─────────────────────────────────────────────────
-  if (session.is_final_assessment) {
+  // ── Final Assessment flow ─────────────────────────────────────────────────
+  if (session.is_final_assessment || parseInt(session.level) === 0) {
     const finalQs = await loadFinalAssessmentQuestions(session.subject);
     if (!finalQs || finalQs.length < 22) {
       return `⚠️ Final Assessment questions not found. Please import the Final Assessment xlsx first.`;
@@ -417,6 +365,45 @@ async function handleStudentName(phone, text, session) {
       `_Reply with A, B, C, or D_`
     );
   }
+
+  // ── Regular level assessment ──────────────────────────────────────────────
+  const questions = await db.getRandomQuestions(session.level, session.subject, QUESTIONS_PER_SESSION);
+  if (!questions || questions.length < QUESTIONS_PER_SESSION) {
+    return `⚠️ Not enough questions for Level ${session.level} ${session.subject}. Contact your Ops coordinator.`;
+  }
+
+  const shuffledQuestions = questions.map(shuffleOptions);
+  const answersPayload = shuffledQuestions.map(q => ({
+    id:            q.question_id || q.id,
+    question_text: q.q_text_english || q.q_text_urdu || q.question_text || 'Question not available',
+    option_a:      q.option_a,
+    option_b:      q.option_b,
+    option_c:      q.option_c,
+    option_d:      q.option_d,
+    correct: q.shuffled_correct || q.correct_option || q.correct_answer || 'A',
+    chosen:        null,
+  }));
+
+  await db.pool.query(`
+    UPDATE sessions SET
+      state         = $1,
+      current_index = 0,
+      answers       = $2::jsonb,
+      score         = 0,
+      updated_at    = NOW()
+    WHERE phone = $3
+  `, [STATE.IN_ASSESSMENT, JSON.stringify(answersPayload), phone]);
+
+  await db.pool.query(`UPDATE sessions SET started_at = NOW() WHERE phone = $1`, [phone]);
+  await db.pool.query(`UPDATE sessions SET subject = $1 WHERE phone = $2`, [session.subject, phone]);
+  await db.pool.query(`UPDATE sessions SET question_ids = $1::integer[] WHERE phone = $2`, [[studentName.charCodeAt(0)], phone]);
+
+  await db.pool.query(`
+    INSERT INTO student_assessments
+      (pin_id, school_id, teacher_phone, student_name, level, subject, answers_detail)
+    VALUES ($1, $2, $3, $4, $5, $6, '[]'::jsonb)
+  `, [session.pin_id, session.school_id, phone, studentName, session.level, session.subject]);
+
   return (
     `👤 *Student: ${studentName}*\n\n` +
     `📝 *Question 1 of ${QUESTIONS_PER_SESSION}*\n\n` +
@@ -441,14 +428,12 @@ async function handleAnswer(phone, text, session) {
     return `Please reply *A*, *B*, *C*, or *D*.\n\n_Question ${idx + 1} of ${total} is still waiting._`;
   }
 
-  // Record answer
   answers[idx].chosen = answer;
   const isCorrect = answer === answers[idx].correct;
   const newScore   = (session.score || 0) + (isCorrect ? 1 : 0);
   const newIndex   = idx + 1;
 
   if (newIndex < total) {
-    // Save progress
     await db.pool.query(`
       UPDATE sessions SET
         current_index = $1,
@@ -478,7 +463,6 @@ async function handleAnswer(phone, text, session) {
     ? `✅ Ready for Level ${session.level + 1}`
     : `📚 Needs re-assessment at Level ${session.level}`;
 
-  // Save final answers and score
   await db.pool.query(`
     UPDATE sessions SET
       state         = $1,
@@ -489,7 +473,6 @@ async function handleAnswer(phone, text, session) {
     WHERE phone = $5
   `, [STATE.STUDENT_COMPLETE, newIndex, JSON.stringify(answers), newScore, phone]);
 
-  // Update the student_assessment record with results
   const finalSession = await db.getSession(phone);
   await db.pool.query(`
     UPDATE student_assessments SET
@@ -504,8 +487,8 @@ async function handleAnswer(phone, text, session) {
       WHERE teacher_phone = $6
       ORDER BY id DESC LIMIT 1
     )
- `, [newScore, scorePct, passed, JSON.stringify(finalSession.answers || answers), recommendation, phone]);
-  // Get student name from latest record
+  `, [newScore, scorePct, passed, JSON.stringify(finalSession.answers || answers), recommendation, phone]);
+
   const studentRec = await db.pool.query(`
     SELECT student_name FROM student_assessments
     WHERE teacher_phone = $1
@@ -513,7 +496,6 @@ async function handleAnswer(phone, text, session) {
   `, [phone]);
   const studentName = studentRec.rows[0]?.student_name || 'Student';
 
-  // Count students assessed so far
   const countRec = await db.pool.query(`
     SELECT COUNT(*) AS cnt FROM student_assessments
     WHERE teacher_phone = $1 AND pin_id = $2
@@ -530,11 +512,12 @@ async function handleAnswer(phone, text, session) {
     `or send *DONE* to finish the session.`
   );
 }
+
 // ── Final Assessment answer handler ──────────────────────────────────────────
 
 async function handleFinalAnswer(phone, text, session) {
   const answers = parseAnswers(session.answers);
-  const total   = answers.length; // 22
+  const total   = answers.length;
   const idx     = session.current_index;
 
   const answer = normalizeAnswer(text);
@@ -567,7 +550,6 @@ async function handleFinalAnswer(phone, text, session) {
   const scorePct = Math.round((newScore / total) * 100);
   const passed   = scorePct >= PASS_THRESHOLD;
 
-  // Build per-level breakdown
   const levelScores = {};
   for (const a of answers) {
     if (!levelScores[a.level]) levelScores[a.level] = { score: 0, total: 0 };
@@ -586,7 +568,6 @@ async function handleFinalAnswer(phone, text, session) {
     WHERE phone=$5
   `, [STATE.STUDENT_COMPLETE, newIndex, JSON.stringify(answers), newScore, phone]);
 
-  // Save to student_assessments
   const recommendation = passed ? `✅ Completed Final Assessment` : `📚 Needs review`;
   await db.pool.query(`
     UPDATE student_assessments SET
@@ -595,7 +576,6 @@ async function handleFinalAnswer(phone, text, session) {
     WHERE id=(SELECT id FROM student_assessments WHERE teacher_phone=$6 ORDER BY id DESC LIMIT 1)
   `, [newScore, scorePct, passed, JSON.stringify(answers), recommendation, phone]);
 
-  // Save to assessments table for dashboard
   await db.pool.query(`
     INSERT INTO assessments (pin_id, school_id, teacher_phone, level, subject,
       total_questions, correct_answers, score_pct, passed, answers_detail, completed_at)
@@ -627,6 +607,7 @@ async function handleFinalAnswer(phone, text, session) {
     `or send *DONE* to finish.`
   );
 }
+
 // ── Student complete state ───────────────────────────────────────────────────
 
 async function handleStudentComplete(phone, text, session) {
@@ -635,12 +616,10 @@ async function handleStudentComplete(phone, text, session) {
     return await finishSession(phone, session);
   }
 
-  // Treat as new student name — move back to AWAITING_STUDENT_NAME
   await db.pool.query(`
     UPDATE sessions SET state = $1, updated_at = NOW() WHERE phone = $2
   `, [STATE.AWAITING_STUDENT_NAME, phone]);
 
-  // Re-process as student name
   const updatedSession = await db.getSession(phone);
   return handleStudentName(phone, text, updatedSession);
 }
@@ -648,8 +627,6 @@ async function handleStudentComplete(phone, text, session) {
 // ── Finish session ───────────────────────────────────────────────────────────
 
 async function finishSession(phone, session) {
-
-  // Get all students with their answers from session history
   const studentsRec = await db.pool.query(`
     SELECT sa.*, a.answers as session_answers
     FROM student_assessments sa
@@ -664,12 +641,11 @@ async function finishSession(phone, session) {
     return `No students were assessed. Session ended.\n\nSend your PIN to start a new session.`;
   }
 
-  const totalStudents = students.length;
+  const totalStudents  = students.length;
   const passedStudents = students.filter(s => s.passed).length;
-  const avgScore = Math.round(students.reduce((sum, s) => sum + parseFloat(s.score_pct), 0) / totalStudents);
-  const cohortPassed = avgScore >= PASS_THRESHOLD;
+  const avgScore       = Math.round(students.reduce((sum, s) => sum + parseFloat(s.score_pct), 0) / totalStudents);
+  const cohortPassed   = avgScore >= PASS_THRESHOLD;
 
-  // Save overall cohort assessment
   const assessment = await db.saveAssessment({
     pinId:          session.pin_id,
     schoolId:       session.school_id,
@@ -683,7 +659,6 @@ async function finishSession(phone, session) {
     answersDetail:  students,
   });
 
-  // Build student summary
   const studentLines = students.map((s, i) =>
     `${i + 1}. ${s.student_name}: ${s.score_pct}% — ${s.passed ? '✅ Pass' : '📚 Reassess'}`
   ).join('\n');
@@ -837,7 +812,7 @@ app.get('/import', (req, res) => res.sendFile(path.join(__dirname, 'import.html'
 
 app.post('/admin/pins/generate', async (req, res) => {
   const { schoolId, level, subject, cohortSize, issuedBy } = req.body;
-  if (!schoolId || !level || !subject) return res.status(400).json({ error: 'schoolId, level, subject required' });
+  if (!schoolId || level === undefined || !subject) return res.status(400).json({ error: 'schoolId, level, subject required' });
   try {
     const pin = await db.generatePin(schoolId, level, subject, cohortSize || 0, issuedBy || 'admin');
     res.json({ success: true, pin: pin.pin, expiresAt: pin.expires_at });
@@ -911,8 +886,6 @@ app.get('/admin/assessments/all', async (req, res) => {
     res.json(r.rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
-
-// ── Student assessments ───────────────────────────────────────────────────────
 
 app.get('/admin/students/results', async (req, res) => {
   try {
