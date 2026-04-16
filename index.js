@@ -811,6 +811,7 @@ app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'dashboard
 app.get('/import', (req, res) => res.sendFile(path.join(__dirname, 'import.html')));
 app.get('/image-portal', (req, res) => res.sendFile(path.join(__dirname, 'image-portal.html')));
 app.get('/pdf-portal', (req, res) => res.sendFile(path.join(__dirname, 'takmil-pdf-portal.html')));
+app.get('/pdf-portal', (req, res) => res.sendFile(path.join(__dirname, 'takmil-pdf-portal-v2.html')));
 // ══════════════════════════════════════════════════════════════════
 // ADD THESE TWO BLOCKS TO index.js
 // Paste BLOCK A anywhere after the existing app.get('/import') line
