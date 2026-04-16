@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TAKMIL — Level 2 Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Baloo+2:wght@400;700;800&display=swap" rel="stylesheet">
+
+<!-- ═══════════════════════════════════════════════════════════
+     LAYER 1: QUESTION BANK
+     RULE: This section contains ONLY text. No SVG. No images.
+     Every question references an image by ID only.
+════════════════════════════════════════════════════════════ -->
+<script>
+const QUESTION_BANK = {
+
+  Math: [
+    {
+      id:"M2-01", img:"addition_sign",
+      q_en:"Which symbol is used for ADDITION (جمع)?",
+      q_ur:"جمع کی علامت کون سی ہے؟",
+      opts:["÷","×","+","−"], ans:2
+    },
+    {
+      id:"M2-02", img:"compare_46_32",
+      q_en:"Which sign correctly compares 46 and 32?",
+      q_ur:"46 اور 32 کے درمیان کون سا نشان درست ہے؟",
+      opts:["46 = 32","46 < 32","46 > 32","46 ÷ 32"], ans:2
+    },
+    {
+      id:"M2-03", img:"count_carrots",
+      q_en:"Count the objects in the picture. How many are there?",
+      q_ur:"تصویر میں اشیاء گنیں",
+      opts:["3","4","5","6"], ans:2
+    },
+    {
+      id:"M2-04", img:"toffees_aslam_ahmad",
+      q_en:"Aslam has 10 toffees. Ahmad has 5. How many total?",
+      q_ur:"اسلم کے پاس 10 اور احمد کے پاس 5 ٹافیاں ہیں۔ کل کتنی؟",
+      opts:["10","12","15","20"], ans:2
+    },
+    {
+      id:"M2-05", img:"kite_pen_prices",
+      q_en:"Kite costs Rs.15 and pen costs Rs.35. What is the total?",
+      q_ur:"پتنگ Rs.15 اور قلم Rs.35 — کل قیمت کیا ہے؟",
+      opts:["Rs.40","Rs.45","Rs.50","Rs.55"], ans:2
+    },
+    {
+      id:"M2-06", img:"subtract_74_70",
+      q_en:"What is 74 − 70?",
+      q_ur:"74 میں سے 70 منہا کریں",
+      opts:["2","3","4","44"], ans:2
+    },
+    {
+      id:"M2-07", img:"add_46_7",
+      q_en:"What is 46 + 7?",
+      q_ur:"46 اور 7 کو جمع کریں",
+      opts:["51","52","53","54"], ans:2
+    },
+    {
+      id:"M2-08", img:"birds_on_tree",
+      q_en:"14 birds were sitting. 3 flew away. How many birds are left?",
+      q_ur:"درخت میں 14 پرندے تھے۔ 3 اڑ گئے۔ باقی کتنے؟",
+      opts:["9","10","11","12"], ans:2
+    },
+    {
+      id:"M2-09", img:"apples_bananas",
+      q_en:"25 apples + 24 bananas. How many fruits total?",
+      q_ur:"25 سیب اور 24 کیلے — کل پھل کتنے؟",
+      opts:["47","48","49","50"], ans:2
+    },
+    {
+      id:"M2-10", img:"multiply_3x2",
+      q_en:"3 × 2 = 2 + 2 + 2 = ?",
+      q_ur:"3 × 2 کتنا ہوگا؟",
+      opts:["4","5","6","8"], ans:2
+    },
+    {
+      id:"M2-11", img:"coins_notes",
+      q_en:"A Rs.10 note and a Rs.5 coin. What is the total?",
+      q_ur:"Rs.10 کا نوٹ اور Rs.5 کا سکہ — کل رقم؟",
+      opts:["Rs.10","Rs.12","Rs.15","Rs.20"], ans:2
+    },
+    {
+      id:"M2-12", img:"number_line_30",
+      q_en:"Count by 10s: 10, 20, ?, 40, 50. What is the missing number?",
+      q_ur:"دسیوں میں گنیں: 10، 20، ؟، 40، 50",
+      opts:["25","30","35","32"], ans:1
+    }
+  ],
+
+  English: [
+    {
+      id:"E2-01", img:"frog_picture",
+      q_en:"Which picture matches the word FROG?",
+      q_ur:"FROG کی تصویر کون سی ہے؟",
+      opts:["Cup","Frog","Pie","None"], ans:1
+    },
+    {
+      id:"E2-02", img:"nest_picture",
+      q_en:"Which picture matches the word NEST?",
+      q_ur:"NEST کی تصویر کون سی ہے؟",
+      opts:["Globe","Nest","Scissors","None"], ans:1
+    },
+    {
+      id:"E2-03", img:"word_plug",
+      q_en:"In the word PLUG — how many consonants are there?",
+      q_ur:"PLUG میں کتنے consonants ہیں؟",
+      opts:["1","2","3","4"], ans:2
+    },
+    {
+      id:"E2-04", img:"places_grid",
+      q_en:"Which of these is a PLACE?",
+      q_ur:"ان میں سے کون سی جگہ ہے؟",
+      opts:["Watermelon","Rose","School","Bat"], ans:2
+    },
+    {
+      id:"E2-05", img:"picture_egg",
+      q_en:"___ egg — which article is correct?",
+      q_ur:"انڈے کے لیے کون سا آرٹیکل درست ہے؟",
+      opts:["a egg","an egg","the egg","no article"], ans:1
+    },
+    {
+      id:"E2-06", img:"picture_house",
+      q_en:"___ house — which article is correct?",
+      q_ur:"گھر کے لیے کون سا آرٹیکل درست ہے؟",
+      opts:["an house","a house","the house","no article"], ans:1
+    },
+    {
+      id:"E2-07", img:"picture_wheel",
+      q_en:"__eel — which letters complete this word? (Picture: wheel)",
+      q_ur:"تصویر دیکھ کر لفظ مکمل کریں: __eel",
+      opts:["sh","ph","wh","ch"], ans:2
+    },
+    {
+      id:"E2-08", img:"picture_phone",
+      q_en:"__one — which letters complete this word? (Picture: phone)",
+      q_ur:"تصویر دیکھ کر لفظ مکمل کریں: __one",
+      opts:["sh","ph","wh","ch"], ans:1
+    },
+    {
+      id:"E2-09", img:"sentence_storybooks",
+      q_en:"'These are my storybooks ___' — which punctuation?",
+      q_ur:"جملے کے آخر میں کون سا نشان لگائیں؟",
+      opts:[". (full stop)","? (question mark)",", (comma)","! (exclamation)"], ans:0
+    },
+    {
+      id:"E2-10", img:"action_kicking",
+      q_en:"What action is the boy doing in this picture?",
+      q_ur:"تصویر میں لڑکا کیا کر رہا ہے؟",
+      opts:["run","brush","skip","kick"], ans:3
+    },
+    {
+      id:"E2-11", img:"action_reading",
+      q_en:"What action is the girl doing in this picture?",
+      q_ur:"تصویر میں لڑکی کیا کر رہی ہے؟",
+      opts:["eat","skip","read","brush"], ans:2
+    },
+    {
+      id:"E2-12", img:"doll_near",
+      q_en:"The doll is nearby. Complete: '___ is a doll.'",
+      q_ur:"گڑیا قریب ہے۔ خالی جگہ پُر کریں",
+      opts:["That","These","Those","This"], ans:3
+    }
+  ],
+
+  Urdu: [
+    {
+      id:"U2-01", img:"household_items",
+      q_en:"Which of these is used INSIDE the house?",
+      q_ur:"گھر میں استعمال ہونے والی چیز کون سی ہے؟",
+      opts:["ٹریکٹر","کرسی","موٹر سائیکل","کشتی"], ans:1
+    },
+    {
+      id:"U2-02", img:"body_eyes",
+      q_en:"What body part is shown in picture 2?",
+      q_ur:"تصویر نمبر 2 میں جسم کا کون سا حصہ دکھایا گیا ہے؟",
+      opts:["ہاتھ","آنکھیں","پاؤں","کان"], ans:1
+    },
+    {
+      id:"U2-03", img:"body_hands",
+      q_en:"What body part is shown in picture 1?",
+      q_ur:"تصویر نمبر 1 میں جسم کا کون سا حصہ دکھایا گیا ہے؟",
+      opts:["ہاتھ","آنکھیں","پاؤں","کان"], ans:0
+    },
+    {
+      id:"U2-04", img:"body_feet",
+      q_en:"What body part is shown in picture 3?",
+      q_ur:"تصویر نمبر 3 میں جسم کا کون سا حصہ دکھایا گیا ہے؟",
+      opts:["ہاتھ","آنکھیں","پاؤں","کان"], ans:2
+    },
+    {
+      id:"U2-05", img:"clean_teeth",
+      q_en:"This activity helps keep your teeth clean. What is it called?",
+      q_ur:"یہ سرگرمی دانتوں کو صاف رکھتی ہے — یہ کیا ہے؟",
+      opts:["نہانا","دانت صاف کرنا","کھانا کھانا","سونا"], ans:1
+    },
+    {
+      id:"U2-06", img:"pakistan_flag",
+      q_en:"This is the flag of which country?",
+      q_ur:"یہ کس ملک کا جھنڈا ہے؟",
+      opts:["ہندوستان","بنگلہ دیش","پاکستان","ایران"], ans:2
+    },
+    {
+      id:"U2-07", img:"temple_picture",
+      q_en:"What is this building called?",
+      q_ur:"یہ عمارت کیا ہے؟",
+      opts:["مسجد","مندر","چرچ","گوردوارا"], ans:1
+    },
+    {
+      id:"U2-08", img:"church_picture",
+      q_en:"What is this building called?",
+      q_ur:"یہ عمارت کیا ہے؟",
+      opts:["مسجد","مندر","چرچ","گوردوارا"], ans:2
+    },
+    {
+      id:"U2-09", img:"full_stop_sign",
+      q_en:"At the END of a statement sentence we use:",
+      q_ur:"بیانیہ جملے کے آخر میں کون سا نشان لگاتے ہیں؟",
+      opts:["سوالیہ نشان ؟","سکتہ ،","ختمہ ۔","فجائیہ !"], ans:2
+    },
+    {
+      id:"U2-10", img:"question_mark_sign",
+      q_en:"At the end of a QUESTION sentence we use:",
+      q_ur:"سوالیہ جملے کے آخر میں کون سا نشان لگاتے ہیں؟",
+      opts:["ختمہ ۔","سکتہ ،","فجائیہ !","سوالیہ نشان ؟"], ans:3
+    },
+    {
+      id:"U2-11", img:"table_food",
+      q_en:"میز پر ___ رکھا ہے — what goes in the blank?",
+      q_ur:"میز پر ___ رکھا ہے",
+      opts:["کتاب","سیب","قلم","بستہ"], ans:1
+    },
+    {
+      id:"U2-12", img:"germs_bacteria",
+      q_en:"جراثیم سے بچنے کے لیے کیا کریں؟",
+      q_ur:"جراثیم سے بچنے کے لیے کیا ضروری ہے؟",
+      opts:["صرف کھانا کھائیں","صابن سے ہاتھ دھوئیں","صرف سوئیں","باہر کھیلیں"], ans:1
+    }
+  ]
+};
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LAYER 2: IMAGE LIBRARY
+     RULE: SVGs contain ZERO text that appears in options/answers.
+     Only visual elements: shapes, objects, scenes, symbols.
+     Images are referenced by ID from the question bank.
+════════════════════════════════════════════════════════════ -->
+<script>
+const IMAGE_LIB = {
+
+  // ── MATH ──────────────────────────────────────────────────
+  addition_sign: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="16" fill="#E8F8EE"/>
+    <rect x="85" y="30" width="30" height="100" rx="8" fill="#04A344"/>
+    <rect x="30" y="65" width="140" height="30" rx="8" fill="#04A344"/>
+    <text x="100" y="148" text-anchor="middle" font-size="13" fill="#555" font-family="Arial">جمع کی علامت</text>
+  </svg>`,
+
+  compare_46_32: `<svg viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="120" rx="14" fill="#EAF4FF"/>
+    <rect x="10" y="25" width="70" height="70" rx="10" fill="#3498DB" opacity=".2" stroke="#3498DB" stroke-width="2"/>
+    <text x="45" y="72" text-anchor="middle" font-size="38" font-weight="900" fill="#1A5276" font-family="Arial">46</text>
+    <text x="120" y="72" text-anchor="middle" font-size="36" fill="#888" font-family="Arial">?</text>
+    <rect x="160" y="25" width="70" height="70" rx="10" fill="#3498DB" opacity=".2" stroke="#3498DB" stroke-width="2"/>
+    <text x="195" y="72" text-anchor="middle" font-size="38" font-weight="900" fill="#1A5276" font-family="Arial">32</text>
+  </svg>`,
+
+  count_carrots: `<svg viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg">
+    <rect width="260" height="110" rx="14" fill="#FFF8E7"/>
+    ${[30,80,130,180,230].map(x=>`
+      <ellipse cx="${x}" cy="72" rx="16" ry="26" fill="#E67E22"/>
+      <path d="M${x},46 Q${x-6},28 ${x-4},18" stroke="#27AE60" stroke-width="3" fill="none"/>
+      <path d="M${x},46 Q${x+6},28 ${x+4},18" stroke="#27AE60" stroke-width="3" fill="none"/>
+    `).join('')}
+  </svg>`,
+
+  toffees_aslam_ahmad: `<svg viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="130" rx="14" fill="#FEF9E7"/>
+    <rect x="8" y="18" width="128" height="94" rx="10" fill="#F5C842" opacity=".2" stroke="#D4A017" stroke-width="1.5"/>
+    ${[28,52,76,100,124,148,28,52,76,100].map((x,i)=>`<circle cx="${x}" cy="${i<5?44:78}" r="12" fill="#E74C3C" opacity=".8"/>`).join('')}
+    <rect x="168" y="18" width="120" height="94" rx="10" fill="#27AE60" opacity=".15" stroke="#27AE60" stroke-width="1.5"/>
+    ${[186,210,234,258,282].map(x=>`<circle cx="${x-2}" cy="65" r="12" fill="#27AE60" opacity=".8"/>`).join('')}
+    <text x="72" y="120" text-anchor="middle" font-size="11" fill="#555" font-family="Arial">10</text>
+    <text x="228" y="120" text-anchor="middle" font-size="11" fill="#555" font-family="Arial">5</text>
+  </svg>`,
+
+  kite_pen_prices: `<svg viewBox="0 0 280 130" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="130" rx="14" fill="#F0FFF8"/>
+    <polygon points="60,20 95,65 60,110 25,65" fill="#E74C3C"/>
+    <polygon points="60,20 95,65 60,65" fill="#F5C842"/>
+    <polygon points="25,65 60,65 60,110" fill="#3498DB"/>
+    <line x1="60" y1="110" x2="45" y2="130" stroke="#888" stroke-width="1.5"/>
+    <text x="60" y="148" text-anchor="middle" font-size="13" font-weight="700" fill="#E74C3C" font-family="Arial">Rs. 15</text>
+    <line x1="170" y1="30" x2="200" y2="100" stroke="#2C3E50" stroke-width="10" stroke-linecap="round"/>
+    <polygon points="200,100 195,108 210,112" fill="#C0392B"/>
+    <circle cx="170" cy="25" r="8" fill="#F5C842" stroke="#2C3E50" stroke-width="2"/>
+    <text x="190" y="148" text-anchor="middle" font-size="13" font-weight="700" fill="#2C3E50" font-family="Arial">Rs. 35</text>
+    <text x="240" y="70" font-size="22" fill="#555" font-family="Arial">+</text>
+  </svg>`,
+
+  subtract_74_70: `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="130" rx="14" fill="#F5EEF8"/>
+    <text x="110" y="52" text-anchor="middle" font-size="38" font-weight="900" fill="#2C3E50" font-family="Arial">74</text>
+    <text x="32" y="92" font-size="28" font-weight="700" fill="#9B59B6" font-family="Arial">−</text>
+    <text x="110" y="92" text-anchor="middle" font-size="38" font-weight="900" fill="#2C3E50" font-family="Arial">70</text>
+    <line x1="20" y1="102" x2="200" y2="102" stroke="#9B59B6" stroke-width="3"/>
+    <rect x="70" y="110" width="80" height="14" rx="4" fill="#D7B8FF" opacity=".5"/>
+  </svg>`,
+
+  add_46_7: `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="130" rx="14" fill="#E8F8EE"/>
+    <text x="110" y="52" text-anchor="middle" font-size="38" font-weight="900" fill="#2C3E50" font-family="Arial">46</text>
+    <text x="32" y="92" font-size="28" font-weight="700" fill="#27AE60" font-family="Arial">+</text>
+    <text x="110" y="92" text-anchor="middle" font-size="38" font-weight="900" fill="#2C3E50" font-family="Arial">7</text>
+    <line x1="20" y1="102" x2="200" y2="102" stroke="#27AE60" stroke-width="3"/>
+    <rect x="70" y="110" width="80" height="14" rx="4" fill="#A9DFBF" opacity=".5"/>
+  </svg>`,
+
+  birds_on_tree: `<svg viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="150" rx="14" fill="#EAF4FF"/>
+    <rect x="130" y="105" width="12" height="40" rx="4" fill="#8B4513"/>
+    <circle cx="136" cy="80" r="46" fill="#27AE60"/>
+    ${[[80,60],[98,52],[116,60],[134,54],[152,60],[170,54],[188,60],[206,52],[224,58],[242,62],[260,56],[278,60],[80,80],[98,74]].map(([x,y])=>`
+      <ellipse cx="${x}" cy="${y}" rx="10" ry="6" fill="#E74C3C"/>
+      <circle cx="${x-4}" cy="${y-3}" r="3" fill="#2C3E50"/>
+    `).join('')}
+  </svg>`,
+
+  apples_bananas: `<svg viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="130" rx="14" fill="#FEF9E7"/>
+    ${Array.from({length:10},(_,i)=>`<circle cx="${16+i*22}" cy="45" r="10" fill="#E74C3C"/><path d="M${16+i*22},35 Q${20+i*22},26 ${22+i*22},22" stroke="#27AE60" stroke-width="2" fill="none"/>`).join('')}
+    <text x="115" y="72" text-anchor="middle" font-size="18" fill="#888" font-family="Arial">×3 rows</text>
+    ${Array.from({length:10},(_,i)=>`<path d="M${12+i*22},95 Q${16+i*22},80 ${28+i*22},82 Q${32+i*22},95 ${22+i*22},102 Q${12+i*22},100 ${12+i*22},95" fill="#F5C842" stroke="#D4A017" stroke-width="1"/>`).join('')}
+    <text x="225" y="102" font-size="18" fill="#888" font-family="Arial">×3 rows</text>
+    <text x="150" y="62" font-size="22" fill="#555" font-family="Arial">+</text>
+  </svg>`,
+
+  multiply_3x2: `<svg viewBox="0 0 280 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="140" rx="14" fill="#FEF0EF"/>
+    <rect x="8" y="20" width="80" height="55" rx="8" fill="#E74C3C" opacity=".15" stroke="#E74C3C" stroke-width="1.5"/>
+    ${[28,52].map(x=>`<circle cx="${x}" cy="47" r="16" fill="#E74C3C" opacity=".7"/>`).join('')}
+    <text x="48" y="95" text-anchor="middle" font-size="12" fill="#888" font-family="Arial">group 1</text>
+    <text x="103" y="50" font-size="22" fill="#555" font-family="Arial">+</text>
+    <rect x="118" y="20" width="80" height="55" rx="8" fill="#3498DB" opacity=".15" stroke="#3498DB" stroke-width="1.5"/>
+    ${[138,162].map(x=>`<circle cx="${x}" cy="47" r="16" fill="#3498DB" opacity=".7"/>`).join('')}
+    <text x="158" y="95" text-anchor="middle" font-size="12" fill="#888" font-family="Arial">group 2</text>
+    <text x="213" y="50" font-size="22" fill="#555" font-family="Arial">+</text>
+    <rect x="228" y="20" width="44" height="55" rx="8" fill="#27AE60" opacity=".15" stroke="#27AE60" stroke-width="1.5"/>
+    ${[250].map(x=>`<circle cx="${x}" cy="47" r="16" fill="#27AE60" opacity=".7"/>`).join('')}
+    <text x="250" y="95" text-anchor="middle" font-size="12" fill="#888" font-family="Arial">group 3</text>
+    <text x="140" y="128" text-anchor="middle" font-size="14" fill="#555" font-family="Arial">3 groups of 2 = ?</text>
+  </svg>`,
+
+  coins_notes: `<svg viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="120" rx="14" fill="#FFF8E7"/>
+    <rect x="12" y="22" width="90" height="55" rx="8" fill="#27AE60" opacity=".8"/>
+    <rect x="18" y="28" width="78" height="43" rx="4" fill="#2ECC71" opacity=".5"/>
+    <text x="57" y="57" text-anchor="middle" font-size="22" font-weight="900" fill="white" font-family="Arial">10</text>
+    <text x="57" y="90" text-anchor="middle" font-size="11" fill="#555" font-family="Arial">Rs. 10 note</text>
+    <text x="130" y="56" font-size="22" fill="#888" font-family="Arial">+</text>
+    <circle cx="182" cy="49" r="26" fill="#D4A017" stroke="#9A7D0A" stroke-width="2"/>
+    <circle cx="182" cy="49" r="18" fill="#F5C842"/>
+    <text x="182" y="56" text-anchor="middle" font-size="16" font-weight="900" fill="#7D6608" font-family="Arial">5</text>
+    <text x="182" y="90" text-anchor="middle" font-size="11" fill="#555" font-family="Arial">Rs. 5 coin</text>
+  </svg>`,
+
+  number_line_30: `<svg viewBox="0 0 340 90" xmlns="http://www.w3.org/2000/svg">
+    <rect width="340" height="90" rx="14" fill="#EAF4FF"/>
+    <line x1="16" y1="50" x2="324" y2="50" stroke="#3498DB" stroke-width="3"/>
+    ${[10,20,30,40,50].map((n,i)=>{
+      const x=20+i*62;
+      const isQ=n===30;
+      return `<circle cx="${x}" cy="50" r="20" fill="${isQ?'#FEF0EF':'#EAF4FF'}" stroke="${isQ?'#E74C3C':'#3498DB'}" stroke-width="${isQ?3:2}"/>
+      <text x="${x}" y="57" text-anchor="middle" font-size="${isQ?24:18}" font-weight="900" fill="${isQ?'#E74C3C':'#2C3E50'}" font-family="Arial">${isQ?'?':n}</text>`;
+    }).join('')}
+  </svg>`,
+
+  // ── ENGLISH ───────────────────────────────────────────────
+  frog_picture: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="14" fill="#E8F8EE"/>
+    <ellipse cx="100" cy="95" rx="55" ry="44" fill="#27AE60"/>
+    <circle cx="72" cy="62" r="18" fill="#2ECC71"/>
+    <circle cx="128" cy="62" r="18" fill="#2ECC71"/>
+    <circle cx="72" cy="60" r="10" fill="white"/>
+    <circle cx="128" cy="60" r="10" fill="white"/>
+    <circle cx="74" cy="62" r="6" fill="#1A3A1A"/>
+    <circle cx="130" cy="62" r="6" fill="#1A3A1A"/>
+    <path d="M80 108 Q100 118 120 108" stroke="#1A3A1A" stroke-width="2.5" fill="none"/>
+    <line x1="60" y1="130" x2="40" y2="155" stroke="#27AE60" stroke-width="4"/>
+    <line x1="140" y1="130" x2="160" y2="155" stroke="#27AE60" stroke-width="4"/>
+    <line x1="60" y1="130" x2="48" y2="140" stroke="#27AE60" stroke-width="3"/>
+    <line x1="140" y1="130" x2="152" y2="140" stroke="#27AE60" stroke-width="3"/>
+  </svg>`,
+
+  nest_picture: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="14" fill="#FEF9E7"/>
+    <path d="M30,120 Q50,80 100,75 Q150,80 170,120 Q140,130 100,132 Q60,130 30,120Z" fill="#8B4513"/>
+    <path d="M35,110 Q55,75 100,70 Q145,75 165,110" fill="none" stroke="#6B3410" stroke-width="4"/>
+    <path d="M40,120 Q65,82 100,78 Q135,82 160,120" fill="none" stroke="#6B3410" stroke-width="3"/>
+    <circle cx="80" cy="92" r="12" fill="#FAEBD7"/>
+    <circle cx="100" cy="88" r="12" fill="#FAEBD7"/>
+    <circle cx="120" cy="92" r="12" fill="#FAEBD7"/>
+  </svg>`,
+
+  word_plug: `<svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="100" rx="14" fill="#EAF4FF"/>
+    ${['P','L','U','G'].map((l,i)=>`
+      <rect x="${18+i*56}" y="15" width="46" height="70" rx="8" fill="${['#E74C3C','#3498DB','#9B59B6','#27AE60'][i]}" opacity=".2" stroke="${['#E74C3C','#3498DB','#9B59B6','#27AE60'][i]}" stroke-width="2"/>
+      <text x="${41+i*56}" y="62" text-anchor="middle" font-size="34" font-weight="900" fill="#2C3E50" font-family="Georgia,serif">${l}</text>
+    `).join('')}
+  </svg>`,
+
+  places_grid: `<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+    <rect width="320" height="180" rx="14" fill="#F0F8FF"/>
+    <!-- Home -->
+    <rect x="12" y="15" width="68" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <polygon points="46,22 68,40 24,40" fill="#E74C3C"/>
+    <rect x="28" y="38" width="36" height="28" fill="#ECF0F1"/>
+    <rect x="39" y="48" width="14" height="18" rx="2" fill="#8B4513"/>
+    <!-- Watermelon -->
+    <rect x="88" y="15" width="68" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <path d="M112,75 Q122,30 132,75 Z" fill="#E74C3C"/>
+    <path d="M112,75 Q122,75 132,75 Q128,80 116,80 Z" fill="#2ECC71"/>
+    <!-- School -->
+    <rect x="164" y="15" width="68" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <rect x="172" y="35" width="52" height="40" fill="#3498DB"/>
+    <rect x="172" y="25" width="52" height="14" fill="#E74C3C"/>
+    <rect x="192" y="52" width="12" height="23" fill="white"/>
+    <!-- Rose -->
+    <rect x="240" y="15" width="68" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <circle cx="274" cy="44" r="16" fill="#E74C3C"/>
+    <circle cx="266" cy="40" r="8" fill="#E74C3C"/>
+    <circle cx="282" cy="40" r="8" fill="#E74C3C"/>
+    <line x1="274" y1="60" x2="274" y2="78" stroke="#27AE60" stroke-width="3"/>
+    <!-- Garden -->
+    <rect x="12" y="95" width="68" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <rect x="12" y="140" width="68" height="23" fill="#8B4513" rx="0 0 8 8"/>
+    ${[28,46,64].map(x=>`<circle cx="${x}" cy="135" r="16" fill="#27AE60"/>`).join('')}
+    <!-- Bat -->
+    <rect x="88" y="95" width="68" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <ellipse cx="122" cy="129" rx="28" ry="14" fill="#2C3E50"/>
+    <path d="M122,115 L108,95 L122,108 L136,95 Z" fill="#2C3E50"/>
+    <!-- Bicycle -->
+    <rect x="164" y="95" width="68" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <circle cx="184" cy="148" r="14" fill="none" stroke="#3498DB" stroke-width="3"/>
+    <circle cx="212" cy="148" r="14" fill="none" stroke="#3498DB" stroke-width="3"/>
+    <line x1="184" y1="134" x2="198" y2="118" stroke="#3498DB" stroke-width="2.5"/>
+    <line x1="198" y1="118" x2="212" y2="134" stroke="#3498DB" stroke-width="2.5"/>
+    <line x1="184" y1="134" x2="212" y2="134" stroke="#3498DB" stroke-width="2.5"/>
+    <!-- Church -->
+    <rect x="240" y="95" width="68" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <rect x="250" y="120" width="48" height="38" fill="#ECF0F1"/>
+    <rect x="268" y="105" width="12" height="30" fill="#E74C3C"/>
+    <rect x="262" y="110" width="24" height="6" fill="#E74C3C"/>
+  </svg>`,
+
+  picture_egg: `<svg viewBox="0 0 180 150" xmlns="http://www.w3.org/2000/svg">
+    <rect width="180" height="150" rx="14" fill="#FEF9E7"/>
+    <path d="M90,30 Q130,30 130,85 Q130,130 90,130 Q50,130 50,85 Q50,30 90,30Z" fill="white" stroke="#D4A017" stroke-width="3"/>
+    <ellipse cx="90" cy="82" rx="25" ry="20" fill="#F5C842" opacity=".6"/>
+  </svg>`,
+
+  picture_house: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="14" fill="#EAF4FF"/>
+    <polygon points="100,18 182,76 18,76" fill="#E74C3C"/>
+    <rect x="28" y="74" width="144" height="78" rx="4" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="1.5"/>
+    <rect x="82" y="106" width="36" height="46" rx="4" fill="#8B4513"/>
+    <rect x="44" y="88" width="28" height="24" rx="3" fill="#87CEEB" stroke="#7FB3D3" stroke-width="1.5"/>
+    <rect x="128" y="88" width="28" height="24" rx="3" fill="#87CEEB" stroke="#7FB3D3" stroke-width="1.5"/>
+  </svg>`,
+
+  picture_wheel: `<svg viewBox="0 0 180 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="180" height="160" rx="14" fill="#F5EEF8"/>
+    <circle cx="90" cy="82" r="62" fill="none" stroke="#2C3E50" stroke-width="6"/>
+    <circle cx="90" cy="82" r="14" fill="#2C3E50"/>
+    ${Array.from({length:8},(_,i)=>{const a=i*45*Math.PI/180;return `<line x1="90" y1="82" x2="${(90+52*Math.cos(a)).toFixed(0)}" y2="${(82+52*Math.sin(a)).toFixed(0)}" stroke="#2C3E50" stroke-width="4"/>`;}).join('')}
+  </svg>`,
+
+  picture_phone: `<svg viewBox="0 0 160 180" xmlns="http://www.w3.org/2000/svg">
+    <rect width="160" height="180" rx="14" fill="#EAF4FF"/>
+    <rect x="38" y="22" width="84" height="136" rx="12" fill="#2C3E50"/>
+    <rect x="46" y="38" width="68" height="88" fill="#3498DB"/>
+    <circle cx="80" cy="145" r="8" fill="#555"/>
+    ${[55,75,95].map(y=>[52,68,84,100].map(x=>`<rect x="${x}" y="${y}" width="12" height="10" rx="2" fill="#ECF0F1"/>`).join('')).join('')}
+  </svg>`,
+
+  sentence_storybooks: `<svg viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="120" rx="14" fill="#F0F8FF"/>
+    <text x="150" y="42" text-anchor="middle" font-size="16" font-weight="700" fill="#2C3E50" font-family="Arial">These are my storybooks</text>
+    <rect x="106" y="54" width="88" height="38" rx="8" fill="#FEF0EF" stroke="#E74C3C" stroke-width="2" stroke-dasharray="4,2"/>
+    <text x="150" y="80" text-anchor="middle" font-size="28" font-weight="900" fill="#E74C3C" font-family="Arial">___</text>
+    <text x="150" y="110" text-anchor="middle" font-size="12" fill="#888" font-family="Arial">Which punctuation mark?</text>
+  </svg>`,
+
+  action_kicking: `<svg viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+    <rect width="180" height="180" rx="14" fill="#FEF9E7"/>
+    <circle cx="90" cy="40" r="24" fill="#F5CBA7"/>
+    <rect x="72" y="64" width="36" height="52" rx="8" fill="#E74C3C"/>
+    <line x1="90" y1="116" x2="70" y2="148" stroke="#2C3E50" stroke-width="7" stroke-linecap="round"/>
+    <line x1="90" y1="116" x2="128" y2="128" stroke="#2C3E50" stroke-width="7" stroke-linecap="round"/>
+    <line x1="70" y1="148" x2="56" y2="168" stroke="#2C3E50" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="148" cy="148" r="18" fill="#3498DB" stroke="white" stroke-width="2"/>
+    <line x1="130" y1="140" x2="148" y2="130" stroke="#3498DB" stroke-width="3"/>
+    <line x1="90" y1="64" x2="60" y2="85" stroke="#2C3E50" stroke-width="6" stroke-linecap="round"/>
+    <line x1="90" y1="64" x2="116" y2="88" stroke="#2C3E50" stroke-width="6" stroke-linecap="round"/>
+  </svg>`,
+
+  action_reading: `<svg viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+    <rect width="180" height="180" rx="14" fill="#E8F8EE"/>
+    <circle cx="90" cy="42" r="26" fill="#F5CBA7"/>
+    <rect x="72" y="68" width="36" height="50" rx="8" fill="#9B59B6"/>
+    <line x1="72" y1="80" x2="40" y2="96" stroke="#2C3E50" stroke-width="7" stroke-linecap="round"/>
+    <line x1="108" y1="80" x2="140" y2="96" stroke="#2C3E50" stroke-width="7" stroke-linecap="round"/>
+    <rect x="48" y="96" width="84" height="52" rx="6" fill="#E74C3C"/>
+    <rect x="54" y="102" width="36" height="40" fill="#ECF0F1"/>
+    <rect x="90" y="102" width="36" height="40" fill="#ECF0F1"/>
+    <line x1="90" y1="102" x2="90" y2="142" stroke="#E74C3C" stroke-width="2"/>
+    ${[58,62,66,70,74,78,82,94,98,102,106,110,114,118,122].map(x=>`<line x1="${x}" y1="108" x2="${x}" y2="138" stroke="#BDC3C7" stroke-width="1"/>`).join('')}
+    <line x1="72" y1="118" x2="80" y2="148" stroke="#2C3E50" stroke-width="7" stroke-linecap="round"/>
+    <line x1="108" y1="118" x2="100" y2="148" stroke="#2C3E50" stroke-width="7" stroke-linecap="round"/>
+  </svg>`,
+
+  doll_near: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="14" fill="#F5EEF8"/>
+    <circle cx="100" cy="44" r="26" fill="#F5CBA7"/>
+    <circle cx="90" cy="40" r="4" fill="#2C3E50"/>
+    <circle cx="110" cy="40" r="4" fill="#2C3E50"/>
+    <path d="M90 56 Q100 64 110 56" stroke="#2C3E50" stroke-width="2" fill="none"/>
+    <rect x="78" y="70" width="44" height="54" rx="8" fill="#E91E63"/>
+    <line x1="78" y1="80" x2="52" y2="100" stroke="#F5CBA7" stroke-width="7" stroke-linecap="round"/>
+    <line x1="122" y1="80" x2="148" y2="100" stroke="#F5CBA7" stroke-width="7" stroke-linecap="round"/>
+    <line x1="88" y1="124" x2="82" y2="154" stroke="#F5CBA7" stroke-width="7" stroke-linecap="round"/>
+    <line x1="112" y1="124" x2="118" y2="154" stroke="#F5CBA7" stroke-width="7" stroke-linecap="round"/>
+    <!-- Arrow showing "near" -->
+    <path d="M20,80 L40,80" stroke="#27AE60" stroke-width="3" marker-end="url(#arr)"/>
+    <text x="14" y="76" font-size="10" fill="#27AE60" font-weight="700" font-family="Arial">HERE</text>
+  </svg>`,
+
+  // ── URDU ──────────────────────────────────────────────────
+  household_items: `<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+    <rect width="320" height="180" rx="14" fill="#F5EEF8"/>
+    <!-- Chair -->
+    <rect x="18" y="28" width="68" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <rect x="32" y="38" width="40" height="28" rx="4" fill="#8B4513"/>
+    <line x1="36" y1="66" x2="36" y2="90" stroke="#8B4513" stroke-width="5"/>
+    <line x1="68" y1="66" x2="68" y2="90" stroke="#8B4513" stroke-width="5"/>
+    <line x1="36" y1="38" x2="36" y2="58" stroke="#8B4513" stroke-width="4"/>
+    <!-- Machine/Vacuum -->
+    <rect x="96" y="28" width="68" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <ellipse cx="130" cy="70" rx="22" ry="14" fill="#3498DB"/>
+    <line x1="108" y1="56" x2="94" y2="42" stroke="#555" stroke-width="3"/>
+    <ellipse cx="92" cy="40" rx="8" ry="6" fill="#555"/>
+    <!-- Tractor (outside) -->
+    <rect x="174" y="28" width="68" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <rect x="186" y="48" width="44" height="28" rx="4" fill="#27AE60"/>
+    <circle cx="196" cy="78" r="12" fill="#2C3E50"/>
+    <circle cx="220" cy="78" r="8" fill="#2C3E50"/>
+    <rect x="196" y="40" width="20" height="16" rx="3" fill="#87CEEB"/>
+    <!-- Boat (outside) -->
+    <rect x="252" y="28" width="60" height="68" rx="8" fill="white" stroke="#ddd" stroke-width="1.5"/>
+    <path d="M258,85 Q282,70 300,85 L296,92 L262,92 Z" fill="#3498DB"/>
+    <line x1="282" y1="70" x2="282" y2="42" stroke="#2C3E50" stroke-width="2"/>
+    <path d="M282,42 L302,60 L282,65 Z" fill="#E74C3C"/>
+  </svg>`,
+
+  body_eyes: `<svg viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="140" rx="14" fill="#F5EEF8"/>
+    <ellipse cx="70" cy="70" rx="40" ry="30" fill="#FDEBD0"/>
+    <circle cx="70" cy="70" r="18" fill="white"/>
+    <circle cx="70" cy="70" r="12" fill="#3498DB"/>
+    <circle cx="70" cy="70" r="6" fill="#1A252F"/>
+    <circle cx="75" cy="65" r="3" fill="white"/>
+    <path d="M35,54 Q70,38 105,54" stroke="#2C3E50" stroke-width="3" fill="none"/>
+    <ellipse cx="130" cy="70" rx="40" ry="30" fill="#FDEBD0"/>
+    <circle cx="130" cy="70" r="18" fill="white"/>
+    <circle cx="130" cy="70" r="12" fill="#3498DB"/>
+    <circle cx="130" cy="70" r="6" fill="#1A252F"/>
+    <circle cx="135" cy="65" r="3" fill="white"/>
+    <path d="M95,54 Q130,38 165,54" stroke="#2C3E50" stroke-width="3" fill="none"/>
+  </svg>`,
+
+  body_hands: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="14" fill="#EAF4FF"/>
+    <path d="M60,140 Q38,130 30,100 Q26,80 36,72 Q44,66 52,76 L56,90 L58,60 Q60,48 70,50 Q80,52 80,64 L80,80 Q82,62 92,62 Q102,64 102,78 L100,88 Q102,74 112,76 Q122,78 120,92 L116,110 Q120,100 126,102 Q134,106 132,118 Q128,136 110,142 Z" fill="#F5CBA7" stroke="#E8A87C" stroke-width="1.5"/>
+    <path d="M140,140 Q162,130 170,100 Q174,80 164,72 Q156,66 148,76 L144,90 L142,60 Q140,48 130,50 Q120,52 120,64 L120,80 Q118,62 108,62 Q98,64 98,78 L100,88 Q98,74 88,76 Q78,78 80,92 L84,110 Q80,100 74,102 Q66,106 68,118 Q72,136 90,142 Z" fill="#F5CBA7" stroke="#E8A87C" stroke-width="1.5"/>
+  </svg>`,
+
+  body_feet: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="14" fill="#FEF9E7"/>
+    <path d="M50,140 Q28,135 22,108 Q20,90 32,80 Q40,120 58,126 Q76,130 90,118 Q92,132 78,140 Z" fill="#F5CBA7" stroke="#E8A87C" stroke-width="1.5"/>
+    <circle cx="34" cy="78" r="6" fill="#F5CBA7"/>
+    <circle cx="42" cy="72" r="6" fill="#F5CBA7"/>
+    <circle cx="50" cy="70" r="6" fill="#F5CBA7"/>
+    <circle cx="58" cy="72" r="6" fill="#F5CBA7"/>
+    <circle cx="65" cy="76" r="5" fill="#F5CBA7"/>
+    <path d="M150,140 Q172,135 178,108 Q180,90 168,80 Q160,120 142,126 Q124,130 110,118 Q108,132 122,140 Z" fill="#F5CBA7" stroke="#E8A87C" stroke-width="1.5"/>
+    <circle cx="166" cy="78" r="6" fill="#F5CBA7"/>
+    <circle cx="158" cy="72" r="6" fill="#F5CBA7"/>
+    <circle cx="150" cy="70" r="6" fill="#F5CBA7"/>
+    <circle cx="142" cy="72" r="6" fill="#F5CBA7"/>
+    <circle cx="135" cy="76" r="5" fill="#F5CBA7"/>
+  </svg>`,
+
+  clean_teeth: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="14" fill="#E8F8EE"/>
+    <rect x="70" y="30" width="60" height="18" rx="9" fill="#27AE60"/>
+    <rect x="82" y="46" width="8" height="76" rx="4" fill="#27AE60"/>
+    <rect x="92" y="46" width="8" height="76" rx="4" fill="#2ECC71"/>
+    <rect x="102" y="46" width="8" height="76" rx="4" fill="#27AE60"/>
+    <path d="M60,70 Q100,55 140,70" stroke="#2C3E50" stroke-width="2" fill="none" stroke-dasharray="4"/>
+    <circle cx="100" cy="110" r="32" fill="white" stroke="#ECF0F1" stroke-width="2"/>
+    <path d="M78,114 L86,108 L92,116 L100,106 L108,116 L116,108 L122,114" stroke="#27AE60" stroke-width="3" fill="none"/>
+  </svg>`,
+
+  pakistan_flag: `<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="160" rx="14" fill="#EAF4FF"/>
+    <rect x="25" y="24" width="190" height="112" rx="6" fill="#01411C"/>
+    <rect x="25" y="24" width="48" height="112" fill="white"/>
+    <circle cx="145" cy="80" r="32" fill="white"/>
+    <circle cx="153" cy="80" r="28" fill="#01411C"/>
+    <polygon points="162,60 170,80 154,68 178,68 162,80" fill="white"/>
+  </svg>`,
+
+  temple_picture: `<svg viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="180" rx="14" fill="#FEF9E7"/>
+    <rect x="40" y="90" width="120" height="80" rx="4" fill="#E67E22"/>
+    <path d="M100,20 L160,90 L40,90 Z" fill="#E74C3C"/>
+    <path d="M100,40 L148,90 L52,90 Z" fill="#F39C12"/>
+    <line x1="100" y1="20" x2="100" y2="8" stroke="#D4A017" stroke-width="4"/>
+    <circle cx="100" cy="6" r="5" fill="#D4A017"/>
+    <rect x="82" y="130" width="36" height="40" rx="4" fill="#8B4513"/>
+    <rect x="52" y="105" width="24" height="20" rx="3" fill="#87CEEB"/>
+    <rect x="124" y="105" width="24" height="20" rx="3" fill="#87CEEB"/>
+  </svg>`,
+
+  church_picture: `<svg viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="180" rx="14" fill="#EAF4FF"/>
+    <rect x="36" y="90" width="128" height="80" rx="4" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="2"/>
+    <polygon points="100,22 164,90 36,90" fill="#BDC3C7"/>
+    <rect x="88" y="8" width="24" height="50" rx="4" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="2"/>
+    <rect x="82" y="26" width="36" height="8" rx="2" fill="#BDC3C7"/>
+    <rect x="80" y="112" width="40" height="58" rx="4" fill="#8B4513"/>
+    <path d="M90,78 Q100,65 110,78" fill="#87CEEB" stroke="#7FB3D3" stroke-width="1.5"/>
+    <rect x="50" y="108" width="22" height="18" rx="3" fill="#87CEEB"/>
+    <rect x="128" y="108" width="22" height="18" rx="3" fill="#87CEEB"/>
+  </svg>`,
+
+  full_stop_sign: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="14" fill="#F0FFF8"/>
+    <text x="100" y="112" text-anchor="middle" font-size="100" font-weight="900" fill="#27AE60" font-family="Arial">۔</text>
+  </svg>`,
+
+  question_mark_sign: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="14" fill="#FEF9E7"/>
+    <text x="100" y="120" text-anchor="middle" font-size="100" font-weight="900" fill="#D4A017" font-family="Arial">؟</text>
+  </svg>`,
+
+  table_food: `<svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="160" rx="14" fill="#F5EEF8"/>
+    <rect x="20" y="80" width="180" height="16" rx="6" fill="#8B4513"/>
+    <rect x="30" y="94" width="14" height="50" rx="5" fill="#8B4513"/>
+    <rect x="176" y="94" width="14" height="50" rx="5" fill="#8B4513"/>
+    <path d="M90,40 Q120,22 150,40 Q150,75 120,78 Q90,75 90,40Z" fill="#E74C3C"/>
+    <path d="M90,40 Q120,40 150,40" fill="none" stroke="#C0392B" stroke-width="1"/>
+  </svg>`,
+
+  germs_bacteria: `<svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="160" rx="14" fill="#FEF0EF"/>
+    ${[[50,50],[90,35],[130,50],[165,40],[40,90],[80,100],[120,85],[160,95],[55,130],[100,120],[145,130]].map(([x,y])=>`
+      <circle cx="${x}" cy="${y}" r="10" fill="#E74C3C" opacity=".6"/>
+      ${Array.from({length:4},(_,k)=>{const a=k*90*Math.PI/180;return `<line x1="${x}" y1="${y}" x2="${(x+14*Math.cos(a)).toFixed(0)}" y2="${(y+14*Math.sin(a)).toFixed(0)}" stroke="#E74C3C" stroke-width="2" stroke-linecap="round"/>`;}).join('')}
+    `).join('')}
+    <line x1="155" y1="110" x2="195" y2="140" stroke="#E74C3C" stroke-width="3"/>
+    <line x1="195" y1="110" x2="155" y2="140" stroke="#E74C3C" stroke-width="3"/>
+  </svg>`,
+};
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LAYER 3: PORTAL ENGINE
+     Reads from QUESTION_BANK and IMAGE_LIB.
+     Never generates text from images.
+════════════════════════════════════════════════════════════ -->
+<style>
+:root{--g:#01411C;--gm:#026B2F;--gl:#04A344;--gold:#F5C842;--w:#FFF;--tx:#1A2E1A}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Baloo 2',cursive;background:linear-gradient(145deg,#E8F8F5,#F5FFF8,#FFF8EC);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 10% 20%,rgba(4,163,68,.07) 0%,transparent 40%),radial-gradient(circle at 90% 80%,rgba(245,200,66,.07) 0%,transparent 40%)}
+.screen{display:none;flex-direction:column;align-items:center;width:100%;max-width:680px;z-index:1;position:relative}
+.screen.active{display:flex;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes popIn{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:none}}
+.card{background:var(--w);border-radius:32px;padding:28px 24px;width:100%;box-shadow:0 8px 40px rgba(1,65,28,.15);border:2px solid rgba(4,163,68,.1)}
+.logo-wrap{text-align:center;margin-bottom:20px}
+.logo-icon{width:72px;height:72px;background:linear-gradient(135deg,var(--g),var(--gl));border-radius:20px;display:inline-flex;align-items:center;justify-content:center;font-size:34px;margin-bottom:8px;box-shadow:0 8px 28px rgba(1,65,28,.3);animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.logo-title{font-size:30px;font-weight:800;color:var(--g)}
+.logo-sub{font-size:12px;color:#4A7A4A;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+.logo-ur{font-family:'Noto Nastaliq Urdu',serif;font-size:16px;color:#026B2F;direction:rtl;margin-top:5px}
+.fl{font-size:12px;font-weight:700;color:#4A7A4A;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;display:block}
+input{width:100%;padding:14px 16px;font-size:17px;font-family:'Baloo 2',cursive;font-weight:700;border:3px solid #C8E8D0;border-radius:14px;outline:none;color:var(--tx);background:#F5FFF8;transition:all .2s}
+input:focus{border-color:var(--gl);box-shadow:0 0 0 4px rgba(4,163,68,.14);background:var(--w)}
+input::placeholder{color:#AADABC;font-weight:400}
+.fg{margin-bottom:14px}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.sbtn{padding:14px 6px;border:3px solid #C8E8D0;border-radius:14px;background:#F5FFF8;cursor:pointer;text-align:center;transition:all .15s;font-family:'Baloo 2',cursive}
+.sbtn .si{font-size:22px;display:block;margin-bottom:3px}
+.sbtn .sn{font-size:12px;font-weight:700;color:var(--g)}
+.sbtn.sel{border-color:var(--g);background:#E8F8EE;transform:scale(1.04)}
+.btn-p{width:100%;padding:16px;background:linear-gradient(135deg,var(--g),var(--gm));color:var(--w);font-size:17px;font-weight:800;font-family:'Baloo 2',cursive;border:none;border-radius:16px;cursor:pointer;box-shadow:0 6px 24px rgba(1,65,28,.35);transition:transform .15s;margin-top:4px}
+.btn-p:active{transform:scale(.97)}
+.err-msg{background:#FEE8E7;border:2px solid #F5C6C3;color:#C0392B;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;margin-top:8px;display:none;text-align:center}
+.err-msg.show{display:block;animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.strip{width:100%;max-width:680px;background:var(--g);border-radius:14px;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;z-index:1;box-shadow:0 4px 16px rgba(1,65,28,.2)}
+.sn-n{font-size:14px;font-weight:800;color:var(--w);display:flex;align-items:center;gap:6px}
+.sn-s{font-size:11px;color:rgba(255,255,255,.75);font-weight:600}
+.pw{width:100%;margin-bottom:14px}
+.pt{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.pl{font-size:11px;font-weight:700;color:#4A7A4A;text-transform:uppercase;letter-spacing:1px}
+.pc{font-size:19px;font-weight:800;color:var(--g)}
+.pb{height:9px;background:#C8E8D0;border-radius:9px;overflow:hidden}
+.pf{height:100%;background:linear-gradient(90deg,var(--gl),var(--gold));border-radius:9px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.ibox{width:100%;background:linear-gradient(135deg,#F0FFF8,#E8F8EE);border:2.5px solid #C8E8D0;border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;min-height:155px;padding:12px;overflow:hidden}
+.ibox svg{max-width:100%;max-height:220px}
+.qt{font-size:18px;font-weight:700;color:var(--tx);text-align:center;margin-bottom:7px;line-height:1.4}
+.qur{font-family:'Noto Nastaliq Urdu',serif;font-size:17px;color:#2E6B3E;direction:rtl;text-align:right;margin-bottom:12px;background:#F5FFF8;padding:9px 12px;border-radius:10px;border-right:4px solid var(--gl);line-height:2}
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.abtn{padding:14px 11px;border:2.5px solid #C8E8D0;border-radius:16px;background:var(--w);cursor:pointer;transition:all .15s;text-align:center;box-shadow:0 3px 10px rgba(1,65,28,.08)}
+.abtn:active{transform:scale(.95)}
+.albl{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:#E8F8EE;border-radius:7px;font-size:14px;font-weight:900;color:var(--g);margin-bottom:5px;transition:all .15s}
+.atxt{font-size:14px;font-weight:700;color:var(--tx);display:block;line-height:1.3}
+.aur{font-family:'Noto Nastaliq Urdu',serif;font-size:14px;color:#4A7A4A;direction:rtl;display:block;margin-top:2px}
+.abtn:hover,.abtn.selected{border-color:var(--g);background:linear-gradient(135deg,#F0F8F2,#E8F5EC)}
+.abtn.selected .albl{background:var(--g);color:var(--w)}
+.abtn.cor{border-color:var(--gl);background:linear-gradient(135deg,#E8F8EE,#D4F0DE);animation:bounce .4s}
+.abtn.cor .albl{background:var(--gl);color:var(--w)}
+.abtn.wrg{border-color:#E74C3C;background:#FEF0EF;animation:wobble .4s}
+.abtn.wrg .albl{background:#E74C3C;color:var(--w)}
+@keyframes bounce{0%,100%{transform:scale(1)}40%{transform:scale(1.05)}}
+@keyframes wobble{0%,100%{transform:translateX(0)}30%{transform:translateX(-5px)}70%{transform:translateX(5px)}}
+.fb{border-radius:14px;text-align:center;margin-bottom:12px;display:none;padding:0}
+.fb.show{display:block;animation:popIn .3s}
+.fb-inner{padding:14px 18px;border-radius:14px}
+.fb-icon{font-size:28px;display:block;margin-bottom:5px}
+.fb-main{font-size:19px;font-weight:800;display:block;margin-bottom:3px}
+.fb-sub{font-size:13px;font-weight:600;display:block;opacity:.8}
+.fb.cfb .fb-inner{background:#E8F8EE;color:var(--g);border:2.5px solid var(--gl)}
+.fb.wfb .fb-inner{background:#FEF0EF;color:#C0392B;border:2.5px solid #F5A89F}
+.btn-n{width:100%;padding:16px;background:linear-gradient(135deg,var(--g),var(--gm));color:var(--w);font-size:16px;font-weight:800;font-family:'Baloo 2',cursive;border:none;border-radius:16px;cursor:pointer;box-shadow:0 6px 24px rgba(1,65,28,.3);display:none;transition:transform .15s}
+.btn-n:active{transform:scale(.97)}
+.btn-n.show{display:block;animation:popIn .3s cubic-bezier(.34,1.56,.64,1)}
+.sring{width:140px;height:140px;border-radius:50%;background:conic-gradient(var(--gl) 0%,var(--gl) var(--pct),#C8E8D0 var(--pct));display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(1,65,28,.2);position:relative}
+.sring::before{content:'';position:absolute;width:105px;height:105px;background:var(--w);border-radius:50%}
+.si2{position:relative;z-index:1;text-align:center}
+.spct{font-size:30px;font-weight:900;color:var(--g)}
+.slbl{font-size:10px;font-weight:700;color:#4A7A4A;letter-spacing:1px}
+.rbadge{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 22px;border-radius:50px;font-size:16px;font-weight:800;margin-bottom:14px}
+.rbadge.pass{background:#E8F8EE;color:var(--g);border:2px solid var(--gl)}
+.rbadge.fail{background:#FEF0EF;color:#C0392B;border:2px solid #F5A89F}
+.tv-btn{width:100%;padding:12px;background:linear-gradient(135deg,#2C3E50,#1A252F);color:var(--w);font-size:14px;font-weight:700;font-family:'Baloo 2',cursive;border:none;border-radius:13px;cursor:pointer;margin-top:8px}
+.tv-wrap{display:none;margin-top:14px}
+.tv-wrap.show{display:block;animation:popIn .3s}
+.tv-title{font-size:15px;font-weight:800;color:var(--g);margin-bottom:10px;text-align:center;padding:8px;background:#E8F8EE;border-radius:10px;border:2px solid var(--gl)}
+.tv-row{display:flex;align-items:flex-start;gap:7px;padding:9px 11px;border-radius:10px;margin-bottom:7px;border:2px solid}
+.tv-row.cor{background:#F0FFF8;border-color:#C8E8D0}
+.tv-row.wrg{background:#FEF5F5;border-color:#F5C6C3}
+.tv-q{flex:1;font-size:11px;color:#333;font-weight:600;line-height:1.4}
+.tv-ans{text-align:right;font-size:11px;font-weight:700;min-width:100px}
+.tv-mark{font-size:16px;margin-right:3px}
+.spin{width:48px;height:48px;border:5px solid #C8E8D0;border-top-color:var(--g);border-radius:50%;animation:spin .8s linear infinite;margin:36px auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:480px){.card{padding:20px 14px}.qt{font-size:15px}.atxt{font-size:12px}.agrid{gap:8px}}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div class="screen active" id="sc-setup">
+  <div class="logo-wrap">
+    <div class="logo-icon">📚</div>
+    <div class="logo-title">TAKMIL</div>
+    <div class="logo-sub">Level 2 — Assessment</div>
+    <div class="logo-ur">سطح ۲ — امتحان</div>
+  </div>
+  <div class="card">
+    <div class="fg"><label class="fl">PIN</label><input type="password" id="pin-in" placeholder="Enter PIN" maxlength="10" autocomplete="off"></div>
+    <div class="fg"><label class="fl">Student Name — نام طالب علم</label><input type="text" id="name-in" placeholder="Full name" style="letter-spacing:0"></div>
+    <div class="fg"><label class="fl">Subject — مضمون</label>
+      <div class="sgrid">
+        <button class="sbtn sel" onclick="selS('Math',this)"><span class="si">🔢</span><span class="sn">Math<br>ریاضی</span></button>
+        <button class="sbtn" onclick="selS('English',this)"><span class="si">🔤</span><span class="sn">English<br>انگریزی</span></button>
+        <button class="sbtn" onclick="selS('Urdu',this)"><span class="si" style="font-family:'Noto Nastaliq Urdu',serif;font-size:16px">اردو</span><span class="sn">Urdu</span></button>
+      </div>
+    </div>
+    <button class="btn-p" onclick="start()">شروع کریں • Start ▶</button>
+    <div class="err-msg" id="err">Please enter a valid PIN and student name.</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="screen" id="sc-load"><div class="card" style="text-align:center"><div class="spin"></div><div style="font-size:15px;font-weight:700;color:#4A7A4A">Loading…</div></div></div>
+
+<!-- STRIP -->
+<div class="strip" id="strip" style="display:none"><div class="sn-n">👤 <span id="sn-txt"></span></div><div class="sn-s" id="ss-txt"></div></div>
+
+<!-- QUESTION -->
+<div class="screen" id="sc-q">
+  <div class="card">
+    <div class="pw"><div class="pt"><span class="pl">Question</span><span class="pc"><span id="qn">1</span>/<span id="qt">10</span></span></div><div class="pb"><div class="pf" id="pf" style="width:0%"></div></div></div>
+    <div class="ibox" id="ibox"></div>
+    <div class="qt" id="qen"></div>
+    <div class="qur" id="qur" style="display:none"></div>
+    <div class="agrid" id="agrid"></div>
+    <div class="fb" id="fb"><div class="fb-inner"><span class="fb-icon" id="fb-ico"></span><span class="fb-main" id="fb-main"></span><span class="fb-sub" id="fb-sub"></span></div></div>
+    <button class="btn-n" id="btn-n" onclick="nextQ()">Next →</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="sc-res">
+  <div class="card">
+    <div class="logo-wrap" style="margin-bottom:12px">
+      <div class="logo-icon" style="width:60px;height:60px;font-size:26px;animation:none">🏆</div>
+      <div class="logo-title" style="font-size:20px">Assessment Complete!</div>
+      <div class="logo-ur" style="font-size:14px">امتحان مکمل ہوگیا!</div>
+    </div>
+    <div style="text-align:center;font-size:13px;font-weight:700;color:#4A7A4A;margin-bottom:7px" id="rname"></div>
+    <div style="text-align:center;margin:8px 0 16px"><div class="sring" id="sring" style="--pct:0%"><div class="si2"><div class="spct" id="rpct">0%</div><div class="slbl" id="rfrac">0/0</div></div></div></div>
+    <div class="rbadge" id="rbadge">✅ PASSED</div>
+    <div style="background:linear-gradient(135deg,#F0F8F2,#E8F5EC);border-radius:14px;border:2px solid #C8E8D0;padding:14px;text-align:center;margin-bottom:12px">
+      <div style="font-size:30px;margin-bottom:5px">👩‍🏫</div>
+      <div style="font-size:14px;font-weight:700;color:var(--g)">Please give the tablet to your teacher</div>
+      <div style="font-family:'Noto Nastaliq Urdu',serif;font-size:13px;color:#4A7A4A;direction:rtl;margin-top:4px">براہ کرم ٹیبلیٹ استاد کو دیں</div>
+    </div>
+    <button class="tv-btn" onclick="toggleTV()">👩‍🏫 Teacher Summary — استاد کا خلاصہ</button>
+    <div class="tv-wrap" id="tv-wrap"><div class="tv-title">📋 Answer Sheet</div><div id="tv-rows"></div></div>
+    <button class="btn-p" onclick="reset()" style="margin-top:10px;background:linear-gradient(135deg,#4A6B4A,#2E4E2E)">New Student — نیا طالب علم</button>
+  </div>
+</div>
+
+<script>
+// ── ENGINE ────────────────────────────────────────────────────
+let G={subj:'Math',name:'',qs:[],cur:0,score:0,done:false,log:[]};
+const LBL=['A','B','C','D'];
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function selS(s,el){G.subj=s;document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel')}
+
+async function start(){
+  const pin=document.getElementById('pin-in').value.trim();
+  const name=document.getElementById('name-in').value.trim();
+  const err=document.getElementById('err');
+  err.classList.remove('show');
+  if(pin.length<4){err.textContent='Please enter a valid PIN.';err.classList.add('show');return}
+  if(name.length<2){err.textContent='Please enter the student name.';err.classList.add('show');return}
+  show('sc-load');
+  G.name=name;G.cur=0;G.score=0;G.done=false;G.log=[];
+  const bank=[...(QUESTION_BANK[G.subj]||[])];
+  for(let i=bank.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bank[i],bank[j]]=[bank[j],bank[i]]}
+  G.qs=bank.slice(0,Math.min(10,bank.length));
+  try{await fetch('/portal/session/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin,studentName:name})})}catch(e){}
+  document.getElementById('sn-txt').textContent=name;
+  document.getElementById('ss-txt').textContent=`${G.subj} • Level 2`;
+  document.getElementById('strip').style.display='flex';
+  renderQ(0);show('sc-q');
+}
+
+function renderQ(idx){
+  G.done=false;
+  const q=G.qs[idx],tot=G.qs.length;
+  document.getElementById('qn').textContent=idx+1;
+  document.getElementById('qt').textContent=tot;
+  document.getElementById('pf').style.width=`${(idx/tot)*100}%`;
+  // Layer 2: image from library by ID only
+  const svg=IMAGE_LIB[q.img]||`<svg viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="140" rx="14" fill="#ECF0F1"/><text x="100" y="78" text-anchor="middle" font-size="14" fill="#888" font-family="Arial">Image: ${q.img}</text></svg>`;
+  document.getElementById('ibox').innerHTML=svg;
+  // Layer 1: question text from bank only
+  document.getElementById('qen').textContent=q.q_en;
+  const ur=document.getElementById('qur');
+  if(q.q_ur){ur.textContent=q.q_ur;ur.style.display='block'}else ur.style.display='none';
+  // Render options — HTML only, never SVG
+  const grid=document.getElementById('agrid');
+  grid.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='abtn';btn.dataset.i=i;
+    const isUr=/[\u0600-\u06FF]/.test(opt);
+    btn.innerHTML=`<span class="albl">${LBL[i]}</span><span class="atxt${isUr?' aur':''}">${opt}</span>`;
+    btn.onclick=()=>pick(i);
+    grid.appendChild(btn);
+  });
+  document.getElementById('fb').className='fb';
+  document.getElementById('btn-n').classList.remove('show');
+}
+
+function pick(idx){
+  if(G.done)return;G.done=true;
+  const q=G.qs[G.cur];
+  const right=idx===q.ans;
+  if(right)G.score++;
+  G.log.push({q:q.q_en.slice(0,60),chosen:q.opts[idx],correct:q.opts[q.ans],right});
+  document.querySelectorAll('.abtn').forEach(b=>{
+    const i=parseInt(b.dataset.i);
+    if(i===q.ans)b.classList.add('cor');
+    else if(i===idx&&!right)b.classList.add('wrg');
+  });
+  const fb=document.getElementById('fb');
+  document.getElementById('fb-ico').textContent=right?'🌟':'❌';
+  document.getElementById('fb-main').textContent=right?'Correct! — درست جواب':'Wrong! — غلط جواب';
+  document.getElementById('fb-sub').textContent=right?'Well done! شاباش!':`Answer: ${q.opts[q.ans]}`;
+  fb.className=`fb show ${right?'cfb':'wfb'}`;
+  const nb=document.getElementById('btn-n');
+  nb.textContent=G.cur>=G.qs.length-1?'🎓 See Results':'Next Question →';
+  nb.classList.add('show');
+}
+
+function nextQ(){G.cur++;G.cur<G.qs.length?(renderQ(G.cur),window.scrollTo(0,0)):showResults()}
+
+function showResults(){
+  const tot=G.qs.length,pct=Math.round((G.score/tot)*100),pass=pct>=70;
+  document.getElementById('rname').textContent=G.name;
+  document.getElementById('rpct').textContent=pct+'%';
+  document.getElementById('rfrac').textContent=`${G.score}/${tot}`;
+  document.getElementById('sring').style.setProperty('--pct',pct+'%');
+  const rb=document.getElementById('rbadge');
+  rb.textContent=pass?'✅ PASSED — کامیاب 🌟':'📚 Keep Trying — مزید محنت کریں';
+  rb.className=`rbadge ${pass?'pass':'fail'}`;
+  const rows=document.getElementById('tv-rows');rows.innerHTML='';
+  G.log.forEach((l,i)=>{const d=document.createElement('div');d.className=`tv-row ${l.right?'cor':'wrg'}`;d.innerHTML=`<span class="tv-mark">${l.right?'✅':'❌'}</span><div class="tv-q">Q${i+1}: ${l.q}…</div><div class="tv-ans"><div style="color:#2980B9">Student: ${l.chosen}</div><div style="color:${l.right?'#01411C':'#C0392B'}">Answer: ${l.correct}</div></div>`;rows.appendChild(d)});
+  document.getElementById('strip').style.display='none';show('sc-res');
+}
+
+function toggleTV(){document.getElementById('tv-wrap').classList.toggle('show')}
+
+function reset(){
+  G={subj:'Math',name:'',qs:[],cur:0,score:0,done:false,log:[]};
+  document.getElementById('name-in').value='';document.getElementById('pin-in').value='';
+  document.getElementById('err').classList.remove('show');
+  document.getElementById('strip').style.display='none';
+  document.getElementById('tv-wrap').classList.remove('show');
+  document.querySelectorAll('.sbtn').forEach((b,i)=>b.classList.toggle('sel',i===0));
+  show('sc-setup');
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('name-in').addEventListener('keydown',e=>{if(e.key==='Enter')start()});
+  document.addEventListener('keydown',e=>{
+    if(!document.getElementById('sc-q').classList.contains('active'))return;
+    const m={a:0,b:1,c:2,d:3,A:0,B:1,C:2,D:3};
+    if(m[e.key]!==undefined)pick(m[e.key]);
+    if(e.key==='Enter'){const nb=document.getElementById('btn-n');if(nb.classList.contains('show'))nextQ()}
+  });
+});
+</script>
+</body>
+</html>
