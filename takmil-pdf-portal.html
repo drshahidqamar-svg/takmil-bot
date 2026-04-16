@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TAKMIL — Level 1 Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:#01411C; --green-mid:#026B2F; --green-lite:#04A344;
+  --gold:#F5C842; --white:#FFFFFF; --text:#1A2E1A;
+  --radius:24px; --shadow:0 8px 40px rgba(1,65,28,0.15);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Baloo 2',cursive;background:linear-gradient(145deg,#E8F8F5,#F0FFF8,#FFF8E8);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 10% 20%,rgba(4,163,68,0.08) 0%,transparent 40%),radial-gradient(circle at 90% 80%,rgba(245,200,66,0.08) 0%,transparent 40%)}
+.screen{display:none;flex-direction:column;align-items:center;width:100%;max-width:680px;z-index:1;position:relative}
+.screen.active{display:flex;animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes popIn{from{opacity:0;transform:scale(0.92) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.card{background:white;border-radius:32px;padding:32px 28px;width:100%;box-shadow:var(--shadow);border:2px solid rgba(4,163,68,0.1)}
+.logo-wrap{text-align:center;margin-bottom:24px}
+.logo-icon{width:76px;height:76px;background:linear-gradient(135deg,var(--green),var(--green-lite));border-radius:22px;display:inline-flex;align-items:center;justify-content:center;font-size:38px;margin-bottom:10px;box-shadow:0 8px 28px rgba(1,65,28,0.3);animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.logo-title{font-size:34px;font-weight:800;color:var(--green);letter-spacing:-1px}
+.logo-sub{font-size:13px;color:#4A7A4A;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+.logo-urdu{font-family:'Noto Nastaliq Urdu',serif;font-size:18px;color:var(--green-mid);direction:rtl;margin-top:6px}
+.field-label{font-size:13px;font-weight:700;color:#4A7A4A;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;display:block}
+input{width:100%;padding:16px 18px;font-size:18px;font-family:'Baloo 2',cursive;font-weight:700;border:3px solid #C8E8D0;border-radius:16px;outline:none;color:var(--text);background:#F5FFF8;transition:all 0.2s}
+input:focus{border-color:var(--green-lite);box-shadow:0 0 0 4px rgba(4,163,68,0.15);background:white}
+input::placeholder{color:#AADABC;font-weight:400}
+.field-group{margin-bottom:16px}
+.subject-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.subj-btn{padding:16px 8px;border:3px solid #C8E8D0;border-radius:18px;background:#F5FFF8;cursor:pointer;text-align:center;transition:all 0.15s;font-family:'Baloo 2',cursive}
+.subj-btn .si{font-size:26px;display:block;margin-bottom:4px}
+.subj-btn .sn{font-size:13px;font-weight:700;color:var(--green)}
+.subj-btn.selected{border-color:var(--green);background:#E8F8EE;transform:scale(1.04)}
+.btn-primary{width:100%;padding:18px;background:linear-gradient(135deg,var(--green),var(--green-mid));color:white;font-size:19px;font-weight:800;font-family:'Baloo 2',cursive;border:none;border-radius:18px;cursor:pointer;box-shadow:0 6px 24px rgba(1,65,28,0.35);transition:transform 0.15s;margin-top:6px}
+.btn-primary:active{transform:scale(0.97)}
+.err{background:#FEE8E7;border:2px solid #F5C6C3;color:#C0392B;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:700;margin-top:10px;display:none;text-align:center}
+.err.show{display:block;animation:shake 0.4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.progress-wrap{width:100%;margin-bottom:18px}
+.prog-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.prog-lbl{font-size:12px;font-weight:700;color:#4A7A4A;text-transform:uppercase;letter-spacing:1px}
+.prog-cnt{font-size:20px;font-weight:800;color:var(--green)}
+.prog-bar{height:10px;background:#C8E8D0;border-radius:10px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--green-lite),var(--gold));border-radius:10px;transition:width 0.5s cubic-bezier(0.4,0,0.2,1)}
+.student-strip{width:100%;max-width:680px;background:var(--green);border-radius:16px;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;z-index:1;box-shadow:0 4px 16px rgba(1,65,28,0.2)}
+.sn-name{font-size:15px;font-weight:800;color:white;display:flex;align-items:center;gap:6px}
+.sn-sub{font-size:12px;color:rgba(255,255,255,0.75);font-weight:600}
+.image-box{width:100%;background:linear-gradient(135deg,#F0FFF8,#E8F8EE);border:3px solid #C8E8D0;border-radius:22px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;min-height:180px;padding:14px;overflow:hidden}
+.image-box svg{max-width:100%;max-height:240px}
+.q-text{font-size:20px;font-weight:700;color:var(--text);text-align:center;margin-bottom:8px;line-height:1.4}
+.q-urdu{font-family:'Noto Nastaliq Urdu',serif;font-size:18px;color:#2E6B3E;direction:rtl;text-align:right;margin-bottom:16px;background:#F5FFF8;padding:10px 14px;border-radius:12px;border-right:4px solid var(--green-lite);line-height:2}
+.answers-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.answers-grid.cols1{grid-template-columns:1fr}
+.answers-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+.ans-btn{padding:16px 12px;border:3px solid #C8E8D0;border-radius:18px;background:white;cursor:pointer;transition:all 0.15s;text-align:center;box-shadow:0 4px 12px rgba(1,65,28,0.08)}
+.ans-btn:active{transform:scale(0.95)}
+.ans-lbl{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:#E8F8EE;border-radius:8px;font-size:16px;font-weight:900;color:var(--green);margin-bottom:6px;transition:all 0.15s}
+.ans-text{font-size:15px;font-weight:700;color:var(--text);display:block;line-height:1.3}
+.ans-svg{display:block;margin:0 auto 6px}
+.ans-urdu{font-family:'Noto Nastaliq Urdu',serif;font-size:15px;color:#4A7A4A;direction:rtl;display:block;margin-top:3px}
+.ans-btn.selected,.ans-btn:hover{border-color:var(--green);background:linear-gradient(135deg,#F0F8F2,#E8F5EC)}
+.ans-btn.selected .ans-lbl{background:var(--green);color:white}
+.ans-btn.correct{border-color:var(--green-lite);background:linear-gradient(135deg,#E8F8EE,#D4F0DE)}
+.ans-btn.correct .ans-lbl{background:var(--green-lite);color:white}
+.ans-btn.wrong{border-color:#E74C3C;background:#FEF0EF}
+.ans-btn.wrong .ans-lbl{background:#E74C3C;color:white}
+.feedback{padding:12px 18px;border-radius:14px;font-size:17px;font-weight:700;text-align:center;margin-bottom:14px;display:none}
+.feedback.cfb{background:#E8F8EE;color:var(--green);border:2px solid var(--green-lite);display:block}
+.feedback.wfb{background:#FEF0EF;color:#C0392B;border:2px solid #F5A89F;display:block}
+.btn-next{width:100%;padding:17px;background:linear-gradient(135deg,var(--green),var(--green-mid));color:white;font-size:17px;font-weight:800;font-family:'Baloo 2',cursive;border:none;border-radius:18px;cursor:pointer;box-shadow:0 6px 24px rgba(1,65,28,0.3);display:none;transition:transform 0.15s}
+.btn-next:active{transform:scale(0.97)}
+.btn-next.show{display:block;animation:popIn 0.3s cubic-bezier(0.34,1.56,0.64,1)}
+.score-wrap{text-align:center;margin:10px 0 22px}
+.score-ring{width:150px;height:150px;border-radius:50%;background:conic-gradient(var(--green-lite) 0%,var(--green-lite) var(--pct),#C8E8D0 var(--pct));display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(1,65,28,0.2);position:relative}
+.score-ring::before{content:'';position:absolute;width:112px;height:112px;background:white;border-radius:50%}
+.score-inner{position:relative;z-index:1}
+.score-pct{font-size:34px;font-weight:900;color:var(--green)}
+.score-lbl{font-size:11px;font-weight:700;color:#4A7A4A;letter-spacing:1px}
+.res-badge{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 24px;border-radius:50px;font-size:17px;font-weight:800;margin-bottom:18px}
+.res-badge.passed{background:#E8F8EE;color:var(--green);border:2px solid var(--green-lite)}
+.res-badge.failed{background:#FEF0EF;color:#C0392B;border:2px solid #F5A89F}
+.done-card{background:linear-gradient(135deg,#F0F8F2,#E8F5EC);border-radius:16px;border:2px solid #C8E8D0;padding:18px;text-align:center}
+.done-card .di{font-size:36px;margin-bottom:6px}
+.done-card .dm{font-size:16px;font-weight:700;color:var(--green)}
+.done-card .du{font-family:'Noto Nastaliq Urdu',serif;font-size:14px;color:#4A7A4A;direction:rtl;margin-top:5px}
+.spinner{width:52px;height:52px;border:5px solid #C8E8D0;border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:40px auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:480px){.card{padding:22px 16px}.q-text{font-size:17px}.ans-text{font-size:13px}.answers-grid{gap:8px}}
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: SETUP -->
+<div class="screen active" id="sc-setup">
+  <div class="logo-wrap">
+    <div class="logo-icon">📚</div>
+    <div class="logo-title">TAKMIL</div>
+    <div class="logo-sub">Level 1 Assessment</div>
+    <div class="logo-urdu">سطح ۱ — امتحان</div>
+  </div>
+  <div class="card">
+    <div class="field-group">
+      <label class="field-label">PIN</label>
+      <input type="password" id="pin-in" placeholder="Enter PIN" maxlength="10" autocomplete="off">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Student Name — نام طالب علم</label>
+      <input type="text" id="name-in" placeholder="Full name" style="letter-spacing:0">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Subject — مضمون</label>
+      <div class="subject-grid">
+        <button class="subj-btn selected" onclick="selSubj('Math',this)"><span class="si">🔢</span><span class="sn">Math</span></button>
+        <button class="subj-btn" onclick="selSubj('English',this)"><span class="si">🔤</span><span class="sn">English</span></button>
+        <button class="subj-btn" onclick="selSubj('Urdu',this)"><span class="si" style="font-family:'Noto Nastaliq Urdu',serif;font-size:20px">اردو</span><span class="sn">Urdu</span></button>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="startAssessment()">شروع کریں • Start ▶</button>
+    <div class="err" id="err">Please enter a valid PIN and student name.</div>
+  </div>
+</div>
+
+<!-- SCREEN 2: LOADING -->
+<div class="screen" id="sc-loading">
+  <div class="card" style="text-align:center">
+    <div class="spinner"></div>
+    <div style="font-size:17px;font-weight:700;color:#4A7A4A">Loading questions…</div>
+  </div>
+</div>
+
+<!-- SCREEN 3: QUESTION -->
+<div class="student-strip" id="stu-strip" style="display:none">
+  <div class="sn-name">👤 <span id="strip-name"></span></div>
+  <div class="sn-sub" id="strip-sub"></div>
+</div>
+<div class="screen" id="sc-question">
+  <div class="card">
+    <div class="progress-wrap">
+      <div class="prog-top">
+        <span class="prog-lbl">Question</span>
+        <span class="prog-cnt"><span id="qn">1</span>/<span id="qt">10</span></span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" id="pf" style="width:0%"></div></div>
+    </div>
+    <div class="image-box" id="img-box"></div>
+    <div class="q-text" id="q-en"></div>
+    <div class="q-urdu" id="q-ur" style="display:none"></div>
+    <div class="answers-grid" id="ans-grid"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Next →</button>
+  </div>
+</div>
+
+<!-- SCREEN 4: RESULTS -->
+<div class="screen" id="sc-results">
+  <div class="card">
+    <div class="logo-wrap" style="margin-bottom:14px">
+      <div class="logo-icon" style="width:64px;height:64px;font-size:30px;animation:none">🏆</div>
+      <div class="logo-title" style="font-size:22px">Assessment Complete!</div>
+      <div class="logo-urdu" style="font-size:16px">امتحان مکمل ہوگیا!</div>
+    </div>
+    <div style="text-align:center;font-size:15px;font-weight:700;color:#4A7A4A;margin-bottom:8px"><span id="r-name"></span></div>
+    <div class="score-wrap">
+      <div class="score-ring" id="s-ring" style="--pct:0%">
+        <div class="score-inner">
+          <div class="score-pct" id="r-pct">0%</div>
+          <div class="score-lbl" id="r-frac">0/0</div>
+        </div>
+      </div>
+    </div>
+    <div class="res-badge" id="r-badge">✅ PASSED</div>
+    <div class="done-card">
+      <div class="di">👩‍🏫</div>
+      <div class="dm">Please give the tablet to your teacher</div>
+      <div class="du">براہ کرم ٹیبلیٹ استاد کو دیں</div>
+    </div>
+    <button class="btn-primary" onclick="reset()" style="margin-top:14px;background:linear-gradient(135deg,#4A6B4A,#2E4E2E)">New Student — نیا طالب علم</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SVG LIBRARY — all based on actual PDF content
+// ═══════════════════════════════════════════════════════════════
+const S = {
+
+  // ── BEACH BALL (English Q1 adapted) ─────────────────────────
+  beach_ball_colored:`<svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="110" cy="110" r="100" fill="white" stroke="#555" stroke-width="3"/>
+    <path d="M110,10 Q145,55 145,110 Q145,165 110,210" fill="#E74C3C" stroke="#555" stroke-width="2"/>
+    <path d="M110,10 Q75,55 75,110 Q75,165 110,210" fill="#27AE60" stroke="#555" stroke-width="2"/>
+    <path d="M13,75 Q60,90 110,110 Q160,90 207,75" fill="#F5C842" stroke="#555" stroke-width="2"/>
+    <path d="M13,145 Q60,130 110,110 Q160,130 207,145" fill="#E67E22" stroke="#555" stroke-width="2"/>
+    <path d="M75,110 Q75,165 110,210 Q60,130 13,145" fill="#2980B9" stroke="#555" stroke-width="2"/>
+    <path d="M145,110 Q145,165 110,210 Q160,130 207,145" fill="#85C1E9" stroke="#555" stroke-width="2"/>
+    <circle cx="110" cy="110" r="12" fill="white" stroke="#555" stroke-width="2"/>
+  </svg>`,
+
+  // ── ODD LETTER OUT visuals ───────────────────────────────────
+  odd_letter_E:`<svg viewBox="0 0 280 80" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="80" rx="12" fill="#F0F8FF"/>
+    ${['E','E','F','E'].map((l,i)=>`<text x="${35+i*65}" y="58" text-anchor="middle" font-size="48" font-weight="900" font-family="Georgia,serif" fill="${l==='F'?'#E74C3C':'#2C3E50'}">${l}</text>`).join('')}
+    <text x="240" y="72" font-size="12" fill="#E74C3C" font-weight="700" font-family="Arial">← different</text>
+  </svg>`,
+
+  odd_letter_O:`<svg viewBox="0 0 280 80" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="80" rx="12" fill="#FFF8F0"/>
+    ${['O','Q','O','O'].map((l,i)=>`<text x="${35+i*65}" y="58" text-anchor="middle" font-size="48" font-weight="900" font-family="Georgia,serif" fill="${l==='Q'?'#E74C3C':'#2C3E50'}">${l}</text>`).join('')}
+  </svg>`,
+
+  odd_letter_U:`<svg viewBox="0 0 280 80" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="80" rx="12" fill="#F0FFF8"/>
+    ${['U','U','V','U'].map((l,i)=>`<text x="${35+i*65}" y="58" text-anchor="middle" font-size="48" font-weight="900" font-family="Georgia,serif" fill="${l==='V'?'#E74C3C':'#2C3E50'}">${l}</text>`).join('')}
+  </svg>`,
+
+  // ── CVC WORD PICTURES ────────────────────────────────────────
+  cap_pic:`<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="100" cy="110" rx="80" ry="25" fill="#3498DB" opacity="0.3"/>
+    <path d="M30,100 Q50,40 100,35 Q150,40 170,100 Z" fill="#3498DB"/>
+    <rect x="20" y="98" width="160" height="18" rx="9" fill="#2980B9"/>
+    <ellipse cx="100" cy="38" rx="12" ry="8" fill="#E74C3C"/>
+    <text x="100" y="150" text-anchor="middle" font-size="20" font-weight="900" fill="#2980B9" font-family="Georgia,serif">cap</text>
+  </svg>`,
+
+  cat_pic:`<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="100" cy="100" rx="55" ry="45" fill="#95A5A6"/>
+    <circle cx="100" cy="65" r="38" fill="#95A5A6"/>
+    <polygon points="68,38 58,12 80,32" fill="#7F8C8D"/>
+    <polygon points="132,38 142,12 120,32" fill="#7F8C8D"/>
+    <circle cx="88" cy="60" r="7" fill="#2C3E50"/>
+    <circle cx="112" cy="60" r="7" fill="#2C3E50"/>
+    <ellipse cx="100" cy="76" rx="6" ry="5" fill="#E91E63"/>
+    <text x="100" y="155" text-anchor="middle" font-size="20" font-weight="900" fill="#7F8C8D" font-family="Georgia,serif">cat</text>
+  </svg>`,
+
+  fan_pic:`<svg viewBox="0 0 200 170" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="80" r="12" fill="#555"/>
+    <ellipse cx="100" cy="45" rx="20" ry="32" fill="#3498DB" transform="rotate(0,100,80)"/>
+    <ellipse cx="130" cy="95" rx="20" ry="32" fill="#3498DB" transform="rotate(120,100,80)"/>
+    <ellipse cx="70" cy="95" rx="20" ry="32" fill="#3498DB" transform="rotate(240,100,80)"/>
+    <circle cx="100" cy="80" r="8" fill="#E74C3C"/>
+    <rect x="94" y="130" width="12" height="25" fill="#888"/>
+    <rect x="75" y="153" width="50" height="10" rx="5" fill="#888"/>
+    <text x="100" y="175" text-anchor="middle" font-size="20" font-weight="900" fill="#3498DB" font-family="Georgia,serif">fan</text>
+  </svg>`,
+
+  hat_pic:`<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="100" cy="118" rx="80" ry="20" fill="#8B4513"/>
+    <path d="M55,118 Q55,55 100,45 Q145,55 145,118 Z" fill="#A0522D"/>
+    <ellipse cx="100" cy="118" rx="65" ry="16" fill="#8B4513" opacity="0.5"/>
+    <text x="100" y="155" text-anchor="middle" font-size="20" font-weight="900" fill="#8B4513" font-family="Georgia,serif">hat</text>
+  </svg>`,
+
+  van_pic:`<svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg">
+    <rect x="15" y="55" width="190" height="80" rx="10" fill="#2ECC71"/>
+    <path d="M15,55 L40,20 L175,20 L205,55" fill="#27AE60"/>
+    <rect x="30" y="28" width="60" height="30" rx="4" fill="#87CEEB"/>
+    <rect x="100" y="28" width="65" height="30" rx="4" fill="#87CEEB"/>
+    <circle cx="50" cy="140" r="20" fill="#2C3E50"/>
+    <circle cx="50" cy="140" r="10" fill="#95A5A6"/>
+    <circle cx="165" cy="140" r="20" fill="#2C3E50"/>
+    <circle cx="165" cy="140" r="10" fill="#95A5A6"/>
+    <text x="110" y="158" text-anchor="middle" font-size="18" font-weight="900" fill="#27AE60" font-family="Georgia,serif">van</text>
+  </svg>`,
+
+  // ── VOWEL IDENTIFICATION ─────────────────────────────────────
+  vowel_hot:`<svg viewBox="0 0 220 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="100" rx="16" fill="#FEF9E7"/>
+    <text x="110" y="68" text-anchor="middle" font-size="56" font-weight="900" font-family="Georgia,serif" fill="#2C3E50">h<tspan fill="#E74C3C" text-decoration="underline">o</tspan>t</text>
+    <text x="110" y="92" text-anchor="middle" font-size="13" fill="#7F8C8D" font-family="Arial">'o' is the vowel</text>
+  </svg>`,
+
+  vowel_ant:`<svg viewBox="0 0 220 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="100" rx="16" fill="#FEF9E7"/>
+    <text x="110" y="68" text-anchor="middle" font-size="56" font-weight="900" font-family="Georgia,serif" fill="#2C3E50"><tspan fill="#E74C3C" text-decoration="underline">a</tspan>nt</text>
+  </svg>`,
+
+  vowel_fish:`<svg viewBox="0 0 220 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="100" rx="16" fill="#EBF5FB"/>
+    <text x="110" y="68" text-anchor="middle" font-size="56" font-weight="900" font-family="Georgia,serif" fill="#2C3E50">f<tspan fill="#E74C3C" text-decoration="underline">i</tspan>sh</text>
+  </svg>`,
+
+  // ── CAPITAL/SMALL LETTER MATCH ────────────────────────────────
+  capital_A:`<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="20" fill="#3498DB"/>
+    <text x="100" y="118" text-anchor="middle" font-size="110" font-weight="900" fill="white" font-family="Georgia,serif">A</text>
+    <text x="100" y="148" text-anchor="middle" font-size="14" fill="rgba(255,255,255,0.8)" font-family="Arial">Capital A</text>
+  </svg>`,
+
+  small_a:`<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="20" fill="#2ECC71"/>
+    <text x="100" y="118" text-anchor="middle" font-size="110" font-weight="900" fill="white" font-family="Georgia,serif">a</text>
+    <text x="100" y="148" text-anchor="middle" font-size="14" fill="rgba(255,255,255,0.8)" font-family="Arial">Small a</text>
+  </svg>`,
+
+  // ── MATH — ZERO / SIFAR ──────────────────────────────────────
+  zero_shape:`<svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="110" cy="110" rx="95" ry="95" fill="none" stroke="#27AE60" stroke-width="8"/>
+    <ellipse cx="110" cy="110" rx="60" ry="60" fill="none" stroke="#27AE60" stroke-width="6"/>
+    <text x="110" y="185" text-anchor="middle" font-size="20" font-weight="900" fill="#27AE60" font-family="Noto Nastaliq Urdu,serif">صفر = ۰</text>
+  </svg>`,
+
+  // ── TREE WITH FRUIT vs WITHOUT ────────────────────────────────
+  tree_with_fruit:`<svg viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="68" y="155" width="24" height="40" rx="6" fill="#8B4513"/>
+    <circle cx="80" cy="100" r="65" fill="#27AE60"/>
+    <circle cx="80" cy="85" r="50" fill="#2ECC71"/>
+    ${[[55,75],[80,65],[105,78],[65,100],[95,95],[78,115]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="10" fill="#E74C3C"/>`).join('')}
+    <text x="80" y="198" text-anchor="middle" font-size="13" fill="#27AE60" font-weight="700" font-family="Noto Nastaliq Urdu,serif">پھل والا درخت ✓</text>
+  </svg>`,
+
+  tree_without_fruit:`<svg viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="68" y="155" width="24" height="40" rx="6" fill="#8B4513"/>
+    <circle cx="80" cy="100" r="65" fill="#95A5A6"/>
+    <circle cx="80" cy="85" r="50" fill="#7F8C8D"/>
+    <text x="80" y="198" text-anchor="middle" font-size="13" fill="#E74C3C" font-weight="700" font-family="Noto Nastaliq Urdu,serif">بغیر پھل ← یہ</text>
+  </svg>`,
+
+  // ── COUNTING OBJECTS ─────────────────────────────────────────
+  count_3:`<svg viewBox="0 0 220 120" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="120" rx="16" fill="#FEF9E7"/>
+    ${[45,110,175].map(x=>`<polygon points="${x},20 ${x+10},42 ${x+35},42 ${x+15},56 ${x+22},78 ${x},64 ${x-22},78 ${x-15},56 ${x-35},42 ${x-10},42" fill="#F5C842" stroke="#D4A017" stroke-width="2"/>`).join('')}
+    <text x="110" y="112" text-anchor="middle" font-size="14" font-weight="900" fill="#D4A017" font-family="Arial">Count = 3</text>
+  </svg>`,
+
+  count_5:`<svg viewBox="0 0 280 120" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="120" rx="16" fill="#EBF5FB"/>
+    ${[28,84,140,196,252].map((x,i)=>`<circle cx="${x}" cy="55" r="28" fill="${['#E74C3C','#3498DB','#27AE60','#F5C842','#9B59B6'][i]}"/>`).join('')}
+    <text x="140" y="108" text-anchor="middle" font-size="14" font-weight="900" fill="#555" font-family="Arial">Count = 5</text>
+  </svg>`,
+
+  count_7:`<svg viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="130" rx="16" fill="#FEF9E7"/>
+    ${[22,64,106,150,194,236,278].map((x,i)=>`<rect x="${x-18}" y="20" width="36" height="70" rx="6" fill="${['#E74C3C','#3498DB','#27AE60','#F5C842','#9B59B6','#E67E22','#E74C3C'][i]}"/>`).join('')}
+    <text x="150" y="120" text-anchor="middle" font-size="14" font-weight="900" fill="#555" font-family="Arial">Count = 7</text>
+  </svg>`,
+
+  // ── ORDINAL NUMBERS ─────────────────────────────────────────
+  ordinal_first:`<svg viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="140" rx="16" fill="#EBF5FB"/>
+    ${[1,2,3,4,5].map((n,i)=>`
+      <circle cx="${30+i*45}" cy="60" r="24" fill="${i===0?'#F5C842':'#BDC3C7'}"/>
+      <text x="${30+i*45}" y="66" text-anchor="middle" font-size="18" font-weight="900" fill="${i===0?'#2C3E50':'white'}" font-family="Arial">${n}</text>
+    `).join('')}
+    <rect x="5" y="55" width="50" height="10" fill="#F5C842" opacity="0.3"/>
+    <text x="30" y="100" text-anchor="middle" font-size="14" font-weight="700" fill="#D4A017" font-family="Arial">1st = FIRST</text>
+    <text x="120" y="125" text-anchor="middle" font-size="13" fill="#7F8C8D" font-family="Arial">Which position is yellow?</text>
+  </svg>`,
+
+  ordinal_third:`<svg viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="140" rx="16" fill="#FEF9E7"/>
+    ${[1,2,3,4,5].map((n,i)=>`
+      <circle cx="${30+i*45}" cy="60" r="24" fill="${i===2?'#E74C3C':'#BDC3C7'}"/>
+      <text x="${30+i*45}" y="66" text-anchor="middle" font-size="18" font-weight="900" fill="white" font-family="Arial">${n}</text>
+    `).join('')}
+    <text x="120" y="100" text-anchor="middle" font-size="14" font-weight="700" fill="#E74C3C" font-family="Arial">3rd = THIRD</text>
+    <text x="120" y="125" text-anchor="middle" font-size="13" fill="#7F8C8D" font-family="Arial">Red circle is in which position?</text>
+  </svg>`,
+
+  // ── PLACE VALUE ──────────────────────────────────────────────
+  place_value_23:`<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="160" rx="16" fill="#F0FFF0"/>
+    <text x="120" y="45" text-anchor="middle" font-size="22" font-weight="900" fill="#2C3E50" font-family="Arial">Number: 23</text>
+    <rect x="20" y="60" width="90" height="60" rx="8" fill="#3498DB" opacity="0.2" stroke="#3498DB" stroke-width="2"/>
+    <text x="65" y="88" text-anchor="middle" font-size="16" font-weight="700" fill="#2980B9" font-family="Noto Nastaliq Urdu,serif">دہائی</text>
+    <text x="65" y="108" text-anchor="middle" font-size="28" font-weight="900" fill="#2980B9" font-family="Arial">2</text>
+    <rect x="130" y="60" width="90" height="60" rx="8" fill="#E74C3C" opacity="0.2" stroke="#E74C3C" stroke-width="2"/>
+    <text x="175" y="88" text-anchor="middle" font-size="16" font-weight="700" fill="#C0392B" font-family="Noto Nastaliq Urdu,serif">اکائی</text>
+    <text x="175" y="108" text-anchor="middle" font-size="28" font-weight="900" fill="#C0392B" font-family="Arial">3</text>
+    <text x="120" y="148" text-anchor="middle" font-size="14" fill="#555" font-family="Arial">2 tens + 3 units = 23</text>
+  </svg>`,
+
+  place_value_45:`<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="160" rx="16" fill="#FFF8F0"/>
+    <text x="120" y="45" text-anchor="middle" font-size="22" font-weight="900" fill="#2C3E50" font-family="Arial">Number: 45</text>
+    <rect x="20" y="60" width="90" height="60" rx="8" fill="#9B59B6" opacity="0.2" stroke="#9B59B6" stroke-width="2"/>
+    <text x="65" y="88" text-anchor="middle" font-size="16" font-weight="700" fill="#7D3C98" font-family="Noto Nastaliq Urdu,serif">دہائی</text>
+    <text x="65" y="108" text-anchor="middle" font-size="28" font-weight="900" fill="#7D3C98" font-family="Arial">4</text>
+    <rect x="130" y="60" width="90" height="60" rx="8" fill="#E67E22" opacity="0.2" stroke="#E67E22" stroke-width="2"/>
+    <text x="175" y="88" text-anchor="middle" font-size="16" font-weight="700" fill="#D35400" font-family="Noto Nastaliq Urdu,serif">اکائی</text>
+    <text x="175" y="108" text-anchor="middle" font-size="28" font-weight="900" fill="#D35400" font-family="Arial">5</text>
+    <text x="120" y="148" text-anchor="middle" font-size="14" fill="#555" font-family="Arial">4 tens + 5 units = 45</text>
+  </svg>`,
+
+  // ── URDU — LETTER JOINING ────────────────────────────────────
+  urdu_join_kitab:`<svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="160" rx="16" fill="#F5EEF8"/>
+    <text x="150" y="55" text-anchor="middle" font-size="18" fill="#6C3483" font-weight="700" font-family="Noto Nastaliq Urdu,serif">حروف جوڑیں</text>
+    <text x="150" y="100" text-anchor="middle" font-size="28" fill="#4A235A" font-weight="700" font-family="Noto Nastaliq Urdu,serif">ک + ت + ا + ب</text>
+    <text x="150" y="135" text-anchor="middle" font-size="14" fill="#7D3C98" font-weight="700" font-family="Arial">Join to make a word →</text>
+  </svg>`,
+
+  urdu_join_mela:`<svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="160" rx="16" fill="#EAF2FF"/>
+    <text x="150" y="55" text-anchor="middle" font-size="18" fill="#1A5276" font-weight="700" font-family="Noto Nastaliq Urdu,serif">حروف جوڑیں</text>
+    <text x="150" y="100" text-anchor="middle" font-size="28" fill="#1A3A5C" font-weight="700" font-family="Noto Nastaliq Urdu,serif">م + ی + ل + ا</text>
+    <text x="150" y="135" text-anchor="middle" font-size="14" fill="#2E86C1" font-weight="700" font-family="Arial">Join to make a word →</text>
+  </svg>`,
+
+  urdu_join_poda:`<svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="160" rx="16" fill="#E9F7EF"/>
+    <text x="150" y="55" text-anchor="middle" font-size="18" fill="#1E8449" font-weight="700" font-family="Noto Nastaliq Urdu,serif">حروف جوڑیں</text>
+    <text x="150" y="100" text-anchor="middle" font-size="28" fill="#145A32" font-weight="700" font-family="Noto Nastaliq Urdu,serif">پ + و + د + ا</text>
+    <text x="150" y="135" text-anchor="middle" font-size="14" fill="#27AE60" font-weight="700" font-family="Arial">Join to make a word →</text>
+  </svg>`,
+
+  // ── URDU — LIVING vs NON-LIVING ─────────────────────────────
+  lion_pic:`<svg viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="100" cy="115" rx="65" ry="48" fill="#C8860A"/>
+    <circle cx="100" cy="70" r="42" fill="#D4A017"/>
+    <circle cx="100" cy="70" r="55" fill="none" stroke="#8B6914" stroke-width="18" opacity="0.4"/>
+    <circle cx="88" cy="65" r="8" fill="#2C3E50"/>
+    <circle cx="112" cy="65" r="8" fill="#2C3E50"/>
+    <ellipse cx="100" cy="82" rx="10" ry="7" fill="#E8956A"/>
+    <path d="M90 90 Q100 97 110 90" stroke="#2C3E50" stroke-width="2.5" fill="none"/>
+    <text x="100" y="175" text-anchor="middle" font-size="14" font-weight="700" fill="#C8860A" font-family="Noto Nastaliq Urdu,serif">شیر — جاندار</text>
+  </svg>`,
+
+  mango_pic:`<svg viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
+    <path d="M100,155 Q55,130 50,90 Q48,55 100,40 Q152,55 150,90 Q145,130 100,155 Z" fill="#F5C842"/>
+    <path d="M100,40 Q115,15 130,10" stroke="#27AE60" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <ellipse cx="133" cy="8" rx="15" ry="8" fill="#27AE60" transform="rotate(-25,133,8)"/>
+    <ellipse cx="80" cy="75" rx="20" ry="35" fill="white" opacity="0.15" transform="rotate(-15,80,75)"/>
+    <text x="100" y="175" text-anchor="middle" font-size="14" font-weight="700" fill="#D4A017" font-family="Noto Nastaliq Urdu,serif">آم — بے جان</text>
+  </svg>`,
+
+  // ── PLANT PARTS ─────────────────────────────────────────────
+  plant_parts:`<svg viewBox="0 0 240 260" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="260" rx="16" fill="#E9F7EF"/>
+    <!-- roots -->
+    <path d="M120,220 Q90,240 70,255" stroke="#8B4513" stroke-width="4" fill="none"/>
+    <path d="M120,220 Q120,245 110,260" stroke="#8B4513" stroke-width="4" fill="none"/>
+    <path d="M120,220 Q150,240 165,255" stroke="#8B4513" stroke-width="4" fill="none"/>
+    <!-- stem -->
+    <rect x="114" y="130" width="12" height="92" rx="4" fill="#27AE60"/>
+    <!-- leaves -->
+    <ellipse cx="90" cy="165" rx="32" ry="16" fill="#2ECC71" transform="rotate(-30,90,165)"/>
+    <ellipse cx="150" cy="165" rx="32" ry="16" fill="#2ECC71" transform="rotate(30,150,165)"/>
+    <!-- flower -->
+    ${[0,60,120,180,240,300].map(a=>{const r=a*Math.PI/180;const x=120+22*Math.cos(r);const y=100+22*Math.sin(r);return `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="14" ry="9" fill="#E74C3C" transform="rotate(${a},${x.toFixed(1)},${y.toFixed(1)})"/>`;}).join('')}
+    <circle cx="120" cy="100" r="14" fill="#F5C842"/>
+    <!-- labels -->
+    <text x="58" y="95" font-size="12" fill="#E74C3C" font-weight="700" font-family="Noto Nastaliq Urdu,serif">پھول</text>
+    <text x="160" y="160" font-size="12" fill="#27AE60" font-weight="700" font-family="Noto Nastaliq Urdu,serif">پتا</text>
+    <text x="130" y="185" font-size="12" fill="#1E8449" font-weight="700" font-family="Noto Nastaliq Urdu,serif">تنا</text>
+    <text x="60" y="245" font-size="12" fill="#8B4513" font-weight="700" font-family="Noto Nastaliq Urdu,serif">جڑ</text>
+  </svg>`,
+
+  // ── HAMD DEFINITION ─────────────────────────────────────────
+  hamd_pic:`<svg viewBox="0 0 240 180" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="180" rx="16" fill="#FEF9E7"/>
+    <text x="120" y="50" text-anchor="middle" font-size="24" font-weight="900" fill="#D4A017" font-family="Noto Nastaliq Urdu,serif">حمد</text>
+    <text x="120" y="80" text-anchor="middle" font-size="14" fill="#7F8C8D" font-family="Noto Nastaliq Urdu,serif">ایک خاص قسم کی نظم</text>
+    <text x="120" y="110" text-anchor="middle" font-size="30" font-family="Noto Nastaliq Urdu,serif">🕌</text>
+    <text x="120" y="148" text-anchor="middle" font-size="14" fill="#7F8C8D" font-family="Noto Nastaliq Urdu,serif">کس کی تعریف میں لکھی جاتی ہے؟</text>
+  </svg>`,
+
+  // ── AERAAB ──────────────────────────────────────────────────
+  aeraab_pic:`<svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="160" rx="16" fill="#F5EEF8"/>
+    <text x="140" y="35" text-anchor="middle" font-size="16" font-weight="700" fill="#6C3483" font-family="Noto Nastaliq Urdu,serif">اعراب — حرکات</text>
+    <rect x="10" y="50" width="80" height="90" rx="10" fill="#E8DAEF"/>
+    <text x="50" y="90" text-anchor="middle" font-size="28" font-weight="900" fill="#6C3483" font-family="Noto Nastaliq Urdu,serif">اَ</text>
+    <text x="50" y="130" text-anchor="middle" font-size="13" fill="#7D3C98" font-family="Noto Nastaliq Urdu,serif">زبر = a</text>
+    <rect x="100" y="50" width="80" height="90" rx="10" fill="#D5EAF7"/>
+    <text x="140" y="90" text-anchor="middle" font-size="28" font-weight="900" fill="#1A5276" font-family="Noto Nastaliq Urdu,serif">اِ</text>
+    <text x="140" y="130" text-anchor="middle" font-size="13" fill="#2E86C1" font-family="Noto Nastaliq Urdu,serif">زیر = i</text>
+    <rect x="190" y="50" width="80" height="90" rx="10" fill="#D5F5E3"/>
+    <text x="230" y="90" text-anchor="middle" font-size="28" font-weight="900" fill="#1E8449" font-family="Noto Nastaliq Urdu,serif">اُ</text>
+    <text x="230" y="130" text-anchor="middle" font-size="13" fill="#27AE60" font-family="Noto Nastaliq Urdu,serif">پیش = u</text>
+  </svg>`,
+
+  // ── SUN / SURAJ ──────────────────────────────────────────────
+  sun_benefits:`<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+    ${Array.from({length:12},(_,i)=>{const a=i*30*Math.PI/180;return `<line x1="${110+58*Math.cos(a)}" y1="${100+58*Math.sin(a)}" x2="${110+82*Math.cos(a)}" y2="${100+82*Math.sin(a)}" stroke="#F39C12" stroke-width="5" stroke-linecap="round"/>`;}).join('')}
+    <circle cx="110" cy="100" r="52" fill="#F5C842"/>
+    <circle cx="94" cy="92" r="6" fill="#2C3E50" opacity="0.5"/>
+    <circle cx="126" cy="92" r="6" fill="#2C3E50" opacity="0.5"/>
+    <path d="M92 110 Q110 122 128 110" stroke="#2C3E50" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.5"/>
+    <!-- plant growing from sunlight -->
+    <rect x="95" y="155" width="30" height="8" rx="4" fill="#795548"/>
+    <rect x="108" y="130" width="4" height="28" fill="#27AE60"/>
+    <ellipse cx="100" cy="128" rx="18" ry="12" fill="#2ECC71"/>
+    <ellipse cx="120" cy="128" rx="18" ry="12" fill="#2ECC71"/>
+    <text x="110" y="192" text-anchor="middle" font-size="13" fill="#E67E22" font-weight="700" font-family="Noto Nastaliq Urdu,serif">سورج کی روشنی</text>
+  </svg>`,
+};
+
+// ═══════════════════════════════════════════════════════════════
+// QUESTION BANKS — directly adapted from your PDFs
+// ═══════════════════════════════════════════════════════════════
+const QB = {
+
+  English: [
+    // From Q1 — beach ball colors
+    {
+      img:'beach_ball_colored',
+      q:'Look at the beach ball. Section 1 is colored RED. What color is Section 3?',
+      qur:'گیند میں حصہ نمبر ۳ کا رنگ کیا ہے؟',
+      opts:['Red / لال','Green / سبز','Yellow / پیلا','Orange / نارنجی'],
+      ans:2
+    },
+    // From Q2 — odd letter out
+    {
+      img:'odd_letter_E',
+      q:'Which letter is DIFFERENT in this row?',
+      qur:'اس قطار میں کون سا حرف مختلف ہے؟',
+      opts:['E','E','F','E'],
+      ans:2
+    },
+    {
+      img:'odd_letter_O',
+      q:'Which letter is DIFFERENT in this row?',
+      qur:'اس قطار میں کون سا حرف مختلف ہے؟',
+      opts:['O','Q','O','O'],
+      ans:1
+    },
+    {
+      img:'odd_letter_U',
+      q:'Which letter is DIFFERENT in this row?',
+      qur:'اس قطار میں کون سا حرف مختلف ہے؟',
+      opts:['U','U','V','U'],
+      ans:2
+    },
+    // From Q3 — capital/small matching
+    {
+      img:'capital_A',
+      q:'Match the capital letter A with its small letter.',
+      qur:'بڑے حرف A کا چھوٹا حرف کون سا ہے؟',
+      opts:['c','g','a','e'],
+      ans:2
+    },
+    // From Q5 — vowel identification
+    {
+      img:'vowel_hot',
+      q:'Which letter is the VOWEL in the word "hot"?',
+      qur:'"hot" میں vowel کون سا حرف ہے؟',
+      opts:['h','o','t','None'],
+      ans:1
+    },
+    {
+      img:'vowel_ant',
+      q:'Which letter is the VOWEL in the word "ant"?',
+      qur:'"ant" میں vowel کون سا حرف ہے؟',
+      opts:['a','n','t','None'],
+      ans:0
+    },
+    // From Q6 — fill correct vowel
+    {
+      img:'vowel_fish',
+      q:'P__ n — Choose the correct vowel to complete the word.',
+      qur:'صحیح حرف علت لکھیں: P__ n',
+      opts:['a — Pan','e — Pen','i — Pin','o — Pon'],
+      ans:1
+    },
+    // From Q9 — match word with picture
+    {
+      img:'cap_pic',
+      q:'What is the correct word for this picture?',
+      qur:'اس تصویر کے لیے درست لفظ کون سا ہے؟',
+      opts:['cat','cap','car','can'],
+      ans:1
+    },
+    {
+      img:'fan_pic',
+      q:'What is the correct word for this picture?',
+      qur:'اس تصویر کے لیے درست لفظ کون سا ہے؟',
+      opts:['van','pan','can','fan'],
+      ans:3
+    },
+    {
+      img:'hat_pic',
+      q:'What is the correct word for this picture?',
+      qur:'اس تصویر کے لیے درست لفظ کون سا ہے؟',
+      opts:['mat','bat','hat','cat'],
+      ans:2
+    },
+    {
+      img:'van_pic',
+      q:'What is the correct word for this picture?',
+      qur:'اس تصویر کے لیے درست لفظ کون سا ہے؟',
+      opts:['fan','can','pan','van'],
+      ans:3
+    },
+  ],
+
+  Math: [
+    // From Q1 — zero
+    {
+      img:'zero_shape',
+      q:'صفر میں رنگ بھریں — What number does this shape represent?',
+      qur:'یہ شکل کون سا عدد ہے؟',
+      opts:['۱ (One)','۰ (Zero / صفر)','۲ (Two)','۵ (Five)'],
+      ans:1
+    },
+    // From Q2 — tree without fruit
+    {
+      img:'tree_without_fruit',
+      q:'جس درخت پر کوئی پھل نہیں — Which tree has NO fruit?',
+      qur:'کون سا درخت ہے جس پر پھل نہیں ہے؟',
+      opts:['Right tree / دائیں درخت','Left tree / بائیں درخت','Both trees','Neither'],
+      ans:1
+    },
+    // From Q3 — count objects
+    {
+      img:'count_3',
+      q:'چیزوں کو گن کر لکھیں — How many stars are there?',
+      qur:'ستاروں کی تعداد گنیں',
+      opts:['2 (دو)','3 (تین)','4 (چار)','5 (پانچ)'],
+      ans:1
+    },
+    {
+      img:'count_5',
+      q:'How many circles/balls are there?',
+      qur:'گیندوں کی تعداد گنیں',
+      opts:['3 (تین)','4 (چار)','5 (پانچ)','6 (چھ)'],
+      ans:2
+    },
+    // From Q4 — complete counting (60-100)
+    {
+      img:'count_7',
+      q:'گنتی مکمل کریں — What number comes after 69?',
+      qur:'۶۹ کے بعد کون سا عدد آتا ہے؟',
+      opts:['68','70','71','72'],
+      ans:1
+    },
+    // From Q6 — descending order
+    {
+      img:'place_value_45',
+      q:'دی گئی اعداد کو ترتیبِ نزولی میں لکھیں — Which is the CORRECT descending order?',
+      qur:'نزولی ترتیب کون سی درست ہے؟ 45, __, __, __, 39',
+      opts:['39, 41, 43, 45','45, 43, 41, 39','43, 45, 41, 39','41, 43, 45, 39'],
+      ans:1
+    },
+    // From Q8 — ordinal numbers
+    {
+      img:'ordinal_first',
+      q:'اشیاء کی ترتیبی اعداد — What is the ordinal word for 1st?',
+      qur:'1st کو لفظوں میں کیا کہتے ہیں؟',
+      opts:['second','third','first','fourth'],
+      ans:2
+    },
+    {
+      img:'ordinal_third',
+      q:'The red circle is in which position?',
+      qur:'سرخ دائرہ کس ترتیب پر ہے؟',
+      opts:['first / اول','second / دوم','third / سوم','fourth / چہارم'],
+      ans:2
+    },
+    // From Q9 — match ordinals
+    {
+      img:'ordinal_first',
+      q:'دیے گئے اعداد کو درست کالم سے ملائیں — Match: 2nd = ?',
+      qur:'2nd کو لفظوں میں کیا کہتے ہیں؟',
+      opts:['first','second','third','fourth'],
+      ans:1
+    },
+    // From Q10 — place value
+    {
+      img:'place_value_23',
+      q:'دی گئی اشیاء کو گن کر اکائیاں اور دہائیاں لکھیں — Number 23: How many TENS (دہائی)?',
+      qur:'عدد ۲۳ میں دہائی کتنی ہے؟',
+      opts:['1 ten','2 tens','3 tens','5 tens'],
+      ans:1
+    },
+    // From Q11 — place value of 435
+    {
+      img:'place_value_45',
+      q:'435 کی مقامی قیمت لکھیں — What is the UNITS (اکائی) digit of 435?',
+      qur:'۴۳۵ میں اکائی کا ہندسہ کون سا ہے؟',
+      opts:['4','3','5','43'],
+      ans:2
+    },
+    {
+      img:'place_value_23',
+      q:'867 کی مقامی قیمت — What is the TENS (دہائی) digit of 867?',
+      qur:'۸۶۷ میں دہائی کا ہندسہ کون سا ہے؟',
+      opts:['8','6','7','86'],
+      ans:1
+    },
+  ],
+
+  Urdu: [
+    // From Q1 — letter joining
+    {
+      img:'urdu_join_kitab',
+      q:'دیے گئے حروف کے جوڑ لکھیں — ک + ت + ا + ب = ?',
+      qur:'ان حروف کو جوڑنے سے کون سا لفظ بنتا ہے؟',
+      opts:['کتاب','کباب','کتا','باتک'],
+      ans:0
+    },
+    {
+      img:'urdu_join_mela',
+      q:'دیے گئے حروف کے جوڑ لکھیں — م + ی + ل + ا = ?',
+      qur:'ان حروف کو جوڑنے سے کون سا لفظ بنتا ہے؟',
+      opts:['ملا','میلا','مالی','لیما'],
+      ans:1
+    },
+    {
+      img:'urdu_join_poda',
+      q:'دیے گئے حروف کے جوڑ لکھیں — پ + و + د + ا = ?',
+      qur:'ان حروف کو جوڑنے سے کون سا لفظ بنتا ہے؟',
+      opts:['پودا','پادو','دوپا','واپد'],
+      ans:0
+    },
+    // From Q2 — word breakdown
+    {
+      img:'urdu_join_kitab',
+      q:'دیے گئے الفاظ کا توڑ لکھیں — "سلام" کو توڑیں',
+      qur:'"سلام" الگ الگ حروف میں کیسے لکھیں گے؟',
+      opts:['س+ل+ا+م','س+لا+م','سل+ام','سلا+م'],
+      ans:0
+    },
+    // From Q4 — حروف علت (vowels)
+    {
+      img:'aeraab_pic',
+      q:'حروف علت لکھیں — How many vowels (حروف علت) are in Urdu?',
+      qur:'اردو میں حروف علت کتنے ہیں؟',
+      opts:['3 (الف، واو، یے)','5','7','10'],
+      ans:0
+    },
+    // From Q5 — match picture to living/non-living
+    {
+      img:'lion_pic',
+      q:'کالم A کو کالم B کے درست جواب سے ملائیں — A lion (شیر) is:',
+      qur:'شیر کیا ہے؟',
+      opts:['بے جان (Non-living)','جاندار (Living)','پودا (Plant)','پانی (Water)'],
+      ans:1
+    },
+    {
+      img:'mango_pic',
+      q:'A mango (آم) is:',
+      qur:'آم کیا ہے؟',
+      opts:['جاندار (Living)','بے جان (Non-living)','جانور (Animal)','پرندہ (Bird)'],
+      ans:1
+    },
+    // From Q8 — plant parts
+    {
+      img:'plant_parts',
+      q:'دی گئی تصویر میں پودے کے مختلف حصے لیبل کریں — Which part absorbs water from soil?',
+      qur:'پودے کا کون سا حصہ مٹی سے پانی جذب کرتا ہے؟',
+      opts:['پھول (Flower)','پتا (Leaf)','تنا (Stem)','جڑ (Root)'],
+      ans:3
+    },
+    // From Q9 — what is حمد
+    {
+      img:'hamd_pic',
+      q:'حمد کسے کہتے ہیں؟ — Hamd is a poem in praise of:',
+      qur:'حمد کس کی تعریف میں لکھی جاتی ہے؟',
+      opts:['نبی کریمﷺ','اللہ تعالیٰ','پاکستان','قدرت'],
+      ans:1
+    },
+    // From Q10 — aeraab
+    {
+      img:'aeraab_pic',
+      q:'زیر، زبر اور پیش لگا کر الفاظ مکمل کریں — "اُونٹ" — The sign (پیش) gives which sound?',
+      qur:'پیش کی آواز کون سی ہے؟',
+      opts:['a (اَ)','i (اِ)','u (اُ)','e (اے)'],
+      ans:2
+    },
+    // From Q12 — sunlight needed for plants
+    {
+      img:'sun_benefits',
+      q:'سورج کی روشنی کی نشونما کے لیے ضروری ہے — Sunlight is necessary for the growth of:',
+      qur:'سورج کی روشنی کس کی نشونما کے لیے ضروری ہے؟',
+      opts:['پہاڑوں (Mountains)','پودوں (Plants)','پانی (Water)','پتھروں (Stones)'],
+      ans:1
+    },
+    // From Q5 — aeraab on words
+    {
+      img:'aeraab_pic',
+      q:'زبر، زیر، پیش لگا کر الفاظ مکمل کریں — "کِتاب" — Which aeraab is on "ک"?',
+      qur:'"کِتاب" میں "ک" پر کون سا اعراب ہے؟',
+      opts:['زبر (a)','زیر (i)','پیش (u)','کوئی نہیں'],
+      ans:1
+    },
+  ],
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SESSION
+// ═══════════════════════════════════════════════════════════════
+let sess={subject:'Math',name:'',qs:[],cur:0,score:0,done:false};
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function selSubj(s,el){sess.subject=s;document.querySelectorAll('.subj-btn').forEach(b=>b.classList.remove('selected'));el.classList.add('selected')}
+
+async function startAssessment(){
+  const pin=document.getElementById('pin-in').value.trim();
+  const name=document.getElementById('name-in').value.trim();
+  const err=document.getElementById('err');
+  err.classList.remove('show');
+  if(!pin||pin.length<4){err.textContent='Please enter a valid PIN.';err.classList.add('show');return}
+  if(!name||name.length<2){err.textContent='Please enter the student name.';err.classList.add('show');return}
+  show('sc-loading');
+  sess.name=name; sess.cur=0; sess.score=0; sess.done=false;
+  const bank=[...(QB[sess.subject]||QB.Math)];
+  for(let i=bank.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bank[i],bank[j]]=[bank[j],bank[i]]}
+  sess.qs=bank.slice(0,Math.min(10,bank.length));
+  try{await fetch('/portal/session/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin,studentName:name})})}catch(e){}
+  document.getElementById('strip-name').textContent=name;
+  document.getElementById('strip-sub').textContent=`${sess.subject} • Level 1 Assessment`;
+  document.getElementById('stu-strip').style.display='flex';
+  renderQ(0);show('sc-question');
+}
+
+function renderQ(idx){
+  sess.done=false;
+  const q=sess.qs[idx],total=sess.qs.length;
+  document.getElementById('qn').textContent=idx+1;
+  document.getElementById('qt').textContent=total;
+  document.getElementById('pf').style.width=`${(idx/total)*100}%`;
+  const ib=document.getElementById('img-box');
+  ib.innerHTML=S[q.img]||`<div style="font-size:60px;text-align:center">📖</div>`;
+  document.getElementById('q-en').textContent=q.q;
+  const ur=document.getElementById('q-ur');
+  if(q.qur){ur.textContent=q.qur;ur.style.display='block'}else ur.style.display='none';
+  const grid=document.getElementById('ans-grid');
+  grid.innerHTML='';
+  grid.className=`answers-grid${q.opts.length===3?' cols3':''}`;
+  const labels=['A','B','C','D'];
+  q.opts.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='ans-btn';btn.dataset.i=i;
+    const isUrdu=/[\u0600-\u06FF]/.test(opt);
+    btn.innerHTML=`<span class="ans-lbl">${labels[i]}</span><span class="ans-text${isUrdu?' ans-urdu':''}">${opt}</span>`;
+    btn.onclick=()=>pick(i);
+    grid.appendChild(btn);
+  });
+  document.getElementById('feedback').className='feedback';
+  document.getElementById('btn-next').classList.remove('show');
+}
+
+function pick(idx){
+  if(sess.done)return;
+  sess.done=true;
+  const q=sess.qs[sess.cur];
+  const right=idx===q.ans;
+  if(right)sess.score++;
+  document.querySelectorAll('.ans-btn').forEach(b=>{
+    const i=parseInt(b.dataset.i);
+    if(i===q.ans)b.classList.add('correct');
+    else if(i===idx&&!right)b.classList.add('wrong');
+  });
+  const fb=document.getElementById('feedback');
+  fb.textContent=right?'✅ Correct! — درست جواب 🌟':'❌ Wrong! — غلط جواب';
+  fb.className=`feedback ${right?'cfb':'wfb'}`;
+  const nb=document.getElementById('btn-next');
+  nb.textContent=sess.cur>=sess.qs.length-1?'🎓 See Results':'Next Question →';
+  nb.classList.add('show');
+}
+
+function nextQ(){
+  sess.cur++;
+  if(sess.cur<sess.qs.length){renderQ(sess.cur);window.scrollTo(0,0)}
+  else showResults();
+}
+
+function showResults(){
+  const total=sess.qs.length,pct=Math.round((sess.score/total)*100),passed=pct>=70;
+  document.getElementById('r-name').textContent=sess.name;
+  document.getElementById('r-pct').textContent=pct+'%';
+  document.getElementById('r-frac').textContent=`${sess.score}/${total}`;
+  document.getElementById('s-ring').style.setProperty('--pct',pct+'%');
+  const rb=document.getElementById('r-badge');
+  rb.textContent=passed?'✅ PASSED — کامیاب 🌟':'📚 Keep Trying — مزید محنت کریں';
+  rb.className=`res-badge ${passed?'passed':'failed'}`;
+  document.getElementById('stu-strip').style.display='none';
+  show('sc-results');
+}
+
+function reset(){
+  sess={subject:'Math',name:'',qs:[],cur:0,score:0,done:false};
+  document.getElementById('name-in').value='';
+  document.getElementById('pin-in').value='';
+  document.getElementById('err').classList.remove('show');
+  document.getElementById('stu-strip').style.display='none';
+  document.querySelectorAll('.subj-btn').forEach((b,i)=>b.classList.toggle('selected',i===0));
+  show('sc-setup');
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('name-in').addEventListener('keydown',e=>{if(e.key==='Enter')startAssessment()});
+  document.addEventListener('keydown',e=>{
+    if(!document.getElementById('sc-question').classList.contains('active'))return;
+    const m={'a':0,'b':1,'c':2,'d':3,'A':0,'B':1,'C':2,'D':3};
+    if(m[e.key]!==undefined)pick(m[e.key]);
+    if(e.key==='Enter'){const nb=document.getElementById('btn-next');if(nb.classList.contains('show'))nextQ()}
+  });
+});
+</script>
+</body>
+</html>
