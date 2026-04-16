@@ -810,6 +810,7 @@ app.get('/', (req, res) => res.json({ status: 'ok', service: 'TAKMIL Bot', versi
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
 app.get('/import', (req, res) => res.sendFile(path.join(__dirname, 'import.html')));
 app.get('/image-portal', (req, res) => res.sendFile(path.join(__dirname, 'image-portal.html')));
+app.get('/pdf-portal', (req, res) => res.sendFile(path.join(__dirname, 'takmil-pdf-portal.html')));
 // ══════════════════════════════════════════════════════════════════
 // ADD THESE TWO BLOCKS TO index.js
 // Paste BLOCK A anywhere after the existing app.get('/import') line
