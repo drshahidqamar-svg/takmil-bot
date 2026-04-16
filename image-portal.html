@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TAKMIL — Picture Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:      #01411C;
+  --green-mid:  #026B2F;
+  --green-lite: #04A344;
+  --gold:       #F5C842;
+  --gold-dark:  #D4A017;
+  --sky:        #E8F8F5;
+  --white:      #FFFFFF;
+  --text:       #1A2E1A;
+  --radius:     24px;
+  --shadow:     0 8px 40px rgba(1,65,28,0.15);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Baloo 2', cursive;
+  background: linear-gradient(145deg, #E8F8F5 0%, #F0FFF8 50%, #FFF8E8 100%);
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 16px;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(4,163,68,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(245,200,66,0.08) 0%, transparent 40%);
+}
+
+.screen { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 640px; z-index: 1; position: relative; }
+.screen.active { display: flex; animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes popIn { from { opacity:0; transform:scale(0.92) translateY(20px); } to { opacity:1; transform:scale(1) translateY(0); } }
+
+/* ── Card ── */
+.card {
+  background: white; border-radius: 32px; padding: 36px 32px;
+  width: 100%; box-shadow: var(--shadow);
+  border: 2px solid rgba(4,163,68,0.1);
+}
+
+/* ── Header ── */
+.logo-wrap { text-align: center; margin-bottom: 28px; }
+.logo-icon {
+  width: 80px; height: 80px;
+  background: linear-gradient(135deg, var(--green), var(--green-lite));
+  border-radius: 24px; display: inline-flex; align-items: center;
+  justify-content: center; font-size: 40px; margin-bottom: 12px;
+  box-shadow: 0 8px 28px rgba(1,65,28,0.3);
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.logo-title { font-size: 36px; font-weight: 800; color: var(--green); letter-spacing: -1px; }
+.logo-sub { font-size: 15px; color: #4A7A4A; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+.logo-sub-urdu { font-family: 'Noto Nastaliq Urdu', serif; font-size: 18px; color: var(--green-mid); direction: rtl; margin-top: 6px; }
+
+/* ── Inputs ── */
+.field-label { font-size: 14px; font-weight: 700; color: #4A7A4A; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: block; }
+input[type="text"], input[type="password"] {
+  width: 100%; padding: 18px 20px; font-size: 20px; font-family: 'Baloo 2', cursive; font-weight: 700;
+  border: 3px solid #C8E8D0; border-radius: 16px; outline: none; color: var(--text);
+  background: #F5FFF8; transition: all 0.2s; letter-spacing: 3px;
+}
+input[type="text"] { letter-spacing: 0; }
+input:focus { border-color: var(--green-lite); box-shadow: 0 0 0 4px rgba(4,163,68,0.15); background: white; }
+input::placeholder { color: #AADABC; letter-spacing: 0; font-weight: 400; }
+.field-group { margin-bottom: 18px; }
+
+/* ── Subject selector ── */
+.subject-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
+.subj-btn {
+  padding: 16px 8px; border: 3px solid #C8E8D0; border-radius: 18px;
+  background: #F5FFF8; cursor: pointer; text-align: center; transition: all 0.15s;
+  font-family: 'Baloo 2', cursive;
+}
+.subj-btn .subj-icon { font-size: 28px; display: block; margin-bottom: 4px; }
+.subj-btn .subj-name { font-size: 13px; font-weight: 700; color: var(--green); }
+.subj-btn.selected { border-color: var(--green); background: #E8F8EE; transform: scale(1.04); }
+.subj-btn:active { transform: scale(0.96); }
+
+/* ── Buttons ── */
+.btn-primary {
+  width: 100%; padding: 20px; background: linear-gradient(135deg, var(--green), var(--green-mid));
+  color: white; font-size: 20px; font-weight: 800; font-family: 'Baloo 2', cursive;
+  border: none; border-radius: 18px; cursor: pointer;
+  box-shadow: 0 6px 24px rgba(1,65,28,0.35);
+  transition: transform 0.15s, box-shadow 0.15s; margin-top: 8px;
+}
+.btn-primary:active { transform: scale(0.97); box-shadow: 0 2px 12px rgba(1,65,28,0.2); }
+
+.error-msg {
+  background: #FEE8E7; border: 2px solid #F5C6C3; color: #C0392B;
+  border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 700;
+  margin-top: 12px; display: none; text-align: center;
+}
+.error-msg.show { display: block; animation: shake 0.4s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+/* ── Progress ── */
+.progress-wrap { width: 100%; margin-bottom: 20px; }
+.progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.progress-label { font-size: 13px; font-weight: 700; color: #4A7A4A; text-transform: uppercase; letter-spacing: 1px; }
+.progress-count { font-size: 22px; font-weight: 800; color: var(--green); }
+.progress-bar { height: 12px; background: #C8E8D0; border-radius: 12px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--green-lite), var(--gold)); border-radius: 12px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+
+/* ── Student strip ── */
+.student-strip {
+  width: 100%; max-width: 640px; background: var(--green); border-radius: 18px;
+  padding: 12px 20px; display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px; z-index: 1; box-shadow: 0 4px 16px rgba(1,65,28,0.2);
+}
+.strip-name { font-size: 16px; font-weight: 800; color: white; display: flex; align-items: center; gap: 8px; }
+.strip-sub { font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 600; }
+
+/* ── Image box ── */
+.image-box {
+  width: 100%; background: linear-gradient(135deg, #F0FFF8, #E8F8EE);
+  border: 3px solid #C8E8D0; border-radius: 24px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px; min-height: 200px; padding: 16px;
+  position: relative; overflow: hidden;
+}
+.image-box svg { max-width: 100%; max-height: 220px; }
+
+/* ── Question text ── */
+.q-text { font-size: 22px; font-weight: 700; color: var(--text); text-align: center; margin-bottom: 20px; line-height: 1.4; }
+.q-urdu { font-family: 'Noto Nastaliq Urdu', serif; font-size: 18px; color: #4A7A4A; direction: rtl; text-align: right; margin-bottom: 16px; background: #F5FFF8; padding: 10px 14px; border-radius: 12px; border-right: 4px solid var(--green-lite); }
+
+/* ── Answer buttons ── */
+.answers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+.ans-btn {
+  padding: 18px 14px; border: 3px solid #C8E8D0; border-radius: 20px;
+  background: white; cursor: pointer; transition: all 0.15s; text-align: center;
+  box-shadow: 0 4px 12px rgba(1,65,28,0.08); position: relative;
+}
+.ans-btn:active { transform: scale(0.95); }
+.ans-label {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; background: #E8F8EE; border-radius: 10px;
+  font-size: 18px; font-weight: 900; color: var(--green); margin-bottom: 6px;
+  transition: all 0.15s;
+}
+.ans-text { font-size: 17px; font-weight: 700; color: var(--text); display: block; line-height: 1.3; }
+.ans-urdu { font-family: 'Noto Nastaliq Urdu', serif; font-size: 15px; color: #4A7A4A; direction: rtl; display: block; margin-top: 2px; }
+
+.ans-btn.selected, .ans-btn:hover { border-color: var(--green); background: linear-gradient(135deg, #F0F8F2, #E8F5EC); }
+.ans-btn.selected .ans-label { background: var(--green); color: white; }
+.ans-btn.correct { border-color: var(--green-lite); background: linear-gradient(135deg, #E8F8EE, #D4F0DE); }
+.ans-btn.correct .ans-label { background: var(--green-lite); color: white; }
+.ans-btn.wrong { border-color: #E74C3C; background: #FEF0EF; }
+.ans-btn.wrong .ans-label { background: #E74C3C; color: white; }
+
+/* ── Feedback ── */
+.feedback { padding: 14px 20px; border-radius: 14px; font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 16px; display: none; }
+.feedback.correct-fb { background: #E8F8EE; color: var(--green); border: 2px solid var(--green-lite); display: block; }
+.feedback.wrong-fb { background: #FEF0EF; color: #C0392B; border: 2px solid #F5A89F; display: block; }
+
+/* ── Next btn ── */
+.btn-next {
+  width: 100%; padding: 18px; background: linear-gradient(135deg, var(--green), var(--green-mid));
+  color: white; font-size: 18px; font-weight: 800; font-family: 'Baloo 2', cursive;
+  border: none; border-radius: 18px; cursor: pointer;
+  box-shadow: 0 6px 24px rgba(1,65,28,0.3); display: none; margin-top: 4px;
+  transition: transform 0.15s;
+}
+.btn-next:active { transform: scale(0.97); }
+.btn-next.show { display: block; animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+
+/* ── Score ring ── */
+.score-wrap { text-align: center; margin: 12px 0 24px; }
+.score-ring {
+  width: 160px; height: 160px; border-radius: 50%;
+  background: conic-gradient(var(--green-lite) 0%, var(--green-lite) var(--pct), #C8E8D0 var(--pct));
+  display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 32px rgba(1,65,28,0.2); position: relative;
+}
+.score-ring::before { content:''; position:absolute; width:120px; height:120px; background:white; border-radius:50%; }
+.score-inner { position: relative; z-index: 1; }
+.score-pct { font-size: 36px; font-weight: 900; color: var(--green); }
+.score-lbl { font-size: 12px; font-weight: 700; color: #4A7A4A; letter-spacing: 1px; }
+.result-badge {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 28px; border-radius: 50px; font-size: 18px; font-weight: 800;
+  margin: 0 auto 20px;
+}
+.result-badge.passed { background: #E8F8EE; color: var(--green); border: 2px solid var(--green-lite); }
+.result-badge.failed { background: #FEF0EF; color: #C0392B; border: 2px solid #F5A89F; }
+.done-card { background: linear-gradient(135deg, #F0F8F2, #E8F5EC); border-radius: 18px; border: 2px solid #C8E8D0; padding: 20px; text-align: center; }
+.done-card .icon { font-size: 40px; margin-bottom: 8px; }
+.done-card .msg { font-size: 17px; font-weight: 700; color: var(--green); }
+.done-card .urdu { font-family: 'Noto Nastaliq Urdu', serif; font-size: 15px; color: #4A7A4A; direction: rtl; margin-top: 6px; }
+
+.loading-wrap { text-align: center; padding: 40px; }
+.spinner { width: 56px; height: 56px; border: 5px solid #C8E8D0; border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media(max-width:480px) { .card{padding:24px 18px;} .q-text{font-size:18px;} .ans-text{font-size:15px;} .answers-grid{gap:10px;} }
+</style>
+</head>
+<body>
+
+<!-- ══ SCREEN 1: Setup ══ -->
+<div class="screen active" id="screen-setup">
+  <div class="logo-wrap">
+    <div class="logo-icon">🎨</div>
+    <div class="logo-title">TAKMIL</div>
+    <div class="logo-sub">Picture Assessment</div>
+    <div class="logo-sub-urdu">تصویری امتحان</div>
+  </div>
+  <div class="card">
+    <div class="field-group">
+      <label class="field-label">Assessment PIN</label>
+      <input type="password" id="pin-input" placeholder="Enter PIN" maxlength="10" autocomplete="off">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Student Name — طالب علم کا نام</label>
+      <input type="text" id="name-input" placeholder="Full name" style="letter-spacing:0">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Subject — مضمون</label>
+      <div class="subject-grid">
+        <button class="subj-btn selected" onclick="selectSubject('Math',this)">
+          <span class="subj-icon">🔢</span><span class="subj-name">Math</span>
+        </button>
+        <button class="subj-btn" onclick="selectSubject('English',this)">
+          <span class="subj-icon">🔤</span><span class="subj-name">English</span>
+        </button>
+        <button class="subj-btn" onclick="selectSubject('Urdu',this)">
+          <span class="subj-icon">اردو</span><span class="subj-name">Urdu</span>
+        </button>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="startAssessment()">شروع کریں &nbsp;•&nbsp; Start ▶</button>
+    <div class="error-msg" id="setup-error">Please enter a valid PIN and student name.</div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 2: Loading ══ -->
+<div class="screen" id="screen-loading">
+  <div class="card">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div style="font-size:18px;font-weight:700;color:#4A7A4A;">Loading pictures…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 3: Question ══ -->
+<div class="student-strip" id="student-strip" style="display:none">
+  <div class="strip-name">👤 <span id="strip-name"></span></div>
+  <div class="strip-sub" id="strip-sub"></div>
+</div>
+
+<div class="screen" id="screen-question">
+  <div class="card">
+    <div class="progress-wrap">
+      <div class="progress-top">
+        <span class="progress-label">Question</span>
+        <span class="progress-count"><span id="q-num">1</span>/<span id="q-total">10</span></span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="image-box" id="image-box"></div>
+    <div class="q-text" id="q-text"></div>
+    <div class="q-urdu" id="q-urdu" style="display:none"></div>
+    <div class="answers-grid" id="answers-grid"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()">Next Question →</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 4: Results ══ -->
+<div class="screen" id="screen-results">
+  <div class="card">
+    <div class="logo-wrap" style="margin-bottom:16px">
+      <div class="logo-icon" style="width:64px;height:64px;font-size:32px">🏆</div>
+      <div class="logo-title" style="font-size:24px">Well Done!</div>
+      <div class="logo-sub-urdu">شاباش!</div>
+    </div>
+    <div style="text-align:center;font-size:16px;font-weight:700;color:#4A7A4A;margin-bottom:8px"><span id="res-name"></span></div>
+    <div class="score-wrap">
+      <div class="score-ring" id="score-ring" style="--pct:0%">
+        <div class="score-inner">
+          <div class="score-pct" id="res-pct">0%</div>
+          <div class="score-lbl" id="res-frac">0/0</div>
+        </div>
+      </div>
+    </div>
+    <div class="result-badge" id="res-badge">✅ PASSED</div>
+    <div class="done-card">
+      <div class="icon">👩‍🏫</div>
+      <div class="msg">Please hand the tablet to your teacher</div>
+      <div class="urdu">براہ کرم ٹیبلیٹ استاد کو دیں</div>
+    </div>
+    <button class="btn-primary" onclick="resetPortal()" style="margin-top:16px;background:linear-gradient(135deg,#4A6B4A,#2E4E2E)">
+      New Student — نیا طالب علم
+    </button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// SVG ILLUSTRATIONS — fully inline, zero internet needed
+// ══════════════════════════════════════════════════════════
+
+const SVGS = {
+
+  // ── MATH ────────────────────────────────────────────────
+  apple: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="100" cy="130" rx="75" ry="75" fill="#E74C3C"/>
+    <ellipse cx="100" cy="110" rx="75" ry="70" fill="#C0392B" opacity="0.3"/>
+    <path d="M100 55 Q110 30 130 25" stroke="#2ECC71" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <ellipse cx="133" cy="22" rx="18" ry="10" fill="#27AE60" transform="rotate(-20,133,22)"/>
+    <ellipse cx="85" cy="90" rx="15" ry="25" fill="white" opacity="0.2" transform="rotate(-20,85,90)"/>
+  </svg>`,
+
+  three_stars: `<svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg">
+    ${[60,120,180].map(x=>`<polygon points="${x},15 ${x+8},35 ${x+30},35 ${x+13},48 ${x+20},68 ${x},55 ${x-20},68 ${x-13},48 ${x-30},35 ${x-8},35" fill="#F5C842" stroke="#D4A017" stroke-width="2"/>`).join('')}
+  </svg>`,
+
+  five_stars: `<svg viewBox="0 0 280 120" xmlns="http://www.w3.org/2000/svg">
+    ${[30,80,140,200,250].map(x=>`<polygon points="${x},20 ${x+8},38 ${x+28},38 ${x+12},50 ${x+18},68 ${x},56 ${x-18},68 ${x-12},50 ${x-28},38 ${x-8},38" fill="#F5C842" stroke="#D4A017" stroke-width="1.5"/>`).join('')}
+  </svg>`,
+
+  triangle: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="100,20 190,180 10,180" fill="#3498DB" stroke="#2980B9" stroke-width="4"/>
+    <polygon points="100,50 165,165 35,165" fill="none" stroke="white" stroke-width="2" opacity="0.3"/>
+    <text x="100" y="135" text-anchor="middle" font-size="18" fill="white" font-weight="bold" font-family="Arial">مثلث</text>
+  </svg>`,
+
+  circle: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="100" r="85" fill="#E74C3C" stroke="#C0392B" stroke-width="4"/>
+    <circle cx="100" cy="100" r="65" fill="none" stroke="white" stroke-width="2" opacity="0.3"/>
+    <text x="100" y="107" text-anchor="middle" font-size="18" fill="white" font-weight="bold" font-family="Arial">دائرہ</text>
+  </svg>`,
+
+  square: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="20" y="20" width="160" height="160" rx="8" fill="#27AE60" stroke="#1E8449" stroke-width="4"/>
+    <rect x="40" y="40" width="120" height="120" rx="4" fill="none" stroke="white" stroke-width="2" opacity="0.3"/>
+    <text x="100" y="107" text-anchor="middle" font-size="18" fill="white" font-weight="bold" font-family="Arial">مربع</text>
+  </svg>`,
+
+  rectangle: `<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/svg">
+    <rect x="15" y="20" width="210" height="120" rx="8" fill="#9B59B6" stroke="#7D3C98" stroke-width="4"/>
+    <rect x="30" y="35" width="180" height="90" rx="4" fill="none" stroke="white" stroke-width="2" opacity="0.3"/>
+    <text x="120" y="87" text-anchor="middle" font-size="18" fill="white" font-weight="bold" font-family="Arial">مستطیل</text>
+  </svg>`,
+
+  two_apples: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="65" cy="95" rx="52" ry="52" fill="#E74C3C"/>
+    <path d="M65 43 Q73 25 88 20" stroke="#2ECC71" stroke-width="3" fill="none"/>
+    <ellipse cx="90" cy="18" rx="13" ry="7" fill="#27AE60" transform="rotate(-20,90,18)"/>
+    <ellipse cx="135" cy="95" rx="52" ry="52" fill="#E74C3C"/>
+    <path d="M135 43 Q143 25 158 20" stroke="#2ECC71" stroke-width="3" fill="none"/>
+    <ellipse cx="160" cy="18" rx="13" ry="7" fill="#27AE60" transform="rotate(-20,160,18)"/>
+    <text x="100" y="148" text-anchor="middle" font-size="16" font-weight="900" fill="#E74C3C" font-family="Arial">2</text>
+  </svg>`,
+
+  four_balls: `<svg viewBox="0 0 220 120" xmlns="http://www.w3.org/2000/svg">
+    ${[[35,50,'#E74C3C'],[90,50,'#3498DB'],[145,50,'#2ECC71'],[200,50,'#F5C842']].map(([cx,cy,c])=>`<circle cx="${cx}" cy="${cy}" r="28" fill="${c}"/><circle cx="${cx-8}" cy="${cy-8}" r="8" fill="white" opacity="0.25"/>`).join('')}
+    <text x="110" y="110" text-anchor="middle" font-size="16" font-weight="900" fill="#333" font-family="Arial">4</text>
+  </svg>`,
+
+  six_dots: `<svg viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg">
+    <rect x="10" y="10" width="180" height="120" rx="20" fill="#2C3E50" stroke="#1A252F" stroke-width="3"/>
+    ${[[55,45],[100,45],[145,45],[55,95],[100,95],[145,95]].map(([cx,cy])=>`<circle cx="${cx}" cy="${cy}" r="15" fill="white"/>`).join('')}
+  </svg>`,
+
+  plus_sign: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="80" y="20" width="40" height="160" rx="10" fill="#E74C3C"/>
+    <rect x="20" y="80" width="160" height="40" rx="10" fill="#E74C3C"/>
+  </svg>`,
+
+  minus_sign: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <rect x="20" y="85" width="160" height="30" rx="10" fill="#3498DB"/>
+  </svg>`,
+
+  clock_3: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="100" r="88" fill="white" stroke="#2C3E50" stroke-width="6"/>
+    <circle cx="100" cy="100" r="6" fill="#2C3E50"/>
+    ${[0,30,60,90,120,150,180,210,240,270,300,330].map((a,i)=>{const r=a*Math.PI/180,x=100+75*Math.sin(r),y=100-75*Math.cos(r);return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${i%3===0?5:3}" fill="#2C3E50"/>`;}).join('')}
+    <line x1="100" y1="100" x2="100" y2="30" stroke="#2C3E50" stroke-width="5" stroke-linecap="round"/>
+    <line x1="100" y1="100" x2="163" y2="100" stroke="#E74C3C" stroke-width="4" stroke-linecap="round"/>
+    <text x="155" y="55" font-size="18" fill="#2C3E50" font-weight="bold" font-family="Arial">12</text>
+    <text x="165" y="108" font-size="18" fill="#2C3E50" font-weight="bold" font-family="Arial">3</text>
+  </svg>`,
+
+  // ── ENGLISH ─────────────────────────────────────────────
+  letter_A: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="220" rx="24" fill="#3498DB"/>
+    <text x="100" y="160" text-anchor="middle" font-size="160" font-weight="900" fill="white" font-family="Georgia,serif">A</text>
+  </svg>`,
+
+  letter_B: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="220" rx="24" fill="#E74C3C"/>
+    <text x="100" y="160" text-anchor="middle" font-size="160" font-weight="900" fill="white" font-family="Georgia,serif">B</text>
+  </svg>`,
+
+  letter_C: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="220" rx="24" fill="#27AE60"/>
+    <text x="100" y="160" text-anchor="middle" font-size="160" font-weight="900" fill="white" font-family="Georgia,serif">C</text>
+  </svg>`,
+
+  cat: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="100" cy="130" rx="65" ry="55" fill="#95A5A6"/>
+    <circle cx="100" cy="85" r="50" fill="#95A5A6"/>
+    <polygon points="60,45 50,15 75,38" fill="#7F8C8D"/>
+    <polygon points="140,45 150,15 125,38" fill="#7F8C8D"/>
+    <circle cx="85" cy="80" r="10" fill="white"/>
+    <circle cx="115" cy="80" r="10" fill="white"/>
+    <circle cx="87" cy="82" r="6" fill="#2C3E50"/>
+    <circle cx="117" cy="82" r="6" fill="#2C3E50"/>
+    <ellipse cx="100" cy="100" rx="8" ry="6" fill="#E91E63"/>
+    <path d="M92 106 Q100 112 108 106" stroke="#2C3E50" stroke-width="2" fill="none"/>
+    <line x1="70" y1="95" x2="40" y2="88" stroke="#2C3E50" stroke-width="2"/>
+    <line x1="70" y1="100" x2="38" y2="100" stroke="#2C3E50" stroke-width="2"/>
+    <line x1="130" y1="95" x2="160" y2="88" stroke="#2C3E50" stroke-width="2"/>
+    <line x1="130" y1="100" x2="162" y2="100" stroke="#2C3E50" stroke-width="2"/>
+  </svg>`,
+
+  dog: `<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="110" cy="130" rx="70" ry="55" fill="#C8860A"/>
+    <circle cx="110" cy="80" r="48" fill="#C8860A"/>
+    <ellipse cx="75" cy="65" rx="18" ry="28" fill="#A0670A" transform="rotate(-15,75,65)"/>
+    <ellipse cx="145" cy="65" rx="18" ry="28" fill="#A0670A" transform="rotate(15,145,65)"/>
+    <circle cx="95" cy="75" r="10" fill="white"/>
+    <circle cx="125" cy="75" r="10" fill="white"/>
+    <circle cx="97" cy="77" r="6" fill="#1A1A1A"/>
+    <circle cx="127" cy="77" r="6" fill="#1A1A1A"/>
+    <ellipse cx="110" cy="100" rx="18" ry="14" fill="#E8956A"/>
+    <ellipse cx="110" cy="105" rx="10" ry="8" fill="#C0392B"/>
+    <path d="M190 120 Q210 100 205 140 Q200 160 185 150" stroke="#C8860A" stroke-width="8" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  sun: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    ${Array.from({length:12},(_,i)=>{const a=i*30*Math.PI/180,x1=100+55*Math.cos(a),y1=100+55*Math.sin(a),x2=100+80*Math.cos(a),y2=100+80*Math.sin(a);return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#F39C12" stroke-width="5" stroke-linecap="round"/>`;}).join('')}
+    <circle cx="100" cy="100" r="50" fill="#F5C842"/>
+    <circle cx="100" cy="100" r="38" fill="#F39C12" opacity="0.4"/>
+    <circle cx="85" cy="92" r="6" fill="#2C3E50" opacity="0.6"/>
+    <circle cx="115" cy="92" r="6" fill="#2C3E50" opacity="0.6"/>
+    <path d="M85 112 Q100 124 115 112" stroke="#2C3E50" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6"/>
+  </svg>`,
+
+  tree: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <rect x="85" y="160" width="30" height="55" rx="6" fill="#8B4513"/>
+    <polygon points="100,20 165,110 35,110" fill="#27AE60"/>
+    <polygon points="100,50 155,130 45,130" fill="#2ECC71"/>
+    <polygon points="100,80 150,155 50,155" fill="#27AE60"/>
+  </svg>`,
+
+  fish: `<svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="175,80 210,50 210,110" fill="#3498DB"/>
+    <ellipse cx="105" cy="80" rx="80" ry="45" fill="#3498DB"/>
+    <ellipse cx="85" cy="68" rx="12" ry="18" fill="#5DADE2" opacity="0.5"/>
+    <circle cx="58" cy="70" r="10" fill="white"/>
+    <circle cx="60" cy="70" r="6" fill="#1A1A1A"/>
+    <circle cx="62" cy="68" r="2" fill="white"/>
+    <path d="M70 58 Q100 40 140 55" stroke="#2980B9" stroke-width="2" fill="none"/>
+    <path d="M70 102 Q100 118 140 105" stroke="#2980B9" stroke-width="2" fill="none"/>
+  </svg>`,
+
+  // ── URDU ────────────────────────────────────────────────
+  urdu_alif: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="220" rx="24" fill="linear-gradient(135deg,#1F4E79,#2E86C1)"/>
+    <rect width="200" height="220" rx="24" fill="#1F4E79"/>
+    <text x="100" y="165" text-anchor="middle" font-size="140" font-weight="bold" fill="white" font-family="Noto Nastaliq Urdu,serif">ا</text>
+    <text x="100" y="205" text-anchor="middle" font-size="16" fill="rgba(255,255,255,0.7)" font-family="Noto Nastaliq Urdu,serif">الف</text>
+  </svg>`,
+
+  urdu_ba: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="220" rx="24" fill="#6C3483"/>
+    <text x="100" y="155" text-anchor="middle" font-size="130" font-weight="bold" fill="white" font-family="Noto Nastaliq Urdu,serif">ب</text>
+    <text x="100" y="205" text-anchor="middle" font-size="16" fill="rgba(255,255,255,0.7)" font-family="Noto Nastaliq Urdu,serif">بے</text>
+  </svg>`,
+
+  urdu_ta: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="220" rx="24" fill="#117A65"/>
+    <text x="100" y="155" text-anchor="middle" font-size="130" font-weight="bold" fill="white" font-family="Noto Nastaliq Urdu,serif">ت</text>
+    <text x="100" y="205" text-anchor="middle" font-size="16" fill="rgba(255,255,255,0.7)" font-family="Noto Nastaliq Urdu,serif">تے</text>
+  </svg>`,
+
+  urdu_jeem: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="220" rx="24" fill="#B7770D"/>
+    <text x="100" y="155" text-anchor="middle" font-size="130" font-weight="bold" fill="white" font-family="Noto Nastaliq Urdu,serif">ج</text>
+    <text x="100" y="205" text-anchor="middle" font-size="16" fill="rgba(255,255,255,0.7)" font-family="Noto Nastaliq Urdu,serif">جیم</text>
+  </svg>`,
+
+  poda: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <rect x="88" y="155" width="24" height="60" rx="6" fill="#8B4513"/>
+    <ellipse cx="100" cy="100" rx="65" ry="70" fill="#27AE60"/>
+    <ellipse cx="100" cy="85" rx="45" ry="50" fill="#2ECC71"/>
+    <ellipse cx="75" cy="120" rx="30" ry="20" fill="#1E8449" transform="rotate(-20,75,120)"/>
+    <ellipse cx="125" cy="120" rx="30" ry="20" fill="#1E8449" transform="rotate(20,125,120)"/>
+    <text x="100" y="215" text-anchor="middle" font-size="16" fill="#1E8449" font-weight="700" font-family="Noto Nastaliq Urdu,serif">پودا</text>
+  </svg>`,
+
+  anar: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="115" r="80" fill="#C0392B"/>
+    <ellipse cx="100" cy="90" rx="80" ry="60" fill="#E74C3C" opacity="0.5"/>
+    <rect x="88" y="35" width="24" height="30" rx="4" fill="#8B4513"/>
+    <ellipse cx="100" cy="35" rx="16" ry="8" fill="#27AE60"/>
+    ${[[70,90],[100,80],[130,90],[80,115],[120,115],[95,140],[110,138]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="8" fill="#F8C6C6" opacity="0.6"/>`).join('')}
+    <text x="100" y="215" text-anchor="middle" font-size="16" fill="#C0392B" font-weight="700" font-family="Noto Nastaliq Urdu,serif">انار</text>
+  </svg>`,
+
+  kitab: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <rect x="20" y="25" width="160" height="175" rx="8" fill="#3498DB"/>
+    <rect x="30" y="25" width="10" height="175" fill="#2980B9"/>
+    <rect x="45" y="45" width="120" height="8" rx="4" fill="white" opacity="0.5"/>
+    <rect x="45" y="65" width="100" height="6" rx="3" fill="white" opacity="0.4"/>
+    <rect x="45" y="80" width="110" height="6" rx="3" fill="white" opacity="0.4"/>
+    <rect x="45" y="95" width="90" height="6" rx="3" fill="white" opacity="0.4"/>
+    <rect x="45" y="110" width="105" height="6" rx="3" fill="white" opacity="0.4"/>
+    <text x="105" y="175" text-anchor="middle" font-size="18" fill="white" font-weight="700" font-family="Noto Nastaliq Urdu,serif">کتاب</text>
+    <text x="105" y="215" text-anchor="middle" font-size="14" fill="#3498DB" font-weight="700" font-family="Noto Nastaliq Urdu,serif">کتاب</text>
+  </svg>`,
+
+  ustaa: `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="60" r="40" fill="#F5CBA7"/>
+    <rect x="60" y="95" width="80" height="90" rx="10" fill="#2980B9"/>
+    <rect x="75" y="185" width="20" height="30" rx="6" fill="#1C2833"/>
+    <rect x="105" y="185" width="20" height="30" rx="6" fill="#1C2833"/>
+    <circle cx="87" cy="55" r="6" fill="#2C3E50"/>
+    <circle cx="113" cy="55" r="6" fill="#2C3E50"/>
+    <path d="M88 72 Q100 80 112 72" stroke="#2C3E50" stroke-width="2" fill="none"/>
+    <rect x="95" y="115" width="10" height="40" rx="4" fill="white" opacity="0.5"/>
+    <rect x="82" y="125" width="36" height="6" rx="3" fill="white" opacity="0.5"/>
+    <text x="100" y="215" text-anchor="middle" font-size="14" fill="#2980B9" font-weight="700" font-family="Noto Nastaliq Urdu,serif">اُستاد</text>
+  </svg>`,
+
+  ghar: `<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="110,15 200,90 20,90" fill="#E74C3C"/>
+    <rect x="35" y="88" width="150" height="105" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="2"/>
+    <rect x="80" y="120" width="40" height="73" rx="4" fill="#8B4513"/>
+    <circle cx="116" cy="158" r="4" fill="#BDC3C7"/>
+    <rect x="50" y="110" width="30" height="28" rx="4" fill="#87CEEB" stroke="#7FB3D3" stroke-width="2"/>
+    <rect x="140" y="110" width="30" height="28" rx="4" fill="#87CEEB" stroke="#7FB3D3" stroke-width="2"/>
+    <text x="110" y="195" text-anchor="middle" font-size="16" fill="#E74C3C" font-weight="700" font-family="Noto Nastaliq Urdu,serif">گھر</text>
+  </svg>`,
+
+  colours_red: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="20" fill="#E74C3C"/>
+    <text x="100" y="100" text-anchor="middle" font-size="36" fill="white" font-weight="900" font-family="Baloo 2,cursive">RED</text>
+    <text x="100" y="140" text-anchor="middle" font-size="22" fill="rgba(255,255,255,0.8)" font-family="Noto Nastaliq Urdu,serif">لال</text>
+  </svg>`,
+
+  colours_blue: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="20" fill="#3498DB"/>
+    <text x="100" y="100" text-anchor="middle" font-size="36" fill="white" font-weight="900" font-family="Baloo 2,cursive">BLUE</text>
+    <text x="100" y="140" text-anchor="middle" font-size="22" fill="rgba(255,255,255,0.8)" font-family="Noto Nastaliq Urdu,serif">نیلا</text>
+  </svg>`,
+
+  colours_green: `<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="160" rx="20" fill="#27AE60"/>
+    <text x="100" y="100" text-anchor="middle" font-size="36" fill="white" font-weight="900" font-family="Baloo 2,cursive">GREEN</text>
+    <text x="100" y="140" text-anchor="middle" font-size="22" fill="rgba(255,255,255,0.8)" font-family="Noto Nastaliq Urdu,serif">سبز</text>
+  </svg>`,
+};
+
+// ══════════════════════════════════════════════════════════
+// QUESTION BANKS — image-based
+// ══════════════════════════════════════════════════════════
+const QUESTION_BANKS = {
+  Math: [
+    { img:'apple',      q:'What fruit is this? / یہ کون سا پھل ہے؟',     opts:['Mango','Apple','Banana','Orange'],    ans:1 },
+    { img:'three_stars',q:'How many stars? / کتنے ستارے ہیں؟',           opts:['Two / دو','Three / تین','Four / چار','Five / پانچ'], ans:1 },
+    { img:'five_stars', q:'How many stars? / کتنے ستارے ہیں؟',           opts:['Three / تین','Four / چار','Five / پانچ','Six / چھ'], ans:2 },
+    { img:'triangle',   q:'What shape is this? / یہ کون سی شکل ہے؟',    opts:['Square / مربع','Circle / دائرہ','Triangle / مثلث','Rectangle / مستطیل'], ans:2 },
+    { img:'circle',     q:'What shape is this? / یہ کون سی شکل ہے؟',    opts:['Triangle / مثلث','Circle / دائرہ','Square / مربع','Rectangle / مستطیل'], ans:1 },
+    { img:'square',     q:'What shape is this? / یہ کون سی شکل ہے؟',    opts:['Circle / دائرہ','Triangle / مثلث','Rectangle / مستطیل','Square / مربع'], ans:3 },
+    { img:'rectangle',  q:'What shape is this? / یہ کون سی شکل ہے؟',    opts:['Square / مربع','Triangle / مثلث','Rectangle / مستطیل','Circle / دائرہ'], ans:2 },
+    { img:'two_apples', q:'How many apples? / کتنے سیب ہیں؟',            opts:['One / ایک','Two / دو','Three / تین','Four / چار'], ans:1 },
+    { img:'four_balls', q:'How many balls? / کتنی گیندیں ہیں؟',          opts:['Two / دو','Three / تین','Four / چار','Five / پانچ'], ans:2 },
+    { img:'six_dots',   q:'How many dots on the dice? / پانسے پر کتنے نقطے ہیں؟', opts:['Four / چار','Five / پانچ','Six / چھ','Seven / سات'], ans:2 },
+    { img:'clock_3',    q:'What time does the clock show? / گھڑی میں کیا وقت ہے؟', opts:['1:00','2:00','3:00','4:00'], ans:2 },
+    { img:'plus_sign',  q:'What sign is this? / یہ کون سا نشان ہے؟',     opts:['Minus / منفی','Multiply / ضرب','Plus / جمع','Divide / تقسیم'], ans:2 },
+  ],
+  English: [
+    { img:'letter_A',   q:'What letter is this?',                         opts:['O','A','U','E'], ans:1 },
+    { img:'letter_B',   q:'What letter is this?',                         opts:['D','P','B','R'], ans:2 },
+    { img:'letter_C',   q:'What letter is this?',                         opts:['G','O','C','Q'], ans:2 },
+    { img:'cat',        q:'What animal is this?',                         opts:['Dog','Rabbit','Cat','Fox'], ans:2 },
+    { img:'dog',        q:'What animal is this?',                         opts:['Cat','Dog','Wolf','Bear'], ans:1 },
+    { img:'sun',        q:'What is this?',                                opts:['Moon','Cloud','Star','Sun'], ans:3 },
+    { img:'tree',       q:'What is this?',                                opts:['Flower','Grass','Tree','Bush'], ans:2 },
+    { img:'fish',       q:'What animal is this?',                         opts:['Bird','Snake','Fish','Frog'], ans:2 },
+    { img:'colours_red',q:'What colour is this?',                         opts:['Blue','Green','Red','Yellow'], ans:2 },
+    { img:'colours_blue',q:'What colour is this?',                        opts:['Red','Blue','Green','Yellow'], ans:1 },
+    { img:'colours_green',q:'What colour is this?',                       opts:['Yellow','Red','Blue','Green'], ans:3 },
+    { img:'apple',      q:'What is this?',                                opts:['Banana','Mango','Apple','Orange'], ans:2 },
+  ],
+  Urdu: [
+    { img:'urdu_alif',  q:'یہ کون سا حرف ہے؟',  opts:['ب','پ','ا','ت'], ans:2 },
+    { img:'urdu_ba',    q:'یہ کون سا حرف ہے؟',  opts:['ا','ب','پ','ت'], ans:1 },
+    { img:'urdu_ta',    q:'یہ کون سا حرف ہے؟',  opts:['ب','پ','ت','ا'], ans:2 },
+    { img:'urdu_jeem',  q:'یہ کون سا حرف ہے؟',  opts:['ح','خ','ج','چ'], ans:2 },
+    { img:'poda',       q:'یہ تصویر میں کیا ہے؟', opts:['درخت','پھول','پودا','گھاس'], ans:2 },
+    { img:'anar',       q:'یہ کون سا پھل ہے؟',  opts:['سیب','آم','انار','کیلا'], ans:2 },
+    { img:'kitab',      q:'یہ کیا ہے؟',          opts:['قلم','بستہ','کاپی','کتاب'], ans:3 },
+    { img:'ustaa',      q:'یہ کون ہے؟',          opts:['شاگرد','اُستاد','والدین','ڈاکٹر'], ans:1 },
+    { img:'ghar',       q:'یہ کیا ہے؟',          opts:['اسکول','بازار','گھر','ہسپتال'], ans:2 },
+    { img:'sun',        q:'یہ کیا ہے؟',          opts:['چاند','ستارہ','بادل','سورج'], ans:3 },
+    { img:'tree',       q:'یہ کیا ہے؟',          opts:['پھول','درخت','گھاس','پودا'], ans:1 },
+    { img:'cat',        q:'یہ کون سا جانور ہے؟',opts:['کتا','خرگوش','بلی','لومڑی'], ans:2 },
+  ],
+};
+
+// ══════════════════════════════════════════════════════════
+// SESSION STATE
+// ══════════════════════════════════════════════════════════
+let session = { subject:'Math', studentName:'', questions:[], currentQ:0, score:0, answered:false };
+
+function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+function selectSubject(subj, el) {
+  session.subject = subj;
+  document.querySelectorAll('.subj-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ── Start ────────────────────────────────────────────────
+async function startAssessment() {
+  const pin  = document.getElementById('pin-input').value.trim();
+  const name = document.getElementById('name-input').value.trim();
+  const err  = document.getElementById('setup-error');
+  err.classList.remove('show');
+
+  if (!pin || pin.length < 4) { err.textContent = 'Please enter a valid PIN.'; err.classList.add('show'); return; }
+  if (!name || name.length < 2) { err.textContent = 'Please enter the student\'s full name.'; err.classList.add('show'); return; }
+
+  show('screen-loading');
+  session.studentName = name;
+  session.currentQ    = 0;
+  session.score       = 0;
+
+  // Shuffle questions
+  const bank = [...(QUESTION_BANKS[session.subject] || QUESTION_BANKS.Math)];
+  for (let i = bank.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [bank[i],bank[j]]=[bank[j],bank[i]]; }
+  session.questions = bank.slice(0, 10);
+
+  // Optional: notify backend
+  try {
+    await fetch('/portal/session/start', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ pin, studentName: name })
+    });
+  } catch(e) {}
+
+  document.getElementById('strip-name').textContent = name;
+  document.getElementById('strip-sub').textContent  = `${session.subject} • Picture Assessment`;
+  document.getElementById('student-strip').style.display = 'flex';
+
+  showQuestion(0);
+  show('screen-question');
+}
+
+// ── Render question ──────────────────────────────────────
+function showQuestion(idx) {
+  session.answered = false;
+  const q     = session.questions[idx];
+  const total = session.questions.length;
+
+  document.getElementById('q-num').textContent    = idx + 1;
+  document.getElementById('q-total').textContent  = total;
+  document.getElementById('prog-fill').style.width = `${(idx/total)*100}%`;
+
+  // SVG image
+  const imgBox = document.getElementById('image-box');
+  imgBox.innerHTML = SVGS[q.img] || `<div style="font-size:80px">${q.img}</div>`;
+
+  // Question text
+  const [qEn, qUr] = q.q.split(' / ');
+  document.getElementById('q-text').textContent = qEn || q.q;
+  const urDiv = document.getElementById('q-urdu');
+  if (qUr) { urDiv.textContent = qUr; urDiv.style.display = 'block'; }
+  else { urDiv.style.display = 'none'; }
+
+  // Options
+  const grid = document.getElementById('answers-grid');
+  grid.innerHTML = '';
+  const labels = ['A','B','C','D'];
+  q.opts.forEach((opt, i) => {
+    const [optEn, optUr] = opt.split(' / ');
+    const btn = document.createElement('button');
+    btn.className = 'ans-btn';
+    btn.dataset.idx = i;
+    btn.innerHTML = `<span class="ans-label">${labels[i]}</span><span class="ans-text">${optEn||opt}</span>${optUr?`<span class="ans-urdu">${optUr}</span>`:''}`;
+    btn.onclick = () => selectAnswer(i);
+    grid.appendChild(btn);
+  });
+
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('btn-next').classList.remove('show');
+}
+
+// ── Answer ───────────────────────────────────────────────
+function selectAnswer(idx) {
+  if (session.answered) return;
+  session.answered = true;
+
+  const q      = session.questions[session.currentQ];
+  const isRight = idx === q.ans;
+  if (isRight) session.score++;
+
+  document.querySelectorAll('.ans-btn').forEach(btn => {
+    const i = parseInt(btn.dataset.idx);
+    if (i === q.ans)  btn.classList.add('correct');
+    else if (i === idx && !isRight) btn.classList.add('wrong');
+  });
+
+  const fb = document.getElementById('feedback');
+  if (isRight) { fb.textContent = '✅ Correct! — درست جواب 🌟'; fb.className = 'feedback correct-fb'; }
+  else { fb.textContent = `❌ Wrong! — غلط جواب`; fb.className = 'feedback wrong-fb'; }
+
+  const nxt = document.getElementById('btn-next');
+  nxt.textContent = session.currentQ >= session.questions.length - 1 ? '🎓 See Results' : 'Next Picture →';
+  nxt.classList.add('show');
+}
+
+// ── Next ─────────────────────────────────────────────────
+function nextQuestion() {
+  session.currentQ++;
+  if (session.currentQ < session.questions.length) {
+    showQuestion(session.currentQ);
+    window.scrollTo(0,0);
+  } else {
+    showResults();
+  }
+}
+
+// ── Results ──────────────────────────────────────────────
+function showResults() {
+  const total = session.questions.length;
+  const pct   = Math.round((session.score / total) * 100);
+  const passed = pct >= 70;
+
+  document.getElementById('res-name').textContent = session.studentName;
+  document.getElementById('res-pct').textContent  = pct + '%';
+  document.getElementById('res-frac').textContent = `${session.score}/${total}`;
+  document.getElementById('score-ring').style.setProperty('--pct', pct + '%');
+
+  const badge = document.getElementById('res-badge');
+  badge.textContent = passed ? '✅ PASSED — کامیاب 🌟' : '📚 Keep Trying — مزید کوشش کریں';
+  badge.className   = `result-badge ${passed ? 'passed' : 'failed'}`;
+
+  document.getElementById('student-strip').style.display = 'none';
+  show('screen-results');
+}
+
+// ── Reset ─────────────────────────────────────────────────
+function resetPortal() {
+  session = { subject:'Math', studentName:'', questions:[], currentQ:0, score:0, answered:false };
+  document.getElementById('name-input').value  = '';
+  document.getElementById('pin-input').value   = '';
+  document.getElementById('setup-error').classList.remove('show');
+  document.getElementById('student-strip').style.display = 'none';
+  document.querySelectorAll('.subj-btn').forEach((b,i)=>b.classList.toggle('selected',i===0));
+  show('screen-setup');
+}
+
+// Keyboard support
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('name-input').addEventListener('keydown', e => { if(e.key==='Enter') startAssessment(); });
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('screen-question').classList.contains('active')) return;
+    const map = {'a':0,'b':1,'c':2,'d':3,'A':0,'B':1,'C':2,'D':3};
+    if (map[e.key] !== undefined) selectAnswer(map[e.key]);
+    if (e.key === 'Enter' || e.key === ' ') { const btn = document.getElementById('btn-next'); if(btn.classList.contains('show')) nextQuestion(); }
+  });
+});
+</script>
+</body>
+</html>
