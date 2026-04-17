@@ -813,6 +813,7 @@ app.get('/image-portal', (req, res) => res.sendFile(path.join(__dirname, 'image-
 app.get('/pdf-portal', (req, res) => res.sendFile(path.join(__dirname, 'takmil-pdf-portal.html')));
 app.get('/pdf-portal', (req, res) => res.sendFile(path.join(__dirname, 'takmil-pdf-portal-v2.html')));
 app.get('/level2', (req,res) => res.sendFile(path.join(__dirname,'takmil-level2-portal.html')));
+app.get('/assess', (req,res) => res.sendFile(path.join(__dirname,'takmil-unified-portal.html')));
 // ══════════════════════════════════════════════════════════════════
 // ADD THESE TWO BLOCKS TO index.js
 // Paste BLOCK A anywhere after the existing app.get('/import') line
