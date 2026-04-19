@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TAKMIL — Level 3 Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Baloo+2:wght@400;700;800&display=swap" rel="stylesheet">
+
+<!-- ════════════════════════════════════════════════════════
+     LAYER 1 — QUESTION BANK
+     RULE: Text only. No SVG. Images referenced by ID only.
+════════════════════════════════════════════════════════ -->
+<script>
+const QB_L3 = {
+
+  Math: [
+    { id:"M3-01", img:"clock_digital_1215",
+      q_en:"The digital clock shows 12:15. Which analog clock shows the same time?",
+      q_ur:"ڈیجیٹل گھڑی 12:15 دکھاتی ہے — کون سی اینالاگ گھڑی یہی وقت دکھاتی ہے؟",
+      opts:["3:00 بجے","12:15 بجے","6:30 بجے","8:45 بجے"], ans:1 },
+
+    { id:"M3-02", img:"clock_digital_630",
+      q_en:"The digital clock shows 6:30. Which analog clock shows the same time?",
+      q_ur:"ڈیجیٹل گھڑی 6:30 دکھاتی ہے — کون سی اینالاگ گھڑی یہی وقت دکھاتی ہے؟",
+      opts:["12:15 بجے","8:45 بجے","6:30 بجے","1:00 بجے"], ans:2 },
+
+    { id:"M3-03", img:"shape_triangle",
+      q_en:"Look at this shape. What is it called?",
+      q_ur:"اس شکل کو کیا کہتے ہیں؟",
+      opts:["Triangle / مثلث","Rectangle / مستطیل","Circle / دائرہ","Square / مربع"], ans:0 },
+
+    { id:"M3-04", img:"shape_circle",
+      q_en:"Look at this shape. What is it called?",
+      q_ur:"اس شکل کو کیا کہتے ہیں؟",
+      opts:["Triangle / مثلث","Rectangle / مستطیل","Circle / دائرہ","Square / مربع"], ans:2 },
+
+    { id:"M3-05", img:"clock_910",
+      q_en:"The clock shows 9:10. The hour hand is between which two numbers?",
+      q_ur:"گھڑی 9:10 بجے دکھاتی ہے — گھنٹے کی سوئی کن دو نمبروں کے درمیان ہے؟",
+      opts:["8 اور 9","9 اور 10","10 اور 11","11 اور 12"], ans:1 },
+
+    { id:"M3-06", img:"clock_9_to_10",
+      q_en:"The clock shows 9:00. One hour later, what will the time be?",
+      q_ur:"گھڑی 9:00 بجے دکھاتی ہے — ایک گھنٹہ بعد کیا وقت ہوگا؟",
+      opts:["8:00 بجے","9:00 بجے","10:00 بجے","11:00 بجے"], ans:2 },
+
+    { id:"M3-07", img:"days_of_week",
+      q_en:"What is the THIRD day of the week?",
+      q_ur:"ہفتے کا تیسرا دن کون سا ہے؟",
+      opts:["Monday / پیر","Tuesday / منگل","Wednesday / بدھ","Thursday / جمعرات"], ans:2 },
+
+    { id:"M3-08", img:"months_calendar",
+      q_en:"Which month comes AFTER March?",
+      q_ur:"مارچ کے بعد کون سا مہینہ آتا ہے؟",
+      opts:["February / فروری","March / مارچ","April / اپریل","May / مئی"], ans:2 },
+
+    { id:"M3-09", img:"shape_rectangle",
+      q_en:"How many SIDES does a rectangle have?",
+      q_ur:"مستطیل کے کتنے اضلاع ہوتے ہیں؟",
+      opts:["3","4","5","6"], ans:1 },
+
+    { id:"M3-10", img:"shape_triangle_plain",
+      q_en:"How many CORNERS does a triangle have?",
+      q_ur:"مثلث کے کتنے کونے ہوتے ہیں؟",
+      opts:["3","4","5","6"], ans:0 },
+
+    { id:"M3-11", img:"days_sequence",
+      q_en:"Which day comes AFTER Monday (پیر)?",
+      q_ur:"پیر کے بعد کون سا دن آتا ہے؟",
+      opts:["Sunday / اتوار","Tuesday / منگل","Wednesday / بدھ","Thursday / جمعرات"], ans:1 },
+
+    { id:"M3-12", img:"shape_pentagon",
+      q_en:"Look at this shape. How many SIDES does it have?",
+      q_ur:"اس شکل کے کتنے اضلاع ہیں؟",
+      opts:["3","4","5","6"], ans:2 },
+  ],
+
+  English: [
+    { id:"E3-01", img:"capital_L",
+      q_en:"Capital letter L — which is its small letter?",
+      q_ur:"بڑے حرف L کا چھوٹا حرف کون سا ہے؟",
+      opts:["d","l","s","i"], ans:1 },
+
+    { id:"E3-02", img:"capital_D",
+      q_en:"Capital letter D — which is its small letter?",
+      q_ur:"بڑے حرف D کا چھوٹا حرف کون سا ہے؟",
+      opts:["d","l","s","v"], ans:0 },
+
+    { id:"E3-03", img:"pic_boy",
+      q_en:"Look at the picture. Complete: '___ is a boy.'",
+      q_ur:"تصویر دیکھیں: '___ is a boy' — خالی جگہ بھریں",
+      opts:["He","She","It","They"], ans:0 },
+
+    { id:"E3-04", img:"pic_woman",
+      q_en:"Look at the picture. Complete: '___ is a woman.'",
+      q_ur:"تصویر دیکھیں: '___ is a woman' — خالی جگہ بھریں",
+      opts:["He","She","It","They"], ans:1 },
+
+    { id:"E3-05", img:"pic_chair",
+      q_en:"Look at the picture. Complete: '___ is a chair.'",
+      q_ur:"تصویر دیکھیں: '___ is a chair' — خالی جگہ بھریں",
+      opts:["He","She","It","They"], ans:2 },
+
+    { id:"E3-06", img:"story_zara",
+      q_en:"Zara lives near a park. She loves to play with her friends. Zara lives near ___?",
+      q_ur:"زارہ ایک پارک کے قریب رہتی ہے — زارہ کہاں رہتی ہے؟",
+      opts:["School / اسکول","Market / بازار","Park / پارک","Jungle / جنگل"], ans:2 },
+
+    { id:"E3-07", img:"noun_types",
+      q_en:"'Zara' is a name of ___.",
+      q_ur:"'زارہ' کس چیز کا نام ہے؟",
+      opts:["Person / شخص","Place / جگہ","Thing / چیز","Idea / خیال"], ans:0 },
+
+    { id:"E3-08", img:"noun_types",
+      q_en:"'Park' is a name of ___.",
+      q_ur:"'پارک' کس چیز کا نام ہے؟",
+      opts:["Person / شخص","Place / جگہ","Thing / چیز","Idea / خیال"], ans:1 },
+
+    { id:"E3-09", img:"story_zara",
+      q_en:"From the passage: Zara plays with her ___.",
+      q_ur:"عبارت سے: زارہ اپنے ___ کے ساتھ کھیلتی ہے",
+      opts:["Brother / بھائی","Sister / بہن","Mother / ماں","Friends / دوست"], ans:3 },
+
+    { id:"E3-10", img:"punctuation_marks",
+      q_en:"'They also like swings ___' — which punctuation mark goes at the end?",
+      q_ur:"جملے کے آخر میں کون سا نشان لگائیں؟",
+      opts:[". (full stop)","? (question mark)","! (exclamation)",", (comma)"], ans:0 },
+
+    { id:"E3-11", img:"manners_walking",
+      q_en:"If you walk in front of someone, what should you say?",
+      q_ur:"اگر آپ کسی کے سامنے سے گزریں تو کیا کہیں گے؟",
+      opts:["Thank You","Please","I'm Sorry","Excuse Me"], ans:3 },
+
+    { id:"E3-12", img:"manners_gift",
+      q_en:"When you receive a gift, you send a ___.",
+      q_ur:"جب آپ کو تحفہ ملے تو آپ کیا بھیجتے ہیں؟",
+      opts:["I'm Sorry","Please","Thank You Card","Excuse Me"], ans:2 },
+  ],
+
+  Urdu: [
+    { id:"U3-01", img:"boy_helping_elder",
+      q_en:"تصویر میں اچھے کردار کا کون سا پہلو دکھایا گیا ہے؟",
+      q_ur:"تصویر میں اچھے کردار کا کون سا پہلو دکھایا گیا ہے؟",
+      opts:["شائستگی","رحمدلی","ایمانداری","سچائی"], ans:1 },
+
+    { id:"U3-02", img:"sick_reasons",
+      q_en:"ہم بیمار کیوں ہوتے ہیں؟",
+      q_ur:"ہم بیمار کیوں ہوتے ہیں؟",
+      opts:["صحت مند غذا کھانے سے","گندی چیزیں کھانے سے","صفائی کا خیال رکھنے سے","باہر کھیلنے سے"], ans:1 },
+
+    { id:"U3-03", img:"hygiene_bad",
+      q_en:"جسمانی صفائی نہ رکھنے کا کیا نتیجہ ہوتا ہے؟",
+      q_ur:"جسمانی صفائی نہ رکھنے کا کیا نتیجہ ہوتا ہے؟",
+      opts:["صحت اچھی ہوجاتی ہے","جلدی صحت یاب ہوتے ہیں","بیمار ہو جاتے ہیں","کھانا اچھا لگتا ہے"], ans:2 },
+
+    { id:"U3-04", img:"boy_polite",
+      q_en:"تصویر میں لڑکا کون سی صفت دکھا رہا ہے؟",
+      q_ur:"تصویر میں لڑکا کون سی صفت دکھا رہا ہے؟",
+      opts:["شائستگی","غصہ","بے ادبی","تکبر"], ans:0 },
+
+    { id:"U3-05", img:"healthy_food",
+      q_en:"صحت مند رہنے کے لیے کیا کھانا چاہیے؟",
+      q_ur:"صحت مند رہنے کے لیے کیا کھانا چاہیے؟",
+      opts:["گندی چیزیں","باہر کا کھانا","صحت مند غذا","میٹھی چیزیں"], ans:2 },
+
+    { id:"U3-06", img:"clean_environment",
+      q_en:"صاف ماحول کس لیے ضروری ہے؟",
+      q_ur:"صاف ماحول کس لیے ضروری ہے؟",
+      opts:["خوبصورتی کے لیے","صحت مند زندگی کے لیے","کھیلنے کے لیے","پڑھنے کے لیے"], ans:1 },
+
+    { id:"U3-07", img:"haroof_izafat",
+      q_en:"حروف اضافت: 'ہم سب دوست ___ یہاں آئے ہیں' — درست لفظ کون سا ہے؟",
+      q_ur:"'ہم سب دوست ___ یہاں آئے ہیں' — خالی جگہ بھریں",
+      opts:["کا","کی","کے","کو"], ans:2 },
+
+    { id:"U3-08", img:"muzakkar_muannas",
+      q_en:"'خالو' کا مونث کیا ہے؟",
+      q_ur:"'خالو' کا مونث کیا ہے؟",
+      opts:["خالہ","خالی","خالو جی","خالہ جان"], ans:0 },
+
+    { id:"U3-09", img:"muzakkar_muannas",
+      q_en:"'راجہ' کا مونث کیا ہے؟",
+      q_ur:"'راجہ' کا مونث کیا ہے؟",
+      opts:["راجہ جی","رانی","راجہ بی","رانیا"], ans:1 },
+
+    { id:"U3-10", img:"lion_lioness",
+      q_en:"'شیر' کا مونث کیا ہے؟",
+      q_ur:"'شیر' کا مونث کیا ہے؟",
+      opts:["شیری","شیرنی","شیرا","شیرانہ"], ans:1 },
+
+    { id:"U3-11", img:"haroof_izafat",
+      q_en:"'کیونکہ میں نے سکول ___ کام کر لیا' — درست لفظ کون سا ہے؟",
+      q_ur:"'کیونکہ میں نے سکول ___ کام کر لیا' — خالی جگہ بھریں",
+      opts:["کی","کا","کے","کو"], ans:1 },
+
+    { id:"U3-12", img:"wao_leen",
+      q_en:"ان میں سے واؤ لین والا لفظ کون سا ہے؟",
+      q_ur:"ان میں سے واؤ لین والا لفظ کون سا ہے؟",
+      opts:["کتاب","موج","سیب","باغ"], ans:1 },
+  ],
+};
+</script>
+
+<!-- ════════════════════════════════════════════════════════
+     LAYER 2 — IMAGE LIBRARY
+     RULE: ZERO text from any answer option inside any SVG.
+     Pure visuals only — objects, shapes, scenes, symbols.
+════════════════════════════════════════════════════════ -->
+<script>
+const IMGS_L3 = {
+
+  // ── MATH ─────────────────────────────────────────────────
+  clock_digital_1215:`<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="140" rx="16" fill="#1A252F"/>
+    <rect x="16" y="16" width="188" height="88" rx="10" fill="#0D1B2A"/>
+    <text x="110" y="82" text-anchor="middle" font-size="54" font-weight="900" fill="#00FF41" font-family="Courier,monospace" letter-spacing="3">12:15</text>
+    <rect x="16" y="114" width="44" height="12" rx="5" fill="#2C3E50"/>
+    <rect x="160" y="114" width="44" height="12" rx="5" fill="#2C3E50"/>
+  </svg>`,
+
+  clock_digital_630:`<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="140" rx="16" fill="#1A252F"/>
+    <rect x="16" y="16" width="188" height="88" rx="10" fill="#0D1B2A"/>
+    <text x="110" y="82" text-anchor="middle" font-size="54" font-weight="900" fill="#00FF41" font-family="Courier,monospace" letter-spacing="3">6:30</text>
+    <rect x="16" y="114" width="44" height="12" rx="5" fill="#2C3E50"/>
+    <rect x="160" y="114" width="44" height="12" rx="5" fill="#2C3E50"/>
+  </svg>`,
+
+  shape_triangle:`<svg viewBox="0 0 220 190" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="190" rx="16" fill="#EAF4FF"/>
+    <polygon points="110,18 205,168 15,168" fill="#3498DB" stroke="#1A5276" stroke-width="3"/>
+  </svg>`,
+
+  shape_circle:`<svg viewBox="0 0 220 190" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="190" rx="16" fill="#FEF9E7"/>
+    <circle cx="110" cy="95" r="78" fill="#F5C842" stroke="#D4A017" stroke-width="3"/>
+  </svg>`,
+
+  clock_910:`<svg viewBox="0 0 210 210" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="105" cy="105" r="95" fill="white" stroke="#2C3E50" stroke-width="5"/>
+    ${Array.from({length:12},(_,i)=>{const a=(i*30-90)*Math.PI/180,r1=i%3===0?76:80,r2=88;return `<line x1="${(105+r1*Math.cos(a)).toFixed(1)}" y1="${(105+r1*Math.sin(a)).toFixed(1)}" x2="${(105+r2*Math.cos(a)).toFixed(1)}" y2="${(105+r2*Math.sin(a)).toFixed(1)}" stroke="#2C3E50" stroke-width="${i%3===0?4:2}"/>`;}).join('')}
+    <text x="105" y="22" text-anchor="middle" font-size="15" font-weight="900" fill="#2C3E50" font-family="Arial">12</text>
+    <text x="188" y="110" text-anchor="middle" font-size="15" fill="#2C3E50" font-family="Arial">3</text>
+    <text x="105" y="197" text-anchor="middle" font-size="15" fill="#2C3E50" font-family="Arial">6</text>
+    <text x="22" y="110" text-anchor="middle" font-size="15" fill="#2C3E50" font-family="Arial">9</text>
+    <line x1="105" y1="105" x2="48" y2="111" stroke="#2C3E50" stroke-width="7" stroke-linecap="round"/>
+    <line x1="105" y1="105" x2="157" y2="51" stroke="#E74C3C" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="105" cy="105" r="7" fill="#2C3E50"/>
+  </svg>`,
+
+  clock_9_to_10:`<svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="72" cy="95" r="64" fill="white" stroke="#2C3E50" stroke-width="4"/>
+    <text x="72" y="34" text-anchor="middle" font-size="12" font-weight="900" fill="#2C3E50" font-family="Arial">12</text>
+    <text x="132" y="99" text-anchor="middle" font-size="12" fill="#2C3E50" font-family="Arial">3</text>
+    <text x="72" y="162" text-anchor="middle" font-size="12" fill="#2C3E50" font-family="Arial">6</text>
+    <text x="12" y="99" text-anchor="middle" font-size="12" fill="#2C3E50" font-family="Arial">9</text>
+    <line x1="72" y1="95" x2="28" y2="95" stroke="#2C3E50" stroke-width="6" stroke-linecap="round"/>
+    <line x1="72" y1="95" x2="72" y2="40" stroke="#E74C3C" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="72" cy="95" r="6" fill="#2C3E50"/>
+    <text x="155" y="102" text-anchor="middle" font-size="22" fill="#27AE60" font-weight="900" font-family="Arial">+1h</text>
+    <text x="155" y="124" text-anchor="middle" font-size="13" fill="#888" font-family="Arial">= ?</text>
+    <circle cx="222" cy="95" r="64" fill="#F5FFF8" stroke="#27AE60" stroke-width="4" stroke-dasharray="6,3"/>
+    <text x="222" y="34" text-anchor="middle" font-size="12" fill="#BDC3C7" font-family="Arial">12</text>
+    <text x="282" y="99" text-anchor="middle" font-size="12" fill="#BDC3C7" font-family="Arial">3</text>
+    <text x="222" y="162" text-anchor="middle" font-size="12" fill="#BDC3C7" font-family="Arial">6</text>
+    <text x="162" y="99" text-anchor="middle" font-size="12" fill="#BDC3C7" font-family="Arial">9</text>
+    <text x="222" y="104" text-anchor="middle" font-size="34" fill="#E74C3C" font-family="Arial" font-weight="900">?</text>
+  </svg>`,
+
+  days_of_week:`<svg viewBox="0 0 260 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="260" height="140" rx="16" fill="#E8F8EE"/>
+    ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d,i)=>`
+      <rect x="${8+i*34}" y="16" width="28" height="56" rx="6" fill="${i===2?'#E74C3C':'#27AE60'}" opacity="${i===2?1:.65}"/>
+      <text x="${22+i*34}" y="38" text-anchor="middle" font-size="8.5" font-weight="700" fill="white" font-family="Arial">${d}</text>
+      <text x="${22+i*34}" y="52" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.9)" font-family="Arial">${i+1}</text>
+    `).join('')}
+    <text x="130" y="104" text-anchor="middle" font-size="18" fill="#E74C3C" font-weight="900" font-family="Arial">Day 3 = ?</text>
+  </svg>`,
+
+  months_calendar:`<svg viewBox="0 0 260 170" xmlns="http://www.w3.org/2000/svg">
+    <rect width="260" height="170" rx="16" fill="#EAF4FF"/>
+    ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i)=>{
+      const x=8+i%4*62, y=12+Math.floor(i/4)*46;
+      const isM=m==='Mar', isA=m==='Apr';
+      return `<rect x="${x}" y="${y}" width="54" height="38" rx="6" fill="${isM?'#3498DB':isA?'#E74C3C':'#BDC3C7'}" opacity="${isA?1:isM?1:.6}"/>
+      <text x="${x+27}" y="${y+24}" text-anchor="middle" font-size="12" font-weight="${isM||isA?'900':'700'}" fill="white" font-family="Arial">${m}</text>`;
+    }).join('')}
+    <text x="130" y="160" text-anchor="middle" font-size="12" fill="#555" font-family="Arial">Mar → ?</text>
+  </svg>`,
+
+  shape_rectangle:`<svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="160" rx="16" fill="#F5EEF8"/>
+    <rect x="20" y="28" width="200" height="104" rx="6" fill="#9B59B6" stroke="#6C3483" stroke-width="3"/>
+  </svg>`,
+
+  shape_triangle_plain:`<svg viewBox="0 0 220 190" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="190" rx="16" fill="#E8F8EE"/>
+    <polygon points="110,20 196,162 24,162" fill="#27AE60" stroke="#01411C" stroke-width="3"/>
+    <circle cx="110" cy="20" r="8" fill="#E74C3C"/>
+    <circle cx="196" cy="162" r="8" fill="#E74C3C"/>
+    <circle cx="24" cy="162" r="8" fill="#E74C3C"/>
+  </svg>`,
+
+  days_sequence:`<svg viewBox="0 0 280 120" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="120" rx="16" fill="#E8F8EE"/>
+    <rect x="8" y="22" width="70" height="56" rx="10" fill="#27AE60"/>
+    <text x="43" y="44" text-anchor="middle" font-size="12" font-weight="800" fill="white" font-family="Arial">Mon</text>
+    <text x="43" y="62" text-anchor="middle" font-size="11" fill="rgba(255,255,255,.85)" font-family="Arial">پیر</text>
+    <text x="87" y="54" font-size="22" fill="#888" font-family="Arial">→</text>
+    <rect x="104" y="22" width="70" height="56" rx="10" fill="#FEF0EF" stroke="#E74C3C" stroke-width="2.5" stroke-dasharray="5,3"/>
+    <text x="139" y="58" text-anchor="middle" font-size="32" font-weight="900" fill="#E74C3C" font-family="Arial">?</text>
+    <text x="183" y="54" font-size="22" fill="#888" font-family="Arial">→</text>
+    <rect x="200" y="22" width="70" height="56" rx="10" fill="#FEF0EF" stroke="#E74C3C" stroke-width="2.5" stroke-dasharray="5,3"/>
+    <text x="235" y="58" text-anchor="middle" font-size="32" font-weight="900" fill="#E74C3C" font-family="Arial">?</text>
+  </svg>`,
+
+  shape_pentagon:`<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="200" rx="16" fill="#FEF9E7"/>
+    <polygon points="110,18 192,76 162,168 58,168 28,76" fill="#F5C842" stroke="#D4A017" stroke-width="3"/>
+  </svg>`,
+
+  // ── ENGLISH ───────────────────────────────────────────────
+  capital_L:`<svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="220" rx="22" fill="#1A5276"/>
+    <text x="110" y="172" text-anchor="middle" font-size="168" font-weight="900" fill="white" font-family="Georgia,serif">L</text>
+  </svg>`,
+
+  capital_D:`<svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+    <rect width="220" height="220" rx="22" fill="#2E86C1"/>
+    <text x="110" y="172" text-anchor="middle" font-size="168" font-weight="900" fill="white" font-family="Georgia,serif">D</text>
+  </svg>`,
+
+  pic_boy:`<svg viewBox="0 0 190 230" xmlns="http://www.w3.org/2000/svg">
+    <rect width="190" height="230" rx="16" fill="#EAF4FF"/>
+    <circle cx="95" cy="58" r="38" fill="#F5CBA7"/>
+    <circle cx="82" cy="52" r="5.5" fill="#2C3E50"/>
+    <circle cx="108" cy="52" r="5.5" fill="#2C3E50"/>
+    <path d="M83 70 Q95 79 107 70" stroke="#2C3E50" stroke-width="2.5" fill="none"/>
+    <rect x="67" y="94" width="56" height="62" rx="9" fill="#3498DB"/>
+    <line x1="67" y1="104" x2="38" y2="135" stroke="#F5CBA7" stroke-width="11" stroke-linecap="round"/>
+    <line x1="123" y1="104" x2="152" y2="135" stroke="#F5CBA7" stroke-width="11" stroke-linecap="round"/>
+    <line x1="82" y1="156" x2="74" y2="210" stroke="#2C3E50" stroke-width="10" stroke-linecap="round"/>
+    <line x1="108" y1="156" x2="116" y2="210" stroke="#2C3E50" stroke-width="10" stroke-linecap="round"/>
+  </svg>`,
+
+  pic_woman:`<svg viewBox="0 0 190 235" xmlns="http://www.w3.org/2000/svg">
+    <rect width="190" height="235" rx="16" fill="#F5EEF8"/>
+    <ellipse cx="95" cy="46" rx="40" ry="44" fill="#8B4513"/>
+    <circle cx="95" cy="58" r="34" fill="#F5CBA7"/>
+    <circle cx="83" cy="52" r="4.5" fill="#2C3E50"/>
+    <circle cx="107" cy="52" r="4.5" fill="#2C3E50"/>
+    <path d="M84 68 Q95 76 106 68" stroke="#2C3E50" stroke-width="2.5" fill="none"/>
+    <path d="M60,90 L54,192 L136,192 L130,90 Z" fill="#E91E63"/>
+    <line x1="60" y1="100" x2="34" y2="136" stroke="#F5CBA7" stroke-width="10" stroke-linecap="round"/>
+    <line x1="130" y1="100" x2="156" y2="136" stroke="#F5CBA7" stroke-width="10" stroke-linecap="round"/>
+    <line x1="78" y1="192" x2="72" y2="228" stroke="#F5CBA7" stroke-width="9" stroke-linecap="round"/>
+    <line x1="112" y1="192" x2="118" y2="228" stroke="#F5CBA7" stroke-width="9" stroke-linecap="round"/>
+  </svg>`,
+
+  pic_chair:`<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="220" rx="16" fill="#FEF9E7"/>
+    <rect x="38" y="28" width="124" height="78" rx="7" fill="#8B4513"/>
+    <rect x="54" y="44" width="92" height="46" rx="5" fill="#A0522D"/>
+    <rect x="28" y="102" width="144" height="26" rx="7" fill="#8B4513"/>
+    <rect x="40" y="126" width="16" height="76" rx="6" fill="#6B3410"/>
+    <rect x="144" y="126" width="16" height="76" rx="6" fill="#6B3410"/>
+    <rect x="40" y="160" width="120" height="9" rx="4" fill="#6B3410"/>
+  </svg>`,
+
+  story_zara:`<svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="190" rx="16" fill="#87CEEB"/>
+    <rect x="0" y="145" width="280" height="45" rx="0 0 16 16" fill="#27AE60"/>
+    <rect x="20" y="108" width="10" height="38" fill="#8B4513"/>
+    <circle cx="25" cy="88" r="26" fill="#2ECC71"/>
+    <rect x="240" y="108" width="10" height="38" fill="#8B4513"/>
+    <circle cx="245" cy="88" r="26" fill="#2ECC71"/>
+    <line x1="92" y1="40" x2="92" y2="145" stroke="#8B4513" stroke-width="5"/>
+    <line x1="188" y1="40" x2="188" y2="145" stroke="#8B4513" stroke-width="5"/>
+    <line x1="92" y1="40" x2="188" y2="40" stroke="#8B4513" stroke-width="5"/>
+    <line x1="116" y1="40" x2="116" y2="108" stroke="#555" stroke-width="2.5"/>
+    <line x1="164" y1="40" x2="164" y2="108" stroke="#555" stroke-width="2.5"/>
+    <rect x="110" y="104" width="60" height="10" rx="4" fill="#8B4513"/>
+    <circle cx="140" cy="92" r="12" fill="#F5CBA7"/>
+    <rect x="130" y="104" width="20" height="20" rx="4" fill="#E91E63"/>
+  </svg>`,
+
+  noun_types:`<svg viewBox="0 0 280 165" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="165" rx="16" fill="#F4F6F7"/>
+    <rect x="6" y="14" width="82" height="136" rx="10" fill="#EAF4FF" stroke="#3498DB" stroke-width="2"/>
+    <circle cx="47" cy="56" r="20" fill="#F5CBA7"/>
+    <rect x="34" y="78" width="26" height="38" rx="5" fill="#3498DB"/>
+    <rect x="100" y="14" width="80" height="136" rx="10" fill="#E8F8EE" stroke="#27AE60" stroke-width="2"/>
+    <polygon points="140,28 172,60 108,60" fill="#E74C3C"/>
+    <rect x="116" y="58" width="48" height="68" rx="3" fill="#ECF0F1"/>
+    <rect x="188" y="14" width="86" height="136" rx="10" fill="#FEF9E7" stroke="#D4A017" stroke-width="2"/>
+    <rect x="206" y="46" width="50" height="70" rx="6" fill="#3498DB" opacity=".7"/>
+    <rect x="216" y="36" width="30" height="16" rx="3" fill="#2980B9"/>
+  </svg>`,
+
+  punctuation_marks:`<svg viewBox="0 0 280 150" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="150" rx="16" fill="#F4F6F7"/>
+    <rect x="8" y="16" width="58" height="118" rx="9" fill="#E8F8EE" stroke="#27AE60" stroke-width="2"/>
+    <circle cx="37" cy="96" r="11" fill="#27AE60"/>
+    <rect x="78" y="16" width="58" height="118" rx="9" fill="#EAF4FF" stroke="#3498DB" stroke-width="2"/>
+    <circle cx="107" cy="90" r="9" fill="#3498DB"/>
+    <path d="M107,99 Q100,114 94,118" stroke="#3498DB" stroke-width="3.5" fill="none"/>
+    <rect x="148" y="16" width="58" height="118" rx="9" fill="#FEF9E7" stroke="#D4A017" stroke-width="2"/>
+    <path d="M166,44 Q166,30 177,30 Q188,30 188,44 Q188,58 177,68 L177,80" stroke="#D4A017" stroke-width="5" fill="none"/>
+    <circle cx="177" cy="96" r="6" fill="#D4A017"/>
+    <rect x="218" y="16" width="58" height="118" rx="9" fill="#FEF0EF" stroke="#E74C3C" stroke-width="2"/>
+    <rect x="240" y="34" width="9" height="50" rx="4" fill="#E74C3C"/>
+    <circle cx="244" cy="100" r="7" fill="#E74C3C"/>
+  </svg>`,
+
+  manners_walking:`<svg viewBox="0 0 240 190" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="190" rx="16" fill="#F5FFF8"/>
+    <circle cx="62" cy="50" r="24" fill="#F5CBA7"/>
+    <circle cx="54" cy="44" r="4" fill="#2C3E50"/><circle cx="70" cy="44" r="4" fill="#2C3E50"/>
+    <rect x="46" y="74" width="32" height="46" rx="7" fill="#3498DB"/>
+    <line x1="46" y1="82" x2="26" y2="108" stroke="#F5CBA7" stroke-width="9" stroke-linecap="round"/>
+    <line x1="78" y1="82" x2="98" y2="108" stroke="#F5CBA7" stroke-width="9" stroke-linecap="round"/>
+    <line x1="58" y1="120" x2="50" y2="170" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+    <line x1="70" y1="120" x2="80" y2="170" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+    <text x="122" y="96" text-anchor="middle" font-size="26" fill="#27AE60" font-family="Arial">→</text>
+    <circle cx="178" cy="50" r="24" fill="#F5CBA7"/>
+    <circle cx="170" cy="44" r="4" fill="#2C3E50"/><circle cx="186" cy="44" r="4" fill="#2C3E50"/>
+    <path d="M170 62 Q178 68 186 62" stroke="#2C3E50" stroke-width="2" fill="none"/>
+    <rect x="162" y="74" width="32" height="46" rx="7" fill="#E74C3C"/>
+    <line x1="162" y1="82" x2="142" y2="108" stroke="#F5CBA7" stroke-width="9" stroke-linecap="round"/>
+    <line x1="194" y1="82" x2="214" y2="108" stroke="#F5CBA7" stroke-width="9" stroke-linecap="round"/>
+    <line x1="170" y1="120" x2="162" y2="170" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+    <line x1="186" y1="120" x2="194" y2="170" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+  </svg>`,
+
+  manners_gift:`<svg viewBox="0 0 240 190" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="190" rx="16" fill="#FEF9E7"/>
+    <rect x="28" y="88" width="96" height="86" rx="7" fill="#E74C3C"/>
+    <rect x="28" y="88" width="96" height="26" rx="7 7 0 0" fill="#C0392B"/>
+    <rect x="68" y="64" width="16" height="110" rx="5" fill="#F5C842"/>
+    <rect x="28" y="96" width="96" height="9" fill="#F5C842"/>
+    <ellipse cx="76" cy="68" rx="22" ry="15" fill="none" stroke="#F5C842" stroke-width="4"/>
+    <rect x="142" y="62" width="76" height="58" rx="7" fill="white" stroke="#D4A017" stroke-width="2"/>
+    <rect x="150" y="74" width="60" height="4" rx="2" fill="#D4A017" opacity=".4"/>
+    <rect x="150" y="83" width="48" height="4" rx="2" fill="#D4A017" opacity=".4"/>
+    <rect x="150" y="92" width="54" height="4" rx="2" fill="#D4A017" opacity=".4"/>
+    <path d="M178,72 Q184,64 190,72 Q186,82 178,86 Q170,82 166,72 Q172,64 178,72Z" fill="#E74C3C"/>
+  </svg>`,
+
+  // ── URDU ─────────────────────────────────────────────────
+  boy_helping_elder:`<svg viewBox="0 0 240 210" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="210" rx="16" fill="#E8F8EE"/>
+    <circle cx="68" cy="54" r="22" fill="#F5CBA7"/>
+    <circle cx="60" cy="48" r="4" fill="#2C3E50"/><circle cx="76" cy="48" r="4" fill="#2C3E50"/>
+    <path d="M60 64 Q68 72 76 64" stroke="#2C3E50" stroke-width="2.5" fill="none"/>
+    <rect x="52" y="76" width="32" height="50" rx="7" fill="#E74C3C"/>
+    <line x1="52" y1="86" x2="30" y2="110" stroke="#F5CBA7" stroke-width="9" stroke-linecap="round"/>
+    <line x1="84" y1="86" x2="112" y2="100" stroke="#F5CBA7" stroke-width="9" stroke-linecap="round"/>
+    <line x1="62" y1="126" x2="56" y2="175" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+    <line x1="74" y1="126" x2="82" y2="175" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+    <rect x="104" y="88" width="38" height="28" rx="5" fill="#F5C842" stroke="#D4A017" stroke-width="2"/>
+    <path d="M96 102 Q118 94 136 100" stroke="#27AE60" stroke-width="2.5" fill="none" stroke-dasharray="4,2"/>
+    <circle cx="172" cy="50" r="22" fill="#F5CBA7"/>
+    <ellipse cx="172" cy="36" rx="22" ry="14" fill="#ECF0F1"/>
+    <rect x="156" y="72" width="32" height="48" rx="7" fill="#7F8C8D"/>
+    <line x1="156" y1="82" x2="136" y2="108" stroke="#F5CBA7" stroke-width="9" stroke-linecap="round"/>
+    <line x1="188" y1="82" x2="206" y2="104" stroke="#F5CBA7" stroke-width="9" stroke-linecap="round"/>
+    <line x1="164" y1="120" x2="158" y2="175" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+    <line x1="176" y1="120" x2="184" y2="175" stroke="#2C3E50" stroke-width="8" stroke-linecap="round"/>
+    <line x1="198" y1="100" x2="214" y2="178" stroke="#8B4513" stroke-width="5" stroke-linecap="round"/>
+  </svg>`,
+
+  sick_reasons:`<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
+    <rect width="260" height="190" rx="16" fill="#FEF0EF"/>
+    <circle cx="72" cy="56" r="30" fill="#F5CBA7"/>
+    <circle cx="62" cy="50" r="4.5" fill="#2C3E50"/><circle cx="82" cy="50" r="4.5" fill="#2C3E50"/>
+    <path d="M62 70 Q72 62 82 70" stroke="#2C3E50" stroke-width="2.5" fill="none"/>
+    <rect x="46" y="38" width="8" height="38" rx="4" fill="white" stroke="#E74C3C" stroke-width="2"/>
+    <circle cx="50" cy="76" r="8" fill="#E74C3C"/>
+    <rect x="48" y="46" width="4" height="26" rx="2" fill="#E74C3C"/>
+    <rect x="44" y="86" width="56" height="56" rx="9" fill="#95A5A6"/>
+    <circle cx="185" cy="95" r="52" fill="#E74C3C" opacity=".15" stroke="#E74C3C" stroke-width="2" stroke-dasharray="6,3"/>
+    <ellipse cx="172" cy="92" rx="26" ry="16" fill="#8B4513" opacity=".55"/>
+    <path d="M162,88 Q172,80 182,88 Q172,98 162,88Z" fill="#27AE60" opacity=".5"/>
+    <line x1="162" y1="72" x2="206" y2="118" stroke="#E74C3C" stroke-width="5"/>
+    <line x1="206" y1="72" x2="162" y2="118" stroke="#E74C3C" stroke-width="5"/>
+  </svg>`,
+
+  hygiene_bad:`<svg viewBox="0 0 260 190" xmlns="http://www.w3.org/2000/svg">
+    <rect width="260" height="190" rx="16" fill="#FEF9E7"/>
+    <path d="M44,142 Q22,132 18,104 Q16,84 28,74 Q36,94 50,90 L52,58 Q54,44 64,46 Q74,48 74,60 L74,76 Q76,58 86,60 Q96,62 96,76 L94,86 Q96,72 106,74 Q116,76 114,90 L110,108 Q114,98 122,100 Q130,104 128,116 Q124,134 106,140 Z" fill="#F5CBA7" stroke="#E8A87C" stroke-width="1.5"/>
+    ${[[36,90],[54,72],[70,92],[86,80],[102,98]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="5.5" fill="#8B4513" opacity=".5"/>`).join('')}
+    <text x="158" y="82" font-size="30" fill="#E74C3C" font-family="Arial">→</text>
+    <circle cx="210" cy="100" r="38" fill="#F5CBA7"/>
+    <circle cx="200" cy="92" r="5" fill="#2C3E50"/><circle cx="220" cy="92" r="5" fill="#2C3E50"/>
+    <path d="M200 112 Q210 104 220 112" stroke="#2C3E50" stroke-width="3" fill="none"/>
+    ${[[175,68],[244,74],[172,130],[244,130]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="8" fill="#E74C3C" opacity=".5"/><line x1="${x-10}" y1="${y}" x2="${x+10}" y2="${y}" stroke="#E74C3C" stroke-width="2"/><line x1="${x}" y1="${y-10}" x2="${x}" y2="${y+10}" stroke="#E74C3C" stroke-width="2"/>`).join('')}
+  </svg>`,
+
+  boy_polite:`<svg viewBox="0 0 210 215" xmlns="http://www.w3.org/2000/svg">
+    <rect width="210" height="215" rx="16" fill="#E8F8EE"/>
+    <circle cx="105" cy="54" r="30" fill="#F5CBA7"/>
+    <circle cx="95" cy="48" r="5" fill="#2C3E50"/><circle cx="115" cy="48" r="5" fill="#2C3E50"/>
+    <path d="M95 66 Q105 74 115 66" stroke="#2C3E50" stroke-width="2.5" fill="none"/>
+    <rect x="83" y="84" width="44" height="58" rx="9" fill="#27AE60"/>
+    <line x1="83" y1="94" x2="55" y2="118" stroke="#F5CBA7" stroke-width="10" stroke-linecap="round"/>
+    <line x1="127" y1="94" x2="155" y2="118" stroke="#F5CBA7" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="153" cy="116" r="13" fill="#F5CBA7"/>
+    <line x1="93" y1="142" x2="86" y2="196" stroke="#2C3E50" stroke-width="9" stroke-linecap="round"/>
+    <line x1="117" y1="142" x2="124" y2="196" stroke="#2C3E50" stroke-width="9" stroke-linecap="round"/>
+  </svg>`,
+
+  healthy_food:`<svg viewBox="0 0 250 180" xmlns="http://www.w3.org/2000/svg">
+    <rect width="250" height="180" rx="16" fill="#E8F8EE"/>
+    <circle cx="125" cy="95" r="72" fill="#ECF0F1" stroke="#27AE60" stroke-width="4"/>
+    <circle cx="125" cy="95" r="60" fill="white"/>
+    <path d="M104,72 Q125,52 146,72 Q146,106 125,114 Q104,106 104,72Z" fill="#E74C3C"/>
+    <path d="M125,52 Q131,38 138,34" stroke="#27AE60" stroke-width="3" fill="none"/>
+    <ellipse cx="140" cy="32" rx="11" ry="7" fill="#27AE60" transform="rotate(-20,140,32)"/>
+    <ellipse cx="82" cy="110" rx="12" ry="24" fill="#E67E22" transform="rotate(20,82,110)"/>
+    <path d="M82,88 Q76,78 78,70" stroke="#27AE60" stroke-width="3" fill="none"/>
+    ${[[152,84],[164,84],[158,96],[152,106],[164,106]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="10" fill="#9B59B6"/>`).join('')}
+  </svg>`,
+
+  clean_environment:`<svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="190" rx="16" fill="#87CEEB"/>
+    <rect x="0" y="148" width="280" height="42" rx="0 0 16 16" fill="#27AE60"/>
+    ${Array.from({length:8},(_,i)=>{const a=i*45*Math.PI/180;return `<line x1="${36+30*Math.cos(a)}" y1="${36+30*Math.sin(a)}" x2="${36+44*Math.cos(a)}" y2="${36+44*Math.sin(a)}" stroke="#F5C842" stroke-width="3.5" stroke-linecap="round"/>`;}).join('')}
+    <circle cx="36" cy="36" r="24" fill="#F5C842"/>
+    <rect x="98" y="100" width="84" height="50" rx="4" fill="white"/>
+    <polygon points="140,64 96,102 184,102" fill="#E74C3C"/>
+    <rect x="120" y="120" width="18" height="30" rx="3" fill="#8B4513"/>
+    <rect x="104" y="110" width="26" height="18" rx="3" fill="#87CEEB"/>
+    <rect x="156" y="110" width="16" height="18" rx="3" fill="#87CEEB"/>
+    <rect x="192" y="126" width="10" height="24" fill="#8B4513"/>
+    <circle cx="197" cy="108" r="22" fill="#2ECC71"/>
+    <rect x="60" y="126" width="10" height="24" fill="#8B4513"/>
+    <circle cx="65" cy="108" r="22" fill="#2ECC71"/>
+    <text x="218" y="62" font-size="16" font-family="Arial">✨</text>
+    <text x="42" y="82" font-size="16" font-family="Arial">✨</text>
+  </svg>`,
+
+  haroof_izafat:`<svg viewBox="0 0 260 165" xmlns="http://www.w3.org/2000/svg">
+    <rect width="260" height="165" rx="16" fill="#F5EEF8"/>
+    ${[['کا',43,'#E8DAEF','#6C3483'],['کی',130,'#D5EAF7','#1A5276'],['کے',217,'#D5F5E3','#1E8449']].map(([w,cx,bg,fg])=>
+      `<rect x="${cx-46}" y="22" width="92" height="110" rx="14" fill="${bg}" stroke="${fg}" stroke-width="2.5"/>
+       <text x="${cx}" y="96" text-anchor="middle" font-size="54" font-weight="900" fill="${fg}" font-family="Arial">${w}</text>`
+    ).join('')}
+  </svg>`,
+
+  muzakkar_muannas:`<svg viewBox="0 0 260 165" xmlns="http://www.w3.org/2000/svg">
+    <rect width="260" height="165" rx="16" fill="#EAF4FF"/>
+    <rect x="6" y="16" width="116" height="132" rx="12" fill="#D6EAF8" stroke="#3498DB" stroke-width="2"/>
+    <text x="64" y="62" text-anchor="middle" font-size="30" font-weight="900" fill="#1A5276" font-family="Arial">مذکر</text>
+    <circle cx="64" cy="106" r="20" fill="#F5CBA7"/>
+    <rect x="52" y="126" width="24" height="18" rx="4" fill="#3498DB"/>
+    <rect x="138" y="16" width="116" height="132" rx="12" fill="#FDEBD0" stroke="#E67E22" stroke-width="2"/>
+    <text x="196" y="62" text-anchor="middle" font-size="30" font-weight="900" fill="#D35400" font-family="Arial">مونث</text>
+    <circle cx="196" cy="106" r="20" fill="#F5CBA7"/>
+    <ellipse cx="196" cy="96" rx="24" ry="16" fill="#8B4513"/>
+    <rect x="182" y="124" width="28" height="20" rx="4" fill="#E67E22"/>
+  </svg>`,
+
+  lion_lioness:`<svg viewBox="0 0 280 178" xmlns="http://www.w3.org/2000/svg">
+    <rect width="280" height="178" rx="16" fill="#FEF9E7"/>
+    <circle cx="68" cy="72" r="38" fill="#D4A017"/>
+    <circle cx="68" cy="72" r="52" fill="none" stroke="#9A6909" stroke-width="16" opacity=".38"/>
+    <circle cx="58" cy="65" r="6.5" fill="#2C3E50"/><circle cx="78" cy="65" r="6.5" fill="#2C3E50"/>
+    <ellipse cx="68" cy="82" rx="10" ry="7" fill="#E8956A"/>
+    <path d="M57 90 Q68 98 79 90" stroke="#2C3E50" stroke-width="2.5" fill="none"/>
+    <ellipse cx="68" cy="138" rx="46" ry="32" fill="#C8860A"/>
+    <path d="M194,110 Q210,92 208,118 Q206,134 192,126" stroke="#C8860A" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <text x="152" y="82" text-anchor="middle" font-size="22" fill="#888" font-family="Arial">→</text>
+    <circle cx="210" cy="72" r="36" fill="#D4A017"/>
+    <circle cx="200" cy="65" r="6" fill="#2C3E50"/><circle cx="220" cy="65" r="6" fill="#2C3E50"/>
+    <ellipse cx="210" cy="82" rx="9" ry="6.5" fill="#E8956A"/>
+    <path d="M200 90 Q210 98 220 90" stroke="#2C3E50" stroke-width="2.5" fill="none"/>
+    <ellipse cx="210" cy="138" rx="42" ry="30" fill="#C8860A"/>
+  </svg>`,
+
+  wao_leen:`<svg viewBox="0 0 260 165" xmlns="http://www.w3.org/2000/svg">
+    <rect width="260" height="165" rx="16" fill="#E8F8EE"/>
+    <rect x="14" y="16" width="232" height="98" rx="14" fill="#D5F5E3" stroke="#27AE60" stroke-width="2.5"/>
+    <text x="130" y="92" text-anchor="middle" font-size="72" font-weight="900" fill="#01411C" font-family="Arial">و</text>
+    <path d="M24,136 Q58,122 92,136 Q126,150 160,136 Q194,122 228,136" stroke="#27AE60" stroke-width="3.5" fill="none"/>
+  </svg>`,
+};
+</script>
+
+<!-- ════════════════════════════════════════════════════════
+     STYLES
+════════════════════════════════════════════════════════ -->
+<style>
+:root{--g:#01411C;--gm:#026B2F;--gl:#04A344;--gold:#F5C842;--w:#FFF;--tx:#1A2E1A}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Baloo 2',cursive;background:linear-gradient(145deg,#E8F8F5,#F5FFF8,#FFF8EC);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(circle at 10% 20%,rgba(4,163,68,.07),transparent 40%),radial-gradient(circle at 90% 80%,rgba(245,200,66,.07),transparent 40%)}
+.screen{display:none;flex-direction:column;align-items:center;width:100%;max-width:680px;z-index:1;position:relative}
+.screen.active{display:flex;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes popIn{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:none}}
+.card{background:var(--w);border-radius:28px;padding:26px 22px;width:100%;box-shadow:0 8px 40px rgba(1,65,28,.15);border:2px solid rgba(4,163,68,.1)}
+/* Login */
+.logo-icon{width:70px;height:70px;background:linear-gradient(135deg,var(--g),var(--gl));border-radius:20px;display:inline-flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:8px;box-shadow:0 8px 28px rgba(1,65,28,.3);animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.logo-title{font-size:28px;font-weight:800;color:var(--g);text-align:center}
+.logo-sub{font-size:11px;color:#4A7A4A;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-top:2px}
+.logo-ur{font-family:'Noto Nastaliq Urdu',serif;font-size:15px;color:#026B2F;direction:rtl;text-align:center;margin-top:4px}
+.fl{font-size:11px;font-weight:700;color:#4A7A4A;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;display:block}
+.fg{margin-bottom:13px}
+input{width:100%;padding:13px 15px;font-size:16px;font-family:'Baloo 2',cursive;font-weight:700;border:3px solid #C8E8D0;border-radius:13px;outline:none;color:var(--tx);background:#F5FFF8;transition:all .2s}
+input:focus{border-color:var(--gl);box-shadow:0 0 0 4px rgba(4,163,68,.14);background:var(--w)}
+input::placeholder{color:#AADABC;font-weight:400}
+.sgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:12px}
+.sbtn{padding:13px 6px;border:3px solid #C8E8D0;border-radius:13px;background:#F5FFF8;cursor:pointer;text-align:center;transition:all .15s;font-family:'Baloo 2',cursive}
+.sbtn .si{font-size:22px;display:block;margin-bottom:3px}
+.sbtn .sn{font-size:11px;font-weight:700;color:var(--g)}
+.sbtn .snu{font-family:'Noto Nastaliq Urdu',serif;font-size:11px;color:var(--gm);display:block}
+.sbtn.sel{border-color:var(--g);background:#E8F8EE;transform:scale(1.04)}
+/* Buttons */
+.btn-p{width:100%;padding:15px;background:linear-gradient(135deg,var(--g),var(--gm));color:var(--w);font-size:16px;font-weight:800;font-family:'Baloo 2',cursive;border:none;border-radius:15px;cursor:pointer;box-shadow:0 6px 24px rgba(1,65,28,.35);transition:transform .15s;margin-top:3px}
+.btn-p:active{transform:scale(.97)}
+.err-msg{background:#FEE8E7;border:2px solid #F5C6C3;color:#C0392B;border-radius:10px;padding:10px;font-size:12px;font-weight:700;margin-top:7px;display:none;text-align:center}
+.err-msg.show{display:block;animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+/* Strip */
+.strip{width:100%;max-width:680px;background:var(--g);border-radius:13px;padding:9px 15px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;z-index:1;box-shadow:0 4px 16px rgba(1,65,28,.2)}
+.s-name{font-size:13px;font-weight:800;color:var(--w)}
+.s-info{font-size:11px;color:rgba(255,255,255,.75);font-weight:600;text-align:right}
+/* Progress */
+.pw{width:100%;margin-bottom:12px}
+.pt{display:flex;justify-content:space-between;margin-bottom:4px}
+.pl{font-size:10px;font-weight:700;color:#4A7A4A;text-transform:uppercase;letter-spacing:1px}
+.pc{font-size:18px;font-weight:800;color:var(--g)}
+.pb{height:9px;background:#C8E8D0;border-radius:9px;overflow:hidden}
+.pf{height:100%;background:linear-gradient(90deg,var(--gl),var(--gold));border-radius:9px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+/* Image box */
+.ibox{width:100%;background:linear-gradient(135deg,#F0FFF8,#E8F8EE);border:2.5px solid #C8E8D0;border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;min-height:150px;padding:11px;overflow:hidden}
+.ibox svg{max-width:100%;max-height:215px}
+/* Question */
+.qt{font-size:17px;font-weight:700;color:var(--tx);text-align:center;margin-bottom:6px;line-height:1.4}
+.qt.ur{font-family:'Noto Nastaliq Urdu',serif;direction:rtl;font-size:19px}
+.qur{font-family:'Noto Nastaliq Urdu',serif;font-size:16px;color:#2E6B3E;direction:rtl;text-align:right;margin-bottom:11px;background:#F5FFF8;padding:8px 11px;border-radius:9px;border-right:4px solid var(--gl);line-height:2.1}
+/* Options */
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+.abtn{padding:13px 10px;border:2.5px solid #C8E8D0;border-radius:15px;background:var(--w);cursor:pointer;transition:all .15s;text-align:center;box-shadow:0 3px 10px rgba(1,65,28,.07)}
+.abtn:active{transform:scale(.95)}
+.albl{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;background:#E8F8EE;border-radius:7px;font-size:13px;font-weight:900;color:var(--g);margin-bottom:5px;transition:all .15s}
+.atxt{font-size:13px;font-weight:700;color:var(--tx);display:block;line-height:1.4}
+.atxt.ur{font-family:'Noto Nastaliq Urdu',serif;font-size:15px;direction:rtl;line-height:2}
+.abtn.sel{border-color:var(--g);background:linear-gradient(135deg,#F0F8F2,#E8F5EC)}
+.abtn.sel .albl{background:var(--g);color:var(--w)}
+.abtn.cor{border-color:var(--gl);background:linear-gradient(135deg,#E8F8EE,#D4F0DE);animation:bounce .4s}
+.abtn.cor .albl{background:var(--gl);color:var(--w)}
+.abtn.wrg{border-color:#E74C3C;background:#FEF0EF;animation:wobble .4s}
+.abtn.wrg .albl{background:#E74C3C;color:var(--w)}
+@keyframes bounce{0%,100%{transform:scale(1)}40%{transform:scale(1.05)}}
+@keyframes wobble{0%,100%{transform:translateX(0)}30%{transform:translateX(-5px)}70%{transform:translateX(5px)}}
+/* Feedback */
+.fb{border-radius:13px;margin-bottom:11px;display:none}
+.fb.show{display:block;animation:popIn .3s}
+.fb-inner{padding:13px 16px;border-radius:13px;text-align:center}
+.fb-icon{font-size:26px;display:block;margin-bottom:4px}
+.fb-main{font-size:17px;font-weight:800;display:block;margin-bottom:2px}
+.fb-sub{font-size:12px;font-weight:600;display:block;opacity:.8}
+.fb.cfb .fb-inner{background:#E8F8EE;color:var(--g);border:2.5px solid var(--gl)}
+.fb.wfb .fb-inner{background:#FEF0EF;color:#C0392B;border:2.5px solid #F5A89F}
+.btn-n{width:100%;padding:15px;background:linear-gradient(135deg,var(--g),var(--gm));color:var(--w);font-size:15px;font-weight:800;font-family:'Baloo 2',cursive;border:none;border-radius:15px;cursor:pointer;box-shadow:0 6px 24px rgba(1,65,28,.3);display:none;transition:transform .15s}
+.btn-n:active{transform:scale(.97)}
+.btn-n.show{display:block;animation:popIn .3s cubic-bezier(.34,1.56,.64,1)}
+/* Results */
+.sring{width:138px;height:138px;border-radius:50%;background:conic-gradient(var(--gl) 0%,var(--gl) var(--pct),#C8E8D0 var(--pct));display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(1,65,28,.2);position:relative}
+.sring::before{content:'';position:absolute;width:104px;height:104px;background:var(--w);border-radius:50%}
+.ri{position:relative;z-index:1;text-align:center}
+.spct{font-size:28px;font-weight:900;color:var(--g)}
+.slbl{font-size:10px;font-weight:700;color:#4A7A4A;letter-spacing:1px}
+.rbadge{display:flex;align-items:center;justify-content:center;gap:7px;padding:8px 20px;border-radius:50px;font-size:15px;font-weight:800;margin-bottom:12px}
+.rbadge.pass{background:#E8F8EE;color:var(--g);border:2px solid var(--gl)}
+.rbadge.fail{background:#FEF0EF;color:#C0392B;border:2px solid #F5A89F}
+.breakdown{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.bk-card{border-radius:10px;padding:10px;text-align:center;border:2px solid}
+.tv-btn{width:100%;padding:11px;background:linear-gradient(135deg,#2C3E50,#1A252F);color:var(--w);font-size:13px;font-weight:700;font-family:'Baloo 2',cursive;border:none;border-radius:12px;cursor:pointer;margin-top:7px}
+.tv-wrap{display:none;margin-top:12px}
+.tv-wrap.show{display:block}
+.tv-title{font-size:13px;font-weight:800;color:var(--g);margin-bottom:8px;text-align:center;padding:7px;background:#E8F8EE;border-radius:8px;border:2px solid var(--gl)}
+.tv-row{display:flex;align-items:flex-start;gap:6px;padding:8px 10px;border-radius:9px;margin-bottom:6px;border:2px solid}
+.tv-row.cor{background:#F0FFF8;border-color:#C8E8D0}
+.tv-row.wrg{background:#FEF5F5;border-color:#F5C6C3}
+.tv-q{flex:1;font-size:10px;color:#333;font-weight:600;line-height:1.4}
+.tv-a{font-size:10px;font-weight:700;min-width:100px;text-align:right}
+.spin{width:46px;height:46px;border:5px solid #C8E8D0;border-top-color:var(--g);border-radius:50%;animation:spin .8s linear infinite;margin:34px auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:480px){.card{padding:18px 12px}.qt{font-size:14px}.atxt{font-size:12px}.agrid{gap:7px}}
+</style>
+</head>
+<body>
+
+<!-- ── SCREEN 1: LOGIN ──────────────────────────────────── -->
+<div class="screen active" id="sc-login">
+  <div style="text-align:center;margin-bottom:18px">
+    <div class="logo-icon">📚</div>
+    <div class="logo-title">TAKMIL</div>
+    <div class="logo-sub">Level 3 — Assessment</div>
+    <div class="logo-ur">سطح ۳ — امتحان</div>
+  </div>
+  <div class="card">
+    <div class="fg"><label class="fl">PIN</label>
+      <input type="password" id="pin-in" placeholder="Enter PIN from teacher" maxlength="10" autocomplete="off"></div>
+    <div class="fg"><label class="fl">Your Name — اپنا نام لکھیں</label>
+      <input type="text" id="name-in" placeholder="Full name" style="letter-spacing:0"></div>
+    <div class="fg"><label class="fl">Subject — مضمون</label>
+      <div class="sgrid">
+        <button class="sbtn sel" onclick="selS('Math',this)"><span class="si">🔢</span><span class="sn">Math<span class="snu">ریاضی</span></span></button>
+        <button class="sbtn" onclick="selS('English',this)"><span class="si">🔤</span><span class="sn">English<span class="snu">انگریزی</span></span></button>
+        <button class="sbtn" onclick="selS('Urdu',this)"><span class="si" style="font-family:'Noto Nastaliq Urdu',serif;font-size:18px">اردو</span><span class="sn">Urdu<span class="snu">اردو</span></span></button>
+      </div>
+    </div>
+    <button class="btn-p" onclick="start()">شروع کریں — Start ▶</button>
+    <div class="err-msg" id="err">Please enter PIN and your name.</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="screen" id="sc-load"><div class="card" style="text-align:center"><div class="spin"></div><div style="font-size:14px;font-weight:700;color:#4A7A4A">Loading…</div></div></div>
+
+<!-- STRIP -->
+<div class="strip" id="strip" style="display:none">
+  <div class="s-name">👤 <span id="s-nm"></span></div>
+  <div class="s-info"><span id="s-subj"></span><br>Level 3</div>
+</div>
+
+<!-- ── SCREEN 3: QUESTION ───────────────────────────────── -->
+<div class="screen" id="sc-q">
+  <div class="card">
+    <div class="pw">
+      <div class="pt"><span class="pl">Question</span><span class="pc"><span id="qn">1</span>/<span id="qt">12</span></span></div>
+      <div class="pb"><div class="pf" id="pf" style="width:0%"></div></div>
+    </div>
+    <!-- LAYER 2 image rendered here by ID — never contains answer text -->
+    <div class="ibox" id="ibox"></div>
+    <!-- LAYER 1 question text -->
+    <div class="qt" id="qen"></div>
+    <div class="qur" id="qur" style="display:none"></div>
+    <!-- LAYER 1 options rendered in HTML — never from SVG -->
+    <div class="agrid" id="agrid"></div>
+    <div class="fb" id="fb"><div class="fb-inner"><span class="fb-icon" id="fbi"></span><span class="fb-main" id="fbm"></span><span class="fb-sub" id="fbs"></span></div></div>
+    <button class="btn-n" id="btn-n" onclick="nextQ()">Next →</button>
+  </div>
+</div>
+
+<!-- ── SCREEN 4: RESULTS ────────────────────────────────── -->
+<div class="screen" id="sc-res">
+  <div class="card">
+    <div style="text-align:center;margin-bottom:11px">
+      <div class="logo-icon" style="width:58px;height:58px;font-size:24px;animation:none">🏆</div>
+      <div class="logo-title" style="font-size:19px">Assessment Complete!</div>
+      <div class="logo-ur" style="font-size:13px">امتحان مکمل ہوگیا!</div>
+    </div>
+    <div style="text-align:center;font-size:12px;font-weight:700;color:#4A7A4A;margin-bottom:4px" id="res-nm"></div>
+    <div style="text-align:center;font-size:11px;color:#888;margin-bottom:12px" id="res-info"></div>
+    <div style="text-align:center;margin:8px 0 14px">
+      <div class="sring" id="sring" style="--pct:0%"><div class="ri"><div class="spct" id="rpct">0%</div><div class="slbl" id="rfrac">0/0</div></div></div>
+    </div>
+    <div class="rbadge" id="rbadge">✅ PASSED</div>
+    <div class="breakdown" id="breakdown"></div>
+    <div style="background:linear-gradient(135deg,#F0F8F2,#E8F5EC);border-radius:13px;border:2px solid #C8E8D0;padding:13px;text-align:center;margin-bottom:10px">
+      <div style="font-size:28px;margin-bottom:4px">👩‍🏫</div>
+      <div style="font-size:13px;font-weight:700;color:var(--g)">Please give the tablet to your teacher</div>
+      <div style="font-family:'Noto Nastaliq Urdu',serif;font-size:12px;color:#4A7A4A;direction:rtl;margin-top:3px">براہ کرم ٹیبلیٹ استاد کو دیں</div>
+    </div>
+    <button class="tv-btn" onclick="document.getElementById('tv-wrap').classList.toggle('show')">👩‍🏫 Teacher Summary — استاد کا خلاصہ</button>
+    <div class="tv-wrap" id="tv-wrap"><div class="tv-title">📋 Answer Sheet</div><div id="tv-rows"></div></div>
+    <button class="btn-p" onclick="resetAll()" style="margin-top:10px;background:linear-gradient(135deg,#4A6B4A,#2E4E2E)">New Student — نیا طالب علم</button>
+  </div>
+</div>
+
+<!-- ── LAYER 3: ENGINE ──────────────────────────────────── -->
+<script>
+const G = {
+  pin:'', name:'', subj:'Math',
+  qs:[], cur:0, score:0, picS:0, txtS:0, picT:0, txtT:0,
+  done:false, log:[]
+};
+const LBL = ['A','B','C','D'];
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function selS(s,el){
+  G.subj=s;
+  document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+async function start(){
+  const pin=document.getElementById('pin-in').value.trim();
+  const name=document.getElementById('name-in').value.trim();
+  const err=document.getElementById('err');
+  err.classList.remove('show');
+  if(pin.length<4){err.textContent='Please enter a valid PIN.';err.classList.add('show');return}
+  if(name.length<2){err.textContent='Please enter your name.';err.classList.add('show');return}
+  G.pin=pin; G.name=name;
+  G.cur=0; G.score=0; G.picS=0; G.txtS=0; G.picT=0; G.txtT=0;
+  G.done=false; G.log=[];
+  show('sc-load');
+
+  // Shuffle questions
+  const bank = [...(QB_L3[G.subj]||[])];
+  for(let i=bank.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bank[i],bank[j]]=[bank[j],bank[i]];}
+  G.qs = bank.slice(0, Math.min(12, bank.length));
+
+  try{
+    await fetch('/portal/session/start',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pin:G.pin,studentName:G.name})});
+  }catch(e){}
+
+  document.getElementById('s-nm').textContent=G.name;
+  document.getElementById('s-subj').textContent=G.subj;
+  document.getElementById('qt').textContent=G.qs.length;
+  document.getElementById('strip').style.display='flex';
+  renderQ(0); show('sc-q');
+}
+
+function renderQ(idx){
+  G.done=false;
+  const q=G.qs[idx], tot=G.qs.length;
+  document.getElementById('qn').textContent=idx+1;
+  document.getElementById('pf').style.width=`${(idx/tot)*100}%`;
+
+  // LAYER 2: fetch SVG from library by ID — never generates text
+  const svg = IMGS_L3[q.img] ||
+    `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+       <rect width="200" height="100" rx="12" fill="#ECF0F1"/>
+       <text x="100" y="56" text-anchor="middle" font-size="11" fill="#888" font-family="Arial">img: ${q.img}</text>
+     </svg>`;
+  document.getElementById('ibox').innerHTML = svg;
+
+  // LAYER 1: question text — from JSON only
+  const isUr = /[\u0600-\u06FF]/.test(q.q_en);
+  const qenEl = document.getElementById('qen');
+  qenEl.textContent = q.q_en;
+  if(isUr){
+    qenEl.className='qt ur';
+    document.getElementById('qur').style.display='none';
+  } else {
+    qenEl.className='qt';
+    const urEl=document.getElementById('qur');
+    if(q.q_ur && q.q_ur!==q.q_en){urEl.textContent=q.q_ur;urEl.style.display='block';}
+    else urEl.style.display='none';
+  }
+
+  // Options — rendered in HTML only, NEVER touches image code
+  const grid=document.getElementById('agrid');
+  grid.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='abtn'; btn.dataset.i=i;
+    const isU=/[\u0600-\u06FF]/.test(opt);
+    btn.innerHTML=`<span class="albl">${LBL[i]}</span><span class="atxt${isU?' ur':''}">${opt}</span>`;
+    btn.onclick=()=>pick(i);
+    grid.appendChild(btn);
+  });
+
+  document.getElementById('fb').className='fb';
+  document.getElementById('btn-n').classList.remove('show');
+}
+
+function pick(idx){
+  if(G.done)return; G.done=true;
+  const q=G.qs[G.cur];
+  const right=idx===q.ans;
+
+  // Determine pic vs text question (pic = has drawn image, txt = text display)
+  const isPic = !['num_23','num_435','num_867','desc_45_39','article_egg','article_house','article_umbrella','compare_numbers','subtract_calc','add_calc','storybooks_sent','question_sent'].includes(q.img);
+  if(right){G.score++;if(isPic)G.picS++;else G.txtS++;}
+  if(isPic)G.picT++;else G.txtT++;
+
+  G.log.push({
+    q: (q.q_en.replace(/[\u0600-\u06FF]/g,'').trim()||q.id).slice(0,55),
+    chosen:q.opts[idx], correct:q.opts[q.ans], right
+  });
+
+  document.querySelectorAll('.abtn').forEach(b=>{
+    const i=parseInt(b.dataset.i);
+    if(i===q.ans) b.classList.add('cor');
+    else if(i===idx&&!right) b.classList.add('wrg');
+  });
+
+  document.getElementById('fbi').textContent=right?'🌟':'❌';
+  document.getElementById('fbm').textContent=right?'Correct! — درست جواب':'Wrong! — غلط جواب';
+  document.getElementById('fbs').textContent=right?'Well done! شاباش!':'Correct: '+q.opts[q.ans];
+  document.getElementById('fb').className=`fb show ${right?'cfb':'wfb'}`;
+
+  const nb=document.getElementById('btn-n');
+  nb.textContent=G.cur>=G.qs.length-1?'🎓 See Results':'Next Question →';
+  nb.classList.add('show');
+}
+
+function nextQ(){
+  G.cur++;
+  G.cur<G.qs.length ? renderQ(G.cur) : showResults();
+}
+
+function showResults(){
+  const tot=G.qs.length, pct=Math.round((G.score/tot)*100), pass=pct>=70;
+  document.getElementById('res-nm').textContent=G.name;
+  document.getElementById('res-info').textContent=`${G.subj} • Level 3 • ${tot} Questions`;
+  document.getElementById('rpct').textContent=pct+'%';
+  document.getElementById('rfrac').textContent=`${G.score}/${tot}`;
+  document.getElementById('sring').style.setProperty('--pct',pct+'%');
+  const rb=document.getElementById('rbadge');
+  rb.textContent=pass?'✅ PASSED — کامیاب 🌟':'📚 Keep Trying — مزید محنت کریں';
+  rb.className=`rbadge ${pass?'pass':'fail'}`;
+
+  // Breakdown
+  const picPct=G.picT?Math.round((G.picS/G.picT)*100):0;
+  const txtPct=G.txtT?Math.round((G.txtS/G.txtT)*100):0;
+  document.getElementById('breakdown').innerHTML=`
+    <div class="bk-card" style="background:#E8F8EE;border-color:#C8E8D0">
+      <div style="font-size:18px">🖼️</div>
+      <div style="font-size:13px;font-weight:700;color:var(--g)">Picture Qs</div>
+      <div style="font-size:22px;font-weight:900;color:var(--g)">${G.picS}/${G.picT}</div>
+      <div style="font-size:12px;color:#4A7A4A">${picPct}%</div>
+    </div>
+    <div class="bk-card" style="background:#EAF4FF;border-color:#AED6F1">
+      <div style="font-size:18px">📝</div>
+      <div style="font-size:13px;font-weight:700;color:#1A5276">Text Qs</div>
+      <div style="font-size:22px;font-weight:900;color:#1A5276">${G.txtS}/${G.txtT}</div>
+      <div style="font-size:12px;color:#4A7A4A">${txtPct}%</div>
+    </div>`;
+
+  // Teacher answer sheet
+  const rows=document.getElementById('tv-rows');
+  rows.innerHTML='';
+  G.log.forEach((l,i)=>{
+    const d=document.createElement('div');
+    d.className=`tv-row ${l.right?'cor':'wrg'}`;
+    d.innerHTML=`<span style="font-size:15px;margin-right:3px">${l.right?'✅':'❌'}</span>
+      <div class="tv-q">Q${i+1}: ${l.q}…</div>
+      <div class="tv-a">
+        <div style="color:#2980B9">→ ${l.chosen}</div>
+        <div style="color:${l.right?'#01411C':'#C0392B'}">✓ ${l.correct}</div>
+      </div>`;
+    rows.appendChild(d);
+  });
+
+  document.getElementById('strip').style.display='none';
+  show('sc-res');
+}
+
+function resetAll(){
+  Object.assign(G,{pin:'',name:'',subj:'Math',qs:[],cur:0,score:0,picS:0,txtS:0,picT:0,txtT:0,done:false,log:[]});
+  document.getElementById('pin-in').value='';
+  document.getElementById('name-in').value='';
+  document.getElementById('err').classList.remove('show');
+  document.getElementById('strip').style.display='none';
+  document.getElementById('tv-wrap').classList.remove('show');
+  document.querySelectorAll('.sbtn').forEach((b,i)=>b.classList.toggle('sel',i===0));
+  show('sc-login');
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('sc-q').classList.contains('active')){
+    const m={a:0,b:1,c:2,d:3,A:0,B:1,C:2,D:3};
+    if(m[e.key]!==undefined) pick(m[e.key]);
+    if((e.key==='Enter'||e.key===' ')&&document.getElementById('btn-n').classList.contains('show')) nextQ();
+  }
+  if(document.getElementById('sc-login').classList.contains('active')&&e.key==='Enter') start();
+});
+</script>
+</body>
+</html>
