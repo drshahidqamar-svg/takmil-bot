@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL Ops Console</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0C10;--surface:#111318;--surface2:#1A1D24;
+  --border:#252830;--border2:#2E3240;
+  --blue:#3B82F6;--blue-dim:#1D3461;
+  --green:#22C55E;--green-dim:#14432A;
+  --orange:#F97316;--orange-dim:#3D2006;
+  --purple:#A855F7;--purple-dim:#2D1554;
+  --red:#EF4444;--red-dim:#3B0D0D;
+  --text:#E2E8F0;--muted:#64748B;--dim:#94A3B8;
+  --mono:'JetBrains Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;
+  height:50px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--blue);letter-spacing:3px}
+.logo span{color:var(--muted);font-weight:400}
+.srv{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.dot.red{background:var(--red)}
+.shell{display:grid;grid-template-columns:200px 1fr 290px;height:calc(100vh - 50px)}
+.lpanel{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:12px 0}
+.lbl{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:0 14px;margin-bottom:8px;font-family:var(--mono)}
+.rbtn{display:flex;align-items:center;gap:9px;padding:10px 14px;cursor:pointer;
+  border:none;background:none;color:var(--dim);width:100%;text-align:left;
+  font-family:var(--sans);font-size:13px;border-left:3px solid transparent;transition:all .15s}
+.rbtn:hover{background:var(--surface2);color:var(--text)}
+.rbtn.on{color:var(--text);background:var(--surface2)}
+.rbtn.on.f{border-left-color:var(--green)}.rbtn.on.c{border-left-color:var(--blue)}
+.rbtn.on.r{border-left-color:var(--purple)}.rbtn.on.a{border-left-color:var(--orange)}
+.rico{width:26px;height:26px;border-radius:6px;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.rbtn.on.f .rico{background:rgba(34,197,94,.15);color:var(--green)}
+.rbtn.on.c .rico{background:rgba(59,130,246,.15);color:var(--blue)}
+.rbtn.on.r .rico{background:rgba(168,85,247,.15);color:var(--purple)}
+.rbtn.on.a .rico{background:rgba(249,115,22,.15);color:var(--orange)}
+.rname{font-weight:500;font-size:13px}.rentity{font-size:10px;color:var(--muted);font-family:var(--mono)}
+.divider{border:none;border-top:1px solid var(--border);margin:10px 0}
+.lpfooter{margin-top:auto;padding:10px 14px}
+.sbadge{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px}
+.sbadge-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono);margin-bottom:3px}
+.sbadge-v{font-size:13px;font-weight:700;font-family:var(--mono);color:var(--blue)}
+.sbadge-s{font-size:10px;color:var(--muted);margin-top:1px}
+.cmain{display:flex;flex-direction:column;overflow:hidden}
+.chdr{padding:10px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface)}
+.ctitle{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.ctitle strong{color:var(--green)}
+.bclr{background:none;border:1px solid var(--border2);color:var(--muted);border-radius:5px;padding:4px 10px;font-size:10px;cursor:pointer;font-family:var(--mono)}
+.bclr:hover{border-color:var(--red);color:var(--red)}
+.msgs{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.msg{display:flex;gap:9px;align-items:flex-start}
+.mico{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px}
+.mbdy{flex:1;min-width:0}
+.mwho{font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:2px}
+.mtxt{font-size:12px;line-height:1.65;white-space:pre-wrap;font-family:var(--mono);padding:9px 12px;border-radius:7px;word-break:break-word}
+.msg.out .mtxt{background:var(--blue-dim);border:1px solid var(--blue);color:#93C5FD}
+.msg.in   .mtxt{background:var(--surface2);border:1px solid var(--border2);color:var(--text)}
+.msg.ok   .mtxt{background:var(--green-dim);border-color:var(--green);color:#86EFAC}
+.msg.warn .mtxt{background:var(--orange-dim);border-color:var(--orange);color:#FED7AA}
+.msg.err  .mtxt{background:var(--red-dim);border-color:var(--red);color:#FCA5A5}
+.msg.info .mtxt{background:var(--purple-dim);border-color:var(--purple);color:#D8B4FE}
+.msg.sys  .mtxt{background:none;border:none;color:var(--muted);font-size:10px;padding:1px 0;font-style:italic}
+.mtm{font-size:9px;color:var(--muted);margin-top:2px;font-family:var(--mono)}
+.iarea{border-top:1px solid var(--border);padding:10px 18px;background:var(--surface)}
+.qrow{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.qbtn{background:var(--surface2);border:1px solid var(--border2);color:var(--dim);
+  border-radius:16px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:var(--mono);transition:all .15s;white-space:nowrap}
+.qbtn:hover{border-color:var(--blue);color:var(--text)}
+.irow{display:flex;gap:7px}
+.cinp{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;
+  padding:9px 12px;font-size:12px;color:var(--text);font-family:var(--mono);outline:none}
+.cinp:focus{border-color:var(--blue)}.cinp::placeholder{color:var(--muted)}
+.sbtn{background:var(--blue);color:white;border:none;border-radius:7px;
+  padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.sbtn:hover{opacity:.85}.sbtn:disabled{opacity:.4;cursor:not-allowed}
+.rpanel{background:var(--surface);border-left:1px solid var(--border);overflow-y:auto}
+.rsec{padding:12px 14px;border-bottom:1px solid var(--border)}
+.rtit{font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono);margin-bottom:8px}
+.sr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.sk{font-size:11px;color:var(--dim)}.sv{font-size:11px;font-weight:600;font-family:var(--mono)}
+.sv.g{color:var(--green)}.sv.o{color:var(--orange)}.sv.r{color:var(--red)}.sv.b{color:var(--blue)}.sv.p{color:var(--purple)}
+.ptrk{background:var(--surface2);border-radius:3px;height:5px;overflow:hidden;margin:4px 0 8px}
+.pfil{height:100%;border-radius:3px;background:var(--green);transition:width .5s}
+.rbr{width:100%;background:none;border:1px solid var(--border2);border-radius:5px;
+  color:var(--dim);padding:6px;font-size:10px;cursor:pointer;font-family:var(--mono);margin-top:6px}
+.rbr:hover{border-color:var(--blue);color:var(--blue)}
+.dbg{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
+  padding:7px 9px;font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:6px;line-height:1.8;word-break:break-all}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">TAKMIL <span>/ OPS CONSOLE</span></div>
+  <div class="srv"><div class="dot" id="sdot"></div><span id="stxt">checking...</span></div>
+</div>
+<div class="shell">
+  <div class="lpanel">
+    <div class="lbl">Switch Role</div>
+    <button class="rbtn f on" id="rb-facilitator" onclick="switchRole('facilitator','f')">
+      <div class="rico">F</div><div><div class="rname">Facilitator</div><div class="rentity">SCH-047</div></div>
+    </button>
+    <button class="rbtn c" id="rb-coordinator" onclick="switchRole('coordinator','c')">
+      <div class="rico">C</div><div><div class="rname">Coordinator</div><div class="rentity">COORD-01</div></div>
+    </button>
+    <button class="rbtn r" id="rb-regional" onclick="switchRole('regional','r')">
+      <div class="rico">R</div><div><div class="rname">Regional</div><div class="rentity">Region-A</div></div>
+    </button>
+    <button class="rbtn a" id="rb-admin" onclick="switchRole('admin','a')">
+      <div class="rico">A</div><div><div class="rname">Admin</div><div class="rentity">HQ</div></div>
+    </button>
+    <hr class="divider">
+    <div class="lbl">School</div>
+    <div class="lpfooter">
+      <div class="sbadge">
+        <div class="sbadge-l">Test School</div>
+        <div class="sbadge-v">SCH-047</div>
+        <div class="sbadge-s">Level 5 — Math</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmain">
+    <div class="chdr">
+      <div class="ctitle">Acting as: <strong id="rlbl">FACILITATOR</strong></div>
+      <button class="bclr" onclick="clrMsgs()">clear</button>
+    </div>
+    <div class="msgs" id="msgs">
+      <div class="msg sys"><div class="mtxt">Console ready. Served from Railway — same-origin, no CORS. Select a role and send a command.</div></div>
+    </div>
+    <div class="iarea">
+      <div class="qrow" id="qrow"></div>
+      <div class="irow">
+        <input class="cinp" id="cinp" placeholder="Type command or use shortcuts..."
+          onkeydown="if(event.key==='Enter'){event.preventDefault();doSend()}">
+        <button class="sbtn" id="sbtn" onclick="doSend()">Send →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rpanel">
+    <div class="rsec">
+      <div class="rtit">SCH-047 Progress</div>
+      <div class="sr"><span class="sk">Section</span><span class="sv b" id="rp-sec">—</span></div>
+      <div class="sr"><span class="sk">Days approved</span><span class="sv g" id="rp-days">—</span></div>
+      <div class="ptrk"><div class="pfil" id="rp-bar" style="width:0%"></div></div>
+      <div class="sr"><span class="sk">Status</span><span class="sv o" id="rp-st">—</span></div>
+      <div class="sr"><span class="sk">Today</span><span class="sv" id="rp-td">—</span></div>
+      <button class="rbr" onclick="loadSt()">↻ Refresh</button>
+    </div>
+    <div class="rsec">
+      <div class="rtit">System</div>
+      <div class="sr"><span class="sk">Schools</span><span class="sv b" id="ss">—</span></div>
+      <div class="sr"><span class="sk">Active sections</span><span class="sv g" id="sa">—</span></div>
+      <div class="sr"><span class="sk">Today submitted</span><span class="sv o" id="st">—</span></div>
+      <div class="sr"><span class="sk">Unlocked</span><span class="sv p" id="su">—</span></div>
+    </div>
+    <div class="rsec">
+      <div class="rtit">Test Flow</div>
+      <div style="font-size:10px;color:var(--muted);line-height:1.9;font-family:var(--mono)">
+        <span style="color:var(--green)">1. FACILITATOR</span><br>
+        &nbsp;Run videos → note codes<br>
+        &nbsp;DAILY SCH-047 C1 C2 C3<br>
+        <span style="color:var(--blue)">2. COORDINATOR</span><br>
+        &nbsp;APPROVE SCH-047<br>
+        &nbsp;UNLOCK ASSESS SCH-047<br>
+        <span style="color:var(--purple)">3. REGIONAL</span><br>
+        &nbsp;REGION STATUS<br>
+        <span style="color:var(--orange)">4. ADMIN</span><br>
+        &nbsp;ADMIN STATUS<br>
+        &nbsp;RESET TEST
+      </div>
+    </div>
+    <div class="rsec">
+      <div class="rtit">Debug</div>
+      <div class="dbg" id="dbg">
+        Origin: <span id="dorg">—</span><br>
+        Last HTTP: <span id="dhttp">—</span><br>
+        Last cmd: <span id="dcmd">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let role='facilitator', busy=false;
+const RC={facilitator:'var(--green)',coordinator:'var(--blue)',regional:'var(--purple)',admin:'var(--orange)'};
+const RE={facilitator:'🏫',coordinator:'📋',regional:'🗺',admin:'🏢'};
+const CMDS={
+  facilitator:[
+    {l:'WHOAMI',c:'WHOAMI'},
+    {l:'DAILY demo',c:'DAILY SCH-047 847293 563821 192847'},
+    {l:'MY STATUS',c:'MY STATUS'},
+    {l:'HELP',c:'HELP'},
+  ],
+  coordinator:[
+    {l:'MY SCHOOLS',c:'MY SCHOOLS'},
+    {l:'APPROVE',c:'APPROVE SCH-047'},
+    {l:'REJECT',c:'REJECT SCH-047 codes do not match'},
+    {l:'STATUS',c:'STATUS SCH-047'},
+    {l:'UNLOCK ASSESS',c:'UNLOCK ASSESS SCH-047'},
+  ],
+  regional:[{l:'REGION STATUS',c:'REGION STATUS'},{l:'WHOAMI',c:'WHOAMI'}],
+  admin:[{l:'ADMIN STATUS',c:'ADMIN STATUS'},{l:'RESET TEST',c:'RESET TEST'},{l:'WHOAMI',c:'WHOAMI'}]
+};
+
+function switchRole(r,cls){
+  role=r;
+  document.querySelectorAll('.rbtn').forEach(b=>{b.className=b.className.replace(/ on/g,'')});
+  document.getElementById('rb-'+r).classList.add('on');
+  const rl=document.getElementById('rlbl');
+  rl.textContent=r.toUpperCase(); rl.style.color=RC[r];
+  renderQ();
+  addMsg('sys',null,'— switched to '+r.toUpperCase()+' —');
+  post('ROLE '+r.toUpperCase(),false);
+}
+
+function renderQ(){
+  document.getElementById('qrow').innerHTML=(CMDS[role]||[]).map(c=>
+    `<button class="qbtn" onclick="fill(${JSON.stringify(c.c)})">> ${c.l}</button>`).join('');
+}
+function fill(c){document.getElementById('cinp').value=c;document.getElementById('cinp').focus()}
+
+async function doSend(){
+  const inp=document.getElementById('cinp');
+  const cmd=inp.value.trim();
+  if(!cmd||busy)return;
+  inp.value='';
+  addMsg('out',role,cmd);
+  await post(cmd,true);
+}
+
+async function post(cmd,showReply){
+  busy=true;
+  document.getElementById('sbtn').disabled=true;
+  document.getElementById('sbtn').textContent='...';
+  document.getElementById('dcmd').textContent=cmd;
+  document.getElementById('dorg').textContent=window.location.origin;
+
+  let lid=null;
+  if(showReply) lid=addMsg('in',null,'⏳ waiting...');
+
+  try{
+    const r=await fetch('/webhook',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({From:'whatsapp:+16024305897',Body:cmd}).toString()
+    });
+    document.getElementById('dhttp').textContent=r.status+' '+r.statusText;
+    const txt=await r.text();
+    if(lid)rmMsg(lid);
+    if(showReply){
+      if(!r.ok){
+        addMsg('err',null,'HTTP '+r.status+'\n\n'+txt.substring(0,500));
+      } else {
+        const m=txt.match(/<Message>([\s\S]*?)<\/Message>/i);
+        const reply=m?dXml(m[1]):txt;
+        addMsg(dType(reply),null,reply||(txt||'(empty)'));
+      }
+    }
+    loadSt();
+  }catch(e){
+    if(lid)rmMsg(lid);
+    document.getElementById('dhttp').textContent='ERR: '+e.message;
+    if(showReply) addMsg('err',null,
+      '❌ Request failed: '+e.message+'\n\n'+
+      'This console must be opened from the Railway URL:\n'+
+      'https://takmil-bot-production-0f51.up.railway.app/console\n\n'+
+      'NOT from a local file on your computer.'
+    );
+  }
+  busy=false;
+  document.getElementById('sbtn').disabled=false;
+  document.getElementById('sbtn').textContent='Send →';
+}
+
+function addMsg(cls,who,text){
+  const id='m'+Date.now()+Math.random().toString(36).slice(2,5);
+  const el=document.createElement('div');
+  el.id=id; el.className='msg '+(cls||'in');
+  const t=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if(cls==='sys'){
+    el.innerHTML=`<div class="mtxt">${esc(text)}</div>`;
+  } else if(cls==='out'){
+    el.innerHTML=`<div class="mico">${RE[who]||'👤'}</div><div class="mbdy"><div class="mwho">${who?.toUpperCase()} · ${t}</div><div class="mtxt">${esc(text)}</div></div>`;
+  } else {
+    el.innerHTML=`<div class="mico">🤖</div><div class="mbdy"><div class="mwho">BOT · ${t}</div><div class="mtxt">${esc(text)}</div></div>`;
+  }
+  const c=document.getElementById('msgs');
+  c.appendChild(el); c.scrollTop=c.scrollHeight;
+  return id;
+}
+function rmMsg(id){const e=document.getElementById(id);if(e)e.remove()}
+function clrMsgs(){document.getElementById('msgs').innerHTML='<div class="msg sys"><div class="mtxt">Cleared.</div></div>'}
+
+function dType(t){
+  if(!t)return 'in';
+  if(/✅|APPROVED|Complete|🎉|switched/i.test(t))return 'ok';
+  if(/❌|Cannot|Failed|not found/i.test(t))return 'err';
+  if(/⚠|⏳|pending|Awaiting/i.test(t))return 'warn';
+  if(/📊|📋|🏢|📱|Status/i.test(t))return 'info';
+  return 'in';
+}
+function dXml(s){return s.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"')}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+
+async function loadSt(){
+  try{
+    const r=await fetch('/admin/session-status?school=SCH-047');
+    if(!r.ok)return;
+    const d=await r.json();
+    const pct=d.total_days?Math.round(d.approved_days/d.total_days*100):0;
+    document.getElementById('rp-sec').textContent=d.section_title||'—';
+    document.getElementById('rp-days').textContent=d.approved_days+' / '+d.total_days;
+    document.getElementById('rp-bar').style.width=pct+'%';
+    const stEl=document.getElementById('rp-st');
+    stEl.textContent=(d.status||'').replace(/_/g,' ').toUpperCase();
+    stEl.className='sv '+({in_progress:'o',complete:'g',assessment_unlocked:'p'}[d.status]||'b');
+    const tdEl=document.getElementById('rp-td');
+    tdEl.textContent=d.today_status||'not submitted';
+    tdEl.className='sv '+({approved:'g',pending:'o',rejected:'r'}[d.today_status]||'');
+    if(d.system){
+      document.getElementById('ss').textContent=d.system.total_schools;
+      document.getElementById('sa').textContent=d.system.active_sections;
+      document.getElementById('st').textContent=d.system.today_submitted;
+      document.getElementById('su').textContent=d.system.unlocked;
+    }
+  }catch{}
+}
+
+async function ping(){
+  try{
+    const r=await fetch('/health',{signal:AbortSignal.timeout(4000)});
+    document.getElementById('sdot').className='dot'+(r.ok?'':' red');
+    document.getElementById('stxt').textContent=r.ok?'railway connected':'error '+r.status;
+  }catch{
+    document.getElementById('sdot').className='dot red';
+    document.getElementById('stxt').textContent='not reachable';
+  }
+}
+
+renderQ(); ping(); loadSt();
+setInterval(ping,30000);
+</script>
+</body>
+</html>

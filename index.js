@@ -1779,7 +1779,9 @@ function getRoleHelp(role) {
 //
 // This lets the video module handle its commands first,
 // then falls through to existing PIN/assessment logic.
-
+app.get('/console', (req, res) => {
+  res.sendFile(path.join(__dirname, 'takmil-ops-console.html'));
+});
 
     app.listen(PORT, () => console.log(`🚀 TAKMIL Bot v3.0 running on port ${PORT}`));
   } catch (err) {
