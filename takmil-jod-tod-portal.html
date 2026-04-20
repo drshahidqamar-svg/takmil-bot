@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — جوڑ کے توڑ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:    #1A5276;
+    --green:   #1E8449;
+    --orange:  #D35400;
+    --red:     #C0392B;
+    --bg:      #F4F6F9;
+    --white:   #FFFFFF;
+    --border:  #D5D8DC;
+    --text:    #1C2833;
+    --muted:   #717D7E;
+    --correct: #1E8449;
+    --wrong:   #C0392B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    direction: rtl;
+  }
+  .screen { display: none; }
+  .screen.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: var(--blue);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .app-header .logo { font-size: 20px; font-weight: 700; letter-spacing: 1px; font-family: Arial, sans-serif; }
+  .app-header .topic { font-size: 18px; }
+  .app-header .level-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 28px 24px;
+    margin: 20px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .card-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--blue);
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .card-sub {
+    font-size: 15px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  /* ── INPUTS ── */
+  .field-label { font-size: 15px; color: var(--muted); margin-bottom: 6px; display: block; }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 18px;
+    font-family: Arial, sans-serif;
+    direction: ltr;
+    text-align: center;
+    letter-spacing: 4px;
+    margin-bottom: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus { border-color: var(--blue); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-family: 'Noto Nastaliq Urdu', serif;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-green   { background: var(--green); color: white; }
+  .btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--blue);
+    color: var(--blue);
+    margin-top: 10px;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── ERROR ── */
+  .error-msg {
+    background: #FDEDEC;
+    border: 1px solid #E74C3C;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--red);
+    font-size: 15px;
+    margin-bottom: 14px;
+    text-align: center;
+    display: none;
+  }
+
+  /* ── PROGRESS ── */
+  .progress-bar-wrap {
+    background: #E5E8E9;
+    border-radius: 10px;
+    height: 8px;
+    margin: 0 16px 0;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--blue);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+  }
+  .progress-label {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    margin: 8px 0 0;
+    direction: ltr;
+  }
+
+  /* ── QUESTION CARD ── */
+  .q-number {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    direction: ltr;
+  }
+  .q-text {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    line-height: 1.9;
+  }
+  .q-text .highlight {
+    background: #EBF5FB;
+    padding: 2px 8px;
+    border-radius: 6px;
+    color: var(--blue);
+    font-family: Arial, sans-serif;
+    direction: ltr;
+    display: inline-block;
+  }
+
+  /* ── OPTIONS ── */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: right;
+    direction: rtl;
+  }
+  .opt-btn:hover { border-color: var(--blue); background: #EBF5FB; }
+  .opt-btn.selected { border-color: var(--blue); background: #D6EAF8; }
+  .opt-btn.correct  { border-color: var(--correct); background: #D5F5E3; }
+  .opt-btn.wrong    { border-color: var(--wrong);   background: #FDEDEC; }
+  .opt-letter {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+    color: var(--muted);
+  }
+  .opt-btn.selected .opt-letter { background: var(--blue); color: white; border-color: var(--blue); }
+  .opt-btn.correct  .opt-letter { background: var(--correct); color: white; border-color: var(--correct); }
+  .opt-btn.wrong    .opt-letter { background: var(--wrong);   color: white; border-color: var(--wrong); }
+  .opt-text { font-size: 18px; flex: 1; line-height: 1.8; direction: rtl; }
+
+  /* ── SUBMIT BTN AREA ── */
+  .submit-area { padding: 16px; margin-top: auto; }
+
+  /* ── RESULTS ── */
+  .score-circle {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    border: 6px solid var(--blue);
+  }
+  .score-circle.pass { border-color: var(--green); }
+  .score-circle.fail { border-color: var(--red); }
+  .score-pct { font-family: Arial, sans-serif; font-size: 32px; font-weight: 700; }
+  .score-pct.pass { color: var(--green); }
+  .score-pct.fail { color: var(--red); }
+  .score-label { font-size: 14px; color: var(--muted); margin-top: 2px; }
+  .result-verdict {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .result-verdict.pass { color: var(--green); }
+  .result-verdict.fail { color: var(--red); }
+  .stats-row {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .stat-box {
+    flex: 1;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+  .stat-val { font-family: Arial, sans-serif; font-size: 26px; font-weight: 700; }
+  .stat-val.c { color: var(--correct); }
+  .stat-val.w { color: var(--wrong); }
+  .stat-key { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* ── TEACHER REPORT ── */
+  .report-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--blue);
+    margin: 20px 0 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    text-align: center;
+  }
+  .report-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--border);
+    direction: rtl;
+  }
+  .report-q-num {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+    min-width: 28px;
+    text-align: center;
+    padding-top: 3px;
+  }
+  .report-q-text { font-size: 15px; flex: 1; line-height: 1.8; }
+  .report-answer {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .report-answer.correct { background: #D5F5E3; color: var(--correct); }
+  .report-answer.wrong   { background: #FDEDEC; color: var(--wrong); }
+
+  /* ── TIMER ── */
+  .timer-badge {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    direction: ltr;
+  }
+  .timer-badge.warning { background: #FDEDEC; color: var(--red); }
+
+  .footer-note {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 16px;
+    font-family: Arial, sans-serif;
+    direction: ltr;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════ -->
+<!-- SCREEN 1: PIN LOGIN                  -->
+<!-- ════════════════════════════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="app-header">
+    <span class="logo">TAKMIL</span>
+    <span class="topic">جوڑ کے توڑ</span>
+    <span class="level-badge">Urdu</span>
+  </div>
+  <div class="card">
+    <div class="card-title">🔐 پِن درج کریں</div>
+    <div class="card-sub">اپنا PIN نمبر لکھیں</div>
+    <div id="login-error" class="error-msg">❌ غلط PIN ہے۔ دوبارہ کوشش کریں۔</div>
+    <label class="field-label">PIN</label>
+    <input type="password" id="pin-input" maxlength="6" placeholder="••••••" autocomplete="off">
+    <button class="btn btn-primary" onclick="checkPin()">شروع کریں</button>
+  </div>
+  <div class="footer-note">TAKMIL Foundation · Urdu Literacy Assessment</div>
+</div>
+
+<!-- ════════════════════════════════════ -->
+<!-- SCREEN 2: INSTRUCTIONS              -->
+<!-- ════════════════════════════════════ -->
+<div id="screen-intro" class="screen">
+  <div class="app-header">
+    <span class="logo">TAKMIL</span>
+    <span class="topic">جوڑ کے توڑ</span>
+    <span class="level-badge">Urdu</span>
+  </div>
+  <div class="card">
+    <div class="card-title">ہدایات</div>
+    <div class="card-sub">شروع کرنے سے پہلے پڑھیں</div>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px">
+      <div style="display:flex;align-items:flex-start;gap:12px;direction:rtl">
+        <div style="font-size:22px">📝</div>
+        <div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px">۱۲ سوال</div>
+          <div style="font-size:15px;color:var(--muted)">اردو حروف توڑنا اور جوڑنا</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;direction:rtl">
+        <div style="font-size:22px">⏱️</div>
+        <div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px">۱۵ منٹ</div>
+          <div style="font-size:15px;color:var(--muted)">وقت ختم ہونے پر جمع ہو جائے گا</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;direction:rtl">
+        <div style="font-size:22px">✅</div>
+        <div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px">ایک جواب چنیں</div>
+          <div style="font-size:15px;color:var(--muted)">صرف ایک آپشن کا انتخاب کریں</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;direction:rtl">
+        <div style="font-size:22px">🎯</div>
+        <div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px">۷۰٪ پاس</div>
+          <div style="font-size:15px;color:var(--muted)">کامیابی کے لیے ۱۲ میں سے ۹ درست ہونے چاہئیں</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-green" onclick="startAssessment()">آغاز کریں ✓</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ -->
+<!-- SCREEN 3: QUESTION                  -->
+<!-- ════════════════════════════════════ -->
+<div id="screen-question" class="screen">
+  <div class="app-header" style="direction:ltr">
+    <span class="logo">TAKMIL</span>
+    <span class="topic" style="font-size:16px">جوڑ کے توڑ</span>
+    <span class="timer-badge" id="timer-display">15:00</span>
+  </div>
+  <div style="padding:12px 16px 0">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="progress-label">سوال 1 / 12</div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="q-number" id="q-number">Q 1 / 12</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options-container"></div>
+  </div>
+  <div class="submit-area">
+    <button class="btn btn-primary" id="btn-submit" onclick="submitAnswer()" disabled>جواب جمع کریں</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ -->
+<!-- SCREEN 4: RESULTS                   -->
+<!-- ════════════════════════════════════ -->
+<div id="screen-results" class="screen">
+  <div class="app-header">
+    <span class="logo">TAKMIL</span>
+    <span class="topic">نتیجہ</span>
+    <span class="level-badge">جوڑ کے توڑ</span>
+  </div>
+  <div class="card">
+    <div id="score-circle" class="score-circle">
+      <span id="score-pct" class="score-pct"></span>
+      <span class="score-label">نمبر</span>
+    </div>
+    <div id="verdict" class="result-verdict"></div>
+    <div style="text-align:center;font-size:15px;color:var(--muted);margin-bottom:16px" id="score-fraction"></div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-val c" id="stat-correct">0</div>
+        <div class="stat-key">✓ درست</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val w" id="stat-wrong">0</div>
+        <div class="stat-key">✗ غلط</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-time" style="color:var(--blue)">—</div>
+        <div class="stat-key">⏱ وقت</div>
+      </div>
+    </div>
+
+    <!-- TEACHER REPORT -->
+    <div class="report-title">📋 استاد کی رپورٹ</div>
+    <div id="teacher-report"></div>
+
+    <button class="btn btn-outline" style="margin-top:20px" onclick="resetToLogin()">دوبارہ شروع کریں</button>
+  </div>
+  <div class="footer-note">TAKMIL Foundation · جوڑ کے توڑ Assessment · تمام حقوق محفوظ ہیں</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// QUESTION BANK — جوڑ کے توڑ
+// ══════════════════════════════════════════
+const QUESTION_BANK = [
+  {
+    id: "q01",
+    en: "How many letters are in the word ماں?",
+    ur: "لفظ ماں میں کتنے حروف ہیں؟",
+    highlight: "ماں",
+    options: { A: "2", B: "3", C: "4", D: "5" },
+    answer: "B",
+    explanation: "م + ا + ں = 3 حروف"
+  },
+  {
+    id: "q02",
+    en: "How many letters are in the word دل?",
+    ur: "لفظ دل میں کتنے حروف ہیں؟",
+    highlight: "دل",
+    options: { A: "1", B: "2", C: "3", D: "4" },
+    answer: "B",
+    explanation: "د + ل = 2 حروف"
+  },
+  {
+    id: "q03",
+    en: "How many letters are in the word پانی?",
+    ur: "لفظ پانی میں کتنے حروف ہیں؟",
+    highlight: "پانی",
+    options: { A: "3", B: "4", C: "5", D: "6" },
+    answer: "B",
+    explanation: "پ + ا + ن + ی = 4 حروف"
+  },
+  {
+    id: "q04",
+    en: "Which is the correct توڑ of گھر?",
+    ur: "لفظ گھر کا صحیح توڑ کونسا ہے؟",
+    highlight: "گھر",
+    options: { A: "گ + ر", B: "گ + ھ + ر", C: "گھ + ر", D: "گ + ہ + ر" },
+    answer: "B",
+    explanation: "گ + ھ + ر"
+  },
+  {
+    id: "q05",
+    en: "Which is the correct توڑ of نام?",
+    ur: "لفظ نام کا صحیح توڑ کونسا ہے؟",
+    highlight: "نام",
+    options: { A: "ن + م", B: "نا + م", C: "ن + ا + م", D: "ن + ام" },
+    answer: "C",
+    explanation: "ن + ا + م"
+  },
+  {
+    id: "q06",
+    en: "Which is the correct توڑ of کتاب?",
+    ur: "لفظ کتاب کا صحیح توڑ کونسا ہے؟",
+    highlight: "کتاب",
+    options: { A: "ک + ا + ت + ب", B: "ک + ت + ا + ب", C: "ک + ت + ب", D: "کت + اب" },
+    answer: "B",
+    explanation: "ک + ت + ا + ب"
+  },
+  {
+    id: "q07",
+    en: "Join م + ی + ز — which word do you get?",
+    ur: "یہ حروف جوڑیں: م + ی + ز — کونسا لفظ بنے گا؟",
+    highlight: "م + ی + ز",
+    options: { A: "مزی", B: "میز", C: "زیم", D: "مزے" },
+    answer: "B",
+    explanation: "میز (میز = table)"
+  },
+  {
+    id: "q08",
+    en: "Join ب + ل + ی — which word is formed?",
+    ur: "جوڑیں: ب + ل + ی — کونسا لفظ بنے گا؟",
+    highlight: "ب + ل + ی",
+    options: { A: "لبی", B: "بیل", C: "بلی", D: "لیب" },
+    answer: "C",
+    explanation: "بلی (بلی = cat)"
+  },
+  {
+    id: "q09",
+    en: "Join آ + م — which word is formed?",
+    ur: "جوڑیں: آ + م — کونسا لفظ بنے گا؟",
+    highlight: "آ + م",
+    options: { A: "ما", B: "آام", C: "آم", D: "اما" },
+    answer: "C",
+    explanation: "آم (آم = mango)"
+  },
+  {
+    id: "q10",
+    en: "Join ک + ت + ا + ب — which word is formed?",
+    ur: "جوڑیں: ک + ت + ا + ب — کونسا لفظ بنے گا؟",
+    highlight: "ک + ت + ا + ب",
+    options: { A: "تکاب", B: "کتاب", C: "باتک", D: "کابت" },
+    answer: "B",
+    explanation: "کتاب (کتاب = book)"
+  },
+  {
+    id: "q11",
+    en: "The توڑ is: س + ک + و + ل — which word is this?",
+    ur: "یہ توڑ ہے: س + ک + و + ل — یہ کونسا لفظ ہے؟",
+    highlight: "س + ک + و + ل",
+    options: { A: "سکل", B: "سکول", C: "اسکول", D: "سکوال" },
+    answer: "B",
+    explanation: "سکول (سکول = school)"
+  },
+  {
+    id: "q12",
+    en: "Which word has the توڑ: ب + ا + پ?",
+    ur: "کس لفظ کا توڑ ب + ا + پ ہے؟",
+    highlight: "ب + ا + پ",
+    options: { A: "آپ", B: "باپ", C: "پاب", D: "آب" },
+    answer: "B",
+    explanation: "باپ (باپ = father)"
+  }
+];
+
+// ══════════════════════════════════════════
+// VALID PINS
+// ══════════════════════════════════════════
+const VALID_PINS = ["123456","111111","222222","333333","444444","555555","999999","takmil","TAKMIL"];
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let shuffledQuestions = [];
+let currentIndex = 0;
+let answers = {};
+let selectedOption = null;
+let timerInterval = null;
+let timeLeft = 15 * 60;
+let startTime = null;
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function shuffleOptions(q) {
+  const keys = shuffle(["A","B","C","D"]);
+  const newOpts = {};
+  const keyMap = {};
+  keys.forEach((oldKey, i) => {
+    const newKey = ["A","B","C","D"][i];
+    newOpts[newKey] = q.options[oldKey];
+    keyMap[oldKey] = newKey;
+  });
+  return { ...q, options: newOpts, answer: keyMap[q.answer] };
+}
+
+function formatTime(secs) {
+  const m = Math.floor(secs / 60).toString().padStart(2,'0');
+  const s = (secs % 60).toString().padStart(2,'0');
+  return `${m}:${s}`;
+}
+
+// ══════════════════════════════════════════
+// PIN CHECK
+// ══════════════════════════════════════════
+function checkPin() {
+  const pin = document.getElementById('pin-input').value.trim();
+  const err = document.getElementById('login-error');
+  if (VALID_PINS.includes(pin) || pin.length >= 4) {
+    err.style.display = 'none';
+    showScreen('screen-intro');
+  } else {
+    err.style.display = 'block';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
+  }
+}
+
+document.getElementById('pin-input').addEventListener('keyup', function(e) {
+  if (e.key === 'Enter') checkPin();
+});
+
+// ══════════════════════════════════════════
+// START ASSESSMENT
+// ══════════════════════════════════════════
+function startAssessment() {
+  shuffledQuestions = shuffle(QUESTION_BANK).map(shuffleOptions);
+  currentIndex = 0;
+  answers = {};
+  selectedOption = null;
+  timeLeft = 15 * 60;
+  startTime = Date.now();
+  showScreen('screen-question');
+  renderQuestion();
+  startTimer();
+}
+
+// ══════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    const el = document.getElementById('timer-display');
+    el.textContent = formatTime(timeLeft);
+    if (timeLeft <= 120) el.classList.add('warning');
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      finishAssessment();
+    }
+  }, 1000);
+}
+
+// ══════════════════════════════════════════
+// RENDER QUESTION
+// ══════════════════════════════════════════
+function renderQuestion() {
+  const q = shuffledQuestions[currentIndex];
+  const total = shuffledQuestions.length;
+  const pct = (currentIndex / total) * 100;
+
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `سوال ${currentIndex + 1} / ${total}`;
+  document.getElementById('q-number').textContent = `Q ${currentIndex + 1} / ${total}`;
+
+  // Render question text with highlighted word
+  const qtEl = document.getElementById('q-text');
+  const highlighted = `<span class="highlight" style="direction:rtl;display:inline-block">${q.highlight}</span>`;
+  const urText = q.ur.replace(q.highlight, highlighted);
+  qtEl.innerHTML = urText;
+
+  // Render options
+  const container = document.getElementById('options-container');
+  container.innerHTML = '';
+  selectedOption = null;
+  document.getElementById('btn-submit').disabled = true;
+
+  ['A','B','C','D'].forEach(key => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.onclick = () => selectOption(key);
+    btn.innerHTML = `
+      <div class="opt-text">${q.options[key]}</div>
+      <div class="opt-letter">${key}</div>
+    `;
+    btn.dataset.key = key;
+    container.appendChild(btn);
+  });
+}
+
+// ══════════════════════════════════════════
+// SELECT OPTION
+// ══════════════════════════════════════════
+function selectOption(key) {
+  selectedOption = key;
+  document.querySelectorAll('.opt-btn').forEach(btn => {
+    btn.classList.remove('selected');
+    if (btn.dataset.key === key) btn.classList.add('selected');
+  });
+  document.getElementById('btn-submit').disabled = false;
+}
+
+// ══════════════════════════════════════════
+// SUBMIT ANSWER
+// ══════════════════════════════════════════
+function submitAnswer() {
+  if (!selectedOption) return;
+  const q = shuffledQuestions[currentIndex];
+  answers[q.id] = { selected: selectedOption, correct: q.answer, isCorrect: selectedOption === q.answer };
+
+  document.querySelectorAll('.opt-btn').forEach(btn => {
+    btn.onclick = null;
+    if (btn.dataset.key === q.answer) btn.classList.add('correct');
+    else if (btn.dataset.key === selectedOption) btn.classList.add('wrong');
+  });
+
+  document.getElementById('btn-submit').disabled = true;
+  document.getElementById('btn-submit').textContent = 'اگلا سوال...';
+
+  setTimeout(() => {
+    document.getElementById('btn-submit').textContent = 'جواب جمع کریں';
+    currentIndex++;
+    if (currentIndex < shuffledQuestions.length) {
+      renderQuestion();
+    } else {
+      finishAssessment();
+    }
+  }, 700);
+}
+
+// ══════════════════════════════════════════
+// FINISH
+// ══════════════════════════════════════════
+function finishAssessment() {
+  clearInterval(timerInterval);
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const elapsedStr = formatTime(elapsed);
+
+  let correct = 0;
+  shuffledQuestions.forEach(q => {
+    if (answers[q.id] && answers[q.id].isCorrect) correct++;
+  });
+
+  const total = shuffledQuestions.length;
+  const pct = Math.round((correct / total) * 100);
+  const pass = pct >= 70;
+
+  // Score circle
+  const circle = document.getElementById('score-circle');
+  const pctEl = document.getElementById('score-pct');
+  const verdict = document.getElementById('verdict');
+  circle.className = 'score-circle ' + (pass ? 'pass' : 'fail');
+  pctEl.className = 'score-pct ' + (pass ? 'pass' : 'fail');
+  pctEl.textContent = pct + '%';
+  verdict.className = 'result-verdict ' + (pass ? 'pass' : 'fail');
+  verdict.textContent = pass ? '🎉 کامیاب!' : '📚 مزید مشق کریں';
+  document.getElementById('score-fraction').textContent = `${correct} / ${total} درست`;
+
+  document.getElementById('stat-correct').textContent = correct;
+  document.getElementById('stat-wrong').textContent = total - correct;
+  document.getElementById('stat-time').textContent = elapsedStr;
+
+  // Teacher report
+  const reportEl = document.getElementById('teacher-report');
+  reportEl.innerHTML = '';
+  shuffledQuestions.forEach((q, i) => {
+    const ans = answers[q.id];
+    const isCorrect = ans && ans.isCorrect;
+    const row = document.createElement('div');
+    row.className = 'report-row';
+    const selectedText = ans ? q.options[ans.selected] : '—';
+    const correctText = q.options[q.answer];
+    row.innerHTML = `
+      <div class="report-q-num">${i+1}</div>
+      <div class="report-q-text">
+        <div style="font-size:14px;color:var(--muted);margin-bottom:2px">${q.ur}</div>
+        <div style="font-size:13px">
+          ${isCorrect ? '' : `<span style="color:var(--red);font-size:12px">✗ جواب: ${selectedText} &nbsp;|&nbsp; </span>`}
+          <span style="color:var(--correct);font-size:12px">✓ صحیح: ${correctText}</span>
+        </div>
+      </div>
+      <div class="report-answer ${isCorrect ? 'correct' : 'wrong'}">${isCorrect ? '✓' : '✗'}</div>
+    `;
+    reportEl.appendChild(row);
+  });
+
+  showScreen('screen-results');
+}
+
+// ══════════════════════════════════════════
+// RESET
+// ══════════════════════════════════════════
+function resetToLogin() {
+  clearInterval(timerInterval);
+  document.getElementById('pin-input').value = '';
+  showScreen('screen-login');
+}
+</script>
+</body>
+</html>
