@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Question Bank Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090F;--s1:#0F1117;--s2:#161B24;--s3:#1C2231;
+  --brd:#232B38;--brd2:#2A3547;
+  --blue:#2563EB;--blue2:#3B82F6;--bdim:#0D1E40;
+  --green:#16A34A;--green2:#22C55E;--gdim:#091A0E;
+  --amber:#D97706;--amber2:#F59E0B;--adim:#231500;
+  --red:#DC2626;--red2:#EF4444;--rdim:#220808;
+  --teal:#0D9488;--teal2:#2DD4BF;--tdim:#071A18;
+  --pur:#7C3AED;--pur2:#A78BFA;--pudim:#150A30;
+  --text:#DDE6F5;--muted:#566780;--dim:#8AA0BC;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+  --urdu:'Noto Nastaliq Urdu',serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:14px}
+
+/* TOP */
+.top{height:50px;background:var(--s1);border-bottom:1px solid var(--brd);
+  display:flex;align-items:center;justify-content:space-between;padding:0 20px;
+  position:sticky;top:0;z-index:100}
+.logo{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--blue2);letter-spacing:3px}
+.logo em{color:var(--muted);font-style:normal;font-weight:400;font-size:11px;margin-left:10px}
+.top-mid{display:flex;gap:7px}
+.tpill{font-size:11px;color:var(--muted);background:var(--s2);border:1px solid var(--brd);
+  border-radius:5px;padding:3px 9px;font-family:var(--mono)}
+.tpill b{color:var(--blue2)}
+.srv{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green2)}
+.dot.err{background:var(--red2)}
+
+/* SHELL */
+.shell{display:grid;grid-template-columns:235px 1fr;min-height:calc(100vh - 50px)}
+
+/* SIDEBAR */
+.sb{background:var(--s1);border-right:1px solid var(--brd);
+  display:flex;flex-direction:column;padding:14px 0;overflow-y:auto}
+.sb-sec{padding:0 14px;margin-bottom:16px}
+.sb-lbl{font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;
+  margin-bottom:7px;font-family:var(--mono)}
+.filt-btn{display:flex;align-items:center;justify-content:space-between;width:100%;
+  padding:7px 9px;border-radius:5px;cursor:pointer;border:1px solid transparent;
+  background:none;color:var(--dim);font-size:12px;font-family:var(--sans);text-align:left;
+  transition:all .12s;margin-bottom:2px}
+.filt-btn:hover{background:var(--s2);color:var(--text)}
+.filt-btn.on{background:var(--bdim);border-color:rgba(59,130,246,.4);color:var(--blue2)}
+.filt-count{font-family:var(--mono);font-size:10px;background:var(--s3);
+  border-radius:8px;padding:1px 6px;color:var(--muted)}
+.filt-btn.on .filt-count{background:rgba(59,130,246,.2);color:var(--blue2)}
+.filt-select{width:100%;background:var(--s2);border:1px solid var(--brd2);
+  border-radius:6px;padding:7px 9px;font-size:12px;color:var(--text);
+  font-family:var(--sans);outline:none;cursor:pointer}
+.filt-select:focus{border-color:var(--blue)}
+.sb-div{border:none;border-top:1px solid var(--brd);margin:12px 0}
+.mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:0 14px}
+.mini{background:var(--s2);border:1px solid var(--brd);border-radius:6px;
+  padding:8px;text-align:center}
+.mini-n{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--blue2)}
+.mini-k{font-size:10px;color:var(--muted);margin-top:1px}
+.mini.g .mini-n{color:var(--green2)}.mini.a .mini-n{color:var(--amber2)}.mini.r .mini-n{color:var(--red2)}
+.act-area{padding:12px 14px;display:flex;flex-direction:column;gap:5px}
+.act-btn{width:100%;border:none;border-radius:6px;padding:9px;font-size:12px;
+  font-weight:600;cursor:pointer;font-family:var(--sans);transition:opacity .15s}
+.act-btn:hover{opacity:.85}
+.act-btn.blue{background:var(--blue);color:#fff}
+.act-btn.teal{background:var(--teal);color:#fff}
+.act-btn.pur{background:var(--pur);color:#fff}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;overflow:hidden}
+.toolbar{padding:10px 18px;border-bottom:1px solid var(--brd);background:var(--s1);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:180px;position:relative}
+.search-wrap::before{content:"⌕";position:absolute;left:9px;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-size:15px;pointer-events:none}
+.search{width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;
+  padding:7px 10px 7px 28px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none}
+.search:focus{border-color:var(--blue)}
+.search::placeholder{color:var(--muted)}
+.tb-sel{background:var(--s2);border:1px solid var(--brd2);border-radius:6px;
+  padding:7px 9px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none}
+.tb-btn{background:none;border:1px solid var(--brd2);border-radius:5px;color:var(--dim);
+  padding:6px 11px;font-size:11px;cursor:pointer;font-family:var(--mono);transition:all .12s}
+.tb-btn:hover{color:var(--text);border-color:var(--brd)}
+.tb-btn.green{color:var(--green2);border-color:rgba(34,197,94,.35)}
+.tb-btn.green:hover{background:var(--gdim)}
+.result-count{font-size:11px;color:var(--muted);font-family:var(--mono);white-space:nowrap}
+
+/* GRID */
+.qgrid{flex:1;overflow-y:auto;padding:14px 18px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(390px,1fr));
+  gap:10px;align-content:start}
+
+/* CARD */
+.qcard{background:var(--s1);border:1px solid var(--brd);border-radius:9px;
+  overflow:hidden;transition:border-color .12s}
+.qcard:hover{border-color:var(--brd2)}
+.qcard.approved{border-left:3px solid var(--green)}
+.qcard.pending{border-left:3px solid var(--amber)}
+.qcard.flagged{border-left:3px solid var(--red2)}
+.card-hdr{padding:8px 11px;border-bottom:1px solid var(--brd);
+  display:flex;align-items:center;gap:7px}
+.card-num{font-family:var(--mono);font-size:10px;color:var(--muted);
+  background:var(--s2);border-radius:3px;padding:1px 5px}
+.card-qid{font-family:var(--mono);font-size:10px;color:var(--blue2);
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;
+  font-family:var(--mono);flex-shrink:0}
+.status-badge.approved{background:var(--gdim);color:var(--green2);border:1px solid rgba(34,197,94,.3)}
+.status-badge.pending{background:var(--adim);color:var(--amber2);border:1px solid rgba(245,158,11,.3)}
+.status-badge.flagged{background:var(--rdim);color:var(--red2);border:1px solid rgba(239,68,68,.3)}
+.card-body{padding:10px 11px}
+.ctags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px}
+.ctag{font-size:10px;padding:1px 6px;border-radius:3px;font-family:var(--mono)}
+.ctag.lv{background:var(--bdim);color:var(--blue2)}
+.ctag.sb{background:var(--pudim);color:var(--pur2)}
+.ctag.tp{background:var(--tdim);color:var(--teal2)}
+.ctag.vs{background:rgba(239,68,68,.1);color:#F87171}
+.ctag.cs{background:var(--s3);color:var(--dim)}
+.qtext{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:8px}
+.qtext.ur{font-family:var(--urdu);font-size:15px;direction:rtl;text-align:right}
+.qopts{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.qopt{font-size:11px;padding:3px 7px;border-radius:3px;display:flex;gap:4px;align-items:flex-start}
+.qopt.ok{background:var(--gdim);border:1px solid rgba(34,197,94,.2)}
+.qopt:not(.ok){background:var(--s2)}
+.qlbl{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0;margin-top:1px}
+.qopt.ok .qlbl{color:var(--green2);font-weight:600}
+.qtxt{color:var(--dim);line-height:1.4}
+.card-foot{padding:6px 11px;border-top:1px solid var(--brd);display:flex;align-items:center;gap:6px}
+.card-meta{font-size:10px;color:var(--muted);font-family:var(--mono);flex:1}
+.cbtns{display:flex;gap:4px}
+.cbtn{background:none;border:1px solid var(--brd2);border-radius:4px;color:var(--dim);
+  padding:3px 7px;font-size:10px;cursor:pointer;font-family:var(--mono);transition:all .12s}
+.cbtn:hover{color:var(--text)}
+.cbtn.apr{color:var(--green2);border-color:rgba(34,197,94,.3)}
+.cbtn.apr:hover{background:var(--gdim)}
+.cbtn.flg{color:var(--red2);border-color:rgba(239,68,68,.3)}
+.cbtn.flg:hover{background:var(--rdim)}
+.cbtn.edt{color:var(--blue2);border-color:rgba(59,130,246,.3)}
+.cbtn.edt:hover{background:var(--bdim)}
+
+/* EMPTY / LOADING */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:260px;gap:10px;color:var(--muted);font-size:13px;text-align:center;
+  grid-column:1/-1}
+.spinner{width:22px;height:22px;border:2px solid var(--brd2);border-top-color:var(--blue2);
+  border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* MODAL */
+.mbackdrop{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:16px}
+.mbackdrop.hidden{display:none}
+.modal{background:var(--s1);border:1px solid var(--brd2);border-radius:11px;
+  width:100%;max-width:660px;max-height:91vh;overflow-y:auto}
+.modal-hdr{padding:14px 18px;border-bottom:1px solid var(--brd);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;background:var(--s1);z-index:1}
+.modal-title{font-size:14px;font-weight:600}
+.modal-x{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:4px}
+.modal-x:hover{color:var(--text);background:var(--s3)}
+.modal-body{padding:18px}
+.modal-foot{padding:12px 18px;border-top:1px solid var(--brd);display:flex;gap:7px;
+  justify-content:flex-end;position:sticky;bottom:0;background:var(--s1)}
+.frow{margin-bottom:12px}
+.frow label{font-size:10px;color:var(--muted);font-family:var(--mono);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;display:block}
+.finput{width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;
+  padding:8px 10px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none}
+.finput:focus{border-color:var(--blue)}
+.finput.urdu{font-family:var(--urdu);direction:rtl;font-size:15px}
+.fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.optgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.optrow{display:flex;gap:7px;align-items:center}
+.optrow span{font-family:var(--mono);font-size:12px;font-weight:600;
+  color:var(--muted);width:16px;flex-shrink:0}
+.btn-blue{background:var(--blue);color:#fff;border:none;border-radius:6px;
+  padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+.btn-blue:hover{opacity:.85}
+.btn-teal{background:var(--teal);color:#fff;border:none;border-radius:6px;
+  padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+.btn-teal:hover{opacity:.85}
+.btn-cancel{background:none;border:1px solid var(--brd2);color:var(--dim);border-radius:6px;
+  padding:8px 16px;font-size:13px;cursor:pointer;font-family:var(--sans)}
+.import-box{background:var(--s2);border:1px solid var(--brd);border-radius:7px;padding:12px;margin-bottom:12px}
+.import-lbl{font-size:10px;color:var(--muted);font-family:var(--mono);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.import-ta{width:100%;background:var(--bg);border:1px solid var(--brd2);border-radius:5px;
+  padding:9px;font-size:11px;font-family:var(--mono);color:var(--teal2);
+  height:110px;outline:none;resize:vertical}
+.import-ta:focus{border-color:var(--blue)}
+.msg-ok{background:var(--gdim);border:1px solid var(--green);border-radius:6px;
+  padding:9px 12px;font-size:12px;color:var(--green2);margin-top:8px;display:none}
+.msg-err{background:var(--rdim);border:1px solid var(--red2);border-radius:6px;
+  padding:9px 12px;font-size:12px;color:var(--red2);margin-top:8px;display:none}
+.hint{font-size:12px;color:var(--dim);line-height:1.7;margin-bottom:12px}
+.hint code{font-family:var(--mono);color:var(--teal2);font-size:11px}
+
+/* VIDEO BANK */
+.vbrow{display:flex;align-items:flex-start;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--brd)}
+.vbrow:last-child{border-bottom:none}
+.vb-thumb{width:80px;height:54px;object-fit:cover;border-radius:5px;flex-shrink:0;background:var(--s3)}
+.vb-info{flex:1;min-width:0}
+.vb-name{font-size:12px;font-weight:500;margin-bottom:3px}
+.vb-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:3px}
+.vb-meta{font-size:10px;color:var(--muted);font-family:var(--mono)}
+.vb-link{font-size:10px;color:var(--blue2);text-decoration:none;flex-shrink:0;
+  padding:3px 7px;border:1px solid rgba(59,130,246,.3);border-radius:4px}
+.vb-link:hover{background:var(--bdim)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;padding:9px 16px;border-radius:7px;
+  font-size:12px;font-weight:500;z-index:999;opacity:0;pointer-events:none;
+  transition:opacity .2s;color:#fff}
+.toast.show{opacity:1}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top">
+  <div class="logo">TAKMIL <em>/ Question Bank Manager</em></div>
+  <div class="top-mid">
+    <div class="tpill">Total: <b id="s-total">—</b></div>
+    <div class="tpill">Approved: <b id="s-approved" style="color:var(--green2)">—</b></div>
+    <div class="tpill">Pending: <b id="s-pending" style="color:var(--amber2)">—</b></div>
+  </div>
+  <div class="srv">
+    <div class="dot" id="srv-dot"></div>
+    <span id="srv-txt">connecting...</span>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <div class="sb">
+
+    <div class="sb-sec">
+      <div class="sb-lbl">Subject</div>
+      <button class="filt-btn on" onclick="setF('subject','all',this)">All Subjects <span class="filt-count" id="fc-all">—</span></button>
+      <button class="filt-btn" onclick="setF('subject','Math',this)">Math <span class="filt-count" id="fc-math">—</span></button>
+      <button class="filt-btn" onclick="setF('subject','English',this)">English <span class="filt-count" id="fc-eng">—</span></button>
+      <button class="filt-btn" onclick="setF('subject','Urdu',this)">اردو / Urdu <span class="filt-count" id="fc-urdu">—</span></button>
+    </div>
+
+    <div class="sb-sec">
+      <div class="sb-lbl">Level</div>
+      <select class="filt-select" id="f-level" onchange="render()">
+        <option value="all">All Levels</option>
+        <option>1</option><option>2</option><option>3</option><option>4</option>
+        <option>5</option><option>6</option><option>7</option><option>8</option>
+        <option>9</option><option>10</option><option>11</option>
+      </select>
+    </div>
+
+    <div class="sb-sec">
+      <div class="sb-lbl">Status</div>
+      <button class="filt-btn on" onclick="setF('status','all',this)">All Status</button>
+      <button class="filt-btn" onclick="setF('status','approved',this)">✓ Approved <span class="filt-count" id="fc-ok">—</span></button>
+      <button class="filt-btn" onclick="setF('status','pending',this)">⏳ Pending <span class="filt-count" id="fc-pend">—</span></button>
+      <button class="filt-btn" onclick="setF('status','flagged',this)">⚑ Flagged <span class="filt-count" id="fc-flag">—</span></button>
+    </div>
+
+    <div class="sb-sec">
+      <div class="sb-lbl">Source</div>
+      <button class="filt-btn on" onclick="setF('source','all',this)">All Sources</button>
+      <button class="filt-btn" onclick="setF('source','video',this)">▶ YouTube Video</button>
+      <button class="filt-btn" onclick="setF('source','curriculum',this)">📚 Curriculum PDF</button>
+      <button class="filt-btn" onclick="setF('source','paper',this)">📄 Paper Assessment</button>
+    </div>
+
+    <hr class="sb-div">
+
+    <div class="mini-stats">
+      <div class="mini"><div class="mini-n" id="sq-m">—</div><div class="mini-k">Math</div></div>
+      <div class="mini g"><div class="mini-n" id="sq-e">—</div><div class="mini-k">English</div></div>
+      <div class="mini a"><div class="mini-n" id="sq-u">—</div><div class="mini-k">Urdu</div></div>
+      <div class="mini r"><div class="mini-n" id="sq-v">—</div><div class="mini-k">From Videos</div></div>
+    </div>
+
+    <hr class="sb-div">
+
+    <div class="act-area">
+      <button class="act-btn blue" onclick="openAdd()">+ Add New Question</button>
+      <button class="act-btn teal" onclick="openImport()">↑ Import from Claude</button>
+      <button class="act-btn pur" onclick="openVideoBank()">▶ Video Bank</button>
+    </div>
+
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <input class="search" id="q-search" placeholder="Search questions, IDs, topics..." oninput="render()">
+      </div>
+      <select class="tb-sel" id="q-sort" onchange="render()">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="level">By level</option>
+        <option value="subject">By subject</option>
+      </select>
+      <button class="tb-btn green" onclick="approveAllPending()">✓ Approve all pending</button>
+      <button class="tb-btn" onclick="loadData()">↻ Refresh</button>
+      <span class="result-count" id="result-count">—</span>
+    </div>
+    <div class="qgrid" id="qgrid">
+      <div class="empty-state"><div class="spinner"></div><span>Loading questions...</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="mbackdrop hidden" id="modal-edit">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="edit-heading">Add Question</div>
+      <button class="modal-x" onclick="closeModal('modal-edit')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrid2">
+        <div class="frow">
+          <label>Question ID</label>
+          <input class="finput" id="f-id" placeholder="e.g. MATH-L5-MULT-001" style="font-family:var(--mono)">
+        </div>
+        <div class="frow">
+          <label>Topic Tag</label>
+          <input class="finput" id="f-topic" placeholder="e.g. multiplication">
+        </div>
+        <div class="frow">
+          <label>Level</label>
+          <select class="finput" id="f-level">
+            <option value="">Select level</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option><option>11</option>
+          </select>
+        </div>
+        <div class="frow">
+          <label>Subject</label>
+          <select class="finput" id="f-subject">
+            <option value="">Select subject</option>
+            <option>Math</option><option>English</option><option>Urdu</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <label>Question Text (English)</label>
+        <input class="finput" id="f-qen" placeholder="Type the question in English">
+      </div>
+      <div class="frow">
+        <label>Question Text — اردو (optional)</label>
+        <input class="finput urdu" id="f-qur" placeholder="اردو میں سوال لکھیں">
+      </div>
+      <div class="frow">
+        <label>Answer Options</label>
+        <div class="optgrid">
+          <div class="optrow"><span>A</span><input class="finput" id="f-a" placeholder="Option A"></div>
+          <div class="optrow"><span>B</span><input class="finput" id="f-b" placeholder="Option B"></div>
+          <div class="optrow"><span>C</span><input class="finput" id="f-c" placeholder="Option C"></div>
+          <div class="optrow"><span>D</span><input class="finput" id="f-d" placeholder="Option D"></div>
+        </div>
+      </div>
+      <div class="fgrid2">
+        <div class="frow">
+          <label>Correct Answer</label>
+          <select class="finput" id="f-correct">
+            <option>A</option><option>B</option><option>C</option><option>D</option>
+          </select>
+        </div>
+        <div class="frow">
+          <label>Source Type</label>
+          <select class="finput" id="f-source">
+            <option value="curriculum">Curriculum PDF</option>
+            <option value="video">YouTube Video</option>
+            <option value="paper">Paper Assessment</option>
+          </select>
+        </div>
+        <div class="frow">
+          <label>YouTube Video ID (if video source)</label>
+          <input class="finput" id="f-vid" placeholder="e.g. DoHfsCv4D2w" style="font-family:var(--mono)">
+        </div>
+        <div class="frow">
+          <label>Approved By (teacher name)</label>
+          <input class="finput" id="f-approver" placeholder="Teacher name">
+        </div>
+      </div>
+      <input type="hidden" id="f-record-id">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('modal-edit')">Cancel</button>
+      <button class="btn-blue" onclick="saveQuestion()">Save Question</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="mbackdrop hidden" id="modal-import">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">↑ Import Questions from Claude</div>
+      <button class="modal-x" onclick="closeModal('modal-import')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint">
+        After Claude generates and your teacher approves questions, ask Claude:<br>
+        <code>"Output the approved questions as a JSON array with fields: question_id, question_text, option_a, option_b, option_c, option_d, correct_option"</code><br>
+        Copy the JSON Claude gives you and paste it below.
+      </p>
+      <div class="import-box">
+        <div class="import-lbl">JSON from Claude — paste here</div>
+        <textarea class="import-ta" id="imp-json" placeholder='[
+  {
+    "question_id": "MATH-L5-MULT-001",
+    "question_text": "What is 5 × 10?",
+    "option_a": "15",
+    "option_b": "50",
+    "option_c": "55",
+    "option_d": "500",
+    "correct_option": "B"
+  }
+]'></textarea>
+      </div>
+      <div class="fgrid2">
+        <div class="frow">
+          <label>Level</label>
+          <select class="finput" id="imp-level">
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option><option>11</option>
+          </select>
+        </div>
+        <div class="frow">
+          <label>Subject</label>
+          <select class="finput" id="imp-subject">
+            <option>Math</option><option>English</option><option>Urdu</option>
+          </select>
+        </div>
+        <div class="frow">
+          <label>Topic</label>
+          <input class="finput" id="imp-topic" placeholder="e.g. multiplication">
+        </div>
+        <div class="frow">
+          <label>YouTube Video ID</label>
+          <input class="finput" id="imp-vid" placeholder="e.g. DoHfsCv4D2w" style="font-family:var(--mono)">
+        </div>
+        <div class="frow">
+          <label>Section Code</label>
+          <input class="finput" id="imp-section" placeholder="e.g. SEC-L5-MATH-01" style="font-family:var(--mono)">
+        </div>
+        <div class="frow">
+          <label>Approved By (teacher name)</label>
+          <input class="finput" id="imp-approver" placeholder="Teacher name">
+        </div>
+      </div>
+      <div class="msg-ok" id="imp-ok"></div>
+      <div class="msg-err" id="imp-err"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('modal-import')">Cancel</button>
+      <button class="btn-teal" onclick="runImport()">Import Questions →</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIDEO BANK MODAL -->
+<div class="mbackdrop hidden" id="modal-vb">
+  <div class="modal" style="max-width:740px">
+    <div class="modal-hdr">
+      <div class="modal-title">▶ Video Question Bank</div>
+      <button class="modal-x" onclick="closeModal('modal-vb')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint">Every YouTube video that has been processed into questions. Questions are saved once and reused for all future student cohorts — never rebuilt again.</p>
+      <div id="vb-list"><div class="empty-state"><div class="spinner"></div><span>Loading...</span></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONFIG ─────────────────────────────────────────────────────
+// When served from Railway the BASE is empty (same origin).
+// When opened locally it falls back to the Railway URL.
+const BASE = window.location.hostname.includes('railway.app')
+  ? '' : 'https://takmil-bot-production-0f51.up.railway.app';
+
+// ─── STATE ───────────────────────────────────────────────────────
+let allQuestions = [];
+let filtered     = [];
+let activeFilt   = { subject:'all', status:'all', source:'all' };
+
+// ─── API HELPER ──────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  try {
+    const r = await fetch(BASE + path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts
+    });
+    if (!r.ok) return null;
+    return r.json();
+  } catch { return null; }
+}
+
+// ─── LOAD DATA ───────────────────────────────────────────────────
+async function loadData() {
+  document.getElementById('qgrid').innerHTML =
+    '<div class="empty-state"><div class="spinner"></div><span>Loading questions...</span></div>';
+
+  const data = await api('/admin/questions/all');
+
+  if (!data) {
+    document.getElementById('qgrid').innerHTML = `
+      <div class="empty-state">
+        <div style="font-size:32px;opacity:.25">⚠</div>
+        <span>Cannot reach server</span>
+        <span style="font-size:11px;color:var(--muted);max-width:340px">
+          This page must be opened from your Railway URL:<br>
+          <span style="font-family:var(--mono);color:var(--blue2)">
+          https://takmil-bot-production-0f51.up.railway.app/question-bank</span>
+        </span>
+      </div>`;
+    setDot(false); setTxt('not reachable'); return;
+  }
+
+  allQuestions = data.questions || [];
+  setDot(true); setTxt('connected');
+  updateStats();
+  render();
+}
+
+// ─── STATS ───────────────────────────────────────────────────────
+function updateStats() {
+  const q   = allQuestions;
+  const ap  = q.filter(x => x.is_approved).length;
+  const pe  = q.filter(x => !x.is_approved && x.status !== 'flagged').length;
+  const fl  = q.filter(x => x.status === 'flagged').length;
+  const mt  = q.filter(x => x.subject === 'Math').length;
+  const en  = q.filter(x => x.subject === 'English').length;
+  const ur  = q.filter(x => x.subject === 'Urdu').length;
+  const vi  = q.filter(x => x.source_type === 'video').length;
+
+  set('s-total',   q.length);  set('s-approved', ap); set('s-pending', pe);
+  set('fc-all',    q.length);  set('fc-math', mt);
+  set('fc-eng',    en);        set('fc-urdu', ur);
+  set('fc-ok',     ap);        set('fc-pend', pe); set('fc-flag', fl);
+  set('sq-m', mt); set('sq-e', en); set('sq-u', ur); set('sq-v', vi);
+}
+
+function set(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
+function setDot(ok) { document.getElementById('srv-dot').className = 'dot' + (ok ? '' : ' err'); }
+function setTxt(t)  { document.getElementById('srv-txt').textContent = t; }
+
+// ─── FILTER ──────────────────────────────────────────────────────
+function setF(type, val, btn) {
+  activeFilt[type] = val;
+  btn.closest('.sb-sec').querySelectorAll('.filt-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  render();
+}
+
+function render() {
+  const search = document.getElementById('q-search').value.toLowerCase();
+  const level  = document.getElementById('f-level').value;
+  const sort   = document.getElementById('q-sort').value;
+
+  let q = [...allQuestions];
+
+  if (activeFilt.subject !== 'all') q = q.filter(x => x.subject === activeFilt.subject);
+  if (level !== 'all')              q = q.filter(x => String(x.level) === level);
+  if (activeFilt.source !== 'all')  q = q.filter(x => x.source_type === activeFilt.source);
+  if (activeFilt.status === 'approved') q = q.filter(x => x.is_approved);
+  if (activeFilt.status === 'pending')  q = q.filter(x => !x.is_approved && x.status !== 'flagged');
+  if (activeFilt.status === 'flagged')  q = q.filter(x => x.status === 'flagged');
+
+  if (search) q = q.filter(x =>
+    (x.question_text || '').toLowerCase().includes(search) ||
+    (x.question_id   || '').toLowerCase().includes(search) ||
+    (x.topic_tag     || '').toLowerCase().includes(search) ||
+    (x.video_id      || '').toLowerCase().includes(search)
+  );
+
+  if (sort === 'newest')  q.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  if (sort === 'oldest')  q.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  if (sort === 'level')   q.sort((a, b) => a.level - b.level);
+  if (sort === 'subject') q.sort((a, b) => (a.subject || '').localeCompare(b.subject || ''));
+
+  filtered = q;
+  document.getElementById('result-count').textContent = q.length + ' questions';
+
+  if (!q.length) {
+    document.getElementById('qgrid').innerHTML =
+      '<div class="empty-state"><span>No questions match your filters</span></div>';
+    return;
+  }
+  document.getElementById('qgrid').innerHTML = q.map(renderCard).join('');
+}
+
+// ─── CARD ────────────────────────────────────────────────────────
+function renderCard(q, i) {
+  const st    = q.status === 'flagged' ? 'flagged' : q.is_approved ? 'approved' : 'pending';
+  const slbl  = st === 'flagged' ? '⚑ Flagged' : q.is_approved ? '✓ Approved' : '⏳ Pending';
+  const isUr  = q.subject === 'Urdu';
+
+  const srcTag = q.source_type === 'video'
+    ? `<span class="ctag vs">▶ ${esc(q.video_id || 'video')}</span>`
+    : q.source_type === 'paper'
+    ? `<span class="ctag cs">📄 paper</span>`
+    : `<span class="ctag cs">📚 curriculum</span>`;
+
+  const opts = ['a','b','c','d'].map(l => {
+    const correct = (q.correct_option || '').toUpperCase() === l.toUpperCase();
+    return `<div class="qopt ${correct ? 'ok' : ''}">
+      <span class="qlbl">${l.toUpperCase()}</span>
+      <span class="qtxt">${esc(q['option_' + l] || '')}</span>
+    </div>`;
+  }).join('');
+
+  const meta = q.approved_by
+    ? `by ${esc(q.approved_by)}`
+    : q.created_at ? new Date(q.created_at).toLocaleDateString() : '';
+
+  const approveBtn = !q.is_approved && st !== 'flagged'
+    ? `<button class="cbtn apr" onclick="event.stopPropagation();approveOne(${q.id})">✓ Approve</button>` : '';
+  const flagBtn = q.is_approved
+    ? `<button class="cbtn flg" onclick="event.stopPropagation();flagOne(${q.id})">⚑ Flag</button>` : '';
+
+  return `
+  <div class="qcard ${st}">
+    <div class="card-hdr">
+      <span class="card-num">#${String(i + 1).padStart(3, '0')}</span>
+      <span class="card-qid">${esc(q.question_id || '—')}</span>
+      <span class="status-badge ${st}">${slbl}</span>
+    </div>
+    <div class="card-body">
+      <div class="ctags">
+        <span class="ctag lv">L${q.level || '?'}</span>
+        <span class="ctag sb">${esc(q.subject || '?')}</span>
+        ${q.topic_tag ? `<span class="ctag tp">${esc(q.topic_tag)}</span>` : ''}
+        ${srcTag}
+      </div>
+      <div class="qtext ${isUr ? 'ur' : ''}">${esc(q.question_text || '—')}</div>
+      <div class="qopts">${opts}</div>
+    </div>
+    <div class="card-foot">
+      <span class="card-meta">${meta}</span>
+      <div class="cbtns">
+        ${approveBtn}${flagBtn}
+        <button class="cbtn edt" onclick="event.stopPropagation();openEdit(${q.id})">✎ Edit</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── APPROVE / FLAG ──────────────────────────────────────────────
+async function approveOne(id) {
+  const r = await api(`/admin/questions/${id}/approve`, { method: 'POST' });
+  if (r) { showToast('Question approved ✓'); loadData(); }
+  else showToast('Error — check server', 'err');
+}
+
+async function flagOne(id) {
+  if (!confirm('Flag this question for review?')) return;
+  await api(`/admin/questions/${id}/flag`, { method: 'POST', body: '{}' });
+  showToast('Question flagged'); loadData();
+}
+
+async function approveAllPending() {
+  const pend = filtered.filter(q => !q.is_approved && q.status !== 'flagged');
+  if (!pend.length) { showToast('No pending questions in current view', 'warn'); return; }
+  if (!confirm(`Approve all ${pend.length} pending questions?`)) return;
+  for (const q of pend) await api(`/admin/questions/${q.id}/approve`, { method: 'POST' });
+  showToast(`${pend.length} questions approved ✓`);
+  loadData();
+}
+
+// ─── ADD / EDIT ───────────────────────────────────────────────────
+function openAdd() {
+  document.getElementById('edit-heading').textContent = 'Add Question';
+  ['f-id','f-topic','f-qen','f-qur','f-a','f-b','f-c','f-d','f-vid','f-approver']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-level').value   = '';
+  document.getElementById('f-subject').value = '';
+  document.getElementById('f-correct').value = 'A';
+  document.getElementById('f-source').value  = 'curriculum';
+  document.getElementById('f-record-id').value = '';
+  openModal('modal-edit');
+}
+
+function openEdit(id) {
+  const q = allQuestions.find(x => x.id === id);
+  if (!q) return;
+  document.getElementById('edit-heading').textContent = 'Edit Question';
+  document.getElementById('f-id').value       = q.question_id || '';
+  document.getElementById('f-topic').value    = q.topic_tag   || '';
+  document.getElementById('f-level').value    = q.level       || '';
+  document.getElementById('f-subject').value  = q.subject     || '';
+  document.getElementById('f-qen').value      = q.question_text   || '';
+  document.getElementById('f-qur').value      = q.question_text_ur|| '';
+  document.getElementById('f-a').value        = q.option_a || '';
+  document.getElementById('f-b').value        = q.option_b || '';
+  document.getElementById('f-c').value        = q.option_c || '';
+  document.getElementById('f-d').value        = q.option_d || '';
+  document.getElementById('f-correct').value  = q.correct_option || 'A';
+  document.getElementById('f-source').value   = q.source_type    || 'curriculum';
+  document.getElementById('f-vid').value      = q.video_id       || '';
+  document.getElementById('f-approver').value = q.approved_by    || '';
+  document.getElementById('f-record-id').value = id;
+  openModal('modal-edit');
+}
+
+async function saveQuestion() {
+  const rid  = document.getElementById('f-record-id').value;
+  const body = {
+    question_id:     document.getElementById('f-id').value.trim(),
+    topic_tag:       document.getElementById('f-topic').value.trim(),
+    level:           parseInt(document.getElementById('f-level').value),
+    subject:         document.getElementById('f-subject').value,
+    question_text:   document.getElementById('f-qen').value.trim(),
+    question_text_ur:document.getElementById('f-qur').value.trim(),
+    option_a:        document.getElementById('f-a').value.trim(),
+    option_b:        document.getElementById('f-b').value.trim(),
+    option_c:        document.getElementById('f-c').value.trim(),
+    option_d:        document.getElementById('f-d').value.trim(),
+    correct_option:  document.getElementById('f-correct').value,
+    source_type:     document.getElementById('f-source').value,
+    video_id:        document.getElementById('f-vid').value.trim() || null,
+    approved_by:     document.getElementById('f-approver').value.trim() || null,
+    is_approved:     !!document.getElementById('f-approver').value.trim(),
+  };
+
+  if (!body.question_id || !body.level || !body.subject) {
+    alert('Question ID, Level and Subject are required.'); return;
+  }
+
+  const path   = rid ? `/admin/questions/${rid}` : '/admin/questions';
+  const method = rid ? 'PUT' : 'POST';
+  const r = await api(path, { method, body: JSON.stringify(body) });
+
+  if (r) {
+    showToast(rid ? 'Question updated ✓' : 'Question added ✓');
+    closeModal('modal-edit');
+    loadData();
+  } else {
+    alert('Error saving question. Check that index.js is deployed with the question bank routes.');
+  }
+}
+
+// ─── IMPORT FROM CLAUDE ──────────────────────────────────────────
+function openImport() {
+  document.getElementById('imp-json').value = '';
+  document.getElementById('imp-ok').style.display  = 'none';
+  document.getElementById('imp-err').style.display = 'none';
+  openModal('modal-import');
+}
+
+async function runImport() {
+  const raw  = document.getElementById('imp-json').value.trim();
+  const okEl = document.getElementById('imp-ok');
+  const errEl= document.getElementById('imp-err');
+  okEl.style.display = 'none'; errEl.style.display = 'none';
+
+  let questions;
+  try {
+    const clean = raw.replace(/```json|```/g, '').trim();
+    questions = JSON.parse(clean);
+    if (!Array.isArray(questions)) throw new Error('Must be a JSON array [ ... ]');
+    if (!questions.length) throw new Error('Array is empty');
+  } catch (e) {
+    errEl.textContent = '❌ Invalid JSON: ' + e.message;
+    errEl.style.display = 'block'; return;
+  }
+
+  const vid = document.getElementById('imp-vid').value.trim();
+  const payload = {
+    questions,
+    level:        parseInt(document.getElementById('imp-level').value),
+    subject:      document.getElementById('imp-subject').value,
+    topic:        document.getElementById('imp-topic').value.trim() || null,
+    video_id:     vid || null,
+    video_url:    vid ? 'https://youtube.com/watch?v=' + vid : null,
+    section_code: document.getElementById('imp-section').value.trim() || null,
+    approved_by:  document.getElementById('imp-approver').value.trim() || null,
+  };
+
+  const r = await api('/api/questions/save', { method: 'POST', body: JSON.stringify(payload) });
+
+  if (r && r.saved !== undefined) {
+    okEl.textContent = `✅ ${r.saved} questions saved to database! They are now reusable for all future student cohorts.`;
+    okEl.style.display = 'block';
+    setTimeout(() => { closeModal('modal-import'); loadData(); }, 2400);
+  } else {
+    errEl.textContent = '❌ Import failed. Make sure the API routes are deployed in index.js and the SQL has been run.';
+    errEl.style.display = 'block';
+  }
+}
+
+// ─── VIDEO BANK ───────────────────────────────────────────────────
+async function openVideoBank() {
+  openModal('modal-vb');
+  const data = await api('/api/video-bank');
+  const el   = document.getElementById('vb-list');
+
+  if (!data || !data.videos || !data.videos.length) {
+    el.innerHTML = '<div class="empty-state"><span>No videos yet. Import questions from a YouTube video to see them here.</span></div>';
+    return;
+  }
+
+  el.innerHTML = data.videos.map(v => `
+    <div class="vbrow">
+      <img class="vb-thumb" src="https://img.youtube.com/vi/${esc(v.video_id)}/default.jpg" alt="">
+      <div class="vb-info">
+        <div class="vb-name">${esc(v.topic || v.video_id)}</div>
+        <div class="vb-tags">
+          <span class="ctag lv">L${v.level || '?'}</span>
+          <span class="ctag sb">${esc(v.subject || '?')}</span>
+          <span class="ctag vs">▶ ${esc(v.video_id)}</span>
+          <span class="ctag" style="background:var(--gdim);color:var(--green2)">${v.question_count} questions</span>
+          <span class="ctag" style="background:${v.status === 'live' ? 'var(--gdim)' : 'var(--adim)'};
+            color:${v.status === 'live' ? 'var(--green2)' : 'var(--amber2)'};">${v.status}</span>
+        </div>
+        <div class="vb-meta">
+          ${v.approved_by ? 'Approved by: ' + esc(v.approved_by) + ' · ' : ''}
+          ${v.approved_at ? new Date(v.approved_at).toLocaleDateString() : ''}
+        </div>
+      </div>
+      <a class="vb-link" href="https://youtube.com/watch?v=${esc(v.video_id)}" target="_blank">Watch ↗</a>
+    </div>`).join('');
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// close on backdrop click
+document.querySelectorAll('.mbackdrop').forEach(bd => {
+  bd.addEventListener('click', e => { if (e.target === bd) closeModal(bd.id); });
+});
+
+// ─── TOAST ───────────────────────────────────────────────────────
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type === 'err' ? 'var(--red)' : type === 'warn' ? 'var(--amber)' : 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── SERVER PING ─────────────────────────────────────────────────
+async function ping() {
+  try {
+    const r = await fetch(BASE + '/health', { signal: AbortSignal.timeout(4000) });
+    setDot(r.ok); setTxt(r.ok ? 'connected' : 'error ' + r.status);
+  } catch {
+    setDot(false); setTxt('not reachable');
+  }
+}
+
+// ─── INIT ────────────────────────────────────────────────────────
+loadData();
+ping();
+setInterval(ping, 30000);
+</script>
+</body>
+</html>

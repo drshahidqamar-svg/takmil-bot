@@ -1180,11 +1180,7 @@ const PORT = process.env.PORT || 3000;
   try {
     await db.initializeDatabase();
 
-    // ── Video module functions are defined at top level above ──
-// ═══════════════════════════════════════════════════════════════
-// TAKMIL BOT — Video Session Module
-// PASTE THIS BLOCK into your index.js BEFORE the final app.listen()
-// ═══════════════════════════════════════════════════════════════
+    // ── Video module and question bank routes are defined above ──
 
 // ── CODE VERIFICATION ────────────────────────────────────────────
 // Same formula used in the HTML player — must stay in sync
@@ -1220,7 +1216,7 @@ async function sendWA(to, body) {
 
 // ── GET ACTIVE ROLE ───────────────────────────────────────────────
 async function getActiveRole(phone) {
-  const res = await db.pool.query(
+  const res = await pool.query(
     `SELECT active_role, entity_code, name FROM user_roles
      WHERE phone = $1 AND role = (SELECT active_role FROM user_roles WHERE phone = $1 LIMIT 1)
      LIMIT 1`,
@@ -1228,12 +1224,12 @@ async function getActiveRole(phone) {
   );
   if (!res.rows.length) return null;
   // Get the active_role from any row for this phone
-  const roleRow = await db.pool.query(
+  const roleRow = await pool.query(
     `SELECT DISTINCT active_role FROM user_roles WHERE phone = $1 LIMIT 1`, [phone]
   );
   if (!roleRow.rows.length) return null;
   const activeRole = roleRow.rows[0].active_role;
-  const entityRow = await db.pool.query(
+  const entityRow = await pool.query(
     `SELECT entity_code, name FROM user_roles WHERE phone = $1 AND role = $2 LIMIT 1`,
     [phone, activeRole]
   );
@@ -1261,14 +1257,14 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
       return true;
     }
     // Check this phone has that role registered
-    const check = await db.pool.query(
+    const check = await pool.query(
       `SELECT entity_code, name FROM user_roles WHERE phone = $1 AND role = $2`, [from, newRole]
     );
     if (!check.rows.length) {
       await sendWA(from, `❌ Your phone is not registered as ${newRole.toUpperCase()}.`);
       return true;
     }
-    await db.pool.query(
+    await pool.query(
       `UPDATE user_roles SET active_role = $1, updated_at = NOW() WHERE phone = $2`, [newRole, from]
     );
     const { entity_code, name } = check.rows[0];
@@ -1321,7 +1317,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
       const dateStr = todayDateStr();
 
       // Get school details
-      const school = await db.pool.query(
+      const school = await pool.query(
         `SELECT * FROM schools WHERE school_code = $1`, [schoolCode]
       );
       if (!school.rows.length) {
@@ -1330,7 +1326,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
       }
 
       // Get active section
-      const section = await db.pool.query(
+      const section = await pool.query(
         `SELECT sc.*, s.title FROM section_completions sc
          JOIN sections s ON s.section_code = sc.section_code
          WHERE sc.school_code = $1 AND sc.status = 'in_progress'
@@ -1344,7 +1340,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
       const sec = section.rows[0];
 
       // Check if already submitted today
-      const existing = await db.pool.query(
+      const existing = await pool.query(
         `SELECT id, status FROM daily_sessions WHERE school_code=$1 AND session_date=$2`,
         [schoolCode, dateStr]
       );
@@ -1369,7 +1365,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
              (school_code,section_code,session_date,topic,v1_code,v2_code,v3_code,submitted_at,submitted_by,status)
            VALUES ($7,$6,$8,$5,$1,$2,$3,NOW(),$4,'pending')`;
 
-      await db.pool.query(q, [
+      await pool.query(q, [
         codes[0], codes[1], codes[2],
         roleInfo.name,
         sec.title,
@@ -1409,7 +1405,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
     // MY STATUS — facilitator checks their school's progress
     if (upper === 'MY STATUS' || upper.startsWith('STATUS SCH')) {
       const schoolCode = upper.includes('SCH') ? upper.split(' ')[1] : roleInfo.entity_code;
-      const sc = await db.pool.query(
+      const sc = await pool.query(
         `SELECT sc.approved_days, sc.total_days, sc.status, s.title
          FROM section_completions sc JOIN sections s ON s.section_code=sc.section_code
          WHERE sc.school_code=$1 AND sc.status IN ('in_progress','complete','assessment_unlocked')
@@ -1449,7 +1445,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
       const schoolCode = upper.split(' ')[1];
       const dateStr = todayDateStr();
 
-      const session = await db.pool.query(
+      const session = await pool.query(
         `SELECT * FROM daily_sessions WHERE school_code=$1 AND session_date=$2`, [schoolCode, dateStr]
       );
       if (!session.rows.length) {
@@ -1462,14 +1458,14 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
       }
 
       // Approve
-      await db.pool.query(
+      await pool.query(
         `UPDATE daily_sessions SET status='approved', approved_by=$1, approved_at=NOW()
          WHERE school_code=$2 AND session_date=$3`,
         [from, schoolCode, dateStr]
       );
 
       // Increment approved_days in section_completions
-      const updated = await db.pool.query(
+      const updated = await pool.query(
         `UPDATE section_completions
          SET approved_days = approved_days + 1,
              status = CASE WHEN approved_days + 1 >= total_days THEN 'complete' ELSE status END,
@@ -1499,7 +1495,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
       await sendWA(from, reply);
 
       // Notify facilitator
-      const school = await db.pool.query(`SELECT facilitator_phone FROM schools WHERE school_code=$1`, [schoolCode]);
+      const school = await pool.query(`SELECT facilitator_phone FROM schools WHERE school_code=$1`, [schoolCode]);
       if (school.rows.length && school.rows[0].facilitator_phone !== from) {
         await sendWA(school.rows[0].facilitator_phone,
           `✅ Today's session APPROVED by coordinator!\n${schoolCode} | Day ${sc.approved_days}/${sc.total_days}`
@@ -1517,7 +1513,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
       const reason = parts.slice(2).join(' ') || 'No reason given';
       const dateStr = todayDateStr();
 
-      await db.pool.query(
+      await pool.query(
         `UPDATE daily_sessions SET status='rejected', reject_reason=$1, approved_by=$2, approved_at=NOW()
          WHERE school_code=$3 AND session_date=$4`,
         [reason, from, schoolCode, dateStr]
@@ -1525,7 +1521,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
 
       await sendWA(from, `❌ Rejected ${schoolCode}. Reason: ${reason}`);
 
-      const school = await db.pool.query(`SELECT facilitator_phone FROM schools WHERE school_code=$1`, [schoolCode]);
+      const school = await pool.query(`SELECT facilitator_phone FROM schools WHERE school_code=$1`, [schoolCode]);
       if (school.rows.length && school.rows[0].facilitator_phone !== from) {
         await sendWA(school.rows[0].facilitator_phone,
           `❌ Today's session was REJECTED.\nSchool: ${schoolCode}\nReason: ${reason}\n\nPlease resubmit today.`
@@ -1539,13 +1535,13 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
     // STATUS SCH-047 — coordinator checks one school
     if (upper.startsWith('STATUS ')) {
       const schoolCode = upper.split(' ')[1];
-      const sessions = await db.pool.query(
+      const sessions = await pool.query(
         `SELECT session_date, status, v1_code, v2_code, v3_code, submitted_at
          FROM daily_sessions WHERE school_code=$1
          ORDER BY session_date DESC LIMIT 7`,
         [schoolCode]
       );
-      const sc = await db.pool.query(
+      const sc = await pool.query(
         `SELECT sc.approved_days, sc.total_days, sc.status, s.title
          FROM section_completions sc JOIN sections s ON s.section_code=sc.section_code
          WHERE sc.school_code=$1 LIMIT 1`, [schoolCode]
@@ -1564,7 +1560,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
     // MY SCHOOLS — show all 10 schools status
     if (upper === 'MY SCHOOLS' || upper === 'SCHOOLS') {
       // In real system, filter by coordinator. In test, show SCH-047
-      const rows = await db.pool.query(
+      const rows = await pool.query(
         `SELECT sc.school_code, sc.approved_days, sc.total_days, sc.status,
                 ds.status as today_status
          FROM section_completions sc
@@ -1586,12 +1582,12 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
     // UNLOCK ASSESS SCH-047 — coordinator releases assessment PIN
     if (upper.startsWith('UNLOCK ASSESS ') || upper.startsWith('UNLOCK ')) {
       const schoolCode = upper.split(' ').pop();
-      const sc = await db.pool.query(
+      const sc = await pool.query(
         `SELECT * FROM section_completions WHERE school_code=$1 AND status='complete'`, [schoolCode]
       );
       if (!sc.rows.length) {
         // Check progress
-        const prog = await db.pool.query(
+        const prog = await pool.query(
           `SELECT approved_days, total_days FROM section_completions WHERE school_code=$1`, [schoolCode]
         );
         if (prog.rows.length) {
@@ -1607,7 +1603,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
       }
 
       // Get a PIN from the existing pins table or generate a temporary one
-      const pinResult = await db.pool.query(
+      const pinResult = await pool.query(
         `SELECT pin FROM pins WHERE school_id = (SELECT id FROM schools WHERE school_code=$1)
          AND subject='Math' AND is_used=FALSE LIMIT 1`,
         [schoolCode]
@@ -1615,7 +1611,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
 
       let pin = pinResult.rows.length ? pinResult.rows[0].pin : Math.floor(100000 + Math.random() * 900000).toString();
 
-      await db.pool.query(
+      await pool.query(
         `UPDATE section_completions SET status='assessment_unlocked', assessment_pin=$1, pin_sent_at=NOW()
          WHERE school_code=$2 AND status='complete'`,
         [pin, schoolCode]
@@ -1628,7 +1624,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
         `Facilitator has been notified.`
       );
 
-      const school = await db.pool.query(`SELECT facilitator_phone FROM schools WHERE school_code=$1`, [schoolCode]);
+      const school = await pool.query(`SELECT facilitator_phone FROM schools WHERE school_code=$1`, [schoolCode]);
       if (school.rows.length && school.rows[0].facilitator_phone !== from) {
         await sendWA(school.rows[0].facilitator_phone,
           `🎉 Assessment is ready!\n\nPIN: *${pin}*\n` +
@@ -1657,7 +1653,7 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
   if (roleInfo.role === 'regional') {
 
     if (upper === 'REGION STATUS' || upper === 'STATUS') {
-      const rows = await db.pool.query(
+      const rows = await pool.query(
         `SELECT sc.school_code, sc.approved_days, sc.total_days,
                 ROUND(sc.approved_days::numeric/sc.total_days*100) as pct,
                 COUNT(CASE WHEN ds.status='approved' AND ds.session_date=CURRENT_DATE THEN 1 END) as today_ok
@@ -1692,11 +1688,11 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
   if (roleInfo.role === 'admin') {
 
     if (upper === 'ADMIN STATUS' || upper === 'STATUS ALL') {
-      const total = await db.pool.query(`SELECT COUNT(*) as c FROM schools`);
-      const sections = await db.pool.query(
+      const total = await pool.query(`SELECT COUNT(*) as c FROM schools`);
+      const sections = await pool.query(
         `SELECT status, COUNT(*) as c FROM section_completions GROUP BY status`
       );
-      const today = await db.pool.query(
+      const today = await pool.query(
         `SELECT status, COUNT(*) as c FROM daily_sessions WHERE session_date=CURRENT_DATE GROUP BY status`
       );
       let reply = `🏢 *Admin Overview — ${todayDateStr()}*\n`;
@@ -1712,8 +1708,8 @@ async function handleVideoCommands(from, msgBody, twilioRes) {
 
     // RESET TEST — wipe today's test data so you can redo the test
     if (upper === 'RESET TEST') {
-      await db.pool.query(`DELETE FROM daily_sessions WHERE school_code='SCH-047' AND session_date=CURRENT_DATE`);
-      await db.pool.query(`UPDATE section_completions SET approved_days=0, status='in_progress', completed_at=NULL, assessment_pin=NULL WHERE school_code='SCH-047'`);
+      await pool.query(`DELETE FROM daily_sessions WHERE school_code='SCH-047' AND session_date=CURRENT_DATE`);
+      await pool.query(`UPDATE section_completions SET approved_days=0, status='in_progress', completed_at=NULL, assessment_pin=NULL WHERE school_code='SCH-047'`);
       await sendWA(from, `🔄 Test data reset for SCH-047. You can run the full test again.`);
       return true;
     }
@@ -1759,12 +1755,22 @@ function getRoleHelp(role) {
   return helps[role] || `Send HELP after switching role.`;
 }
 
+// ── INTEGRATE INTO EXISTING WEBHOOK ──────────────────────────────
+// In your existing webhook handler, find where you process the message body
+// and ADD this line BEFORE your existing command handling:
+//
+//   const handled = await handleVideoCommands(from, body, res);
+//   if (handled) return;
+//
+// This lets the video module handle its commands first,
+// then falls through to existing PIN/assessment logic.
 app.get('/console', (req, res) => {
   res.sendFile(path.join(__dirname, 'takmil-ops-console.html'));
 });
 
 app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
+// ── Admin session status (used by ops console sidebar) ────────────
 app.get('/admin/session-status', async (req, res) => {
   try {
     const school = req.query.school || 'SCH-047';
@@ -1774,13 +1780,11 @@ app.get('/admin/session-status', async (req, res) => {
        JOIN sections s ON s.section_code = sc.section_code
        WHERE sc.school_code = $1 ORDER BY sc.id DESC LIMIT 1`, [school]
     );
-    const today = await db.pool.query(
-      `SELECT status FROM daily_sessions WHERE school_code=$1 AND session_date=CURRENT_DATE`, [school]
-    );
-    const sysTotal    = await db.pool.query(`SELECT COUNT(*) as c FROM schools`);
-    const sysActive   = await db.pool.query(`SELECT COUNT(*) as c FROM section_completions WHERE status IN ('in_progress','complete')`);
-    const sysTodaySub = await db.pool.query(`SELECT COUNT(*) as c FROM daily_sessions WHERE session_date=CURRENT_DATE`);
-    const sysUnlocked = await db.pool.query(`SELECT COUNT(*) as c FROM section_completions WHERE status='assessment_unlocked'`);
+    const today      = await db.pool.query(`SELECT status FROM daily_sessions WHERE school_code=$1 AND session_date=CURRENT_DATE`, [school]);
+    const sysTotal   = await db.pool.query(`SELECT COUNT(*) as c FROM schools`);
+    const sysActive  = await db.pool.query(`SELECT COUNT(*) as c FROM section_completions WHERE status IN ('in_progress','complete')`);
+    const sysTodaySub= await db.pool.query(`SELECT COUNT(*) as c FROM daily_sessions WHERE session_date=CURRENT_DATE`);
+    const sysUnlocked= await db.pool.query(`SELECT COUNT(*) as c FROM section_completions WHERE status='assessment_unlocked'`);
     res.json({
       school_code:   school,
       approved_days: sc.rows[0]?.approved_days ?? 0,
@@ -1795,6 +1799,169 @@ app.get('/admin/session-status', async (req, res) => {
         unlocked:        sysUnlocked.rows[0]?.c ?? 0,
       }
     });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// QUESTION BANK MANAGER — all routes
+// ══════════════════════════════════════════════════════════════════
+
+app.get('/question-bank', (req, res) => {
+  res.sendFile(path.join(__dirname, 'takmil-question-bank.html'));
+});
+
+// Get all questions with optional filters
+app.get('/admin/questions/all', async (req, res) => {
+  try {
+    const { level, subject, topic, video_id, status, source_type } = req.query;
+    let query = `SELECT * FROM questions WHERE 1=1`;
+    const params = [];
+    if (level)       { params.push(level);       query += ` AND level = $${params.length}`; }
+    if (subject)     { params.push(subject);     query += ` AND subject = $${params.length}`; }
+    if (topic)       { params.push(topic);       query += ` AND topic_tag = $${params.length}`; }
+    if (video_id)    { params.push(video_id);    query += ` AND video_id = $${params.length}`; }
+    if (source_type) { params.push(source_type); query += ` AND source_type = $${params.length}`; }
+    if (status === 'approved') query += ` AND is_approved = TRUE`;
+    if (status === 'pending')  query += ` AND (is_approved = FALSE OR is_approved IS NULL) AND (status IS NULL OR status != 'flagged')`;
+    if (status === 'flagged')  query += ` AND status = 'flagged'`;
+    query += ` ORDER BY created_at DESC LIMIT 500`;
+    const result = await db.pool.query(query, params);
+    res.json({ questions: result.rows, count: result.rows.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Get approved questions for portals (random)
+app.get('/api/questions', async (req, res) => {
+  try {
+    const { level, subject, topic, video_id, limit = 12 } = req.query;
+    let query = `SELECT * FROM questions WHERE is_approved = TRUE`;
+    const params = [];
+    if (level)    { params.push(level);    query += ` AND level = $${params.length}`; }
+    if (subject)  { params.push(subject);  query += ` AND subject = $${params.length}`; }
+    if (topic)    { params.push(topic);    query += ` AND topic_tag = $${params.length}`; }
+    if (video_id) { params.push(video_id); query += ` AND video_id = $${params.length}`; }
+    params.push(parseInt(limit));
+    query += ` ORDER BY RANDOM() LIMIT $${params.length}`;
+    const result = await db.pool.query(query, params);
+    res.json({ questions: result.rows, count: result.rows.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Add a single question
+app.post('/admin/questions', async (req, res) => {
+  try {
+    const { question_id, level, subject, topic_tag, question_text,
+            question_text_ur, option_a, option_b, option_c, option_d,
+            correct_option, source_type, video_id, section_code,
+            is_approved, approved_by } = req.body;
+    if (!question_id || !level || !subject)
+      return res.status(400).json({ error: 'question_id, level, subject required' });
+    const r = await db.pool.query(`
+      INSERT INTO questions
+        (question_id, level, subject, topic_tag, question_text, question_text_ur,
+         option_a, option_b, option_c, option_d, correct_option,
+         source_type, video_id, section_code, is_approved, approved_by, approved_at, created_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
+        CASE WHEN $15 THEN NOW() ELSE NULL END, NOW())
+      ON CONFLICT (question_id) DO UPDATE SET
+        level=$2, subject=$3, topic_tag=$4, question_text=$5,
+        option_a=$7, option_b=$8, option_c=$9, option_d=$10,
+        correct_option=$11, is_approved=$15, approved_by=$16
+      RETURNING *`,
+      [question_id, level, subject, topic_tag||null, question_text,
+       question_text_ur||null, option_a, option_b, option_c, option_d,
+       correct_option, source_type||'video', video_id||null, section_code||null,
+       !!is_approved, approved_by||null]);
+    res.json({ question: r.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Edit a question
+app.put('/admin/questions/:id', async (req, res) => {
+  try {
+    const { question_id, level, subject, topic_tag, question_text,
+            option_a, option_b, option_c, option_d, correct_option,
+            source_type, video_id, is_approved, approved_by } = req.body;
+    const r = await db.pool.query(`
+      UPDATE questions SET
+        question_id=$1, level=$2, subject=$3, topic_tag=$4, question_text=$5,
+        option_a=$6, option_b=$7, option_c=$8, option_d=$9, correct_option=$10,
+        source_type=$11, video_id=$12, is_approved=$13, approved_by=$14,
+        approved_at = CASE WHEN $13 THEN NOW() ELSE approved_at END
+      WHERE id=$15 RETURNING *`,
+      [question_id, level, subject, topic_tag||null, question_text,
+       option_a, option_b, option_c, option_d, correct_option,
+       source_type, video_id||null, !!is_approved, approved_by||null,
+       req.params.id]);
+    res.json({ question: r.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Approve a question
+app.post('/admin/questions/:id/approve', async (req, res) => {
+  try {
+    await db.pool.query(
+      `UPDATE questions SET is_approved=TRUE, approved_at=NOW(), status='approved' WHERE id=$1`,
+      [req.params.id]);
+    res.json({ approved: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Flag a question
+app.post('/admin/questions/:id/flag', async (req, res) => {
+  try {
+    await db.pool.query(
+      `UPDATE questions SET status='flagged', is_approved=FALSE WHERE id=$1`,
+      [req.params.id]);
+    res.json({ flagged: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Bulk import from Claude JSON
+app.post('/api/questions/save', async (req, res) => {
+  try {
+    const { questions, video_id, video_url, level, subject,
+            section_code, topic, approved_by } = req.body;
+    if (!questions || !Array.isArray(questions))
+      return res.status(400).json({ error: 'questions array required' });
+    let saved = 0;
+    for (const q of questions) {
+      await db.pool.query(`
+        INSERT INTO questions
+          (question_id, level, subject, topic_tag, question_text,
+           option_a, option_b, option_c, option_d, correct_option,
+           video_id, section_code, source_type, is_approved, approved_by,
+           approved_at, created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'video',TRUE,$13,NOW(),NOW())
+        ON CONFLICT (question_id) DO UPDATE SET
+          is_approved=TRUE, approved_by=$13, approved_at=NOW(),
+          video_id=$11, section_code=$12`,
+        [q.question_id, level, subject, topic||null, q.question_text,
+         q.option_a, q.option_b, q.option_c, q.option_d, q.correct_option,
+         video_id||null, section_code||null, approved_by||null]);
+      saved++;
+    }
+    // Record in video bank
+    if (video_id) {
+      await db.pool.query(`
+        INSERT INTO video_question_bank
+          (video_id, video_url, level, subject, section_code, topic,
+           question_count, status, approved_at, approved_by)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,'live',NOW(),$8)
+        ON CONFLICT (video_id) DO UPDATE SET
+          question_count=$7, status='live', approved_at=NOW(), approved_by=$8`,
+        [video_id, video_url||null, level, subject,
+         section_code||null, topic||null, saved, approved_by||null]);
+    }
+    res.json({ saved, message: `${saved} questions saved to database` });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Video bank — list all processed videos
+app.get('/api/video-bank', async (req, res) => {
+  try {
+    const r = await db.pool.query(`SELECT * FROM video_question_bank ORDER BY created_at DESC`);
+    res.json({ videos: r.rows, total: r.rows.length });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
