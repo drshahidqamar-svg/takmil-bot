@@ -2130,10 +2130,10 @@ Respond ONLY with a valid JSON array, no explanation, no markdown, just the JSON
     for (const q of questions) {
       await db.pool.query(`
         INSERT INTO questions
-          (question_id, level, subject, topic_tag, q_text_english,
+          (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
            option_a, option_b, option_c, option_d, correct_option,
            active, created_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,0,NOW())
+        VALUES ($1,$2,$3,$4,$5,'',$6,$7,$8,$9,$10,0,NOW())
         ON CONFLICT (question_id) DO NOTHING`,
         [q.question_id, parseInt(levelNum), subjectClean, 'curriculum',
          q.question_text, q.option_a, q.option_b, q.option_c, q.option_d,
