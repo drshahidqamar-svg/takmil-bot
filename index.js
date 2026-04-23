@@ -1996,7 +1996,7 @@ Respond ONLY with a valid JSON array — no explanation, no markdown, just JSON:
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set in Railway variables' });
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const responseRaw = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2045,6 +2045,7 @@ app.get('/api/video-bank', async (req, res) => {
     process.exit(1);
   }
 })();
+
 
 
 
