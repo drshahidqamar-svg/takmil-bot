@@ -1180,7 +1180,6 @@ const PORT = process.env.PORT || 3000;
   try {
     await db.initializeDatabase();
 
-    console.log('ENV CHECK - ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? 'SET (length:' + process.env.ANTHROPIC_API_KEY.length + ')' : 'NOT SET');
     // ── Video module and question bank routes are defined above ──
 
 // ── CODE VERIFICATION ────────────────────────────────────────────
@@ -1985,18 +1984,18 @@ RULES:
 1. Questions based ONLY on what is in the transcript
 2. Grade-appropriate for Level ${level} students
 3. Each question has exactly 4 options (A, B, C, D)
-4. Wrong options must be plausible — not obviously wrong
+4. Wrong options must be plausible not obviously wrong
 5. Mix question types: recall, understanding, application
 6. Keep language simple and clear
-7. question_id format: ${(subject||'SUB').toUpperCase()}-L${level}-${topicSafe}-001 (increment last 3 digits for each question)
+7. question_id format: ${(subject||'SUB').toUpperCase()}-L${level}-${topicSafe}-001 increment last 3 digits
 
-Respond ONLY with a valid JSON array — no explanation, no markdown, just JSON:
+Respond ONLY with a valid JSON array no explanation no markdown just JSON:
 [{"question_id":"...","question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_option":"A"}]`;
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set in Railway variables' });
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2010,17 +2009,17 @@ Respond ONLY with a valid JSON array — no explanation, no markdown, just JSON:
       })
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Anthropic API error:', errText);
-      const errBody = await response.text(); console.error('Anthropic error:', errBody); return res.status(500).json({ error: 'Claude API error: ' + response.status, detail: errBody });
+    const bodyText = await aiRes.text();
+    if (!aiRes.ok) {
+      console.error('Anthropic API error:', aiRes.status, bodyText);
+      return res.status(500).json({ error: 'Claude API error: ' + aiRes.status + ' — ' + bodyText.substring(0,200) });
     }
 
-    const data = await response.json();
+    const data = JSON.parse(bodyText);
     const text = data.content?.[0]?.text || '';
     const start = text.indexOf('[');
     const end   = text.lastIndexOf(']');
-    if (start === -1) return res.status(500).json({ error: 'No JSON array in Claude response' });
+    if (start === -1) return res.status(500).json({ error: 'No JSON array in Claude response: ' + text.substring(0,200) });
 
     const questions = JSON.parse(text.substring(start, end + 1));
     res.json({ questions, count: questions.length });
@@ -2030,6 +2029,7 @@ Respond ONLY with a valid JSON array — no explanation, no markdown, just JSON:
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // Video bank — list all processed videos
 app.get('/api/video-bank', async (req, res) => {
@@ -2045,10 +2045,3 @@ app.get('/api/video-bank', async (req, res) => {
     process.exit(1);
   }
 })();
-
-
-
-
-
-
-
