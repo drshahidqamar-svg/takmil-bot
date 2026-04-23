@@ -483,6 +483,7 @@ async function goGenerate() {
   }
 
   await sleep(800);
+  if (!videos.some(v=>v.status==='ready')){return;}
   setStep(3);
   renderReview();
 }
@@ -869,3 +870,4 @@ setInterval(ping, 30000);
 </script>
 </body>
 </html>
+
