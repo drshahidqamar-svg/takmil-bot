@@ -2042,13 +2042,17 @@ app.get('/api/video-bank', async (req, res) => {
 // ── Stats endpoint — shows question counts by date ────────────────
 app.get('/api/schema', async (req, res) => {
   try {
-    const r = await db.pool.query(`
+    const cols = await db.pool.query(`
       SELECT column_name, data_type
       FROM information_schema.columns
       WHERE table_name = 'questions'
       ORDER BY ordinal_position
     `);
-    res.json(r.rows);
+    const tables = await db.pool.query(`
+      SELECT table_name FROM information_schema.tables
+      WHERE table_schema = 'public' ORDER BY table_name
+    `);
+    res.json({ columns: cols.rows, tables: tables.rows });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -2058,9 +2062,8 @@ app.get('/api/stats', async (req, res) => {
       SELECT
         DATE(created_at) as date,
         COUNT(*) as total,
-        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
-        SUM(CASE WHEN status = 'pending' OR status IS NULL THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN status = 'flagged' THEN 1 ELSE 0 END) as flagged
+        SUM(CASE WHEN active = 1 THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN active = 0 OR active IS NULL THEN 1 ELSE 0 END) as pending
       FROM questions
       GROUP BY DATE(created_at)
       ORDER BY date DESC
@@ -2069,9 +2072,8 @@ app.get('/api/stats', async (req, res) => {
     const totals = await db.pool.query(`
       SELECT
         COUNT(*) as total,
-        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
-        SUM(CASE WHEN status = 'pending' OR status IS NULL THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN status = 'flagged' THEN 1 ELSE 0 END) as flagged
+        SUM(CASE WHEN active = 1 THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN active = 0 OR active IS NULL THEN 1 ELSE 0 END) as pending
       FROM questions
     `);
     res.json({ totals: totals.rows[0], by_date: byDate.rows });
@@ -2145,14 +2147,14 @@ Respond ONLY with a valid JSON array, no explanation, no markdown, just the JSON
     for (const q of questions) {
       await db.pool.query(`
         INSERT INTO questions
-          (question_id, level, subject, topic_tag, question_text,
+          (question_id, level, subject, topic_tag, q_text_english,
            option_a, option_b, option_c, option_d, correct_option,
-           source_type, video_id, status, created_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'video',$11,'pending',NOW())
+           active, created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,0,NOW())
         ON CONFLICT (question_id) DO NOTHING`,
         [q.question_id, parseInt(levelNum), subjectClean, 'curriculum',
          q.question_text, q.option_a, q.option_b, q.option_c, q.option_d,
-         q.correct_option, video_name || null]);
+         q.correct_option]);
       saved++;
     }
 
