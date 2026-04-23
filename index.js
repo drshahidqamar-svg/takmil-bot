@@ -1811,19 +1811,25 @@ app.get('/question-bank', (req, res) => {
 });
 
 // Get all questions with optional filters
+// NOTE: DB uses 'active' (int) not 'is_approved'. We alias for the frontend.
+// active=1 → approved, active=0 → pending, active=-1 → flagged
 app.get('/admin/questions/all', async (req, res) => {
   try {
     const { level, subject, topic, video_id, status, source_type } = req.query;
-    let query = `SELECT * FROM questions WHERE 1=1`;
+    let query = `SELECT *,
+      (active = 1) AS is_approved,
+      CASE WHEN active = -1 THEN 'flagged' WHEN active = 1 THEN 'approved' ELSE 'pending' END AS status,
+      COALESCE(q_text_english, q_text_urdu) AS question_text
+      FROM questions WHERE 1=1`;
     const params = [];
     if (level)       { params.push(level);       query += ` AND level = $${params.length}`; }
     if (subject)     { params.push(subject);     query += ` AND subject = $${params.length}`; }
     if (topic)       { params.push(topic);       query += ` AND topic_tag = $${params.length}`; }
     if (video_id)    { params.push(video_id);    query += ` AND video_id = $${params.length}`; }
     if (source_type) { params.push(source_type); query += ` AND source_type = $${params.length}`; }
-    if (status === 'approved') query += ` AND is_approved = TRUE`;
-    if (status === 'pending')  query += ` AND (is_approved = FALSE OR is_approved IS NULL) AND (status IS NULL OR status != 'flagged')`;
-    if (status === 'flagged')  query += ` AND status = 'flagged'`;
+    if (status === 'approved') query += ` AND active = 1`;
+    if (status === 'pending')  query += ` AND (active = 0 OR active IS NULL)`;
+    if (status === 'flagged')  query += ` AND active = -1`;
     query += ` ORDER BY created_at DESC LIMIT 500`;
     const result = await db.pool.query(query, params);
     res.json({ questions: result.rows, count: result.rows.length });
@@ -1834,7 +1840,7 @@ app.get('/admin/questions/all', async (req, res) => {
 app.get('/api/questions', async (req, res) => {
   try {
     const { level, subject, topic, video_id, limit = 12 } = req.query;
-    let query = `SELECT * FROM questions WHERE is_approved = TRUE`;
+    let query = `SELECT * FROM questions WHERE active = 1`;
     const params = [];
     if (level)    { params.push(level);    query += ` AND level = $${params.length}`; }
     if (subject)  { params.push(subject);  query += ` AND subject = $${params.length}`; }
@@ -1852,26 +1858,23 @@ app.post('/admin/questions', async (req, res) => {
   try {
     const { question_id, level, subject, topic_tag, question_text,
             question_text_ur, option_a, option_b, option_c, option_d,
-            correct_option, source_type, video_id, section_code,
-            is_approved, approved_by } = req.body;
+            correct_option, source_type, video_id, is_approved } = req.body;
     if (!question_id || !level || !subject)
       return res.status(400).json({ error: 'question_id, level, subject required' });
     const r = await db.pool.query(`
       INSERT INTO questions
-        (question_id, level, subject, topic_tag, question_text, question_text_ur,
-         option_a, option_b, option_c, option_d, correct_option,
-         source_type, video_id, section_code, is_approved, approved_by, approved_at, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
-        CASE WHEN $15 THEN NOW() ELSE NULL END, NOW())
+        (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
+         option_a, option_b, option_c, option_d, correct_option, active, created_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
       ON CONFLICT (question_id) DO UPDATE SET
-        level=$2, subject=$3, topic_tag=$4, question_text=$5,
+        level=$2, subject=$3, topic_tag=$4, q_text_english=$5, q_text_urdu=$6,
         option_a=$7, option_b=$8, option_c=$9, option_d=$10,
-        correct_option=$11, is_approved=$15, approved_by=$16
-      RETURNING *`,
-      [question_id, level, subject, topic_tag||null, question_text,
+        correct_option=$11, active=$12
+      RETURNING *, (active=1) AS is_approved,
+        COALESCE(q_text_english, q_text_urdu) AS question_text`,
+      [question_id, level, subject, topic_tag||null, question_text||null,
        question_text_ur||null, option_a, option_b, option_c, option_d,
-       correct_option, source_type||'video', video_id||null, section_code||null,
-       !!is_approved, approved_by||null]);
+       correct_option, is_approved ? 1 : 0]);
     res.json({ question: r.rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -1881,18 +1884,18 @@ app.put('/admin/questions/:id', async (req, res) => {
   try {
     const { question_id, level, subject, topic_tag, question_text,
             option_a, option_b, option_c, option_d, correct_option,
-            source_type, video_id, is_approved, approved_by } = req.body;
+            source_type, video_id, is_approved } = req.body;
     const r = await db.pool.query(`
       UPDATE questions SET
-        question_id=$1, level=$2, subject=$3, topic_tag=$4, question_text=$5,
+        question_id=$1, level=$2, subject=$3, topic_tag=$4, q_text_english=$5,
         option_a=$6, option_b=$7, option_c=$8, option_d=$9, correct_option=$10,
-        source_type=$11, video_id=$12, is_approved=$13, approved_by=$14,
-        approved_at = CASE WHEN $13 THEN NOW() ELSE approved_at END
-      WHERE id=$15 RETURNING *`,
+        active=$11
+      WHERE id=$12
+      RETURNING *, (active=1) AS is_approved,
+        COALESCE(q_text_english, q_text_urdu) AS question_text`,
       [question_id, level, subject, topic_tag||null, question_text,
        option_a, option_b, option_c, option_d, correct_option,
-       source_type, video_id||null, !!is_approved, approved_by||null,
-       req.params.id]);
+       is_approved ? 1 : 0, req.params.id]);
     res.json({ question: r.rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -1900,9 +1903,7 @@ app.put('/admin/questions/:id', async (req, res) => {
 // Approve a question
 app.post('/admin/questions/:id/approve', async (req, res) => {
   try {
-    await db.pool.query(
-      `UPDATE questions SET is_approved=TRUE, approved_at=NOW(), status='approved' WHERE id=$1`,
-      [req.params.id]);
+    await db.pool.query(`UPDATE questions SET active=1 WHERE id=$1`, [req.params.id]);
     res.json({ approved: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -1910,9 +1911,7 @@ app.post('/admin/questions/:id/approve', async (req, res) => {
 // Flag a question
 app.post('/admin/questions/:id/flag', async (req, res) => {
   try {
-    await db.pool.query(
-      `UPDATE questions SET status='flagged', is_approved=FALSE WHERE id=$1`,
-      [req.params.id]);
+    await db.pool.query(`UPDATE questions SET active=-1 WHERE id=$1`, [req.params.id]);
     res.json({ flagged: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -1920,38 +1919,22 @@ app.post('/admin/questions/:id/flag', async (req, res) => {
 // Bulk import from Claude JSON
 app.post('/api/questions/save', async (req, res) => {
   try {
-    const { questions, video_id, video_url, level, subject,
-            section_code, topic, approved_by } = req.body;
+    const { questions, video_id, level, subject, topic, approved_by } = req.body;
     if (!questions || !Array.isArray(questions))
       return res.status(400).json({ error: 'questions array required' });
     let saved = 0;
     for (const q of questions) {
       await db.pool.query(`
         INSERT INTO questions
-          (question_id, level, subject, topic_tag, question_text,
-           option_a, option_b, option_c, option_d, correct_option,
-           video_id, section_code, source_type, is_approved, approved_by,
-           approved_at, created_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'video',TRUE,$13,NOW(),NOW())
+          (question_id, level, subject, topic_tag, q_text_english,
+           option_a, option_b, option_c, option_d, correct_option, active, created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,1,NOW())
         ON CONFLICT (question_id) DO UPDATE SET
-          is_approved=TRUE, approved_by=$13, approved_at=NOW(),
-          video_id=$11, section_code=$12`,
-        [q.question_id, level, subject, topic||null, q.question_text,
-         q.option_a, q.option_b, q.option_c, q.option_d, q.correct_option,
-         video_id||null, section_code||null, approved_by||null]);
+          active=1, q_text_english=$5`,
+        [q.question_id, level, subject, topic||null,
+         q.question_text || q.q_text_english || null,
+         q.option_a, q.option_b, q.option_c, q.option_d, q.correct_option]);
       saved++;
-    }
-    // Record in video bank
-    if (video_id) {
-      await db.pool.query(`
-        INSERT INTO video_question_bank
-          (video_id, video_url, level, subject, section_code, topic,
-           question_count, status, approved_at, approved_by)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,'live',NOW(),$8)
-        ON CONFLICT (video_id) DO UPDATE SET
-          question_count=$7, status='live', approved_at=NOW(), approved_by=$8`,
-        [video_id, video_url||null, level, subject,
-         section_code||null, topic||null, saved, approved_by||null]);
     }
     res.json({ saved, message: `${saved} questions saved to database` });
   } catch (err) { res.status(500).json({ error: err.message }); }
