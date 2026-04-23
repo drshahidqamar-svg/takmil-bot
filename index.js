@@ -2040,6 +2040,18 @@ app.get('/api/video-bank', async (req, res) => {
 });
 
 // ── Stats endpoint — shows question counts by date ────────────────
+app.get('/api/schema', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT column_name, data_type
+      FROM information_schema.columns
+      WHERE table_name = 'questions'
+      ORDER BY ordinal_position
+    `);
+    res.json(r.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.get('/api/stats', async (req, res) => {
   try {
     const byDate = await db.pool.query(`
