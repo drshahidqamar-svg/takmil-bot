@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Bulk Assessment Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090F;--s1:#0E1118;--s2:#151B26;--s3:#1C2335;
+  --brd:#242D3E;--brd2:#2C3A52;
+  --blue:#2563EB;--blue2:#3B82F6;--bdim:#0C1D40;
+  --green:#16A34A;--green2:#22C55E;--gdim:#091A0E;
+  --amber:#D97706;--amber2:#F59E0B;--adim:#221500;
+  --red:#DC2626;--red2:#EF4444;--rdim:#200808;
+  --teal:#0D9488;--teal2:#2DD4BF;--tdim:#071816;
+  --pur:#7C3AED;--pur2:#A78BFA;--pudim:#120930;
+  --text:#DDE6F5;--muted:#56678A;--dim:#8AA0BC;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+  --urdu:'Noto Nastaliq Urdu',serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+
+/* TOP */
+.top{height:52px;background:var(--s1);border-bottom:1px solid var(--brd);
+  display:flex;align-items:center;justify-content:space-between;padding:0 22px;
+  position:sticky;top:0;z-index:100}
+.logo{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--blue2);letter-spacing:3px}
+.logo em{color:var(--muted);font-style:normal;font-weight:400;font-size:11px;margin-left:10px}
+.top-right{display:flex;align-items:center;gap:10px}
+.srv{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green2)}
+.dot.err{background:var(--red2)}
+.progress-bar{height:3px;background:var(--brd);position:fixed;top:52px;left:0;right:0;z-index:99}
+.progress-fill{height:100%;background:var(--blue2);width:0%;transition:width .3s}
+
+/* LAYOUT */
+.page{max-width:1100px;margin:0 auto;padding:24px 20px}
+
+/* STEP INDICATOR */
+.steps{display:flex;align-items:center;gap:0;margin-bottom:28px}
+.step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.step.active{color:var(--text)}
+.step.done{color:var(--green2)}
+.step-num{width:24px;height:24px;border-radius:50%;border:1px solid var(--brd2);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;flex-shrink:0}
+.step.active .step-num{border-color:var(--blue);background:var(--bdim);color:var(--blue2)}
+.step.done .step-num{border-color:var(--green);background:var(--gdim);color:var(--green2)}
+.step-line{flex:1;height:1px;background:var(--brd);margin:0 8px}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--brd);border-radius:10px;
+  padding:20px;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card-sub{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6}
+
+/* FORMS */
+.frow{margin-bottom:12px}
+.flabel{font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:4px;display:block}
+.finput{width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;
+  padding:8px 11px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none}
+.finput:focus{border-color:var(--blue)}
+.fsel{width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;
+  padding:8px 11px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;cursor:pointer}
+.fgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.textarea{width:100%;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;
+  padding:11px;font-size:12px;color:var(--text);font-family:var(--mono);outline:none;
+  resize:vertical;line-height:1.6}
+.textarea:focus{border-color:var(--blue)}
+.textarea::placeholder{color:var(--muted)}
+
+/* BUTTONS */
+.btn{border:none;border-radius:7px;padding:10px 20px;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:var(--sans);transition:opacity .15s;display:inline-flex;
+  align-items:center;gap:7px}
+.btn:hover{opacity:.85}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-teal{background:var(--teal);color:#fff}
+.btn-gray{background:var(--s3);color:var(--dim);border:1px solid var(--brd2)}
+.btn-sm{padding:6px 12px;font-size:11px;border-radius:5px}
+.btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:16px}
+
+/* QUESTION REVIEW CARD */
+.qreview{background:var(--s2);border:1px solid var(--brd);border-radius:8px;
+  margin-bottom:12px;overflow:hidden;transition:border-color .15s}
+.qreview.approved{border-color:rgba(34,197,94,.4)}
+.qreview.rejected{border-color:rgba(239,68,68,.4)}
+.qreview.commented{border-color:rgba(245,158,11,.4)}
+.qr-head{padding:10px 14px;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--brd);background:var(--s1)}
+.qr-num{font-family:var(--mono);font-size:11px;color:var(--muted);
+  background:var(--s3);border-radius:4px;padding:2px 7px;flex-shrink:0}
+.qr-id{font-family:var(--mono);font-size:11px;color:var(--blue2);flex:1}
+.qr-status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;font-family:var(--mono)}
+.qr-status.approved{background:var(--gdim);color:var(--green2);border:1px solid rgba(34,197,94,.3)}
+.qr-status.pending{background:var(--s3);color:var(--muted);border:1px solid var(--brd2)}
+.qr-status.rejected{background:var(--rdim);color:var(--red2);border:1px solid rgba(239,68,68,.3)}
+.qr-status.commented{background:var(--adim);color:var(--amber2);border:1px solid rgba(245,158,11,.3)}
+.qr-body{padding:12px 14px}
+.qr-q{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:10px;font-weight:500}
+.qr-opts{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:10px}
+.qr-opt{font-size:11px;padding:4px 8px;border-radius:4px;display:flex;gap:5px;cursor:pointer;
+  border:1px solid transparent;transition:all .12s}
+.qr-opt.correct{background:var(--gdim);border-color:rgba(34,197,94,.3)}
+.qr-opt:not(.correct){background:var(--s3);border-color:var(--brd)}
+.qr-opt:hover{border-color:var(--blue)}
+.opt-lbl{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0}
+.qr-opt.correct .opt-lbl{color:var(--green2);font-weight:600}
+.opt-txt{color:var(--dim);line-height:1.4;font-size:11px}
+.qr-foot{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.qr-edit-area{margin-top:8px;display:none}
+.qr-edit-area.open{display:block}
+.comment-input{width:100%;background:var(--bg);border:1px solid var(--brd2);border-radius:5px;
+  padding:7px 9px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;
+  margin-top:6px}
+.comment-input:focus{border-color:var(--amber)}
+.comment-shown{font-size:11px;color:var(--amber2);background:var(--adim);
+  border-radius:4px;padding:4px 8px;margin-top:5px;display:none}
+.edit-fields{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.edit-field input{width:100%;background:var(--bg);border:1px solid var(--brd2);
+  border-radius:4px;padding:5px 8px;font-size:12px;color:var(--text);
+  font-family:var(--sans);outline:none}
+.edit-field input:focus{border-color:var(--blue)}
+.edit-label{font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:2px}
+
+/* ACTION BTNS */
+.abtn{background:none;border:1px solid var(--brd2);border-radius:4px;
+  color:var(--dim);padding:3px 8px;font-size:10px;cursor:pointer;
+  font-family:var(--mono);transition:all .12s}
+.abtn:hover{color:var(--text)}
+.abtn.apr{color:var(--green2);border-color:rgba(34,197,94,.3)}
+.abtn.apr:hover{background:var(--gdim)}
+.abtn.rej{color:var(--red2);border-color:rgba(239,68,68,.3)}
+.abtn.rej:hover{background:var(--rdim)}
+.abtn.cmt{color:var(--amber2);border-color:rgba(245,158,11,.3)}
+.abtn.cmt:hover{background:var(--adim)}
+.abtn.edt{color:var(--blue2);border-color:rgba(59,130,246,.3)}
+.abtn.edt:hover{background:var(--bdim)}
+
+/* SUMMARY BAR */
+.summary-bar{background:var(--s2);border:1px solid var(--brd);border-radius:8px;
+  padding:12px 16px;display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.sum-item{display:flex;align-items:center;gap:6px;font-size:12px;font-family:var(--mono)}
+.sum-dot{width:8px;height:8px;border-radius:50%}
+
+/* VIDEO BATCH ITEM */
+.batch-item{background:var(--s1);border:1px solid var(--brd);border-radius:8px;
+  margin-bottom:10px;overflow:hidden}
+.bi-head{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;
+  background:var(--s2)}
+.bi-head:hover{background:var(--s3)}
+.bi-name{font-size:13px;font-weight:500;flex:1}
+.bi-meta{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.bi-badge{font-size:10px;padding:2px 7px;border-radius:8px;font-family:var(--mono)}
+.bi-badge.ready{background:var(--gdim);color:var(--green2);border:1px solid rgba(34,197,94,.3)}
+.bi-badge.pending{background:var(--s3);color:var(--muted);border:1px solid var(--brd2)}
+.bi-badge.generating{background:var(--bdim);color:var(--blue2);border:1px solid rgba(59,130,246,.3)}
+.bi-body{display:none;padding:14px}
+.bi-body.open{display:block}
+
+/* LOADING */
+.spin{width:16px;height:16px;border:2px solid var(--brd2);border-top-color:var(--blue2);
+  border-radius:50%;animation:sp .6s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.generating-msg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--blue2);
+  padding:20px;font-family:var(--mono)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:7px;
+  font-size:12px;font-weight:500;z-index:999;opacity:0;pointer-events:none;
+  transition:opacity .2s;color:#fff;font-family:var(--sans)}
+.toast.show{opacity:1}
+
+/* NOTICE */
+.notice{background:var(--bdim);border:1px solid rgba(59,130,246,.3);border-radius:7px;
+  padding:12px 14px;font-size:12px;color:var(--blue2);margin-bottom:14px;line-height:1.7}
+.notice code{font-family:var(--mono);background:rgba(59,130,246,.1);
+  padding:1px 5px;border-radius:3px}
+
+/* HIDDEN */
+.hidden{display:none!important}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="logo">TAKMIL <em>/ Bulk Assessment Generator</em></div>
+  <div class="top-right">
+    <div class="srv"><div class="dot" id="srv-dot"></div><span id="srv-txt">checking...</span></div>
+  </div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+
+<div class="page">
+
+  <!-- STEPS -->
+  <div class="steps">
+    <div class="step active" id="stp1"><div class="step-num">1</div><span>Add Videos</span></div>
+    <div class="step-line"></div>
+    <div class="step" id="stp2"><div class="step-num">2</div><span>Generate Questions</span></div>
+    <div class="step-line"></div>
+    <div class="step" id="stp3"><div class="step-num">3</div><span>Review & Approve</span></div>
+    <div class="step-line"></div>
+    <div class="step" id="stp4"><div class="step-num">4</div><span>Save to Database</span></div>
+  </div>
+
+  <!-- ── STEP 1: ADD VIDEOS ── -->
+  <div id="panel-1">
+    <div class="notice">
+      📋 <strong>How this works:</strong> Paste the transcript from each video (the .txt file Whisper created).
+      Claude reads each transcript and generates 12 MCQ questions. Your team reviews and approves.
+      All approved questions save to the database in one click — ready for students forever.
+    </div>
+
+    <div class="card">
+      <div class="card-title">📁 Default Settings (applies to all videos)</div>
+      <div class="card-sub">Set the defaults. You can override per video.</div>
+      <div class="fgrid">
+        <div class="frow">
+          <label class="flabel">Subject</label>
+          <select class="fsel" id="def-subject">
+            <option value="English">English</option>
+            <option value="Math">Math</option>
+            <option value="Urdu">Urdu</option>
+          </select>
+        </div>
+        <div class="frow">
+          <label class="flabel">Level</label>
+          <select class="fsel" id="def-level">
+            <option>1</option><option selected>2</option><option>3</option>
+            <option>4</option><option>5</option><option>6</option>
+            <option>7</option><option>8</option><option>9</option>
+            <option>10</option><option>11</option>
+          </select>
+        </div>
+        <div class="frow">
+          <label class="flabel">Approved By</label>
+          <input class="finput" id="def-approver" placeholder="Teacher / Reviewer name">
+        </div>
+      </div>
+    </div>
+
+    <div id="video-list"></div>
+
+    <div class="card" style="border-style:dashed">
+      <div class="card-title">➕ Add a Video Transcript</div>
+      <div class="card-sub">Paste the transcript from the Whisper .txt file. Add as many videos as you want.</div>
+      <div class="fgrid2" style="margin-bottom:10px">
+        <div class="frow">
+          <label class="flabel">Video / Lesson Name</label>
+          <input class="finput" id="new-name" placeholder="e.g. 1.3 Words with AT — Unit 1">
+        </div>
+        <div class="frow">
+          <label class="flabel">Topic (for database)</label>
+          <input class="finput" id="new-topic" placeholder="e.g. at_word_family">
+        </div>
+      </div>
+      <div class="fgrid" style="margin-bottom:10px">
+        <div class="frow">
+          <label class="flabel">Subject (override)</label>
+          <select class="fsel" id="new-subject">
+            <option value="">Use default</option>
+            <option value="English">English</option>
+            <option value="Math">Math</option>
+            <option value="Urdu">Urdu</option>
+          </select>
+        </div>
+        <div class="frow">
+          <label class="flabel">Level (override)</label>
+          <select class="fsel" id="new-level">
+            <option value="">Use default</option>
+            <option>1</option><option>2</option><option>3</option>
+            <option>4</option><option>5</option><option>6</option>
+            <option>7</option><option>8</option><option>9</option>
+            <option>10</option><option>11</option>
+          </select>
+        </div>
+        <div class="frow">
+          <label class="flabel">YouTube Video ID (optional)</label>
+          <input class="finput" id="new-vid" placeholder="e.g. OHuJWfpsRrM" style="font-family:var(--mono)">
+        </div>
+      </div>
+      <div class="frow">
+        <label class="flabel">Transcript Text (paste from .txt file)</label>
+        <textarea class="textarea" id="new-transcript" rows="6"
+          placeholder="Paste the full transcript from the Whisper .txt file here...
+
+Example:
+Let's learn word families with AT words. AT words make the sound AT.
+Let's practice some AT words together. Bat. B-AT. Bat.
+Cat. C-AT. Cat. Fat. F-AT. Fat. Hat. H-AT. Hat..."></textarea>
+      </div>
+      <button class="btn btn-blue" onclick="addVideo()">+ Add This Video</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-blue" id="btn-generate" onclick="goGenerate()" disabled>
+        ⚡ Generate Questions for All Videos →
+      </button>
+      <span style="font-size:12px;color:var(--muted)" id="video-count-msg">Add at least one video to continue</span>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: GENERATING ── -->
+  <div id="panel-2" class="hidden">
+    <div class="card">
+      <div class="card-title">⚡ Generating Questions</div>
+      <div class="card-sub">Claude is reading each transcript and creating 12 MCQ questions. This takes about 30 seconds per video.</div>
+      <div id="gen-progress"></div>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: REVIEW ── -->
+  <div id="panel-3" class="hidden">
+    <div class="summary-bar" id="review-summary"></div>
+
+    <div class="btn-row" style="margin-bottom:16px">
+      <button class="btn btn-green btn-sm" onclick="approveAll()">✓ Approve All Questions</button>
+      <button class="btn btn-gray btn-sm" onclick="filterReview('all')">Show All</button>
+      <button class="btn btn-gray btn-sm" onclick="filterReview('pending')">⏳ Pending Only</button>
+      <button class="btn btn-gray btn-sm" onclick="filterReview('commented')">💬 With Comments</button>
+    </div>
+
+    <div id="review-list"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-blue" onclick="goSave()">
+        💾 Save All Approved to Database →
+      </button>
+      <span style="font-size:12px;color:var(--muted)" id="approve-count-msg"></span>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: SAVED ── -->
+  <div id="panel-4" class="hidden">
+    <div class="card" style="text-align:center;padding:40px">
+      <div style="font-size:48px;margin-bottom:16px">🎉</div>
+      <div style="font-size:20px;font-weight:600;margin-bottom:8px">All Done!</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:24px" id="saved-summary"></div>
+      <div class="btn-row" style="justify-content:center">
+        <a href="/question-bank" class="btn btn-blue">View Question Bank →</a>
+        <button class="btn btn-gray" onclick="startOver()">Generate More Videos</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────
+let videos  = [];   // { id, name, topic, subject, level, vid_id, transcript, questions, status }
+let currentStep = 1;
+
+// ─── BASE URL ─────────────────────────────────────────────────────
+const BASE = window.location.origin.includes('railway.app')
+  ? '' : 'https://takmil-bot-production-0f51.up.railway.app';
+
+// ─── ADD VIDEO ────────────────────────────────────────────────────
+function addVideo() {
+  const name       = document.getElementById('new-name').value.trim();
+  const transcript = document.getElementById('new-transcript').value.trim();
+  const topic      = document.getElementById('new-topic').value.trim();
+  const vidId      = document.getElementById('new-vid').value.trim();
+  const subjOver   = document.getElementById('new-subject').value;
+  const levelOver  = document.getElementById('new-level').value;
+
+  if (!name)       { showToast('Enter a video/lesson name', 'warn'); return; }
+  if (!transcript) { showToast('Paste the transcript text', 'warn'); return; }
+  if (transcript.split(' ').length < 10) {
+    showToast('Transcript seems too short — paste the full .txt content', 'warn'); return;
+  }
+
+  const entry = {
+    id:         Date.now(),
+    name,
+    topic:      topic || name.toLowerCase().replace(/[^a-z0-9]/g,'_').substring(0,30),
+    subject:    subjOver || document.getElementById('def-subject').value,
+    level:      parseInt(levelOver || document.getElementById('def-level').value),
+    vid_id:     vidId || null,
+    transcript,
+    questions:  [],
+    status:     'pending'
+  };
+  videos.push(entry);
+
+  // Clear form
+  ['new-name','new-topic','new-transcript','new-vid'].forEach(id =>
+    document.getElementById(id).value = '');
+  document.getElementById('new-subject').value = '';
+  document.getElementById('new-level').value = '';
+
+  renderVideoList();
+  document.getElementById('btn-generate').disabled = false;
+  document.getElementById('video-count-msg').textContent =
+    `${videos.length} video${videos.length > 1 ? 's' : ''} ready to generate`;
+  showToast(`Added: ${name}`);
+}
+
+function removeVideo(id) {
+  videos = videos.filter(v => v.id !== id);
+  renderVideoList();
+  document.getElementById('btn-generate').disabled = videos.length === 0;
+  document.getElementById('video-count-msg').textContent =
+    videos.length === 0 ? 'Add at least one video to continue'
+    : `${videos.length} video${videos.length > 1 ? 's' : ''} ready`;
+}
+
+function renderVideoList() {
+  const el = document.getElementById('video-list');
+  if (!videos.length) { el.innerHTML = ''; return; }
+  el.innerHTML = videos.map(v => `
+    <div class="batch-item">
+      <div class="bi-head">
+        <div style="font-size:14px">📹</div>
+        <div class="bi-name">${esc(v.name)}</div>
+        <span class="bi-meta">L${v.level} · ${esc(v.subject)} · ${v.transcript.split(' ').length} words</span>
+        <button class="abtn rej btn-sm" style="margin-left:8px"
+          onclick="event.stopPropagation();removeVideo(${v.id})">✕ Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+// ─── GENERATE QUESTIONS ───────────────────────────────────────────
+async function goGenerate() {
+  if (!videos.length) return;
+  setStep(2);
+  setProgress(0);
+
+  const genEl = document.getElementById('gen-progress');
+  genEl.innerHTML = videos.map((v,i) => `
+    <div id="gp-${v.id}" style="padding:12px 0;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:10px">
+      <span style="font-size:16px">⏳</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${esc(v.name)}</div>
+        <div style="font-size:11px;color:var(--muted)">Level ${v.level} ${esc(v.subject)}</div>
+      </div>
+      <span id="gs-${v.id}" style="font-size:11px;color:var(--muted);font-family:var(--mono)">Waiting...</span>
+    </div>`).join('');
+
+  for (let i = 0; i < videos.length; i++) {
+    const v = videos[i];
+    const row  = document.getElementById(`gp-${v.id}`);
+    const stat = document.getElementById(`gs-${v.id}`);
+
+    row.querySelector('span').textContent = '🎙';
+    stat.textContent = 'Generating...';
+    stat.style.color = 'var(--blue2)';
+
+    const questions = await generateQuestions(v);
+
+    if (questions && questions.length > 0) {
+      v.questions = questions.map((q, qi) => ({
+        ...q,
+        _status:  'pending',
+        _comment: '',
+        _edited:  false,
+        question_id: q.question_id || `${v.subject.toUpperCase()}-L${v.level}-${v.topic.toUpperCase()}-${String(qi+1).padStart(3,'0')}`
+      }));
+      v.status = 'ready';
+      row.querySelector('span').textContent = '✅';
+      stat.textContent = `${questions.length} questions ready`;
+      stat.style.color = 'var(--green2)';
+    } else {
+      v.status = 'error';
+      row.querySelector('span').textContent = '❌';
+      stat.textContent = 'Failed — check transcript';
+      stat.style.color = 'var(--red2)';
+    }
+
+    setProgress(Math.round(((i+1)/videos.length)*100));
+    await sleep(500);
+  }
+
+  await sleep(800);
+  setStep(3);
+  renderReview();
+}
+
+async function generateQuestions(video) {
+  const prompt = `You are an educational assessment expert for TAKMIL Foundation, which educates out-of-school children in rural Pakistan.
+
+Generate exactly 12 multiple choice questions based on this video transcript.
+
+VIDEO INFO:
+- Name: ${video.name}
+- Subject: ${video.subject}
+- Level: ${video.level} (primary school level)
+- Topic: ${video.topic}
+
+TRANSCRIPT:
+${video.transcript}
+
+RULES:
+1. Questions must be based ONLY on what is in the transcript
+2. Grade-appropriate for Level ${video.level} students (ages 8-12, rural Pakistan)
+3. Each question has exactly 4 options (A, B, C, D)
+4. Wrong options must be plausible — not obviously wrong
+5. Mix question types: recall, understanding, application
+6. Keep language simple and clear
+7. question_id format: ${video.subject.toUpperCase()}-L${video.level}-${(video.topic||'TOPIC').toUpperCase().replace(/[^A-Z0-9]/g,'_')}-001 (increment)
+
+Respond ONLY with a valid JSON array. No explanation, no markdown, just the JSON array:
+[
+  {
+    "question_id": "...",
+    "question_text": "...",
+    "option_a": "...",
+    "option_b": "...",
+    "option_c": "...",
+    "option_d": "...",
+    "correct_option": "A"
+  }
+]`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      console.error('API error:', response.status, await response.text());
+      return null;
+    }
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+
+    // Find the JSON array in the response
+    const start = clean.indexOf('[');
+    const end   = clean.lastIndexOf(']');
+    if (start === -1 || end === -1) return null;
+
+    const parsed = JSON.parse(clean.substring(start, end + 1));
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (e) {
+    console.error('Generate error:', e);
+    return null;
+  }
+}
+
+// ─── REVIEW ──────────────────────────────────────────────────────
+function renderReview() {
+  updateSummary();
+  const el = document.getElementById('review-list');
+  const readyVideos = videos.filter(v => v.status === 'ready');
+
+  el.innerHTML = readyVideos.map(v => `
+    <div class="batch-item" id="bi-${v.id}">
+      <div class="bi-head" onclick="toggleBatch(${v.id})">
+        <div style="font-size:14px">📹</div>
+        <div class="bi-name">${esc(v.name)}</div>
+        <span class="bi-meta" id="bm-${v.id}">
+          ${v.questions.filter(q=>q._status==='approved').length}/${v.questions.length} approved
+        </span>
+        <span class="bi-badge ready">L${v.level} · ${esc(v.subject)}</span>
+        <span style="color:var(--muted);font-size:12px;margin-left:4px">▼</span>
+      </div>
+      <div class="bi-body open" id="bb-${v.id}">
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+          <button class="abtn apr btn-sm" onclick="approveAllInVideo(${v.id})">✓ Approve All</button>
+          <span style="font-size:11px;color:var(--muted);align-self:center">
+            Topic: ${esc(v.topic)} · ${v.vid_id ? 'YouTube: '+v.vid_id : 'No video ID'}
+          </span>
+        </div>
+        <div id="ql-${v.id}">
+          ${v.questions.map((q,qi) => renderQCard(v.id, q, qi)).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderQCard(vid_id, q, qi) {
+  const opts = ['a','b','c','d'];
+  const optsHtml = opts.map(l => {
+    const correct = q.correct_option?.toUpperCase() === l.toUpperCase();
+    return `<div class="qr-opt ${correct?'correct':''}">
+      <span class="opt-lbl">${l.toUpperCase()}</span>
+      <span class="opt-txt">${esc(q['option_'+l]||'')}</span>
+    </div>`;
+  }).join('');
+
+  const stLabel = q._status === 'approved' ? '✓ Approved'
+    : q._status === 'rejected' ? '✕ Rejected'
+    : q._status === 'commented' ? '💬 Comment'
+    : '⏳ Pending';
+
+  return `<div class="qreview ${q._status}" id="qr-${vid_id}-${qi}">
+    <div class="qr-head">
+      <span class="qr-num">Q${qi+1}</span>
+      <span class="qr-id">${esc(q.question_id)}</span>
+      <span class="qr-status ${q._status}">${stLabel}</span>
+    </div>
+    <div class="qr-body">
+      <div class="qr-q">${esc(q.question_text)}</div>
+      <div class="qr-opts">${optsHtml}</div>
+      <div class="qr-foot">
+        <button class="abtn apr" onclick="setQStatus(${vid_id},${qi},'approved')">✓ Approve</button>
+        <button class="abtn rej" onclick="setQStatus(${vid_id},${qi},'rejected')">✕ Reject</button>
+        <button class="abtn cmt" onclick="toggleComment(${vid_id},${qi})">💬 Comment</button>
+        <button class="abtn edt" onclick="toggleEdit(${vid_id},${qi})">✎ Edit</button>
+      </div>
+      <div class="qr-edit-area" id="ea-${vid_id}-${qi}">
+        <textarea class="comment-input" id="cm-${vid_id}-${qi}"
+          placeholder="Add a comment or correction for this question..."
+          onchange="saveComment(${vid_id},${qi},this.value)">${q._comment||''}</textarea>
+        <div class="edit-fields">
+          <div class="edit-field">
+            <div class="edit-label">Question text</div>
+            <input value="${esc(q.question_text)}"
+              onchange="editQ(${vid_id},${qi},'question_text',this.value)">
+          </div>
+          <div class="edit-field">
+            <div class="edit-label">Correct answer</div>
+            <select onchange="editQ(${vid_id},${qi},'correct_option',this.value)"
+              style="width:100%;background:var(--bg);border:1px solid var(--brd2);
+              border-radius:4px;padding:5px 8px;font-size:12px;color:var(--text);outline:none">
+              ${['A','B','C','D'].map(l=>
+                `<option ${q.correct_option?.toUpperCase()===l?'selected':''}>${l}</option>`
+              ).join('')}
+            </select>
+          </div>
+          <div class="edit-field">
+            <div class="edit-label">Option A</div>
+            <input value="${esc(q.option_a||'')}" onchange="editQ(${vid_id},${qi},'option_a',this.value)">
+          </div>
+          <div class="edit-field">
+            <div class="edit-label">Option B</div>
+            <input value="${esc(q.option_b||'')}" onchange="editQ(${vid_id},${qi},'option_b',this.value)">
+          </div>
+          <div class="edit-field">
+            <div class="edit-label">Option C</div>
+            <input value="${esc(q.option_c||'')}" onchange="editQ(${vid_id},${qi},'option_c',this.value)">
+          </div>
+          <div class="edit-field">
+            <div class="edit-label">Option D</div>
+            <input value="${esc(q.option_d||'')}" onchange="editQ(${vid_id},${qi},'option_d',this.value)">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleBatch(id) {
+  const body = document.getElementById(`bb-${id}`);
+  body.classList.toggle('open');
+}
+
+function setQStatus(vid_id, qi, status) {
+  const v = videos.find(v => v.id === vid_id);
+  if (!v) return;
+  v.questions[qi]._status = status;
+  // Re-render just this card
+  const el = document.getElementById(`qr-${vid_id}-${qi}`);
+  if (el) el.outerHTML = renderQCard(vid_id, v.questions[qi], qi);
+  updateBatchMeta(vid_id);
+  updateSummary();
+}
+
+function toggleComment(vid_id, qi) {
+  const ea = document.getElementById(`ea-${vid_id}-${qi}`);
+  ea.classList.toggle('open');
+}
+
+function toggleEdit(vid_id, qi) {
+  const ea = document.getElementById(`ea-${vid_id}-${qi}`);
+  ea.classList.toggle('open');
+}
+
+function saveComment(vid_id, qi, val) {
+  const v = videos.find(v => v.id === vid_id);
+  if (!v) return;
+  v.questions[qi]._comment = val;
+  if (val.trim() && v.questions[qi]._status === 'pending') {
+    v.questions[qi]._status = 'commented';
+  }
+  updateBatchMeta(vid_id);
+  updateSummary();
+}
+
+function editQ(vid_id, qi, field, val) {
+  const v = videos.find(v => v.id === vid_id);
+  if (!v) return;
+  v.questions[qi][field] = val;
+  v.questions[qi]._edited = true;
+}
+
+function approveAllInVideo(vid_id) {
+  const v = videos.find(v => v.id === vid_id);
+  if (!v) return;
+  v.questions.forEach((q, qi) => {
+    if (q._status !== 'rejected') {
+      q._status = 'approved';
+    }
+  });
+  const el = document.getElementById(`ql-${vid_id}`);
+  if (el) el.innerHTML = v.questions.map((q,qi) => renderQCard(vid_id, q, qi)).join('');
+  updateBatchMeta(vid_id);
+  updateSummary();
+  showToast(`All questions approved for: ${v.name}`);
+}
+
+function approveAll() {
+  videos.filter(v=>v.status==='ready').forEach(v => approveAllInVideo(v.id));
+}
+
+function updateBatchMeta(vid_id) {
+  const v = videos.find(v => v.id === vid_id);
+  if (!v) return;
+  const el = document.getElementById(`bm-${vid_id}`);
+  if (el) {
+    const ap = v.questions.filter(q=>q._status==='approved').length;
+    el.textContent = `${ap}/${v.questions.length} approved`;
+  }
+  const appMsg = document.getElementById('approve-count-msg');
+  if (appMsg) {
+    const total = videos.reduce((s,v)=>s+v.questions.filter(q=>q._status==='approved').length,0);
+    appMsg.textContent = `${total} questions approved and ready to save`;
+  }
+}
+
+function updateSummary() {
+  const allQ   = videos.flatMap(v => v.questions);
+  const apQ    = allQ.filter(q=>q._status==='approved').length;
+  const peQ    = allQ.filter(q=>q._status==='pending').length;
+  const cmQ    = allQ.filter(q=>q._status==='commented').length;
+  const reQ    = allQ.filter(q=>q._status==='rejected').length;
+
+  document.getElementById('review-summary').innerHTML = `
+    <span style="font-size:13px;font-weight:600">${videos.filter(v=>v.status==='ready').length} Videos</span>
+    <div class="sum-item"><div class="sum-dot" style="background:var(--green2)"></div>${apQ} Approved</div>
+    <div class="sum-item"><div class="sum-dot" style="background:var(--muted)"></div>${peQ} Pending</div>
+    <div class="sum-item"><div class="sum-dot" style="background:var(--amber2)"></div>${cmQ} With Comments</div>
+    <div class="sum-item"><div class="sum-dot" style="background:var(--red2)"></div>${reQ} Rejected</div>
+    <div class="sum-item" style="margin-left:auto">
+      <strong style="color:var(--blue2)">${allQ.length} Total Questions</strong>
+    </div>`;
+
+  const appMsg = document.getElementById('approve-count-msg');
+  if (appMsg) appMsg.textContent = `${apQ} questions approved and ready to save`;
+}
+
+function filterReview(type) {
+  // Simple filter by toggling visibility
+  document.querySelectorAll('.qreview').forEach(el => {
+    if (type === 'all') { el.style.display = ''; return; }
+    const hasClass = el.classList.contains(type);
+    el.style.display = hasClass ? '' : 'none';
+  });
+}
+
+// ─── SAVE TO DATABASE ─────────────────────────────────────────────
+async function goSave() {
+  const approver = document.getElementById('def-approver').value.trim() || 'TAKMIL Team';
+  let totalSaved = 0;
+  let errorCount = 0;
+
+  for (const v of videos) {
+    if (v.status !== 'ready') continue;
+    const approved = v.questions.filter(q => q._status === 'approved');
+    if (!approved.length) continue;
+
+    const payload = {
+      questions:    approved,
+      level:        v.level,
+      subject:      v.subject,
+      topic:        v.topic,
+      video_id:     v.vid_id || null,
+      video_url:    v.vid_id ? `https://youtube.com/watch?v=${v.vid_id}` : null,
+      section_code: null,
+      approved_by:  approver,
+    };
+
+    const r = await fetch(BASE + '/api/questions/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (r.ok) {
+      const data = await r.json();
+      totalSaved += data.saved || 0;
+    } else {
+      errorCount++;
+    }
+  }
+
+  setStep(4);
+  const totalVideos = videos.filter(v => v.status === 'ready').length;
+  document.getElementById('saved-summary').innerHTML =
+    `<strong>${totalSaved} questions</strong> saved from <strong>${totalVideos} videos</strong>.<br>
+     ${errorCount > 0 ? `${errorCount} videos had errors.` : 'All videos saved successfully.'}<br>
+     They are now in your Question Bank — reusable for all future student cohorts.`;
+
+  showToast(`${totalSaved} questions saved to database! 🎉`, 'green');
+}
+
+function startOver() {
+  videos = [];
+  currentStep = 1;
+  document.getElementById('video-list').innerHTML = '';
+  document.getElementById('btn-generate').disabled = true;
+  document.getElementById('video-count-msg').textContent = 'Add at least one video to continue';
+  setStep(1);
+  setProgress(0);
+}
+
+// ─── STEP MANAGEMENT ─────────────────────────────────────────────
+function setStep(n) {
+  currentStep = n;
+  for (let i = 1; i <= 4; i++) {
+    const panel = document.getElementById(`panel-${i}`);
+    const step  = document.getElementById(`stp${i}`);
+    if (panel) panel.classList.toggle('hidden', i !== n);
+    if (step) {
+      step.classList.remove('active','done');
+      if (i < n) step.classList.add('done');
+      if (i === n) step.classList.add('active');
+    }
+  }
+}
+
+function setProgress(pct) {
+  document.getElementById('prog').style.width = pct + '%';
+}
+
+// ─── PING ─────────────────────────────────────────────────────────
+async function ping() {
+  try {
+    const r = await fetch(BASE + '/health', {signal: AbortSignal.timeout(4000)});
+    document.getElementById('srv-dot').className = 'dot' + (r.ok ? '' : ' err');
+    document.getElementById('srv-txt').textContent = r.ok ? 'connected' : 'error';
+  } catch {
+    document.getElementById('srv-dot').className = 'dot err';
+    document.getElementById('srv-txt').textContent = 'not reachable';
+  }
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type==='warn'?'var(--amber)':type==='err'?'var(--red)':'var(--green)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+ping();
+setInterval(ping, 30000);
+</script>
+</body>
+</html>
