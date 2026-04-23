@@ -1958,7 +1958,77 @@ app.post('/api/questions/save', async (req, res) => {
 });
 
 // ── New tool pages ────────────────────────────────────────────────
-app.get('/bulk-assess',   (req, res) => res.sendFile(path.join(__dirname, 'takmil-bulk-assess.html')));
+app.get('/bulk-assess', (req, res) => res.sendFile(path.join(__dirname, 'takmil-bulk-assess.html')));
+
+// ── AI Question Generator — called by bulk-assess page ────────────
+app.post('/api/generate-questions', async (req, res) => {
+  try {
+    const { transcript, subject, level, topic, name } = req.body;
+    if (!transcript) return res.status(400).json({ error: 'transcript required' });
+
+    const topicSafe = (topic||'TOPIC').toUpperCase().replace(/[^A-Z0-9]/g,'_');
+    const prompt = `You are an educational assessment expert for TAKMIL Foundation which educates out-of-school children in rural Pakistan.
+
+Generate exactly 12 multiple choice questions based on this video transcript.
+
+VIDEO INFO:
+- Name: ${name}
+- Subject: ${subject}
+- Level: ${level} (primary school, ages 8-12)
+- Topic: ${topic}
+
+TRANSCRIPT:
+${transcript}
+
+RULES:
+1. Questions based ONLY on what is in the transcript
+2. Grade-appropriate for Level ${level} students
+3. Each question has exactly 4 options (A, B, C, D)
+4. Wrong options must be plausible — not obviously wrong
+5. Mix question types: recall, understanding, application
+6. Keep language simple and clear
+7. question_id format: ${(subject||'SUB').toUpperCase()}-L${level}-${topicSafe}-001 (increment last 3 digits for each question)
+
+Respond ONLY with a valid JSON array — no explanation, no markdown, just JSON:
+[{"question_id":"...","question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_option":"A"}]`;
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set in Railway variables' });
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Anthropic API error:', errText);
+      return res.status(500).json({ error: 'Claude API error: ' + response.status });
+    }
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+    const start = text.indexOf('[');
+    const end   = text.lastIndexOf(']');
+    if (start === -1) return res.status(500).json({ error: 'No JSON array in Claude response' });
+
+    const questions = JSON.parse(text.substring(start, end + 1));
+    res.json({ questions, count: questions.length });
+
+  } catch (err) {
+    console.error('generate-questions error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Video bank — list all processed videos
 app.get('/api/video-bank', async (req, res) => {

@@ -524,32 +524,28 @@ Respond ONLY with a valid JSON array. No explanation, no markdown, just the JSON
 ]`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(BASE + '/api/generate-questions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 3000,
-        messages: [{ role: 'user', content: prompt }]
+        transcript: video.transcript,
+        subject:    video.subject,
+        level:      video.level,
+        topic:      video.topic,
+        name:       video.name
       })
     });
 
     if (!response.ok) {
-      console.error('API error:', response.status, await response.text());
+      const errText = await response.text();
+      console.error('API error:', response.status, errText);
       return null;
     }
 
     const data = await response.json();
-    const text = data.content?.[0]?.text || '';
-    const clean = text.replace(/```json|```/g, '').trim();
+    if (data.error) { console.error('Server error:', data.error); return null; }
+    return Array.isArray(data.questions) ? data.questions : null;
 
-    // Find the JSON array in the response
-    const start = clean.indexOf('[');
-    const end   = clean.lastIndexOf(']');
-    if (start === -1 || end === -1) return null;
-
-    const parsed = JSON.parse(clean.substring(start, end + 1));
-    return Array.isArray(parsed) ? parsed : null;
   } catch (e) {
     console.error('Generate error:', e);
     return null;
