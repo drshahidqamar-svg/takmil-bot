@@ -1180,6 +1180,7 @@ const PORT = process.env.PORT || 3000;
   try {
     await db.initializeDatabase();
 
+    console.log('ENV CHECK - ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? 'SET (length:' + process.env.ANTHROPIC_API_KEY.length + ')' : 'NOT SET');
     // ── Video module and question bank routes are defined above ──
 
 // ── CODE VERIFICATION ────────────────────────────────────────────
