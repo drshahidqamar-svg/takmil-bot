@@ -2039,6 +2039,118 @@ app.get('/api/video-bank', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Stats endpoint — shows question counts by date ────────────────
+app.get('/api/stats', async (req, res) => {
+  try {
+    const byDate = await db.pool.query(`
+      SELECT
+        DATE(created_at) as date,
+        COUNT(*) as total,
+        SUM(CASE WHEN is_approved = TRUE THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN (is_approved = FALSE OR is_approved IS NULL) AND status != 'flagged' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status = 'flagged' THEN 1 ELSE 0 END) as flagged
+      FROM questions
+      GROUP BY DATE(created_at)
+      ORDER BY date DESC
+      LIMIT 30
+    `);
+    const totals = await db.pool.query(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN is_approved = TRUE THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN (is_approved = FALSE OR is_approved IS NULL) AND status != 'flagged' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status = 'flagged' THEN 1 ELSE 0 END) as flagged
+      FROM questions
+    `);
+    res.json({ totals: totals.rows[0], by_date: byDate.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Auto generate + save — called by takmil_auto_generate.py ─────
+app.post('/api/auto-generate-save', async (req, res) => {
+  try {
+    const { transcript, subject, level, video_name } = req.body;
+    if (!transcript) return res.status(400).json({ error: 'transcript required' });
+
+    const subjectClean = (subject || 'GEN').replace(/__.*/, '').trim();
+    const levelNum     = (level || '').replace(/[^0-9]/g, '') || '1';
+    const topicSafe    = (video_name || 'VIDEO').toUpperCase().replace(/[^A-Z0-9]/g, '_').substring(0, 20);
+
+    const prompt = `You are an educational assessment expert for TAKMIL Foundation which educates out-of-school children in rural Pakistan.
+
+Generate exactly 12 multiple choice questions based on this video transcript.
+
+VIDEO INFO:
+- File: ${video_name}
+- Subject: ${subjectClean}
+- Level: ${levelNum} (primary school, ages 8-12)
+
+TRANSCRIPT:
+${transcript.substring(0, 6000)}
+
+RULES:
+1. Questions based ONLY on what is in the transcript
+2. Grade-appropriate for Level ${levelNum} students
+3. Each question has exactly 4 options (A, B, C, D)
+4. Wrong options must be plausible not obviously wrong
+5. Mix question types: recall, understanding, application
+6. Keep language simple and clear
+7. question_id format: ${subjectClean.toUpperCase().replace(/[^A-Z0-9]/g,'')}-L${levelNum}-${topicSafe}-001 incrementing last 3 digits
+
+Respond ONLY with a valid JSON array, no explanation, no markdown, just the JSON array:
+[{"question_id":"...","question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_option":"A"}]`;
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' });
+
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const bodyText = await aiRes.text();
+    if (!aiRes.ok) return res.status(500).json({ error: 'Claude API error: ' + aiRes.status });
+
+    const data     = JSON.parse(bodyText);
+    const text     = data.content?.[0]?.text || '';
+    const start    = text.indexOf('[');
+    const end      = text.lastIndexOf(']');
+    if (start === -1) return res.status(500).json({ error: 'No JSON in Claude response' });
+
+    const questions = JSON.parse(text.substring(start, end + 1));
+
+    // Save to DB as pending
+    let saved = 0;
+    for (const q of questions) {
+      await db.pool.query(`
+        INSERT INTO questions
+          (question_id, level, subject, topic_tag, question_text,
+           option_a, option_b, option_c, option_d, correct_option,
+           source_type, video_id, is_approved, status, created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'video',$11,FALSE,'pending',NOW())
+        ON CONFLICT (question_id) DO NOTHING`,
+        [q.question_id, parseInt(levelNum), subjectClean, 'curriculum',
+         q.question_text, q.option_a, q.option_b, q.option_c, q.option_d,
+         q.correct_option, video_name || null]);
+      saved++;
+    }
+
+    res.json({ saved, count: saved, message: `${saved} questions saved as pending` });
+  } catch (err) {
+    console.error('auto-generate-save error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
     app.listen(PORT, () => console.log(`🚀 TAKMIL Bot v3.0 running on port ${PORT}`));
   } catch (err) {
     console.error('❌ Failed to start:', err);
