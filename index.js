@@ -1957,6 +1957,9 @@ app.post('/api/questions/save', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── New tool pages ────────────────────────────────────────────────
+app.get('/bulk-assess',   (req, res) => res.sendFile(path.join(__dirname, 'takmil-bulk-assess.html')));
+
 // Video bank — list all processed videos
 app.get('/api/video-bank', async (req, res) => {
   try {
