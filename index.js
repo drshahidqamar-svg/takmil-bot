@@ -2013,7 +2013,7 @@ Respond ONLY with a valid JSON array — no explanation, no markdown, just JSON:
     if (!response.ok) {
       const errText = await response.text();
       console.error('Anthropic API error:', errText);
-      return res.status(500).json({ error: 'Claude API error: ' + response.status });
+      const errBody = await response.text(); console.error('Anthropic error:', errBody); return res.status(500).json({ error: 'Claude API error: ' + response.status, detail: errBody });
     }
 
     const data = await response.json();
@@ -2045,5 +2045,6 @@ app.get('/api/video-bank', async (req, res) => {
     process.exit(1);
   }
 })();
+
 
 
