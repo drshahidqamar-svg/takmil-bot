@@ -2153,6 +2153,11 @@ app.get('/coordinator', (req, res) => {
   res.sendFile(path.join(__dirname, 'coordinator-portal.html'));
 });
 
+// Remove subject check constraint to allow 'All' subject PINs
+    try {
+      await db.pool.query(`ALTER TABLE pins DROP CONSTRAINT IF EXISTS pins_subject_check`);
+    } catch(e) { /* ignore if already removed */ }
+
     app.listen(PORT, () => console.log(`🚀 TAKMIL Bot v3.0 running on port ${PORT}`));
   } catch (err) {
     console.error('❌ Failed to start:', err);
