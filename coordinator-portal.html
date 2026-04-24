@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Coordinator Portal</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #F0F4F8; min-height: 100vh; }
+
+.header {
+  background: #1a3a2a; color: white; padding: 14px 24px;
+  display: flex; align-items: center; gap: 12px;
+}
+.header .logo { font-size: 20px; font-weight: 700; color: #4ade80; }
+.header .subtitle { font-size: 13px; opacity: 0.7; }
+
+.container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+
+/* LOGIN */
+#login-screen {
+  max-width: 420px; margin: 60px auto;
+  background: white; border-radius: 16px;
+  padding: 36px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+#login-screen h2 { font-size: 22px; color: #1a3a2a; margin-bottom: 6px; }
+#login-screen p { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.field select, .field input {
+  width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0;
+  border-radius: 8px; font-size: 15px; color: #1e293b;
+  background: white; outline: none; transition: border-color 0.2s;
+}
+.field select:focus, .field input:focus { border-color: #16a34a; }
+
+.btn-primary {
+  width: 100%; padding: 12px; background: #16a34a; color: white;
+  border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: background 0.2s;
+}
+.btn-primary:hover { background: #15803d; }
+.btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+
+/* DASHBOARD */
+#dashboard { display: none; }
+
+.welcome-bar {
+  background: white; border-radius: 12px; padding: 16px 20px;
+  margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.welcome-bar .name { font-weight: 700; font-size: 17px; color: #1a3a2a; }
+.welcome-bar .region { font-size: 13px; color: #64748b; }
+.btn-logout { background: none; border: 1.5px solid #e2e8f0; padding: 6px 14px;
+  border-radius: 8px; font-size: 13px; cursor: pointer; color: #64748b; }
+.btn-logout:hover { background: #f1f5f9; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px) { .grid2 { grid-template-columns: 1fr; } }
+
+.card {
+  background: white; border-radius: 12px; padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.card h3 { font-size: 15px; font-weight: 700; color: #1a3a2a; margin-bottom: 14px;
+  padding-bottom: 10px; border-bottom: 1.5px solid #f1f5f9; }
+
+/* PIN GENERATOR */
+#pin-form { display: grid; gap: 14px; }
+
+.pin-result {
+  background: #f0fdf4; border: 2px solid #16a34a; border-radius: 12px;
+  padding: 20px; text-align: center; display: none; margin-top: 4px;
+}
+.pin-result .pin-code {
+  font-size: 36px; font-weight: 800; color: #16a34a; letter-spacing: 6px;
+  font-family: monospace;
+}
+.pin-result .pin-meta { font-size: 13px; color: #64748b; margin-top: 6px; }
+.pin-result .pin-label { font-size: 14px; color: #1a3a2a; font-weight: 600; margin-top: 8px; }
+.whatsapp-status { margin-top: 10px; font-size: 13px; padding: 6px 12px;
+  border-radius: 6px; display: inline-block; }
+.whatsapp-status.sent { background: #dcfce7; color: #15803d; }
+.whatsapp-status.pending { background: #fef9c3; color: #854d0e; }
+
+/* RECENT PINS TABLE */
+.pins-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pins-table th { text-align: left; padding: 8px 10px; color: #64748b;
+  border-bottom: 1.5px solid #f1f5f9; font-weight: 600; }
+.pins-table td { padding: 8px 10px; border-bottom: 1px solid #f8fafc; color: #374151; }
+.pins-table tr:hover td { background: #f8fafc; }
+.badge { padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-active { background: #dcfce7; color: #15803d; }
+.badge-expired { background: #f1f5f9; color: #94a3b8; }
+.badge-used { background: #dbeafe; color: #1d4ed8; }
+
+.loading { text-align: center; padding: 20px; color: #94a3b8; font-size: 14px; }
+.error-msg { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;
+  padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 8px; display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">TAKMIL</div>
+    <div class="subtitle">Regional Coordinator Portal — پن جنریٹر</div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <h2>Coordinator Login</h2>
+  <p>Sign in to generate assessment PINs for your schools</p>
+  <div class="field">
+    <label>Select Your Name</label>
+    <select id="rc-select">
+      <option value="">-- Select Regional Coordinator --</option>
+      <option value="1|M. Ali|Sindh">M. Ali — Sindh</option>
+      <option value="2|M. Ayub|Punjab">M. Ayub — Punjab</option>
+      <option value="3|Qiyanoos Khan|KPK">Qiyanoos Khan — KPK</option>
+      <option value="4|Shabir khan|Baluchistan / GB">Shabir Khan — Baluchistan / GB</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Password</label>
+    <input type="password" id="rc-password" placeholder="Enter your password" />
+  </div>
+  <div class="error-msg" id="login-error">Incorrect password. Please try again.</div>
+  <button class="btn-primary" onclick="doLogin()" style="margin-top:8px">Login — لاگ ان</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="container">
+
+  <div class="welcome-bar">
+    <div>
+      <div class="name" id="welcome-name"></div>
+      <div class="region" id="welcome-region"></div>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">Logout</button>
+  </div>
+
+  <div class="grid2">
+
+    <!-- PIN GENERATOR -->
+    <div class="card">
+      <h3>Generate Assessment PIN — پن بنائیں</h3>
+      <div id="pin-form">
+        <div class="field">
+          <label>Area Coordinator</label>
+          <select id="sc-select" onchange="loadSchools()">
+            <option value="">-- Select Coordinator --</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>School</label>
+          <select id="school-select">
+            <option value="">-- Select School --</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Level (1–12)</label>
+          <select id="level-select">
+            <option value="">-- Select Level --</option>
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+            <option value="4">Level 4</option>
+            <option value="5">Level 5</option>
+            <option value="6">Level 6</option>
+            <option value="7">Level 7</option>
+            <option value="8">Level 8</option>
+            <option value="9">Level 9</option>
+            <option value="10">Level 10</option>
+            <option value="11">Level 11</option>
+            <option value="12">Level 12</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Assessment Date</label>
+          <input type="date" id="assessment-date" />
+        </div>
+        <div class="field">
+          <label>Teacher WhatsApp Number</label>
+          <input type="text" id="teacher-phone" placeholder="+92300xxxxxxx" />
+        </div>
+        <button class="btn-primary" id="gen-btn" onclick="generatePIN()">Generate &amp; Send PIN</button>
+        <div class="error-msg" id="gen-error"></div>
+      </div>
+
+      <div class="pin-result" id="pin-result">
+        <div class="pin-code" id="pin-display"></div>
+        <div class="pin-label" id="pin-label"></div>
+        <div class="pin-meta" id="pin-meta"></div>
+        <div class="whatsapp-status" id="wa-status"></div>
+      </div>
+    </div>
+
+    <!-- RECENT PINS -->
+    <div class="card">
+      <h3>Recent PINs — حالیہ پن</h3>
+      <div id="pins-list"><div class="loading">Loading...</div></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const BASE = '';  // same origin when served from Railway
+
+// Coordinator data
+const COORDINATORS = {
+  '1': {
+    name: 'M. Ali', region: 'Sindh',
+    scs: [
+      { id: 1, name: 'Fateh Khan' },
+      { id: 2, name: 'Ghulam Mujtaba' },
+      { id: 3, name: 'Inayat Lashari' },
+      { id: 4, name: 'Arqam Aftab' },
+      { id: 5, name: 'Mehrun Nisa' }
+    ]
+  },
+  '2': {
+    name: 'M. Ayub', region: 'Punjab',
+    scs: [
+      { id: 6, name: 'Farhan Haider' },
+      { id: 7, name: 'Muhammad Ishaq' },
+      { id: 8, name: 'Raheel Maqbool' },
+      { id: 9, name: 'Saima Majeed' }
+    ]
+  },
+  '3': {
+    name: 'Qiyanoos Khan', region: 'KPK',
+    scs: [
+      { id: 10, name: 'Abid Afridi' },
+      { id: 11, name: 'Ishaq Khan' },
+      { id: 12, name: 'Saddam Hussain' },
+      { id: 13, name: 'Sundus Jahanzeb' }
+    ]
+  },
+  '4': {
+    name: 'Shabir Khan', region: 'Baluchistan / GB',
+    scs: [
+      { id: 14, name: 'Ghulam Sarwar' },
+      { id: 15, name: 'M. Younas' },
+      { id: 16, name: 'Saddam Wali' },
+      { id: 17, name: 'Saqiba Baloch' },
+      { id: 18, name: 'Suman Nazir' }
+    ]
+  }
+};
+
+// School data keyed by school coordinator id
+const SCHOOLS = {
+  1: ["AliHassanHingrjo_O_W24S","HajiPirBakshRajhir_A_W24S","MohammedAbbasSolangi_A_W24S","MubeenFaqirRajar_A_W24S","MubeenFaqirRajar_B_W24S","AliHassanKK_A_W24S","DodobirHamani_O_W26S","AliHassanKK_B_W24S"],
+  2: ["AbdulKarimKhashkeli_O_F23S","AbdulKarimKhashkheli_O_W25S","AbdulRehmanMallah_O_SP23S","BaghatMehraj_O_W24S","HayatShah_O_W25S","QaziRasoolBux_O_W24S","HayatShah_O_W24S"],
+  3: ["AllahWarayoShoro_O_W26S","BubuChana_O_W26S","CrashMountainArea_A_W26S","CrashMountainArea_B_W26S","GhulamMuhammadLashari_A_W26S","GhulamMuhammadLashari_B_W26S","GhulamMuhammadLashari_C_W26S","GhulamMuhammadLashari_D_W26S","MuhammadSaddiq_O_W26S","QadirBux_O_W26S"],
+  4: ["FaizMuhammadSoomro_A_W24S","FaizMuhammadSoomro_B_W24S","GhulamHaiderSoomro_A_W24S","GhulamHaiderSoomro_B_W24S","GhulamHaiderSoomro_C_W24S","GhulamHaiderSoomro_D_W24S","ImtiazSoomro_A_W24S","ImtiazSoomro_B_W24S","ManzoorSoomro_A_W24S","ManzoorSoomro_B_W24S"],
+  5: ["AbdulHameedBhatti_O_W24S","AdnanAkbar_O_W24S","ArslanButt_O_W24S","DilshadAmjad_O_W24S","FaisalIqbal_O_W24S","GhulamMustafaKhan_O_W24S","ImranNaeem_O_W24S","MianMalik_O_W24S","MuhammadFarooq_O_W24S","MuhammadIrfanKhan_O_W24S"],
+  6: ["AliZaman_O_W24S","AmirHussain_O_W24S","ArslanRashid_O_W24S","FarrukhNawaz_O_W24S","GhulamFarid_O_W24S","KaramatHussain_O_W24S","MuhammadAsif_O_W24S"],
+  7: ["AbdulMajeedKhan_O_W24S","AsifNawaz_O_W24S","DaoudKhan_O_W24S","FazalKarim_O_W24S","GhulamHaider_O_W24S","IftikharHussain_O_W24S","ImranKhan_O_W24S","JavedIqbal_O_W24S","KarimDad_O_W24S","MuhammadAmjad_O_W24S","NazirHussain_O_W24S","SaifullahKhan_O_W24S"],
+  8: ["AdeelAhmad_O_W24S","AliAkbar_O_W24S","ArifHussain_O_W24S","BasitAli_O_W24S","FarhanAli_O_W24S","GhulamNabi_O_W24S","HanifKhan_O_W24S","IkramHussain_O_W24S","ImranAli_O_W24S","MuhammadNawaz_O_W24S","NadeemAhmed_O_W24S"],
+  9: ["AbdullahKhan_O_W24S","AdilAli_O_W24S","AhsanRaza_O_W24S","AliHussain_O_W24S","AmirSohail_O_W24S","FarheenNaz_O_W24S","GhulamRasool_O_W24S","HamidKhan_O_W24S","ImranShah_O_W24S","JamilKhan_O_W24S","KhalidMehmood_O_W24S","MuhammadAkram_O_W24S"],
+  10: ["AbdulKarimAfghan_O_W24S","AsadullahKhan_O_W24S","BashirAhmad_O_W24S","DastgirKhan_O_W24S","FazalHaq_O_W24S","GhulamHabib_O_W24S","HafeezKhan_O_W24S","IbrahimKhan_O_W24S","JalaluddinKhan_O_W24S","KarimullahKhan_O_W24S","MohammadNasim_O_W24S","NajeebKhan_O_W24S","SabirShah_O_W24S","ZubairKhan_O_W24S"],
+  11: ["AbdullahBaloch_O_W24S","AkramBaloch_O_W24S","AliMuhammadRind_O_W24S","BashirAhmedMengal_O_W24S","DostMuhammad_O_W24S","FazalMuhammadRaisani_O_W24S","GhulamNabiZehri_O_W24S","HamidullahKakar_O_W24S","ImranJamali_O_W24S","JafarKhan_O_W24S","KarimullahMengal_O_W24S","NoorullahBaloch_O_W24S","SaeedMuhammadRind_O_W24S","ZubairNasar_O_W24S"],
+  12: ["AbdullahShah_O_W24S","AkhtarHussain_O_W24S","AliMuhammadKhan_O_W24S","BashirKhan_O_W24S","DilnawazKhan_O_W24S","FazalKhan_O_W24S","GhulamMuhammadShah_O_W24S","HafeezurRehman_O_W24S","IbrahimShah_O_W24S","JavedKhan_O_W24S"],
+  13: ["AbdulQadirSundrani_O_W24S","AkramSundrani_O_W24S","AliAkbarSundrani_O_W24S","BashirSundrani_O_W24S","DilnawazSundrani_O_W24S","FazalSundrani_O_W24S","GhulamSundrani_O_W24S","HafeezSundrani_O_W24S","IbrahimSundrani_O_W24S","JavedSundrani_O_W24S","KarimSundrani_O_W24S","MuhammadSundrani_O_W24S","NajeebSundrani_O_W24S","SaeedSundrani_O_W24S"],
+  14: ["AbdulQadirSarwar_O_W24S","AkramSarwar_O_W24S","AliSarwar_O_W24S","BashirSarwar_O_W24S","DilSarwar_O_W24S","FazalSarwar_O_W24S","GhulamSarwar_B_O_W24S","HafeezSarwar_O_W24S","IbrahimSarwar_O_W24S","JavedSarwar_O_W24S"],
+  15: ["AbdulQadirYounas_O_W24S","AkramYounas_O_W24S","AliYounas_O_W24S","BashirYounas_O_W24S","DilYounas_O_W24S","FazalYounas_O_W24S","GhulamYounas_O_W24S","HafeezYounas_O_W24S","IbrahimYounas_O_W24S","JavedYounas_O_W24S"],
+  16: ["AbdulWali_O_W24S","AkramWali_O_W24S","AliWali_O_W24S","BashirWali_O_W24S","DilWali_O_W24S","FazalWali_O_W24S","GhulamWali_O_W24S","HafeezWali_O_W24S","IbrahimWali_O_W24S"],
+  17: ["AbdulBaloch_O_W24S","AkramBaloch_B_O_W24S","AliBaloch_O_W24S","BashirBaloch_O_W24S","DilBaloch_O_W24S","FazalBaloch_O_W24S","GhulamBaloch_O_W24S","HafeezBaloch_O_W24S","IbrahimBaloch_O_W24S","JavedBaloch_O_W24S"],
+  18: ["AbdulNazir_O_W24S","AkramNazir_O_W24S","AliNazir_O_W24S","BashirNazir_O_W24S"]
+};
+
+let currentRC = null;
+
+// Set today as default date
+document.getElementById('assessment-date').value = new Date().toISOString().split('T')[0];
+
+function doLogin() {
+  const sel = document.getElementById('rc-select').value;
+  const pwd = document.getElementById('rc-password').value;
+  const err = document.getElementById('login-error');
+  
+  if (!sel) { err.style.display='block'; err.textContent='Please select your name.'; return; }
+  if (pwd !== 'takmil123') { err.style.display='block'; err.textContent='Incorrect password.'; return; }
+  
+  err.style.display = 'none';
+  const [id, name, region] = sel.split('|');
+  currentRC = { id, name, region };
+  
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('welcome-name').textContent = name;
+  document.getElementById('welcome-region').textContent = region + ' Region';
+  
+  loadCoordinators();
+  loadRecentPins();
+}
+
+function doLogout() {
+  currentRC = null;
+  document.getElementById('login-screen').style.display = 'block';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('rc-select').value = '';
+  document.getElementById('rc-password').value = '';
+  document.getElementById('pin-result').style.display = 'none';
+}
+
+function loadCoordinators() {
+  const sel = document.getElementById('sc-select');
+  sel.innerHTML = '<option value="">-- Select Area Coordinator --</option>';
+  const scs = COORDINATORS[currentRC.id].scs;
+  scs.forEach(sc => {
+    sel.innerHTML += `<option value="${sc.id}">${sc.name}</option>`;
+  });
+}
+
+function loadSchools() {
+  const scId = parseInt(document.getElementById('sc-select').value);
+  const sel = document.getElementById('school-select');
+  sel.innerHTML = '<option value="">-- Select School --</option>';
+  if (!scId) return;
+  const schools = SCHOOLS[scId] || [];
+  schools.forEach(s => {
+    sel.innerHTML += `<option value="${s}">${s}</option>`;
+  });
+}
+
+async function generatePIN() {
+  const sc = document.getElementById('sc-select').value;
+  const school = document.getElementById('school-select').value;
+  const level = document.getElementById('level-select').value;
+  const date = document.getElementById('assessment-date').value;
+  const phone = document.getElementById('teacher-phone').value;
+  const errDiv = document.getElementById('gen-error');
+
+  if (!sc || !school || !level || !date) {
+    errDiv.style.display = 'block';
+    errDiv.textContent = 'Please fill in all fields.';
+    return;
+  }
+
+  // Check date is today
+  const today = new Date().toISOString().split('T')[0];
+  if (date !== today) {
+    errDiv.style.display = 'block';
+    errDiv.textContent = `PINs can only be generated on the assessment date (${date}). Today is ${today}.`;
+    return;
+  }
+
+  errDiv.style.display = 'none';
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+
+  try {
+    // Generate PIN via Railway API
+    const resp = await fetch('/admin/pins/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        schoolId: 1,  // Will be dynamic once schools are in DB
+        level: parseInt(level),
+        subject: 'All',
+        cohortSize: 30,
+        issuedBy: currentRC.name,
+        teacherPhone: phone || null
+      })
+    });
+
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Failed to generate PIN');
+
+    const pin = data.pin;
+    const expires = new Date(data.expiresAt).toLocaleString();
+    
+    // Show PIN
+    document.getElementById('pin-display').textContent = pin;
+    document.getElementById('pin-label').textContent = `${school} — Level ${level} — All Subjects`;
+    document.getElementById('pin-meta').textContent = `Valid until: ${expires}`;
+    
+    // WhatsApp status
+    const waDiv = document.getElementById('wa-status');
+    if (phone) {
+      waDiv.className = 'whatsapp-status sent';
+      waDiv.textContent = `WhatsApp sent to ${phone}`;
+    } else {
+      waDiv.className = 'whatsapp-status pending';
+      waDiv.textContent = 'No phone number — copy PIN manually';
+    }
+    
+    document.getElementById('pin-result').style.display = 'block';
+    loadRecentPins();
+
+  } catch(e) {
+    errDiv.style.display = 'block';
+    errDiv.textContent = e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate & Send PIN';
+  }
+}
+
+async function loadRecentPins() {
+  const div = document.getElementById('pins-list');
+  try {
+    const resp = await fetch('/admin/pins/list');
+    const pins = await resp.json();
+    
+    if (!pins.length) { div.innerHTML = '<div class="loading">No PINs yet</div>'; return; }
+    
+    const today = new Date().toISOString().split('T')[0];
+    let html = `<table class="pins-table">
+      <tr><th>PIN</th><th>Level</th><th>Issued By</th><th>Status</th><th>Date</th></tr>`;
+    
+    pins.slice(0, 15).forEach(p => {
+      const expired = new Date(p.expires_at) < new Date();
+      const badge = expired ? 'badge-expired' : (p.activated_at ? 'badge-used' : 'badge-active');
+      const label = expired ? 'Expired' : (p.activated_at ? 'Used' : 'Active');
+      const dt = new Date(p.created_at).toLocaleDateString();
+      html += `<tr>
+        <td><strong style="font-family:monospace">${p.pin}</strong></td>
+        <td>L${p.level}</td>
+        <td>${p.issued_by || '—'}</td>
+        <td><span class="badge ${badge}">${label}</span></td>
+        <td>${dt}</td>
+      </tr>`;
+    });
+    
+    html += '</table>';
+    div.innerHTML = html;
+  } catch(e) {
+    div.innerHTML = '<div class="loading">Could not load PINs</div>';
+  }
+}
+</script>
+</body>
+</html>

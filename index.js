@@ -2148,6 +2148,11 @@ Respond ONLY with a valid JSON array, no explanation, no markdown, just the JSON
   }
 });
 
+// Coordinator portal
+app.get('/coordinator', (req, res) => {
+  res.sendFile(path.join(__dirname, 'coordinator-portal.html'));
+});
+
     app.listen(PORT, () => console.log(`🚀 TAKMIL Bot v3.0 running on port ${PORT}`));
   } catch (err) {
     console.error('❌ Failed to start:', err);
