@@ -326,7 +326,7 @@
     <div class="page-title" id="page-title">Dashboard</div>
     <div class="topbar-actions">
       <button class="btn btn-ghost" onclick="refreshAll()">⟳ Refresh</button>
-      <button class="btn btn-primary" onclick="openModal('pin-modal')">+ Generate PIN</button>
+      <button class="btn btn-primary" onclick="window.open('/coordinator','_blank')">🔑 Coordinator Portal</button>
     </div>
   </div>
 
@@ -475,7 +475,7 @@
     <!-- PINS TAB -->
     <div id="tab-pins" class="tab-content">
       <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
-        <button class="btn btn-primary" onclick="openModal('pin-modal')">+ Generate PIN</button>
+        <button class="btn btn-primary" onclick="window.open('/coordinator','_blank')">🔑 Go to Coordinator Portal</button>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Recent PINs</div></div>
@@ -531,61 +531,7 @@
   </div>
 </main>
 
-<!-- Generate PIN Modal -->
-<div class="modal-overlay" id="pin-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Generate PIN</div>
-      <button class="modal-close" onclick="closeModal('pin-modal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div id="pin-result" style="display:none">
-        <div class="pin-display" id="pin-value"></div>
-        <div class="pin-meta" id="pin-expires"></div>
-        <div style="margin-top:16px;font-size:13px;color:var(--text-muted);text-align:center;">Send this PIN to the teacher via WhatsApp. Valid for 24 hours.</div>
-      </div>
-      <div id="pin-form">
-        <div class="form-grid">
-          <div class="form-group full">
-            <label>SCHOOL</label>
-            <select id="pin-school"><option value="">Loading schools...</option></select>
-          </div>
-          <div class="form-group">
-            <label>LEVEL</label>
-            <select id="pin-level">
-              <option value="1">Level 1</option><option value="2">Level 2</option>
-              <option value="3">Level 3</option><option value="4">Level 4</option>
-              <option value="5">Level 5</option><option value="6">Level 6</option>
-              <option value="7">Level 7</option><option value="8">Level 8</option>
-              <option value="9">Level 9</option><option value="10">Level 10</option>
-              <option value="11">Level 11</option><option value="12">Level 12</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>SUBJECT</label>
-            <select id="pin-subject">
-              <option value="Math">Math</option>
-              <option value="English">English</option>
-              <option value="Urdu">Urdu</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>COHORT SIZE</label>
-            <input type="number" id="pin-cohort" placeholder="e.g. 25" min="1">
-          </div>
-          <div class="form-group">
-            <label>ISSUED BY</label>
-            <input type="text" id="pin-issuedby" placeholder="Your name">
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer" id="pin-footer">
-      <button class="btn btn-ghost" onclick="closeModal('pin-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="generatePin()">Generate PIN</button>
-    </div>
-  </div>
-</div>
+<!-- Generate PIN moved to /coordinator portal -->
 
 <!-- Add School Modal -->
 <div class="modal-overlay" id="school-modal">
