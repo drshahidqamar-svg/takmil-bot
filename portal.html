@@ -584,6 +584,7 @@ const API = '';  // same origin — Railway serves both portal + API
 let session = {
   sessionId:   null,
   studentName: '',
+  pin:         '',
   subject:     '',
   level:       0,
   isFinal:     false,
@@ -591,6 +592,11 @@ let session = {
   answers:     [],
   currentQ:    0,
   score:       0,
+  // Multi-subject tracking
+  isMultiSubject: false,
+  subjects:    ['Math', 'English', 'Urdu'],
+  subjectIndex: 0,
+  subjectResults: [], // [{subject, score, total}]
 };
 
 let recognition = null;
@@ -620,7 +626,7 @@ async function startAssessment() {
     const res = await fetch(`${API}/portal/session/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin, studentName: name })
+      body: JSON.stringify({ pin, studentName: name, subject: null })
     });
     const data = await res.json();
 
@@ -631,22 +637,30 @@ async function startAssessment() {
       return;
     }
 
-    session.sessionId   = data.sessionId;
+    session.pin         = pin;
     session.studentName = name;
-    session.subject     = data.subject;
     session.level       = data.level;
     session.isFinal     = data.isFinal;
-    session.questions   = data.questions;
-    session.answers     = new Array(data.questions.length).fill(null);
-    session.currentQ    = 0;
-    session.score       = 0;
+    session.isMultiSubject = data.isMultiSubject || false;
+    session.subjectIndex   = 0;
+    session.subjectResults = [];
 
-    document.getElementById('strip-name').textContent    = name;
-    document.getElementById('strip-subject').textContent = `${data.subject} ${data.isFinal ? '• Final Assessment' : '• Level ' + data.level}`;
-    document.getElementById('student-strip').style.display = 'flex';
-
-    showQuestion(0);
-    show('screen-question');
+    if (session.isMultiSubject) {
+      // Start first subject
+      await loadSubject(session.subjects[0]);
+    } else {
+      session.sessionId = data.sessionId;
+      session.subject   = data.subject;
+      session.questions = data.questions;
+      session.answers   = new Array(data.questions.length).fill(null);
+      session.currentQ  = 0;
+      session.score     = 0;
+      document.getElementById('strip-name').textContent    = name;
+      document.getElementById('strip-subject').textContent = `${data.subject} • Level ${data.level}`;
+      document.getElementById('student-strip').style.display = 'flex';
+      showQuestion(0);
+      show('screen-question');
+    }
 
   } catch (e) {
     show('screen-pin');
@@ -744,6 +758,41 @@ async function nextQuestion() {
   }
 }
 
+// ── Load a specific subject for multi-subject PIN ────────────────────────────
+async function loadSubject(subject) {
+  show('screen-loading');
+  const subjectNum = session.subjectIndex + 1;
+  document.getElementById('loading-text').textContent = `Loading ${subject} (${subjectNum}/3)…`;
+
+  try {
+    const res = await fetch(`${API}/portal/session/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: session.pin, studentName: session.studentName, subject })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error);
+
+    session.sessionId = data.sessionId;
+    session.subject   = subject;
+    session.questions = data.questions;
+    session.answers   = new Array(data.questions.length).fill(null);
+    session.currentQ  = 0;
+    session.score     = 0;
+
+    document.getElementById('strip-name').textContent    = session.studentName;
+    document.getElementById('strip-subject').textContent = `${subject} • Level ${session.level} (${subjectNum}/3)`;
+    document.getElementById('student-strip').style.display = 'flex';
+
+    showQuestion(0);
+    show('screen-question');
+  } catch(e) {
+    show('screen-pin');
+    document.getElementById('pin-error').textContent = e.message || 'Error loading questions.';
+    document.getElementById('pin-error').classList.add('show');
+  }
+}
+
 // ── Submit results ───────────────────────────────────────────────────────────
 async function submitResults() {
   show('screen-loading');
@@ -762,11 +811,45 @@ async function submitResults() {
     });
     const data = await res.json();
 
-    showResults(data);
+    if (session.isMultiSubject) {
+      // Save this subject's result
+      session.subjectResults.push({
+        subject: session.subject,
+        score:   data.score || session.score,
+        total:   data.total || session.questions.length,
+        pct:     data.pct   || Math.round((session.score / session.questions.length) * 100)
+      });
+
+      session.subjectIndex++;
+      if (session.subjectIndex < session.subjects.length) {
+        // Show transition screen
+        showSubjectTransition();
+      } else {
+        // All subjects done — show final results
+        showMultiSubjectResults();
+      }
+    } else {
+      showResults(data);
+    }
+
   } catch (e) {
-    // Show results from local calculation if API fails
-    const pct    = Math.round((session.score / session.questions.length) * 100);
-    showResults({ score: session.score, total: session.questions.length, pct, passed: pct >= 80, levelScores: null });
+    if (session.isMultiSubject) {
+      session.subjectResults.push({
+        subject: session.subject,
+        score: session.score,
+        total: session.questions.length,
+        pct: Math.round((session.score / session.questions.length) * 100)
+      });
+      session.subjectIndex++;
+      if (session.subjectIndex < session.subjects.length) {
+        showSubjectTransition();
+      } else {
+        showMultiSubjectResults();
+      }
+    } else {
+      const pct = Math.round((session.score / session.questions.length) * 100);
+      showResults({ score: session.score, total: session.questions.length, pct, passed: pct >= 80 });
+    }
   }
 }
 
@@ -819,9 +902,89 @@ function buildLocalLevelScores() {
   return scores;
 }
 
+// ── Subject transition screen ────────────────────────────────────────────────
+function showSubjectTransition() {
+  const nextSubject = session.subjects[session.subjectIndex];
+  const doneSubject = session.subjects[session.subjectIndex - 1];
+  const subjectNum  = session.subjectIndex + 1;
+
+  // Inject transition screen if not exists
+  let tr = document.getElementById('screen-transition');
+  if (!tr) {
+    tr = document.createElement('div');
+    tr.className = 'screen';
+    tr.id = 'screen-transition';
+    tr.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div class="logo-wrap" style="margin-bottom:16px;">
+          <div class="logo-icon">✅</div>
+          <div class="logo-title" id="tr-done-title" style="font-size:22px;"></div>
+          <div class="logo-urdu" id="tr-done-urdu" style="font-size:15px;"></div>
+        </div>
+        <div id="tr-next-msg" style="font-size:16px;font-weight:600;color:#1a3a2a;margin:20px 0 8px;"></div>
+        <div id="tr-next-urdu" style="font-size:14px;color:#64748b;margin-bottom:28px;"></div>
+        <button class="btn-primary" onclick="startNextSubject()" style="font-size:17px;padding:14px;">
+          Start <span id="tr-next-subject"></span> — شروع کریں ▶
+        </button>
+      </div>`;
+    document.body.appendChild(tr);
+  }
+
+  document.getElementById('tr-done-title').textContent = `${doneSubject} Complete!`;
+  document.getElementById('tr-done-urdu').textContent  = `${doneSubject} مکمل ہوگیا`;
+  document.getElementById('tr-next-msg').textContent   = `Next: ${nextSubject} Assessment (${subjectNum}/3)`;
+  document.getElementById('tr-next-urdu').textContent  = `اگلا مضمون: ${nextSubject}`;
+  document.getElementById('tr-next-subject').textContent = nextSubject;
+
+  show('screen-transition');
+}
+
+function startNextSubject() {
+  loadSubject(session.subjects[session.subjectIndex]);
+}
+
+// ── Multi-subject final results ──────────────────────────────────────────────
+function showMultiSubjectResults() {
+  const results = session.subjectResults;
+  const totalScore = results.reduce((s, r) => s + r.score, 0);
+  const totalQ     = results.reduce((s, r) => s + r.total, 0);
+  const overallPct = Math.round((totalScore / totalQ) * 100);
+  const passed     = overallPct >= 80;
+
+  document.getElementById('result-name').textContent     = session.studentName;
+  document.getElementById('result-pct').textContent      = overallPct + '%';
+  document.getElementById('result-fraction').textContent = `${totalScore}/${totalQ}`;
+  document.getElementById('score-ring').style.setProperty('--pct', overallPct + '%');
+
+  const badge = document.getElementById('result-badge');
+  if (passed) {
+    badge.textContent = '✅ PASSED — کامیاب';
+    badge.className   = 'result-badge passed';
+  } else {
+    badge.textContent = '📚 NEEDS REVIEW — دوبارہ کوشش کریں';
+    badge.className   = 'result-badge failed';
+  }
+
+  // Show per-subject breakdown
+  const grid = document.getElementById('breakdown-grid');
+  grid.innerHTML = '';
+  results.forEach(r => {
+    const cls  = r.pct >= 80 ? 'strong' : r.pct >= 50 ? 'partial' : 'weak';
+    const dot  = r.pct >= 80 ? '🟢' : r.pct >= 50 ? '🟡' : '🔴';
+    const cell = document.createElement('div');
+    cell.className = `breakdown-cell ${cls}`;
+    cell.style.minWidth = '80px';
+    cell.innerHTML = `<div class="bc-dot">${dot}</div><div class="bc-lvl" style="font-size:13px">${r.subject}</div><div class="bc-score">${r.score}/${r.total}</div>`;
+    grid.appendChild(cell);
+  });
+  document.getElementById('breakdown-section').style.display = 'block';
+
+  show('screen-results');
+}
+
 // ── Reset ────────────────────────────────────────────────────────────────────
 function resetPortal() {
-  session = { sessionId:null, studentName:'', subject:'', level:0, isFinal:false, questions:[], answers:[], currentQ:0, score:0 };
+  session = { sessionId:null, studentName:'', pin:'', subject:'', level:0, isFinal:false, questions:[], answers:[], currentQ:0, score:0, isMultiSubject:false, subjects:['Math','English','Urdu'], subjectIndex:0, subjectResults:[] };
   document.getElementById('name-input').value = '';
   document.getElementById('ans-type').value   = '';
   document.getElementById('pin-error').classList.remove('show');

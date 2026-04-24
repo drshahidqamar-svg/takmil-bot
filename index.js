@@ -829,7 +829,7 @@ app.get('/portal', (req, res) => res.sendFile(path.join(__dirname, 'portal.html'
 
 // ── BLOCK B: Portal session start ────────────────────────────────
 app.post('/portal/session/start', async (req, res) => {
-  const { pin, studentName } = req.body;
+  const { pin, studentName, subject } = req.body;
   if (!pin || !studentName) return res.status(400).json({ error: 'PIN and student name required.' });
 
   try {
@@ -837,7 +837,14 @@ app.post('/portal/session/start', async (req, res) => {
     if (!pinRec) return res.status(401).json({ error: 'Invalid or expired PIN. Please ask your teacher.' });
 
     const isFinal = parseInt(pinRec.level) === 0;
+    const isMultiSubject = pinRec.subject === 'All' && !subject;
     let questions = [];
+    let effectiveSubject = subject || pinRec.subject;
+
+    // If All-subject PIN and no specific subject requested → return isMultiSubject flag
+    if (isMultiSubject) {
+      return res.json({ isMultiSubject: true, level: pinRec.level, isFinal });
+    }
 
     if (isFinal) {
       const levels = [1,2,3,4,5,6,7,8,9,10,11];
@@ -846,40 +853,18 @@ app.post('/portal/session/start', async (req, res) => {
           `SELECT * FROM questions
            WHERE subject=$1 AND topic_tag='final_assessment' AND level=$2 AND active=1
            ORDER BY RANDOM() LIMIT 2`,
-          [pinRec.subject, lvl]
+          [effectiveSubject, lvl]
         );
         questions = questions.concat(r.rows);
       }
     } else {
-      let r;
-      if (pinRec.subject === 'All') {
-        // All-subjects PIN: fetch questions from Math, English, Urdu equally
-        const perSubject = 4;
-        const subjects = ['Math', 'English', 'Urdu'];
-        questions = [];
-        for (const subj of subjects) {
-          const sr = await db.pool.query(
-            `SELECT *, $1 as display_subject FROM questions
-             WHERE subject=$1 AND level=$2 AND active=1
-             ORDER BY RANDOM() LIMIT $3`,
-            [subj, pinRec.level, perSubject]
-          );
-          questions = questions.concat(sr.rows);
-        }
-        // Shuffle combined questions
-        for (let i = questions.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [questions[i], questions[j]] = [questions[j], questions[i]];
-        }
-      } else {
-        r = await db.pool.query(
-          `SELECT * FROM questions
-           WHERE subject=$1 AND level=$2 AND active=1
-           ORDER BY RANDOM() LIMIT 10`,
-          [pinRec.subject, pinRec.level]
-        );
-        questions = r.rows;
-      }
+      const r = await db.pool.query(
+        `SELECT * FROM questions
+         WHERE subject=$1 AND level=$2 AND active=1
+         ORDER BY RANDOM() LIMIT 10`,
+        [effectiveSubject, pinRec.level]
+      );
+      questions = r.rows;
     }
 
     if (!questions.length) {
