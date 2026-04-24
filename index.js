@@ -844,20 +844,42 @@ app.post('/portal/session/start', async (req, res) => {
       for (const lvl of levels) {
         const r = await db.pool.query(
           `SELECT * FROM questions
-           WHERE subject=$1 AND topic_tag='final_assessment' AND level=$2
+           WHERE subject=$1 AND topic_tag='final_assessment' AND level=$2 AND active=1
            ORDER BY RANDOM() LIMIT 2`,
           [pinRec.subject, lvl]
         );
         questions = questions.concat(r.rows);
       }
     } else {
-      const r = await db.pool.query(
-        `SELECT * FROM questions
-         WHERE subject=$1 AND level=$2
-         ORDER BY RANDOM() LIMIT 10`,
-        [pinRec.subject, pinRec.level]
-      );
-      questions = r.rows;
+      let r;
+      if (pinRec.subject === 'All') {
+        // All-subjects PIN: fetch questions from Math, English, Urdu equally
+        const perSubject = 4;
+        const subjects = ['Math', 'English', 'Urdu'];
+        questions = [];
+        for (const subj of subjects) {
+          const sr = await db.pool.query(
+            `SELECT *, $1 as display_subject FROM questions
+             WHERE subject=$1 AND level=$2 AND active=1
+             ORDER BY RANDOM() LIMIT $3`,
+            [subj, pinRec.level, perSubject]
+          );
+          questions = questions.concat(sr.rows);
+        }
+        // Shuffle combined questions
+        for (let i = questions.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [questions[i], questions[j]] = [questions[j], questions[i]];
+        }
+      } else {
+        r = await db.pool.query(
+          `SELECT * FROM questions
+           WHERE subject=$1 AND level=$2 AND active=1
+           ORDER BY RANDOM() LIMIT 10`,
+          [pinRec.subject, pinRec.level]
+        );
+        questions = r.rows;
+      }
     }
 
     if (!questions.length) {
