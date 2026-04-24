@@ -970,11 +970,25 @@ app.post('/portal/session/submit', async (req, res) => {
 
 
 app.post('/admin/pins/generate', async (req, res) => {
-  const { schoolId, level, subject, cohortSize, issuedBy } = req.body;
+  const { schoolId, level, subject, cohortSize, issuedBy, teacherPhone } = req.body;
   if (!schoolId || level === undefined || !subject) return res.status(400).json({ error: 'schoolId, level, subject required' });
   try {
     const pin = await db.generatePin(schoolId, level, subject, cohortSize || 0, issuedBy || 'admin');
-    res.json({ success: true, pin: pin.pin, expiresAt: pin.expires_at });
+
+    // Auto-send WhatsApp to teacher if phone provided
+    if (teacherPhone) {
+      const schoolRes = await db.pool.query('SELECT name FROM schools WHERE id=$1', [schoolId]);
+      const schoolName = schoolRes.rows[0]?.name || 'your school';
+      const msg = `*TAKMIL Assessment PIN*\n\nSchool: ${schoolName}\nLevel: ${level}\nSubject: ${subject}\n\n*PIN: ${pin.pin}*\n\nShare this PIN with students. Valid for 24 hours.\n\nطالب علموں کو یہ PIN دیں۔`;
+      await sendWhatsApp(teacherPhone, msg);
+
+      // Also send copy to coordinator (issuedBy phone if starts with +)
+      if (issuedBy && issuedBy.startsWith('+')) {
+        await sendWhatsApp(issuedBy, `[Copy] PIN *${pin.pin}* sent to teacher ${teacherPhone} for Level ${level} ${subject}`);
+      }
+    }
+
+    res.json({ success: true, pin: pin.pin, expiresAt: pin.expires_at, whatsappSent: !!teacherPhone });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
