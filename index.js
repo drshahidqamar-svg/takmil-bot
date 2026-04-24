@@ -916,11 +916,11 @@ app.post('/portal/session/start', async (req, res) => {
         (pin_id, school_id, teacher_phone, student_name, level, subject, answers_detail)
       VALUES ($1,$2,'portal',$3,$4,$5,'[]'::jsonb)
       RETURNING id
-    `, [pinRec.id, pinRec.school_id, studentName, pinRec.level, pinRec.subject]);
+    `, [pinRec.id, pinRec.school_id, studentName, pinRec.level, effectiveSubject]);
 
     res.json({
       sessionId:   saRec.rows[0].id,
-      subject:     pinRec.subject,
+      subject:     effectiveSubject,
       level:       pinRec.level,
       isFinal,
       questions:   shuffled,
