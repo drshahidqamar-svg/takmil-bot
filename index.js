@@ -980,11 +980,13 @@ app.post('/admin/pins/generate', async (req, res) => {
       const schoolRes = await db.pool.query('SELECT name FROM schools WHERE id=$1', [schoolId]);
       const schoolName = schoolRes.rows[0]?.name || 'your school';
       const msg = `*TAKMIL Assessment PIN*\n\nSchool: ${schoolName}\nLevel: ${level}\nSubject: ${subject}\n\n*PIN: ${pin.pin}*\n\nShare this PIN with students. Valid for 24 hours.\n\nطالب علموں کو یہ PIN دیں۔`;
-      await sendWhatsApp(teacherPhone, msg);
-
-      // Also send copy to coordinator (issuedBy phone if starts with +)
-      if (issuedBy && issuedBy.startsWith('+')) {
-        await sendWhatsApp(issuedBy, `[Copy] PIN *${pin.pin}* sent to teacher ${teacherPhone} for Level ${level} ${subject}`);
+      try {
+        const toNum = teacherPhone.startsWith('whatsapp:') ? teacherPhone : `whatsapp:${teacherPhone}`;
+        console.log(`📱 Sending WhatsApp to ${toNum} from ${FROM_NUMBER}`);
+        const msg_result = await twilioClient.messages.create({ from: FROM_NUMBER, to: toNum, body: msg });
+        console.log(`✅ WhatsApp sent, SID: ${msg_result.sid}`);
+      } catch (twilioErr) {
+        console.log(`❌ WhatsApp failed: ${twilioErr.message} (code: ${twilioErr.code})`);
       }
     }
 
