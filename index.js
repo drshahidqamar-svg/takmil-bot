@@ -2176,6 +2176,32 @@ app.get('/coordinator', (req, res) => {
   res.sendFile(path.join(__dirname, 'coordinator-portal.html'));
 });
 
+// Questions breakdown by subject and level
+app.get('/api/questions/breakdown', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT subject, level, COUNT(*) as total,
+        SUM(CASE WHEN active=1 THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN active=0 OR active IS NULL THEN 1 ELSE 0 END) as pending
+      FROM questions
+      GROUP BY subject, level
+      ORDER BY subject, level
+    `);
+    // Format as easy-to-read table
+    const bySubject = {};
+    r.rows.forEach(row => {
+      if (!bySubject[row.subject]) bySubject[row.subject] = [];
+      bySubject[row.subject].push({
+        level: row.level,
+        total: parseInt(row.total),
+        approved: parseInt(row.approved),
+        pending: parseInt(row.pending)
+      });
+    });
+    res.json(bySubject);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 // Remove subject check constraint to allow 'All' subject PINs
     try {
       await db.pool.query(`ALTER TABLE pins DROP CONSTRAINT IF EXISTS pins_subject_check`);
