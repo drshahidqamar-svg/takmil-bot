@@ -326,6 +326,7 @@
     <div class="page-title" id="page-title">Dashboard</div>
     <div class="topbar-actions">
       <button class="btn btn-ghost" onclick="refreshAll()">⟳ Refresh</button>
+      <button class="btn btn-secondary" onclick="exportQuestions()" style="background:#0d9488;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;">⬇ Export to Excel</button>
       <button class="btn btn-primary" onclick="window.open('/coordinator','_blank')">🔑 Coordinator Portal</button>
     </div>
   </div>
@@ -643,6 +644,18 @@ function loadTab(tab) {
     assessments: loadAssessments,
   };
   if (loaders[tab]) loaders[tab]();
+}
+
+function exportQuestions() {
+  // Build URL with current filters
+  const subject = document.getElementById('filter-subject')?.value || '';
+  const level   = document.getElementById('filter-level')?.value || '';
+  const status  = document.getElementById('filter-status')?.value || '';
+  let url = '/api/questions/export?';
+  if (subject) url += 'subject=' + encodeURIComponent(subject) + '&';
+  if (level)   url += 'level='   + encodeURIComponent(level)   + '&';
+  if (status)  url += 'status='  + encodeURIComponent(status)  + '&';
+  window.open(url, '_blank');
 }
 
 function refreshAll() {

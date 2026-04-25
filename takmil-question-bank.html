@@ -315,6 +315,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
         <option value="subject">By subject</option>
       </select>
       <button class="tb-btn green" onclick="approveAllPending()">✓ Approve all pending</button>
+      <button class="tb-btn" onclick="exportQuestions()" style="background:#0d9488;color:white;border:none;">⬇ Export CSV</button>
       <button class="tb-btn" onclick="loadData()">↻ Refresh</button>
       <span class="result-count" id="result-count">—</span>
     </div>
@@ -679,6 +680,10 @@ async function flagOne(id) {
   if (!confirm('Flag this question for review?')) return;
   await api(`/admin/questions/${id}/flag`, { method: 'POST', body: '{}' });
   showToast('Question flagged'); loadData();
+}
+
+function exportQuestions() {
+  window.open('/api/questions/export', '_blank');
 }
 
 async function approveAllPending() {

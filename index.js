@@ -2176,6 +2176,54 @@ app.get('/coordinator', (req, res) => {
   res.sendFile(path.join(__dirname, 'coordinator-portal.html'));
 });
 
+// Export questions to CSV
+app.get('/api/questions/export', async (req, res) => {
+  try {
+    const { subject, level, status } = req.query;
+    let query = `SELECT question_id, subject, level, topic_tag,
+      COALESCE(q_text_english, q_text_urdu) as question_text,
+      q_text_urdu, option_a, option_b, option_c, option_d,
+      correct_option, active, created_at
+      FROM questions WHERE 1=1`;
+    const params = [];
+    if (subject) { params.push(subject); query += ` AND subject=$${params.length}`; }
+    if (level)   { params.push(level);   query += ` AND level=$${params.length}`; }
+    if (status === 'approved') query += ` AND active=1`;
+    if (status === 'pending')  query += ` AND (active=0 OR active IS NULL)`;
+    query += ` ORDER BY subject, level, question_id`;
+
+    const r = await db.pool.query(query, params);
+
+    // Build CSV
+    const headers = ['question_id','subject','level','topic_tag','question_text','question_urdu','option_a','option_b','option_c','option_d','correct_option','status','created_at'];
+    const escape  = v => v == null ? '' : '"' + String(v).replace(/"/g, '""') + '"';
+
+    let csv = headers.join(',') + '\n';
+    r.rows.forEach(row => {
+      csv += [
+        escape(row.question_id),
+        escape(row.subject),
+        escape(row.level),
+        escape(row.topic_tag),
+        escape(row.question_text),
+        escape(row.q_text_urdu),
+        escape(row.option_a),
+        escape(row.option_b),
+        escape(row.option_c),
+        escape(row.option_d),
+        escape(row.correct_option),
+        escape(row.active === 1 ? 'approved' : row.active === -1 ? 'flagged' : 'pending'),
+        escape(row.created_at ? row.created_at.toISOString().split('T')[0] : '')
+      ].join(',') + '\n';
+    });
+
+    const filename = 'TAKMIL_Questions_' + new Date().toISOString().split('T')[0] + '.csv';
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
+    res.send('\uFEFF' + csv); // BOM for Excel UTF-8
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 // Questions breakdown by subject and level
 app.get('/api/questions/breakdown', async (req, res) => {
   try {
