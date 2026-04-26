@@ -2265,7 +2265,7 @@ app.get('/api/questions/export', async (req, res) => {
     const { subject, level, status } = req.query;
     let query = `SELECT question_id, subject, level, topic_tag,
       COALESCE(q_text_english, q_text_urdu) as question_text,
-      q_text_urdu, option_a, option_b, option_c, option_d,
+      q_text_urdu, image_url, option_a, option_b, option_c, option_d,
       correct_option, active, created_at
       FROM questions WHERE 1=1`;
     const params = [];
@@ -2278,7 +2278,7 @@ app.get('/api/questions/export', async (req, res) => {
     const r = await db.pool.query(query, params);
 
     // Build CSV
-    const headers = ['question_id','subject','level','topic_tag','question_text','question_urdu','option_a','option_b','option_c','option_d','correct_option','status','created_at'];
+    const headers = ['question_id','subject','level','topic_tag','question_text','question_urdu','image_url','option_a','option_b','option_c','option_d','correct_option','status','created_at'];
     const escape  = v => v == null ? '' : '"' + String(v).replace(/"/g, '""') + '"';
 
     let csv = headers.join(',') + '\n';
@@ -2290,6 +2290,7 @@ app.get('/api/questions/export', async (req, res) => {
         escape(row.topic_tag),
         escape(row.question_text),
         escape(row.q_text_urdu),
+        escape(row.image_url),
         escape(row.option_a),
         escape(row.option_b),
         escape(row.option_c),
