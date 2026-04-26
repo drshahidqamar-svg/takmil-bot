@@ -1924,6 +1924,40 @@ app.put('/admin/questions/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// CSV import - update or insert a single question
+app.post('/api/questions/csv-update', async (req, res) => {
+  try {
+    const { question_id, level, subject, topic_tag, question_text,
+            image_url, option_a, option_b, option_c, option_d, correct_option } = req.body;
+    if (!question_id) return res.status(400).json({ error: 'question_id required' });
+
+    const r = await db.pool.query(`
+      INSERT INTO questions
+        (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
+         image_url, question_type, option_a, option_b, option_c, option_d,
+         correct_option, active, created_at)
+      VALUES ($1,$2,$3,$4,$5,'',$6,
+        CASE WHEN $6 IS NOT NULL AND $6 != '' THEN 'picture' ELSE 'text' END,
+        $7,$8,$9,$10,$11,0,NOW())
+      ON CONFLICT (question_id) DO UPDATE SET
+        q_text_english = COALESCE(NULLIF($5,''), questions.q_text_english),
+        image_url      = COALESCE(NULLIF($6,''), questions.image_url),
+        option_a       = COALESCE(NULLIF($7,''), questions.option_a),
+        option_b       = COALESCE(NULLIF($8,''), questions.option_b),
+        option_c       = COALESCE(NULLIF($9,''), questions.option_c),
+        option_d       = COALESCE(NULLIF($10,''), questions.option_d),
+        correct_option = COALESCE(NULLIF($11,''), questions.correct_option)
+      RETURNING (xmax = 0) AS inserted`,
+      [question_id, parseInt(level)||1, subject, topic_tag||'curriculum',
+       question_text||null, image_url||null,
+       option_a||null, option_b||null, option_c||null, option_d||null,
+       correct_option||'A']);
+
+    const inserted = r.rows[0]?.inserted;
+    res.json({ inserted: !!inserted, updated: !inserted });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 // Bulk approve all pending questions
 app.post('/admin/questions/approve-all', async (req, res) => {
   try {

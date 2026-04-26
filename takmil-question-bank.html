@@ -316,6 +316,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       </select>
       <button class="tb-btn green" onclick="approveAllPending()">✓ Approve all pending</button>
       <button class="tb-btn" onclick="exportQuestions()" style="background:#0d9488;color:white;border:none;">⬇ Export CSV</button>
+      <button class="tb-btn" onclick="openCsvImport()" style="background:#7c3aed;color:white;border:none;">⬆ Import CSV</button>
       <button class="tb-btn" onclick="loadData()">↻ Refresh</button>
       <span class="result-count" id="result-count">—</span>
     </div>
@@ -475,6 +476,39 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <div class="modal-foot">
       <button class="btn-cancel" onclick="closeModal('modal-import')">Cancel</button>
       <button class="btn-teal" onclick="runImport()">Import Questions →</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV IMPORT MODAL -->
+<div class="mbackdrop hidden" id="modal-csv">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head">
+      <div class="modal-title">&#11014; Import CSV</div>
+      <button class="modal-x" onclick="closeModal('modal-csv')">x</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#64748b;margin-bottom:16px;">
+        Upload the edited CSV file. Updates image_url, question text and options for each question_id.
+      </p>
+      <div style="border:2px dashed #e2e8f0;border-radius:10px;padding:24px;text-align:center;margin-bottom:16px;cursor:pointer;" onclick="document.getElementById('csv-file').click()">
+        <div style="font-size:32px;margin-bottom:8px;">&#128194;</div>
+        <div style="font-size:14px;font-weight:600;color:#1a3a2a;" id="csv-filename">Click to choose CSV file</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px;">TAKMIL_Questions_*.csv</div>
+        <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="csvFileSelected(this)">
+      </div>
+      <div id="csv-preview" style="display:none;background:#f8fafc;border-radius:8px;padding:12px;font-size:12px;margin-bottom:12px;max-height:150px;overflow-y:auto;font-family:monospace;"></div>
+      <div id="csv-progress" style="display:none;">
+        <div style="background:#e2e8f0;border-radius:6px;height:8px;margin-bottom:8px;">
+          <div id="csv-bar" style="background:#16a34a;height:8px;border-radius:6px;width:0%;transition:width 0.3s;"></div>
+        </div>
+        <div id="csv-status" style="font-size:13px;color:#64748b;text-align:center;"></div>
+      </div>
+      <div id="csv-result" style="display:none;padding:12px;border-radius:8px;font-size:13px;font-weight:600;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('modal-csv')">Cancel</button>
+      <button class="btn-teal" id="csv-import-btn" onclick="runCsvImport()" disabled style="background:#7c3aed;border-color:#7c3aed;">Import CSV</button>
     </div>
   </div>
 </div>
@@ -680,6 +714,120 @@ async function flagOne(id) {
   if (!confirm('Flag this question for review?')) return;
   await api(`/admin/questions/${id}/flag`, { method: 'POST', body: '{}' });
   showToast('Question flagged'); loadData();
+}
+
+function openCsvImport() {
+  document.getElementById('csv-filename').textContent = 'Click to choose CSV file';
+  document.getElementById('csv-preview').style.display = 'none';
+  document.getElementById('csv-progress').style.display = 'none';
+  document.getElementById('csv-result').style.display = 'none';
+  document.getElementById('csv-import-btn').disabled = true;
+  document.getElementById('csv-file').value = '';
+  window._csvRows = [];
+  openModal('modal-csv');
+}
+
+function csvFileSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('csv-filename').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const rows = parseCSV(text);
+    window._csvRows = rows;
+    // Show preview
+    const prev = document.getElementById('csv-preview');
+    prev.style.display = 'block';
+    prev.innerHTML = '<strong>Preview (' + rows.length + ' rows):</strong><br>' +
+      rows.slice(0,5).map(r => r.question_id + ' | ' + r.subject + ' L' + r.level + ' | ' + (r.image_url || '').substring(0,40)).join('<br>') +
+      (rows.length > 5 ? '<br>... and ' + (rows.length-5) + ' more' : '');
+    document.getElementById('csv-import-btn').disabled = false;
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSV(text) {
+  // Remove BOM if present
+  text = text.replace(/^\uFEFF/, '');
+  const lines = text.split('\n').filter(l => l.trim());
+  if (!lines.length) return [];
+  const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = [];
+    let cur = '';
+    let inQ = false;
+    for (const ch of lines[i]) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { vals.push(cur); cur = ''; }
+      else { cur += ch; }
+    }
+    vals.push(cur);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = (vals[idx] || '').trim(); });
+    if (row.question_id) rows.push(row);
+  }
+  return rows;
+}
+
+async function runCsvImport() {
+  const rows = window._csvRows || [];
+  if (!rows.length) return;
+  const btn = document.getElementById('csv-import-btn');
+  btn.disabled = true;
+  btn.textContent = 'Importing...';
+  document.getElementById('csv-progress').style.display = 'block';
+  document.getElementById('csv-result').style.display = 'none';
+
+  let updated = 0, added = 0, errors = 0;
+
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const pct = Math.round(((i+1)/rows.length)*100);
+    document.getElementById('csv-bar').style.width = pct + '%';
+    document.getElementById('csv-status').textContent =
+      'Processing ' + (i+1) + '/' + rows.length + ' — ' + (r.question_id || '');
+
+    try {
+      // Use picture endpoint if image_url, otherwise regular save
+      const endpoint = r.image_url ? '/api/questions/picture' : '/api/questions/save-one';
+      const payload = {
+        question_id:    r.question_id,
+        level:          parseInt(r.level) || 1,
+        subject:        r.subject || '',
+        topic_tag:      r.topic_tag || r.topic || 'curriculum',
+        question_text:  r.question_text || '',
+        image_url:      r.image_url || null,
+        option_a:       r.option_a || '',
+        option_b:       r.option_b || '',
+        option_c:       r.option_c || '',
+        option_d:       r.option_d || '',
+        correct_option: r.correct_option || 'A'
+      };
+      const resp = await fetch('/api/questions/csv-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (data.updated) updated++;
+      else if (data.inserted) added++;
+      else errors++;
+    } catch(e) {
+      errors++;
+    }
+  }
+
+  const res = document.getElementById('csv-result');
+  res.style.display = 'block';
+  res.style.background = errors ? '#fef9c3' : '#dcfce7';
+  res.style.color = errors ? '#854d0e' : '#15803d';
+  res.textContent = 'Done! Updated: ' + updated + '  Added: ' + added + '  Errors: ' + errors;
+
+  btn.textContent = 'Import CSV';
+  btn.disabled = false;
+  setTimeout(() => { closeModal('modal-csv'); loadData(); }, 2500);
 }
 
 function exportQuestions() {
