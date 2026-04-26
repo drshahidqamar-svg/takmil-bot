@@ -514,6 +514,12 @@
 
     <div class="level-badge" id="level-badge">📊 Level 1</div>
 
+    <!-- Picture question image -->
+    <div id="q-image-wrap" style="display:none;text-align:center;margin-bottom:16px;">
+      <img id="q-image" src="" alt="Question image"
+        style="max-width:100%;max-height:240px;border-radius:12px;border:2px solid #e2e8f0;object-fit:contain;" />
+    </div>
+
     <div class="question-text-en" id="q-text-en"></div>
     <div class="question-text-ur" id="q-text-ur"></div>
 
@@ -680,6 +686,17 @@ function showQuestion(idx) {
   document.getElementById('progress-fill').style.width = `${(idx / total) * 100}%`;
   document.getElementById('level-badge').textContent = `📊 Level ${q.level}${session.isFinal ? ' — Final' : ''}`;
   document.getElementById('q-text-en').textContent = q.question_text;
+
+  // Show image if picture question
+  const imgWrap = document.getElementById('q-image-wrap');
+  const imgEl   = document.getElementById('q-image');
+  if (q.image_url) {
+    imgEl.src = q.image_url;
+    imgWrap.style.display = 'block';
+  } else {
+    imgWrap.style.display = 'none';
+    imgEl.src = '';
+  }
 
   // Urdu placeholder (if q_text_urdu available use it, else show English)
   const urduText = q.q_text_urdu && q.q_text_urdu !== q.question_text ? q.q_text_urdu : '';

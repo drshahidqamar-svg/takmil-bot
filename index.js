@@ -2171,9 +2171,38 @@ Respond ONLY with a valid JSON array, no explanation, no markdown, just the JSON
   }
 });
 
+// Picture questions creator
+app.get('/picture-questions', (req, res) => {
+  res.sendFile(path.join(__dirname, 'picture-questions.html'));
+});
+
 // Coordinator portal
 app.get('/coordinator', (req, res) => {
   res.sendFile(path.join(__dirname, 'coordinator-portal.html'));
+});
+
+// Save a picture question
+app.post('/api/questions/picture', async (req, res) => {
+  try {
+    const { question_id, level, subject, topic_tag, question_text,
+            image_url, option_a, option_b, option_c, option_d, correct_option } = req.body;
+    if (!image_url) return res.status(400).json({ error: 'image_url required' });
+    if (!question_id || !level || !subject) return res.status(400).json({ error: 'question_id, level, subject required' });
+
+    await db.pool.query(`
+      INSERT INTO questions
+        (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
+         image_url, question_type, option_a, option_b, option_c, option_d,
+         correct_option, active, created_at)
+      VALUES ($1,$2,$3,$4,$5,'',$6,'picture',$7,$8,$9,$10,$11,0,NOW())
+      ON CONFLICT (question_id) DO UPDATE SET
+        q_text_english=$5, image_url=$6, option_a=$7, option_b=$8,
+        option_c=$9, option_d=$10, correct_option=$11`,
+      [question_id, parseInt(level), subject, topic_tag || 'picture',
+       question_text, image_url, option_a, option_b, option_c, option_d, correct_option]);
+
+    res.json({ saved: true, message: 'Picture question saved as pending' });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 // Export questions to CSV
@@ -2249,6 +2278,13 @@ app.get('/api/questions/breakdown', async (req, res) => {
     res.json(bySubject);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
+
+// Add image_url column if not exists
+    try {
+      await db.pool.query(`ALTER TABLE questions ADD COLUMN IF NOT EXISTS image_url TEXT`);
+      await db.pool.query(`ALTER TABLE questions ADD COLUMN IF NOT EXISTS question_type TEXT DEFAULT 'text'`);
+      console.log('image_url column ready');
+    } catch(e) { console.log('image column note:', e.message); }
 
 // Remove subject check constraint to allow 'All' subject PINs
     try {

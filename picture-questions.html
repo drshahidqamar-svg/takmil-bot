@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Picture Questions</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #F0F4F8; min-height: 100vh; }
+
+.header {
+  background: #1a3a2a; color: white; padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header .logo { font-size: 20px; font-weight: 700; color: #4ade80; }
+.header .subtitle { font-size: 13px; opacity: 0.7; }
+.header a { color: #4ade80; text-decoration: none; font-size: 13px; }
+
+.container { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width:700px) { .grid2 { grid-template-columns: 1fr; } }
+
+.card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.card h3 { font-size: 16px; font-weight: 700; color: #1a3a2a; margin-bottom: 16px;
+  padding-bottom: 10px; border-bottom: 2px solid #f0fdf4; }
+
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; font-weight: 700; color: #64748b;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.field input, .field select, .field textarea {
+  width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0;
+  border-radius: 8px; font-size: 14px; color: #1e293b; outline: none;
+  transition: border-color 0.2s; background: white;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: #16a34a; }
+.field textarea { resize: vertical; min-height: 60px; }
+
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.option-wrap { position: relative; }
+.option-label { position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  font-weight: 700; font-size: 13px; color: #16a34a; }
+.option-input { padding-left: 28px !important; }
+
+.correct-row { display: flex; gap: 8px; }
+.correct-btn { flex: 1; padding: 8px; border: 2px solid #e2e8f0; border-radius: 8px;
+  font-weight: 700; font-size: 14px; cursor: pointer; background: white;
+  transition: all 0.15s; }
+.correct-btn.selected { background: #16a34a; color: white; border-color: #16a34a; }
+.correct-btn:hover:not(.selected) { border-color: #16a34a; color: #16a34a; }
+
+.btn-primary { width: 100%; padding: 12px; background: #16a34a; color: white;
+  border: none; border-radius: 8px; font-size: 15px; font-weight: 700;
+  cursor: pointer; margin-top: 8px; transition: background 0.2s; }
+.btn-primary:hover { background: #15803d; }
+.btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+
+/* Image preview */
+.img-preview { width: 100%; border-radius: 12px; border: 2px dashed #e2e8f0;
+  min-height: 180px; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; background: #f8fafc; margin-bottom: 12px; position: relative; }
+.img-preview img { width: 100%; height: 220px; object-fit: contain; border-radius: 10px; }
+.img-preview .placeholder { color: #94a3b8; font-size: 14px; text-align: center; padding: 20px; }
+
+/* Question preview card */
+.preview-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 16px; background: #f8fafc; }
+.preview-q { font-size: 15px; font-weight: 600; color: #1a3a2a; margin-bottom: 12px; }
+.preview-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.preview-opt { padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  border: 1.5px solid #e2e8f0; background: white; }
+.preview-opt.correct { background: #dcfce7; border-color: #16a34a; color: #15803d; }
+
+/* Saved questions list */
+.q-list { max-height: 400px; overflow-y: auto; }
+.q-item { padding: 12px; border: 1px solid #f1f5f9; border-radius: 8px; margin-bottom: 8px;
+  display: flex; gap: 12px; align-items: flex-start; }
+.q-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.q-item-body { flex: 1; }
+.q-item-q { font-size: 13px; font-weight: 600; color: #1a3a2a; }
+.q-item-meta { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+.badge { padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-pending { background: #fef9c3; color: #854d0e; }
+.badge-approved { background: #dcfce7; color: #15803d; }
+
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px;
+  border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: none; }
+.toast.success { background: #16a34a; color: white; }
+.toast.error { background: #dc2626; color: white; }
+
+.msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
+.msg.success { background: #dcfce7; color: #15803d; }
+.msg.error { background: #fef2f2; color: #dc2626; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">TAKMIL</div>
+    <div class="subtitle">Picture Question Creator — تصویری سوالات</div>
+  </div>
+  <a href="/question-bank">← Question Bank</a>
+</div>
+
+<div class="container">
+  <div class="grid2">
+
+    <!-- CREATOR FORM -->
+    <div class="card">
+      <h3>Create Picture Question</h3>
+
+      <div class="field">
+        <label>Image URL</label>
+        <input type="url" id="img-url" placeholder="https://example.com/image.jpg"
+          oninput="previewImage()" />
+      </div>
+
+      <div class="img-preview" id="img-preview">
+        <div class="placeholder">📷 Paste image URL above to preview</div>
+      </div>
+
+      <div class="field">
+        <label>Question Text (English)</label>
+        <textarea id="q-text" placeholder="e.g. What part of the body is shown?" oninput="updatePreview()"></textarea>
+      </div>
+
+      <div class="options-grid" style="margin-bottom:14px;">
+        <div class="field option-wrap">
+          <label>Option A</label>
+          <div style="position:relative">
+            <span class="option-label">A</span>
+            <input class="option-input" type="text" id="opt-a" placeholder="Heart" oninput="updatePreview()" />
+          </div>
+        </div>
+        <div class="field option-wrap">
+          <label>Option B</label>
+          <div style="position:relative">
+            <span class="option-label" style="color:#2563eb">B</span>
+            <input class="option-input" type="text" id="opt-b" placeholder="Lungs" oninput="updatePreview()" />
+          </div>
+        </div>
+        <div class="field option-wrap">
+          <label>Option C</label>
+          <div style="position:relative">
+            <span class="option-label" style="color:#d97706">C</span>
+            <input class="option-input" type="text" id="opt-c" placeholder="Kidney" oninput="updatePreview()" />
+          </div>
+        </div>
+        <div class="field option-wrap">
+          <label>Option D</label>
+          <div style="position:relative">
+            <span class="option-label" style="color:#dc2626">D</span>
+            <input class="option-input" type="text" id="opt-d" placeholder="Brain" oninput="updatePreview()" />
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Correct Answer</label>
+        <div class="correct-row">
+          <button class="correct-btn" onclick="setCorrect('A')">A</button>
+          <button class="correct-btn" onclick="setCorrect('B')">B</button>
+          <button class="correct-btn" onclick="setCorrect('C')">C</button>
+          <button class="correct-btn" onclick="setCorrect('D')">D</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="field">
+          <label>Subject</label>
+          <select id="subject">
+            <option value="Science">Science</option>
+            <option value="English">English</option>
+            <option value="Math">Math</option>
+            <option value="Urdu">Urdu</option>
+            <option value="Islamiyat">Islamiyat</option>
+            <option value="Social Studies">Social Studies</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Level</label>
+          <select id="level">
+            <option>1</option><option>2</option><option>3</option>
+            <option>4</option><option>5</option><option>6</option>
+            <option>7</option><option>8</option><option>9</option>
+            <option>10</option><option>11</option><option>12</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Topic</label>
+          <input type="text" id="topic" value="picture" />
+        </div>
+      </div>
+
+      <button class="btn-primary" id="save-btn" onclick="saveQuestion()">Save Question — محفوظ کریں</button>
+      <div class="msg" id="save-msg"></div>
+    </div>
+
+    <!-- PREVIEW + LIST -->
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <h3>Live Preview — طالب علم کا نظارہ</h3>
+        <div class="img-preview" id="preview-img">
+          <div class="placeholder">Image will appear here</div>
+        </div>
+        <div class="preview-card">
+          <div class="preview-q" id="preview-q">Your question will appear here...</div>
+          <div class="preview-opts">
+            <div class="preview-opt" id="prev-a">A. —</div>
+            <div class="preview-opt" id="prev-b">B. —</div>
+            <div class="preview-opt" id="prev-c">C. —</div>
+            <div class="preview-opt" id="prev-d">D. —</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Recent Picture Questions</h3>
+        <div class="q-list" id="q-list">
+          <div style="color:#94a3b8;text-align:center;padding:20px;font-size:13px;">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let correctAnswer = 'A';
+let questionCount = 0;
+
+function setCorrect(opt) {
+  correctAnswer = opt;
+  document.querySelectorAll('.correct-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.correct-btn').forEach(b => {
+    if (b.textContent === opt) b.classList.add('selected');
+  });
+  updatePreview();
+}
+setCorrect('A');
+
+function previewImage() {
+  const url = document.getElementById('img-url').value.trim();
+  const prev = document.getElementById('img-preview');
+  const prev2 = document.getElementById('preview-img');
+  if (!url) {
+    prev.innerHTML = '<div class="placeholder">📷 Paste image URL above to preview</div>';
+    prev2.innerHTML = '<div class="placeholder">Image will appear here</div>';
+    return;
+  }
+  const img = `<img src="${url}" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>❌ Image not found — check URL</div>'" />`;
+  prev.innerHTML = img;
+  prev2.innerHTML = img.replace('onerror', 'onerror');
+}
+
+function updatePreview() {
+  const q = document.getElementById('q-text').value || 'Your question will appear here...';
+  const a = document.getElementById('opt-a').value || '—';
+  const b = document.getElementById('opt-b').value || '—';
+  const c = document.getElementById('opt-c').value || '—';
+  const d = document.getElementById('opt-d').value || '—';
+
+  document.getElementById('preview-q').textContent = q;
+  ['a','b','c','d'].forEach(x => {
+    const el = document.getElementById('prev-' + x);
+    el.textContent = x.toUpperCase() + '. ' + (document.getElementById('opt-' + x).value || '—');
+    el.className = 'preview-opt' + (x.toUpperCase() === correctAnswer ? ' correct' : '');
+  });
+}
+
+function generateId() {
+  const subj = document.getElementById('subject').value.substring(0,3).toUpperCase();
+  const lvl  = document.getElementById('level').value;
+  const n    = String(++questionCount).padStart(3,'0');
+  const ts   = Date.now().toString().slice(-4);
+  return `PIC-${subj}-L${lvl}-${ts}-${n}`;
+}
+
+async function saveQuestion() {
+  const url   = document.getElementById('img-url').value.trim();
+  const qtext = document.getElementById('q-text').value.trim();
+  const a     = document.getElementById('opt-a').value.trim();
+  const b     = document.getElementById('opt-b').value.trim();
+  const c     = document.getElementById('opt-c').value.trim();
+  const d     = document.getElementById('opt-d').value.trim();
+  const msg   = document.getElementById('save-msg');
+  const btn   = document.getElementById('save-btn');
+
+  if (!url)   { showMsg(msg, 'Please add an image URL.', 'error'); return; }
+  if (!qtext) { showMsg(msg, 'Please write a question.', 'error'); return; }
+  if (!a || !b || !c || !d) { showMsg(msg, 'Please fill in all 4 options.', 'error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const resp = await fetch('/api/questions/picture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question_id:   generateId(),
+        level:         document.getElementById('level').value,
+        subject:       document.getElementById('subject').value,
+        topic_tag:     document.getElementById('topic').value,
+        question_text: qtext,
+        image_url:     url,
+        option_a: a, option_b: b, option_c: c, option_d: d,
+        correct_option: correctAnswer
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error);
+
+    showMsg(msg, 'Question saved! Go to /question-bank to approve it.', 'success');
+    showToast('Question saved successfully!', 'success');
+    loadRecentQuestions();
+
+    // Clear form
+    document.getElementById('img-url').value = '';
+    document.getElementById('q-text').value = '';
+    ['a','b','c','d'].forEach(x => document.getElementById('opt-' + x).value = '');
+    document.getElementById('img-preview').innerHTML = '<div class="placeholder">📷 Paste image URL above to preview</div>';
+    setCorrect('A');
+    updatePreview();
+
+  } catch(e) {
+    showMsg(msg, 'Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Question — محفوظ کریں';
+  }
+}
+
+async function loadRecentQuestions() {
+  const div = document.getElementById('q-list');
+  try {
+    const resp = await fetch('/admin/questions/all?topic=picture');
+    const data = await resp.json();
+    const qs   = (data.questions || []).filter(q => q.image_url).slice(0, 20);
+
+    if (!qs.length) {
+      div.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;font-size:13px;">No picture questions yet. Create one above!</div>';
+      return;
+    }
+
+    div.innerHTML = qs.map(q => `
+      <div class="q-item">
+        <img src="${q.image_url}" onerror="this.src=''" />
+        <div class="q-item-body">
+          <div class="q-item-q">${q.question_text || q.q_text_english || '—'}</div>
+          <div class="q-item-meta">
+            ${q.subject} • Level ${q.level} •
+            Correct: <strong>${q.correct_option}</strong> •
+            <span class="badge ${q.status === 'approved' ? 'badge-approved' : 'badge-pending'}">
+              ${q.status || 'pending'}
+            </span>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    div.innerHTML = '<div style="color:#94a3b8;padding:16px;font-size:13px;">Could not load questions</div>';
+  }
+}
+
+function showMsg(el, text, type) {
+  el.textContent = text;
+  el.className = 'msg ' + type;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+function showToast(text, type) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.className = 'toast ' + type;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+loadRecentQuestions();
+</script>
+</body>
+</html>
