@@ -891,6 +891,7 @@ app.post('/portal/session/start', async (req, res) => {
         level:         q.level,
         question_text: q.q_text_english || q.question_text || '',
         q_text_urdu:   q.q_text_urdu || '',
+        image_url:     q.image_url || null,
         option_a:      opts[0].text,
         option_b:      opts[1].text,
         option_c:      opts[2].text,
