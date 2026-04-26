@@ -1923,6 +1923,25 @@ app.put('/admin/questions/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Bulk approve all pending questions
+app.post('/admin/questions/approve-all', async (req, res) => {
+  try {
+    const r = await db.pool.query(
+      `UPDATE questions SET active=1 WHERE active=0 OR active IS NULL RETURNING question_id`
+    );
+    res.json({ approved: r.rowCount, message: `${r.rowCount} questions approved` });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Approve by question_id string
+app.post('/admin/questions/approve-by-qid', async (req, res) => {
+  try {
+    const { question_id } = req.body;
+    await db.pool.query(`UPDATE questions SET active=1 WHERE question_id=$1`, [question_id]);
+    res.json({ approved: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // Approve a question
 app.post('/admin/questions/:id/approve', async (req, res) => {
   try {

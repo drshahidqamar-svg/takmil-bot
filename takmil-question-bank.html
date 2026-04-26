@@ -690,9 +690,21 @@ async function approveAllPending() {
   const pend = filtered.filter(q => !q.is_approved && q.status !== 'flagged');
   if (!pend.length) { showToast('No pending questions in current view', 'warn'); return; }
   if (!confirm(`Approve all ${pend.length} pending questions?`)) return;
-  for (const q of pend) await api(`/admin/questions/${q.id}/approve`, { method: 'POST' });
-  showToast(`${pend.length} questions approved ✓`);
-  loadData();
+  try {
+    const result = await api('/admin/questions/approve-all', { method: 'POST' });
+    showToast(`${result.approved} questions approved ✓`);
+    loadData();
+  } catch(e) {
+    // Fallback: approve one by one using question_id
+    for (const q of pend) {
+      await api('/admin/questions/approve-by-qid', {
+        method: 'POST',
+        body: JSON.stringify({ question_id: q.question_id })
+      });
+    }
+    showToast(`${pend.length} questions approved ✓`);
+    loadData();
+  }
 }
 
 // ─── ADD / EDIT ───────────────────────────────────────────────────
