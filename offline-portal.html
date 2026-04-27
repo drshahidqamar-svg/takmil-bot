@@ -174,7 +174,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 <div class="screen active" id="s-home">
   <div class="app-header">
     <div class="logo">TAKMIL</div>
-    <div class="sync-badge offline" id="conn-badge">● Offline</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.7)">طالب علم امتحان</div>
   </div>
 
   <div class="card">
@@ -190,20 +190,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
     <div style="height:4px"></div>
     <button class="btn btn-green" onclick="startAssessment()">Start Assessment — شروع کریں ▶</button>
     <div id="home-err" style="color:#dc2626;font-size:13px;font-weight:700;text-align:center;margin-top:12px;display:none"></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title" style="font-size:15px">📥 Offline Mode</div>
-    <div id="dl-stats" style="margin:8px 0">
-      <div class="stat-row"><span>Questions downloaded</span><span class="stat-val" id="q-count">0</span></div>
-      <div class="stat-row"><span>PINs cached</span><span class="stat-val" id="pin-count">0</span></div>
-    </div>
-    <div class="dl-progress"><div class="dl-fill" id="dl-fill"></div></div>
-    <div id="dl-status" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px">Tap Download to cache questions</div>
-    <button class="btn btn-dark" onclick="downloadForOffline()">⬇ Download Questions</button>
-    <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.6">
-      Results saved automatically on tablet.<br>Coordinator syncs when visiting school.
-    </p>
   </div>
 </div>
 
