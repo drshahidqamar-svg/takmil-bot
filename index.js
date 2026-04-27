@@ -1990,7 +1990,7 @@ app.get('/api/teacher/videos', async (req, res) => {
     // Fallback — generate from questions if catalog empty
     const q = await db.pool.query(`
       SELECT DISTINCT subject, level FROM questions
-      WHERE active=1 AND subject IN ('Math','English','Urdu','Science')
+      WHERE active=true AND subject IN ('Math','English','Urdu','Science')
       ORDER BY subject, level LIMIT 50`);
     const videos = q.rows.map((row,i) => ({
       id: `${(row.subject||'').replace(/\s/g,'').toUpperCase()}-L${row.level}-${i}`,
@@ -2059,19 +2059,39 @@ app.post('/api/lessons/end', async (req, res) => {
     const school = await db.pool.query(
       `SELECT id FROM schools WHERE identifier=$1 OR name ILIKE $1 LIMIT 1`, [school_code]);
     const school_id = school.rows[0]?.id || null;
-    await db.pool.query(`
-      INSERT INTO lessons (video_id, video_name, subject, level, expected_duration,
-        school_id, school_code, school_name, teacher_name, start_time, end_time,
-        actual_duration, coverage_pct, start_gps_lat, start_gps_lng,
-        end_gps_lat, end_gps_lng, gps_match, status, flagged, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,NOW())
-      ON CONFLICT DO NOTHING`,
-      [video_id, video_name, subject, parseInt(level), parseInt(expected_duration)||600,
-       school_id, school_code, school_name, teacher_name, start_time, end_time,
-       parseInt(actual_duration)||0, parseFloat(coverage_pct)||0,
-       start_gps?.lat||null, start_gps?.lng||null,
-       end_gps?.lat||null, end_gps?.lng||null,
-       !!gps_match, status||'completed', !!flagged]);
+
+    // Try to UPDATE the existing 'started' row first
+    const updated = await db.pool.query(`
+      UPDATE lessons SET
+        end_time=$1, actual_duration=$2, coverage_pct=$3,
+        end_gps_lat=$4, end_gps_lng=$5, gps_match=$6,
+        status=$7, flagged=$8
+      WHERE school_code=$9
+        AND video_id=$10
+        AND status='started'
+        AND start_time=$11
+      RETURNING id`,
+      [end_time, parseInt(actual_duration)||0, parseFloat(coverage_pct)||0,
+       end_gps?.lat||null, end_gps?.lng||null, !!gps_match,
+       status||'completed', !!flagged,
+       school_code, video_id, start_time]);
+
+    // If no existing row found (offline start), do a fresh INSERT
+    if (!updated.rows.length) {
+      await db.pool.query(`
+        INSERT INTO lessons (video_id, video_name, subject, level, expected_duration,
+          school_id, school_code, school_name, teacher_name, start_time, end_time,
+          actual_duration, coverage_pct, start_gps_lat, start_gps_lng,
+          end_gps_lat, end_gps_lng, gps_match, status, flagged, created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,NOW())`,
+        [video_id, video_name, subject, parseInt(level), parseInt(expected_duration)||600,
+         school_id, school_code, school_name, teacher_name, start_time, end_time,
+         parseInt(actual_duration)||0, parseFloat(coverage_pct)||0,
+         start_gps?.lat||null, start_gps?.lng||null,
+         end_gps?.lat||null, end_gps?.lng||null,
+         !!gps_match, status||'completed', !!flagged]);
+    }
+
     const mins = Math.floor((actual_duration||0)/60);
     const secs = (actual_duration||0) % 60;
     const statusEmoji = status==='completed' ? '✅' : status==='short' ? '⚠️' : '🚨';

@@ -471,6 +471,7 @@ async function doLogin(){
   document.getElementById('sel-school-name').textContent  = schoolName;
 
   await loadVideoCatalog();
+  filterVideos();
   showScreen('s-select');
   loadTodayLessons();
 }
@@ -490,6 +491,7 @@ async function loadVideoCatalog(){
       if(data.videos && data.videos.length){
         videoCatalog = data.videos;
         for(const v of videoCatalog) await idbPut('catalog',v);
+        filterVideos();
         return;
       }
     }catch(e){}
