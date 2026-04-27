@@ -5,117 +5,84 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TAKMIL — Coordinator Portal</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', sans-serif; background: #F0F4F8; min-height: 100vh; }
-
-.header {
-  background: #1a3a2a; color: white; padding: 14px 24px;
-  display: flex; align-items: center; gap: 12px;
-}
-.header .logo { font-size: 20px; font-weight: 700; color: #4ade80; }
-.header .subtitle { font-size: 13px; opacity: 0.7; }
-
-.container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
-
-/* LOGIN */
-#login-screen {
-  max-width: 420px; margin: 60px auto;
-  background: white; border-radius: 16px;
-  padding: 36px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-}
-#login-screen h2 { font-size: 22px; color: #1a3a2a; margin-bottom: 6px; }
-#login-screen p { color: #64748b; font-size: 14px; margin-bottom: 24px; }
-
-.field { margin-bottom: 16px; }
-.field label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
-.field select, .field input {
-  width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0;
-  border-radius: 8px; font-size: 15px; color: #1e293b;
-  background: white; outline: none; transition: border-color 0.2s;
-}
-.field select:focus, .field input:focus { border-color: #16a34a; }
-
-.btn-primary {
-  width: 100%; padding: 12px; background: #16a34a; color: white;
-  border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
-  cursor: pointer; transition: background 0.2s;
-}
-.btn-primary:hover { background: #15803d; }
-.btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
-
-/* DASHBOARD */
-#dashboard { display: none; }
-
-.welcome-bar {
-  background: white; border-radius: 12px; padding: 16px 20px;
-  margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.welcome-bar .name { font-weight: 700; font-size: 17px; color: #1a3a2a; }
-.welcome-bar .region { font-size: 13px; color: #64748b; }
-.btn-logout { background: none; border: 1.5px solid #e2e8f0; padding: 6px 14px;
-  border-radius: 8px; font-size: 13px; cursor: pointer; color: #64748b; }
-.btn-logout:hover { background: #f1f5f9; }
-
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media(max-width:600px) { .grid2 { grid-template-columns: 1fr; } }
-
-.card {
-  background: white; border-radius: 12px; padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.card h3 { font-size: 15px; font-weight: 700; color: #1a3a2a; margin-bottom: 14px;
-  padding-bottom: 10px; border-bottom: 1.5px solid #f1f5f9; }
-
-/* PIN GENERATOR */
-#pin-form { display: grid; gap: 14px; }
-
-.pin-result {
-  background: #f0fdf4; border: 2px solid #16a34a; border-radius: 12px;
-  padding: 20px; text-align: center; display: none; margin-top: 4px;
-}
-.pin-result .pin-code {
-  font-size: 36px; font-weight: 800; color: #16a34a; letter-spacing: 6px;
-  font-family: monospace;
-}
-.pin-result .pin-meta { font-size: 13px; color: #64748b; margin-top: 6px; }
-.pin-result .pin-label { font-size: 14px; color: #1a3a2a; font-weight: 600; margin-top: 8px; }
-.whatsapp-status { margin-top: 10px; font-size: 13px; padding: 6px 12px;
-  border-radius: 6px; display: inline-block; }
-.whatsapp-status.sent { background: #dcfce7; color: #15803d; }
-.whatsapp-status.pending { background: #fef9c3; color: #854d0e; }
-
-/* RECENT PINS TABLE */
-.pins-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.pins-table th { text-align: left; padding: 8px 10px; color: #64748b;
-  border-bottom: 1.5px solid #f1f5f9; font-weight: 600; }
-.pins-table td { padding: 8px 10px; border-bottom: 1px solid #f8fafc; color: #374151; }
-.pins-table tr:hover td { background: #f8fafc; }
-.badge { padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.badge-active { background: #dcfce7; color: #15803d; }
-.badge-expired { background: #f1f5f9; color: #94a3b8; }
-.badge-used { background: #dbeafe; color: #1d4ed8; }
-
-.loading { text-align: center; padding: 20px; color: #94a3b8; font-size: 14px; }
-.error-msg { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;
-  padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 8px; display: none; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
+.header{background:#1a3a2a;color:white;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:20px;font-weight:800;color:#4ade80}
+.header-right{display:flex;align-items:center;gap:12px}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:#4ade80}
+.conn-dot.offline{background:#ef4444}
+.conn-label{font-size:12px;opacity:0.8}
+.btn-logout{background:rgba(255,255,255,0.1);border:none;color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+.container{max-width:960px;margin:0 auto;padding:20px 16px}
+#login-screen{max-width:420px;margin:60px auto;background:white;border-radius:16px;padding:36px;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
+#login-screen h2{font-size:22px;color:#1a3a2a;margin-bottom:6px}
+#login-screen p{color:#64748b;font-size:14px;margin-bottom:24px}
+.tabs{display:flex;gap:4px;background:white;border-radius:12px;padding:6px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.tab{flex:1;padding:10px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;background:transparent;color:#64748b;transition:all 0.2s;font-family:'Segoe UI',sans-serif}
+.tab.active{background:#1a3a2a;color:white}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.card{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:16px}
+.card h3{font-size:15px;font-weight:700;color:#1a3a2a;margin-bottom:14px;padding-bottom:10px;border-bottom:1.5px solid #f1f5f9}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+.welcome-bar{background:white;border-radius:12px;padding:14px 20px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.welcome-name{font-weight:700;font-size:16px;color:#1a3a2a}
+.welcome-region{font-size:13px;color:#64748b}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.field select,.field input{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;color:#1e293b;background:white;outline:none;transition:border-color 0.2s}
+.field select:focus,.field input:focus{border-color:#16a34a}
+.btn{padding:11px 18px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'Segoe UI',sans-serif;width:100%}
+.btn-green{background:#16a34a;color:white;padding:12px}
+.btn-green:hover{background:#15803d}
+.btn-green:disabled{background:#94a3b8;cursor:not-allowed}
+.pin-result{background:#f0fdf4;border:2px solid #16a34a;border-radius:12px;padding:20px;text-align:center;display:none;margin-top:12px}
+.pin-code{font-size:36px;font-weight:800;color:#16a34a;letter-spacing:6px;font-family:monospace}
+.pin-label{font-size:14px;color:#1a3a2a;font-weight:600;margin-top:8px}
+.pin-meta{font-size:13px;color:#64748b;margin-top:4px}
+.wa-status{margin-top:10px;font-size:13px;padding:6px 12px;border-radius:6px;display:inline-block}
+.wa-sent{background:#dcfce7;color:#15803d}
+.wa-pending{background:#fef9c3;color:#854d0e}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:8px 10px;color:#64748b;border-bottom:1.5px solid #f1f5f9;font-weight:600}
+.tbl td{padding:8px 10px;border-bottom:1px solid #f8fafc;color:#374151}
+.tbl tr:hover td{background:#f8fafc}
+.badge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:#dcfce7;color:#15803d}
+.badge-grey{background:#f1f5f9;color:#94a3b8}
+.badge-blue{background:#dbeafe;color:#1d4ed8}
+.badge-amber{background:#fef9c3;color:#92400e}
+.dl-bar{height:10px;background:#e2e8f0;border-radius:5px;overflow:hidden;margin:12px 0}
+.dl-fill{height:100%;background:linear-gradient(90deg,#16a34a,#4ade80);border-radius:5px;transition:width 0.4s;width:0%}
+.stat-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:14px}
+.stat-val{font-weight:700;color:#16a34a}
+.sync-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:#f8fafc;margin-bottom:8px;font-size:13px}
+.sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sync-pending{background:#d97706}
+.sync-done{background:#16a34a}
+.res-bar{height:6px;background:#e2e8f0;border-radius:3px;margin-top:4px;overflow:hidden}
+.res-fill{height:100%;border-radius:3px}
+.error-msg{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:8px;display:none}
+.loading{text-align:center;padding:20px;color:#94a3b8;font-size:14px}
 </style>
 </head>
 <body>
-
 <div class="header">
-  <div>
-    <div class="logo">TAKMIL</div>
-    <div class="subtitle">Regional Coordinator Portal — پن جنریٹر</div>
+  <div class="logo">TAKMIL</div>
+  <div class="header-right">
+    <div class="conn-dot" id="conn-dot"></div>
+    <span class="conn-label" id="conn-label">Checking...</span>
+    <button class="btn-logout" onclick="doLogout()" id="logout-btn" style="display:none">Logout</button>
   </div>
 </div>
 
-<!-- LOGIN -->
 <div id="login-screen">
   <h2>Coordinator Login</h2>
-  <p>Sign in to generate assessment PINs for your schools</p>
+  <p>Regional Coordinator access only</p>
   <div class="field">
-    <label>Select Your Name</label>
+    <label>Your Name</label>
     <select id="rc-select">
       <option value="">-- Select Regional Coordinator --</option>
       <option value="1|M. Ali|Sindh">M. Ali — Sindh</option>
@@ -126,317 +93,446 @@ body { font-family: 'Segoe UI', sans-serif; background: #F0F4F8; min-height: 100
   </div>
   <div class="field">
     <label>Password</label>
-    <input type="password" id="rc-password" placeholder="Enter your password" />
+    <input type="password" id="rc-password" placeholder="Enter your password">
   </div>
-  <div class="error-msg" id="login-error">Incorrect password. Please try again.</div>
-  <button class="btn-primary" onclick="doLogin()" style="margin-top:8px">Login — لاگ ان</button>
+  <div class="error-msg" id="login-err">Incorrect password.</div>
+  <button class="btn btn-green" onclick="doLogin()" style="margin-top:8px">Login — لاگ ان</button>
 </div>
 
-<!-- DASHBOARD -->
-<div id="dashboard" class="container">
-
+<div id="dashboard" class="container" style="display:none">
   <div class="welcome-bar">
     <div>
-      <div class="name" id="welcome-name"></div>
-      <div class="region" id="welcome-region"></div>
+      <div class="welcome-name" id="w-name"></div>
+      <div class="welcome-region" id="w-region"></div>
     </div>
-    <button class="btn-logout" onclick="doLogout()">Logout</button>
+    <div style="font-size:13px;color:#64748b" id="w-stats"></div>
   </div>
 
-  <div class="grid2">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('pin',this)">📌 Generate PIN</button>
+    <button class="tab" onclick="switchTab('download',this)">⬇ Download</button>
+    <button class="tab" onclick="switchTab('sync',this)">↑ Sync Results</button>
+    <button class="tab" onclick="switchTab('results',this)">📊 Results</button>
+  </div>
 
-    <!-- PIN GENERATOR -->
-    <div class="card">
-      <h3>Generate Assessment PIN — پن بنائیں</h3>
-      <div id="pin-form">
-        <div class="field">
-          <label>Area Coordinator</label>
-          <select id="sc-select" onchange="loadSchools()">
-            <option value="">-- Select Coordinator --</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>School</label>
-          <select id="school-select">
-            <option value="">-- Select School --</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Level (1–12)</label>
+  <!-- PIN TAB -->
+  <div class="tab-content active" id="tab-pin">
+    <div class="grid2">
+      <div class="card">
+        <h3>Generate Assessment PIN — پن بنائیں</h3>
+        <div class="field"><label>Area Coordinator</label>
+          <select id="sc-select" onchange="loadSchools()"><option value="">-- Select Coordinator --</option></select></div>
+        <div class="field"><label>School</label>
+          <select id="school-select"><option value="">-- Select School --</option></select></div>
+        <div class="field"><label>Level (1-12)</label>
           <select id="level-select">
             <option value="">-- Select Level --</option>
-            <option value="1">Level 1</option>
-            <option value="2">Level 2</option>
-            <option value="3">Level 3</option>
-            <option value="4">Level 4</option>
-            <option value="5">Level 5</option>
-            <option value="6">Level 6</option>
-            <option value="7">Level 7</option>
-            <option value="8">Level 8</option>
-            <option value="9">Level 9</option>
-            <option value="10">Level 10</option>
-            <option value="11">Level 11</option>
-            <option value="12">Level 12</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Assessment Date</label>
-          <input type="date" id="assessment-date" />
-        </div>
-        <div class="field">
-          <label>Teacher WhatsApp Number</label>
-          <input type="text" id="teacher-phone" placeholder="+92300xxxxxxx" />
-        </div>
-        <button class="btn-primary" id="gen-btn" onclick="generatePIN()">Generate &amp; Send PIN</button>
+            <option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option>
+            <option value="4">Level 4</option><option value="5">Level 5</option><option value="6">Level 6</option>
+            <option value="7">Level 7</option><option value="8">Level 8</option><option value="9">Level 9</option>
+            <option value="10">Level 10</option><option value="11">Level 11</option><option value="12">Level 12</option>
+          </select></div>
+        <div class="field"><label>Assessment Date</label><input type="date" id="assessment-date"></div>
+        <div class="field"><label>Teacher WhatsApp</label><input type="text" id="teacher-phone" placeholder="+92300xxxxxxx"></div>
+        <button class="btn btn-green" id="gen-btn" onclick="generatePIN()">Generate &amp; Send PIN</button>
         <div class="error-msg" id="gen-error"></div>
+        <div class="pin-result" id="pin-result">
+          <div class="pin-code" id="pin-display"></div>
+          <div class="pin-label" id="pin-label"></div>
+          <div class="pin-meta" id="pin-meta"></div>
+          <div class="wa-status" id="wa-status"></div>
+        </div>
       </div>
-
-      <div class="pin-result" id="pin-result">
-        <div class="pin-code" id="pin-display"></div>
-        <div class="pin-label" id="pin-label"></div>
-        <div class="pin-meta" id="pin-meta"></div>
-        <div class="whatsapp-status" id="wa-status"></div>
+      <div class="card">
+        <h3>Recent PINs — حالیہ پن</h3>
+        <div id="pins-list"><div class="loading">Loading...</div></div>
       </div>
     </div>
+  </div>
 
-    <!-- RECENT PINS -->
+  <!-- DOWNLOAD TAB -->
+  <div class="tab-content" id="tab-download">
+    <div class="grid2">
+      <div class="card">
+        <h3>⬇ Download Questions for Tablets</h3>
+        <p style="font-size:13px;color:#64748b;margin-bottom:16px">Download all questions to this device before visiting schools. Tablets can then work offline.</p>
+        <div class="stat-row"><span>Questions on server</span><span class="stat-val" id="srv-q">—</span></div>
+        <div class="stat-row"><span>Downloaded locally</span><span class="stat-val" id="dl-q">0</span></div>
+        <div class="stat-row"><span>PINs cached</span><span class="stat-val" id="dl-pins">0</span></div>
+        <div class="stat-row"><span>Last downloaded</span><span class="stat-val" id="dl-last">Never</span></div>
+        <div class="dl-bar"><div class="dl-fill" id="dl-fill"></div></div>
+        <div id="dl-status" style="font-size:12px;color:#64748b;text-align:center;margin-bottom:14px">Ready to download</div>
+        <button class="btn btn-green" onclick="downloadQuestions()">⬇ Download All Questions</button>
+      </div>
+      <div class="card">
+        <h3>📲 Tablet Setup Instructions</h3>
+        <div style="font-size:13px;color:#374151;line-height:2">
+          <p><strong>1.</strong> Download questions here (needs internet)</p>
+          <p><strong>2.</strong> Open on each tablet:</p>
+          <div style="background:#f8fafc;padding:10px;border-radius:8px;font-family:monospace;font-size:11px;margin:8px 0;word-break:break-all">takmil-bot-production-0f51.up.railway.app/offline-portal</div>
+          <p><strong>3.</strong> Tap <strong>⬇ Download</strong> on each tablet</p>
+          <p><strong>4.</strong> Android Chrome: tap ⋮ → <strong>Add to Home Screen</strong></p>
+          <p><strong>5.</strong> Tablets ready — no internet needed!</p>
+          <p style="margin-top:12px;color:#16a34a;font-weight:600">Student portal URL for tablets:</p>
+          <a href="/offline-portal" target="_blank" style="color:#2563eb;font-size:12px">
+            /offline-portal — Open Student Portal</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYNC TAB -->
+  <div class="tab-content" id="tab-sync">
+    <div class="grid2">
+      <div class="card">
+        <h3>↑ Sync Results from Tablets</h3>
+        <p style="font-size:13px;color:#64748b;margin-bottom:16px">When you visit a school with internet, sync all offline results to the server.</p>
+        <div class="stat-row"><span>Pending sync</span><span class="stat-val" id="sync-pending">—</span></div>
+        <div class="stat-row"><span>Synced today</span><span class="stat-val" id="sync-today">—</span></div>
+        <div class="stat-row"><span>Connection</span><span class="stat-val" id="sync-conn">Checking...</span></div>
+        <div style="height:12px"></div>
+        <button class="btn btn-green" id="sync-btn" onclick="syncResults()">↑ Sync All Pending</button>
+        <div id="sync-prog" style="display:none;margin-top:12px">
+          <div class="dl-bar"><div class="dl-fill" id="sync-fill"></div></div>
+          <div id="sync-status" style="font-size:12px;color:#64748b;text-align:center"></div>
+        </div>
+        <div id="sync-msg" style="display:none;margin-top:12px;padding:10px;border-radius:8px;font-size:13px;font-weight:600;text-align:center"></div>
+      </div>
+      <div class="card">
+        <h3>Sync Activity</h3>
+        <div id="sync-list"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS TAB -->
+  <div class="tab-content" id="tab-results">
     <div class="card">
-      <h3>Recent PINs — حالیہ پن</h3>
-      <div id="pins-list"><div class="loading">Loading...</div></div>
+      <h3>📊 School Results — نتائج</h3>
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <select onchange="loadResults()" id="rf-subj" style="padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
+          <option value="">All Subjects</option>
+          <option value="Math">Math</option><option value="English">English</option><option value="Urdu">Urdu</option>
+        </select>
+        <select onchange="loadResults()" id="rf-level" style="padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
+          <option value="">All Levels</option>
+          <option value="1">L1</option><option value="2">L2</option><option value="3">L3</option>
+          <option value="4">L4</option><option value="5">L5</option><option value="6">L6</option>
+        </select>
+      </div>
+      <div id="res-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"></div>
+      <div id="results-list"><div class="loading">Loading results...</div></div>
     </div>
-
   </div>
 </div>
 
 <script>
-const BASE = '';  // same origin when served from Railway
-
-// Coordinator data
-const COORDINATORS = {
-  '1': {
-    name: 'M. Ali', region: 'Sindh',
-    scs: [
-      { id: 1, name: 'Fateh Khan' },
-      { id: 2, name: 'Ghulam Mujtaba' },
-      { id: 3, name: 'Inayat Lashari' },
-      { id: 4, name: 'Arqam Aftab' },
-      { id: 5, name: 'Mehrun Nisa' }
-    ]
-  },
-  '2': {
-    name: 'M. Ayub', region: 'Punjab',
-    scs: [
-      { id: 6, name: 'Farhan Haider' },
-      { id: 7, name: 'Muhammad Ishaq' },
-      { id: 8, name: 'Raheel Maqbool' },
-      { id: 9, name: 'Saima Majeed' }
-    ]
-  },
-  '3': {
-    name: 'Qiyanoos Khan', region: 'KPK',
-    scs: [
-      { id: 10, name: 'Abid Afridi' },
-      { id: 11, name: 'Ishaq Khan' },
-      { id: 12, name: 'Saddam Hussain' },
-      { id: 13, name: 'Sundus Jahanzeb' }
-    ]
-  },
-  '4': {
-    name: 'Shabir Khan', region: 'Baluchistan / GB',
-    scs: [
-      { id: 14, name: 'Ghulam Sarwar' },
-      { id: 15, name: 'M. Younas' },
-      { id: 16, name: 'Saddam Wali' },
-      { id: 17, name: 'Saqiba Baloch' },
-      { id: 18, name: 'Suman Nazir' }
-    ]
-  }
+const BASE='';
+const DB_NAME='takmil_coord';
+const COORDINATORS={
+  '1':{name:'M. Ali',region:'Sindh',scs:[{id:1,name:'Fateh Khan'},{id:2,name:'Ghulam Mujtaba'},{id:3,name:'Inayat Lashari'},{id:4,name:'Arqam Aftab'},{id:5,name:'Mehrun Nisa'}]},
+  '2':{name:'M. Ayub',region:'Punjab',scs:[{id:6,name:'Farhan Haider'},{id:7,name:'Muhammad Ishaq'},{id:8,name:'Raheel Maqbool'},{id:9,name:'Saima Majeed'}]},
+  '3':{name:'Qiyanoos Khan',region:'KPK',scs:[{id:10,name:'Abid Afridi'},{id:11,name:'Ishaq Khan'},{id:12,name:'Saddam Hussain'},{id:13,name:'Sundus Jahanzeb'}]},
+  '4':{name:'Shabir Khan',region:'Baluchistan / GB',scs:[{id:14,name:'Ghulam Sarwar'},{id:15,name:'M. Younas'},{id:16,name:'Saddam Wali'},{id:17,name:'Saqiba Baloch'},{id:18,name:'Suman Nazir'}]}
+};
+const SCHOOLS={
+  1:["AliHassanHingrjo_O_W24S","HajiPirBakshRajhir_A_W24S","MohammedAbbasSolangi_A_W24S","MubeenFaqirRajar_A_W24S","AliHassanKK_A_W24S"],
+  2:["AbdulKarimKhashkeli_O_F23S","AbdulRehmanMallah_O_SP23S","BaghatMehraj_O_W24S","HayatShah_O_W25S","QaziRasoolBux_O_W24S"],
+  3:["AllahWarayoShoro_O_W26S","BubuChana_O_W26S","CrashMountainArea_A_W26S","GhulamMuhammadLashari_A_W26S"],
+  4:["FaizMuhammadSoomro_A_W24S","GhulamHaiderSoomro_A_W24S","GhulamHaiderSoomro_B_W24S","ImtiazSoomro_A_W24S"],
+  5:["AbdulHameedBhatti_O_W24S","AdnanAkbar_O_W24S","ArslanButt_O_W24S","FaisalIqbal_O_W24S"],
+  6:["AliZaman_O_W24S","AmirHussain_O_W24S","ArslanRashid_O_W24S"],
+  7:["AbdulMajeedKhan_O_W24S","AsifNawaz_O_W24S","DaoudKhan_O_W24S"],
+  8:["AdeelAhmad_O_W24S","AliAkbar_O_W24S","ArifHussain_O_W24S"],
+  9:["AbdullahKhan_O_W24S","AdilAli_O_W24S","AhsanRaza_O_W24S"],
+  10:["AbdulKarimAfghan_O_W24S","AsadullahKhan_O_W24S"],
+  11:["AbdullahBaloch_O_W24S","AkramBaloch_O_W24S"],
+  12:["AbdullahShah_O_W24S","AkhtarHussain_O_W24S"],
+  13:["AbdulQadirSundrani_O_W24S","AkramSundrani_O_W24S"],
+  14:["AbdulQadirSarwar_O_W24S","AkramSarwar_O_W24S"],
+  15:["AbdulQadirYounas_O_W24S","AkramYounas_O_W24S"],
+  16:["AbdulWali_O_W24S","AkramWali_O_W24S"],
+  17:["AbdulBaloch_O_W24S","AkramBaloch_B_O_W24S"],
+  18:["AbdulNazir_O_W24S","AkramNazir_O_W24S"]
 };
 
-// School data keyed by school coordinator id
-const SCHOOLS = {
-  1: ["AliHassanHingrjo_O_W24S","HajiPirBakshRajhir_A_W24S","MohammedAbbasSolangi_A_W24S","MubeenFaqirRajar_A_W24S","MubeenFaqirRajar_B_W24S","AliHassanKK_A_W24S","DodobirHamani_O_W26S","AliHassanKK_B_W24S"],
-  2: ["AbdulKarimKhashkeli_O_F23S","AbdulKarimKhashkheli_O_W25S","AbdulRehmanMallah_O_SP23S","BaghatMehraj_O_W24S","HayatShah_O_W25S","QaziRasoolBux_O_W24S","HayatShah_O_W24S"],
-  3: ["AllahWarayoShoro_O_W26S","BubuChana_O_W26S","CrashMountainArea_A_W26S","CrashMountainArea_B_W26S","GhulamMuhammadLashari_A_W26S","GhulamMuhammadLashari_B_W26S","GhulamMuhammadLashari_C_W26S","GhulamMuhammadLashari_D_W26S","MuhammadSaddiq_O_W26S","QadirBux_O_W26S"],
-  4: ["FaizMuhammadSoomro_A_W24S","FaizMuhammadSoomro_B_W24S","GhulamHaiderSoomro_A_W24S","GhulamHaiderSoomro_B_W24S","GhulamHaiderSoomro_C_W24S","GhulamHaiderSoomro_D_W24S","ImtiazSoomro_A_W24S","ImtiazSoomro_B_W24S","ManzoorSoomro_A_W24S","ManzoorSoomro_B_W24S"],
-  5: ["AbdulHameedBhatti_O_W24S","AdnanAkbar_O_W24S","ArslanButt_O_W24S","DilshadAmjad_O_W24S","FaisalIqbal_O_W24S","GhulamMustafaKhan_O_W24S","ImranNaeem_O_W24S","MianMalik_O_W24S","MuhammadFarooq_O_W24S","MuhammadIrfanKhan_O_W24S"],
-  6: ["AliZaman_O_W24S","AmirHussain_O_W24S","ArslanRashid_O_W24S","FarrukhNawaz_O_W24S","GhulamFarid_O_W24S","KaramatHussain_O_W24S","MuhammadAsif_O_W24S"],
-  7: ["AbdulMajeedKhan_O_W24S","AsifNawaz_O_W24S","DaoudKhan_O_W24S","FazalKarim_O_W24S","GhulamHaider_O_W24S","IftikharHussain_O_W24S","ImranKhan_O_W24S","JavedIqbal_O_W24S","KarimDad_O_W24S","MuhammadAmjad_O_W24S","NazirHussain_O_W24S","SaifullahKhan_O_W24S"],
-  8: ["AdeelAhmad_O_W24S","AliAkbar_O_W24S","ArifHussain_O_W24S","BasitAli_O_W24S","FarhanAli_O_W24S","GhulamNabi_O_W24S","HanifKhan_O_W24S","IkramHussain_O_W24S","ImranAli_O_W24S","MuhammadNawaz_O_W24S","NadeemAhmed_O_W24S"],
-  9: ["AbdullahKhan_O_W24S","AdilAli_O_W24S","AhsanRaza_O_W24S","AliHussain_O_W24S","AmirSohail_O_W24S","FarheenNaz_O_W24S","GhulamRasool_O_W24S","HamidKhan_O_W24S","ImranShah_O_W24S","JamilKhan_O_W24S","KhalidMehmood_O_W24S","MuhammadAkram_O_W24S"],
-  10: ["AbdulKarimAfghan_O_W24S","AsadullahKhan_O_W24S","BashirAhmad_O_W24S","DastgirKhan_O_W24S","FazalHaq_O_W24S","GhulamHabib_O_W24S","HafeezKhan_O_W24S","IbrahimKhan_O_W24S","JalaluddinKhan_O_W24S","KarimullahKhan_O_W24S","MohammadNasim_O_W24S","NajeebKhan_O_W24S","SabirShah_O_W24S","ZubairKhan_O_W24S"],
-  11: ["AbdullahBaloch_O_W24S","AkramBaloch_O_W24S","AliMuhammadRind_O_W24S","BashirAhmedMengal_O_W24S","DostMuhammad_O_W24S","FazalMuhammadRaisani_O_W24S","GhulamNabiZehri_O_W24S","HamidullahKakar_O_W24S","ImranJamali_O_W24S","JafarKhan_O_W24S","KarimullahMengal_O_W24S","NoorullahBaloch_O_W24S","SaeedMuhammadRind_O_W24S","ZubairNasar_O_W24S"],
-  12: ["AbdullahShah_O_W24S","AkhtarHussain_O_W24S","AliMuhammadKhan_O_W24S","BashirKhan_O_W24S","DilnawazKhan_O_W24S","FazalKhan_O_W24S","GhulamMuhammadShah_O_W24S","HafeezurRehman_O_W24S","IbrahimShah_O_W24S","JavedKhan_O_W24S"],
-  13: ["AbdulQadirSundrani_O_W24S","AkramSundrani_O_W24S","AliAkbarSundrani_O_W24S","BashirSundrani_O_W24S","DilnawazSundrani_O_W24S","FazalSundrani_O_W24S","GhulamSundrani_O_W24S","HafeezSundrani_O_W24S","IbrahimSundrani_O_W24S","JavedSundrani_O_W24S","KarimSundrani_O_W24S","MuhammadSundrani_O_W24S","NajeebSundrani_O_W24S","SaeedSundrani_O_W24S"],
-  14: ["AbdulQadirSarwar_O_W24S","AkramSarwar_O_W24S","AliSarwar_O_W24S","BashirSarwar_O_W24S","DilSarwar_O_W24S","FazalSarwar_O_W24S","GhulamSarwar_B_O_W24S","HafeezSarwar_O_W24S","IbrahimSarwar_O_W24S","JavedSarwar_O_W24S"],
-  15: ["AbdulQadirYounas_O_W24S","AkramYounas_O_W24S","AliYounas_O_W24S","BashirYounas_O_W24S","DilYounas_O_W24S","FazalYounas_O_W24S","GhulamYounas_O_W24S","HafeezYounas_O_W24S","IbrahimYounas_O_W24S","JavedYounas_O_W24S"],
-  16: ["AbdulWali_O_W24S","AkramWali_O_W24S","AliWali_O_W24S","BashirWali_O_W24S","DilWali_O_W24S","FazalWali_O_W24S","GhulamWali_O_W24S","HafeezWali_O_W24S","IbrahimWali_O_W24S"],
-  17: ["AbdulBaloch_O_W24S","AkramBaloch_B_O_W24S","AliBaloch_O_W24S","BashirBaloch_O_W24S","DilBaloch_O_W24S","FazalBaloch_O_W24S","GhulamBaloch_O_W24S","HafeezBaloch_O_W24S","IbrahimBaloch_O_W24S","JavedBaloch_O_W24S"],
-  18: ["AbdulNazir_O_W24S","AkramNazir_O_W24S","AliNazir_O_W24S","BashirNazir_O_W24S"]
-};
+let currentRC=null,localDB=null;
 
-let currentRC = null;
+function openDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open(DB_NAME,1);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('questions')) d.createObjectStore('questions',{keyPath:'question_id'});
+      if(!d.objectStoreNames.contains('pins')) d.createObjectStore('pins',{keyPath:'pin'});
+    };
+    req.onsuccess=e=>{localDB=e.target.result;res(localDB)};
+    req.onerror=()=>rej(req.error);
+  });
+}
+function dbCount(store){return new Promise((res)=>{try{const tx=localDB.transaction(store,'readonly');const req=tx.objectStore(store).count();req.onsuccess=()=>res(req.result);req.onerror=()=>res(0)}catch{res(0)}});}
+function dbPut(store,val){return new Promise((res,rej)=>{const tx=localDB.transaction(store,'readwrite');const req=tx.objectStore(store).put(val);req.onsuccess=()=>res();req.onerror=()=>rej(req.error);});}
 
-// Set today as default date
-document.getElementById('assessment-date').value = new Date().toISOString().split('T')[0];
+function checkConn(){
+  const online=navigator.onLine;
+  document.getElementById('conn-dot').className='conn-dot'+(online?'':' offline');
+  document.getElementById('conn-label').textContent=online?'Online':'Offline';
+  return online;
+}
+window.addEventListener('online',checkConn);
+window.addEventListener('offline',checkConn);
 
-function doLogin() {
-  const sel = document.getElementById('rc-select').value;
-  const pwd = document.getElementById('rc-password').value;
-  const err = document.getElementById('login-error');
-  
-  if (!sel) { err.style.display='block'; err.textContent='Please select your name.'; return; }
-  if (pwd !== 'takmil123') { err.style.display='block'; err.textContent='Incorrect password.'; return; }
-  
-  err.style.display = 'none';
-  const [id, name, region] = sel.split('|');
-  currentRC = { id, name, region };
-  
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-  document.getElementById('welcome-name').textContent = name;
-  document.getElementById('welcome-region').textContent = region + ' Region';
-  
+function doLogin(){
+  const sel=document.getElementById('rc-select').value;
+  const pwd=document.getElementById('rc-password').value;
+  const err=document.getElementById('login-err');
+  if(!sel){err.style.display='block';err.textContent='Please select your name.';return;}
+  if(pwd!=='takmil123'){err.style.display='block';err.textContent='Incorrect password.';return;}
+  err.style.display='none';
+  const [id,name,region]=sel.split('|');
+  currentRC={id,name,region};
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('logout-btn').style.display='block';
+  document.getElementById('w-name').textContent=name;
+  document.getElementById('w-region').textContent=region+' Region';
+  document.getElementById('assessment-date').value=new Date().toISOString().split('T')[0];
   loadCoordinators();
   loadRecentPins();
+  updateDlStats();
+  updateSyncStats();
 }
 
-function doLogout() {
-  currentRC = null;
-  document.getElementById('login-screen').style.display = 'block';
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('rc-select').value = '';
-  document.getElementById('rc-password').value = '';
-  document.getElementById('pin-result').style.display = 'none';
+function doLogout(){
+  currentRC=null;
+  document.getElementById('login-screen').style.display='block';
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('logout-btn').style.display='none';
+  document.getElementById('rc-select').value='';
+  document.getElementById('rc-password').value='';
 }
 
-function loadCoordinators() {
-  const sel = document.getElementById('sc-select');
-  sel.innerHTML = '<option value="">-- Select Area Coordinator --</option>';
-  const scs = COORDINATORS[currentRC.id].scs;
-  scs.forEach(sc => {
-    sel.innerHTML += `<option value="${sc.id}">${sc.name}</option>`;
-  });
+function switchTab(tab,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='results') loadResults();
+  if(tab==='sync') updateSyncStats();
+  if(tab==='download') updateDlStats();
 }
 
-function loadSchools() {
-  const scId = parseInt(document.getElementById('sc-select').value);
-  const sel = document.getElementById('school-select');
-  sel.innerHTML = '<option value="">-- Select School --</option>';
-  if (!scId) return;
-  const schools = SCHOOLS[scId] || [];
-  schools.forEach(s => {
-    sel.innerHTML += `<option value="${s}">${s}</option>`;
-  });
+function loadCoordinators(){
+  const sel=document.getElementById('sc-select');
+  sel.innerHTML='<option value="">-- Select Coordinator --</option>';
+  COORDINATORS[currentRC.id].scs.forEach(sc=>{sel.innerHTML+=`<option value="${sc.id}">${sc.name}</option>`;});
 }
 
-async function generatePIN() {
-  const sc = document.getElementById('sc-select').value;
-  const school = document.getElementById('school-select').value;
-  const level = document.getElementById('level-select').value;
-  const date = document.getElementById('assessment-date').value;
-  const phone = document.getElementById('teacher-phone').value;
-  const errDiv = document.getElementById('gen-error');
+function loadSchools(){
+  const scId=parseInt(document.getElementById('sc-select').value);
+  const sel=document.getElementById('school-select');
+  sel.innerHTML='<option value="">-- Select School --</option>';
+  if(!scId) return;
+  (SCHOOLS[scId]||[]).forEach(s=>{sel.innerHTML+=`<option value="${s}">${s}</option>`;});
+}
 
-  if (!sc || !school || !level || !date) {
-    errDiv.style.display = 'block';
-    errDiv.textContent = 'Please fill in all fields.';
-    return;
-  }
-
-  // Check date is today
-  const today = new Date().toISOString().split('T')[0];
-  if (date !== today) {
-    errDiv.style.display = 'block';
-    errDiv.textContent = `PINs can only be generated on the assessment date (${date}). Today is ${today}.`;
-    return;
-  }
-
-  errDiv.style.display = 'none';
-  const btn = document.getElementById('gen-btn');
-  btn.disabled = true;
-  btn.textContent = 'Generating...';
-
-  try {
-    // Generate PIN via Railway API
-    const resp = await fetch('/admin/pins/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        schoolId: 1,  // Will be dynamic once schools are in DB
-        level: parseInt(level),
-        subject: 'All',
-        cohortSize: 30,
-        issuedBy: currentRC.name,
-        teacherPhone: phone || null
-      })
-    });
-
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error || 'Failed to generate PIN');
-
-    const pin = data.pin;
-    const expires = new Date(data.expiresAt).toLocaleString();
-    
-    // Show PIN
-    document.getElementById('pin-display').textContent = pin;
-    document.getElementById('pin-label').textContent = `${school} — Level ${level} — All Subjects`;
-    document.getElementById('pin-meta').textContent = `Valid until: ${expires}`;
-    
-    // WhatsApp status
-    const waDiv = document.getElementById('wa-status');
-    if (phone) {
-      waDiv.className = 'whatsapp-status sent';
-      waDiv.textContent = `WhatsApp sent to ${phone}`;
-    } else {
-      waDiv.className = 'whatsapp-status pending';
-      waDiv.textContent = 'No phone number — copy PIN manually';
-    }
-    
-    document.getElementById('pin-result').style.display = 'block';
+async function generatePIN(){
+  const sc=document.getElementById('sc-select').value;
+  const school=document.getElementById('school-select').value;
+  const level=document.getElementById('level-select').value;
+  const date=document.getElementById('assessment-date').value;
+  const phone=document.getElementById('teacher-phone').value;
+  const errDiv=document.getElementById('gen-error');
+  if(!sc||!school||!level||!date){errDiv.style.display='block';errDiv.textContent='Please fill in all fields.';return;}
+  const today=new Date().toISOString().split('T')[0];
+  if(date!==today){errDiv.style.display='block';errDiv.textContent='PINs can only be generated on the assessment date ('+date+'). Today is '+today+'.';return;}
+  errDiv.style.display='none';
+  const btn=document.getElementById('gen-btn');
+  btn.disabled=true;btn.textContent='Generating...';
+  try{
+    const resp=await fetch(BASE+'/admin/pins/generate',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({schoolId:1,level:parseInt(level),subject:'All',cohortSize:30,issuedBy:currentRC.name,teacherPhone:phone||null})});
+    const data=await resp.json();
+    if(!resp.ok) throw new Error(data.error||'Failed');
+    document.getElementById('pin-display').textContent=data.pin;
+    document.getElementById('pin-label').textContent=school+' — Level '+level+' — All Subjects';
+    document.getElementById('pin-meta').textContent='Valid until: '+new Date(data.expiresAt).toLocaleString();
+    const waDiv=document.getElementById('wa-status');
+    waDiv.className='wa-status '+(phone?'wa-sent':'wa-pending');
+    waDiv.textContent=phone?'WhatsApp sent to '+phone:'Copy PIN manually';
+    document.getElementById('pin-result').style.display='block';
     loadRecentPins();
-
-  } catch(e) {
-    errDiv.style.display = 'block';
-    errDiv.textContent = e.message;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Generate & Send PIN';
-  }
+  }catch(e){errDiv.style.display='block';errDiv.textContent=e.message;}
+  finally{btn.disabled=false;btn.textContent='Generate & Send PIN';}
 }
 
-async function loadRecentPins() {
-  const div = document.getElementById('pins-list');
-  try {
-    const resp = await fetch('/admin/pins/list');
-    const pins = await resp.json();
-    
-    if (!pins.length) { div.innerHTML = '<div class="loading">No PINs yet</div>'; return; }
-    
-    const today = new Date().toISOString().split('T')[0];
-    let html = `<table class="pins-table">
-      <tr><th>PIN</th><th>Level</th><th>Issued By</th><th>Status</th><th>Date</th></tr>`;
-    
-    pins.slice(0, 15).forEach(p => {
-      const expired = new Date(p.expires_at) < new Date();
-      const badge = expired ? 'badge-expired' : (p.activated_at ? 'badge-used' : 'badge-active');
-      const label = expired ? 'Expired' : (p.activated_at ? 'Used' : 'Active');
-      const dt = new Date(p.created_at).toLocaleDateString();
-      html += `<tr>
-        <td><strong style="font-family:monospace">${p.pin}</strong></td>
-        <td>L${p.level}</td>
-        <td>${p.issued_by || '—'}</td>
-        <td><span class="badge ${badge}">${label}</span></td>
-        <td>${dt}</td>
-      </tr>`;
-    });
-    
-    html += '</table>';
-    div.innerHTML = html;
-  } catch(e) {
-    div.innerHTML = '<div class="loading">Could not load PINs</div>';
-  }
+async function loadRecentPins(){
+  const div=document.getElementById('pins-list');
+  try{
+    const resp=await fetch(BASE+'/admin/pins/list');
+    const pins=await resp.json();
+    if(!pins.length){div.innerHTML='<div class="loading">No PINs yet</div>';return;}
+    div.innerHTML=`<table class="tbl"><tr><th>PIN</th><th>Level</th><th>By</th><th>Status</th><th>Date</th></tr>
+      ${pins.slice(0,15).map(p=>{
+        const expired=new Date(p.expires_at)<new Date();
+        const badge=expired?'badge-grey':p.activated_at?'badge-blue':'badge-green';
+        const label=expired?'Expired':p.activated_at?'Used':'Active';
+        return`<tr><td><strong style="font-family:monospace">${p.pin}</strong></td><td>L${p.level}</td>
+          <td>${p.issued_by||'—'}</td><td><span class="badge ${badge}">${label}</span></td>
+          <td>${new Date(p.created_at).toLocaleDateString()}</td></tr>`;
+      }).join('')}</table>`;
+  }catch(e){div.innerHTML='<div class="loading">Could not load PINs</div>';}
 }
+
+async function updateDlStats(){
+  try{
+    const qc=await dbCount('questions');
+    const pc=await dbCount('pins');
+    document.getElementById('dl-q').textContent=qc;
+    document.getElementById('dl-pins').textContent=pc;
+    const dlTime=localStorage.getItem('takmil_dl_time');
+    if(dlTime) document.getElementById('dl-last').textContent=dlTime;
+    if(checkConn()){
+      const resp=await fetch(BASE+'/api/stats');
+      const data=await resp.json();
+      document.getElementById('srv-q').textContent=data.totals?.approved||'—';
+    }
+  }catch(e){}
+}
+
+function parseCSV(text){
+  text=text.replace(/^\uFEFF/,'');
+  const lines=text.split('\n').filter(l=>l.trim());
+  if(!lines.length) return[];
+  const headers=lines[0].split(',').map(h=>h.replace(/"/g,'').trim());
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    const vals=[];let cur='';let inQ=false;
+    for(const ch of lines[i]){if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){vals.push(cur);cur='';}else{cur+=ch;}}
+    vals.push(cur);
+    const row={};headers.forEach((h,idx)=>{row[h]=(vals[idx]||'').replace(/"/g,'').trim();});
+    if(row.question_id) rows.push(row);
+  }
+  return rows;
+}
+
+async function downloadQuestions(){
+  if(!checkConn()){alert('Need internet to download.');return;}
+  const btn=document.querySelector('[onclick="downloadQuestions()"]');
+  btn.disabled=true;btn.textContent='⬇ Downloading...';
+  setDlSt('Connecting...',10);
+  try{
+    setDlSt('Downloading questions...',20);
+    const resp=await fetch(BASE+'/api/questions/export?status=approved');
+    const text=await resp.text();
+    const rows=parseCSV(text);
+    setDlSt('Saving '+rows.length+' questions...',60);
+    for(const row of rows){
+      await dbPut('questions',{question_id:row.question_id,subject:row.subject,level:parseInt(row.level)||1,
+        topic_tag:row.topic_tag,question_text:row.question_text,image_url:row.image_url||null,
+        option_a:row.option_a,option_b:row.option_b,option_c:row.option_c,option_d:row.option_d,correct_option:row.correct_option});
+    }
+    setDlSt('Downloading PINs...',80);
+    const presp=await fetch(BASE+'/admin/pins/list');
+    const pins=await presp.json();
+    for(const p of pins) if(p.is_active) await dbPut('pins',p);
+    const now=new Date().toLocaleString();
+    localStorage.setItem('takmil_dl_time',now);
+    document.getElementById('dl-last').textContent=now;
+    setDlSt('Done! '+rows.length+' questions ready.',100);
+    updateDlStats();
+  }catch(e){setDlSt('Error: '+e.message,0);}
+  finally{btn.disabled=false;btn.textContent='⬇ Download All Questions';}
+}
+
+function setDlSt(msg,pct){
+  document.getElementById('dl-status').textContent=msg;
+  document.getElementById('dl-fill').style.width=pct+'%';
+}
+
+async function updateSyncStats(){
+  const online=checkConn();
+  document.getElementById('sync-conn').textContent=online?'Online ✓':'Offline';
+  document.getElementById('sync-conn').style.color=online?'#16a34a':'#dc2626';
+  try{
+    const resp=await fetch(BASE+'/api/sync/pending');
+    const data=await resp.json();
+    document.getElementById('sync-pending').textContent=data.pending||0;
+    document.getElementById('sync-today').textContent=data.today||0;
+    const list=document.getElementById('sync-list');
+    if(data.recent&&data.recent.length){
+      list.innerHTML=data.recent.slice(0,8).map(r=>`
+        <div class="sync-item">
+          <div class="sync-dot ${r.synced?'sync-done':'sync-pending'}"></div>
+          <div style="flex:1">
+            <strong>${r.student_name}</strong> — L${r.level} — ${r.overall_pct||0}%
+            <div style="font-size:11px;color:#94a3b8">${(r.assessed_at||r.created_at||'').split('T')[0]} • ${r.synced?'Synced':'Pending'}</div>
+          </div>
+        </div>`).join('');
+    } else {
+      list.innerHTML='<div class="loading">No sync activity yet</div>';
+    }
+  }catch(e){document.getElementById('sync-list').innerHTML='<div class="loading">Could not load sync data</div>';}
+}
+
+async function syncResults(){
+  if(!checkConn()){alert('Need internet to sync.');return;}
+  const btn=document.getElementById('sync-btn');
+  btn.disabled=true;btn.textContent='Syncing...';
+  document.getElementById('sync-prog').style.display='block';
+  document.getElementById('sync-fill').style.width='50%';
+  document.getElementById('sync-status').textContent='Syncing results...';
+  try{
+    const resp=await fetch(BASE+'/api/sync/push',{method:'POST'});
+    const data=await resp.json();
+    document.getElementById('sync-fill').style.width='100%';
+    const msg=document.getElementById('sync-msg');
+    msg.style.display='block';msg.style.background='#dcfce7';msg.style.color='#15803d';
+    msg.textContent=(data.synced||0)+' results synced ✓';
+    updateSyncStats();
+  }catch(e){
+    const msg=document.getElementById('sync-msg');
+    msg.style.display='block';msg.style.background='#fef2f2';msg.style.color='#dc2626';
+    msg.textContent='Sync failed: '+e.message;
+  }finally{btn.disabled=false;btn.textContent='↑ Sync All Pending';}
+}
+
+async function loadResults(){
+  const div=document.getElementById('results-list');
+  div.innerHTML='<div class="loading">Loading...</div>';
+  try{
+    const resp=await fetch(BASE+'/admin/advancements/all');
+    const data=await resp.json();
+    const total=data.length;
+    const passed=data.filter(r=>parseFloat(r.score_pct||0)>=80).length;
+    const avg=total?Math.round(data.reduce((s,r)=>s+parseFloat(r.score_pct||0),0)/total):0;
+    document.getElementById('res-summary').innerHTML=`
+      <div style="background:#f0fdf4;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:26px;font-weight:800;color:#16a34a">${total}</div><div style="font-size:12px;color:#64748b">Assessed</div></div>
+      <div style="background:#f0fdf4;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:26px;font-weight:800;color:#16a34a">${passed}</div><div style="font-size:12px;color:#64748b">Passed</div></div>
+      <div style="background:#fef9c3;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:26px;font-weight:800;color:#d97706">${total-passed}</div><div style="font-size:12px;color:#64748b">Reassess</div></div>
+      <div style="background:#dbeafe;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:26px;font-weight:800;color:#2563eb">${avg}%</div><div style="font-size:12px;color:#64748b">Avg Score</div></div>`;
+    if(!data.length){div.innerHTML='<div class="loading">No results yet</div>';return;}
+    div.innerHTML=`<table class="tbl"><tr><th>School</th><th>Subject</th><th>Level</th><th>Score</th><th>Result</th><th>Date</th></tr>
+      ${data.slice(0,50).map(r=>{
+        const pct=parseFloat(r.score_pct||0);const ok=pct>=80;
+        return`<tr><td>${r.school_name||'—'}</td><td>${r.subject||'—'}</td><td>L${r.level}</td>
+          <td><div style="font-weight:800">${pct}%</div>
+            <div class="res-bar"><div class="res-fill" style="width:${pct}%;background:${ok?'#16a34a':'#d97706'}"></div></div></td>
+          <td><span class="badge ${ok?'badge-green':'badge-amber'}">${ok?'Passed':'Reassess'}</span></td>
+          <td>${new Date(r.created_at).toLocaleDateString()}</td></tr>`;
+      }).join('')}</table>`;
+  }catch(e){div.innerHTML='<div class="loading">Could not load results</div>';}
+}
+
+async function init(){
+  await openDB();
+  checkConn();
+}
+init();
 </script>
 </body>
 </html>
