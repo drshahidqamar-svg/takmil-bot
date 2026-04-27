@@ -1958,6 +1958,21 @@ app.post('/api/questions/csv-update', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Fix mislabeled question subjects
+app.post('/api/questions/fix-subjects', async (req, res) => {
+  try {
+    const { old_subjects, new_subject } = req.body;
+    if (!old_subjects || !new_subject)
+      return res.status(400).json({ error: 'old_subjects array and new_subject required' });
+    const placeholders = old_subjects.map((_, i) => `$${i + 2}`).join(',');
+    const r = await db.pool.query(
+      `UPDATE questions SET subject=$1 WHERE subject IN (${placeholders}) RETURNING question_id`,
+      [new_subject, ...old_subjects]
+    );
+    res.json({ fixed: r.rowCount, new_subject, message: `${r.rowCount} questions updated to ${new_subject}` });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 // Inspect mislabeled questions
 app.get('/api/questions/mislabeled', async (req, res) => {
   try {
