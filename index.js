@@ -1970,7 +1970,7 @@ app.post('/api/teacher/validate', async (req, res) => {
     const { school_code, pin, name } = req.body;
     if (!school_code || !pin) return res.json({ valid: false, error: 'School code and PIN required.' });
     const school = await db.pool.query(
-      `SELECT * FROM schools WHERE identifier=$1 OR name ILIKE $1 LIMIT 1`, [school_code]);
+      `SELECT * FROM schools WHERE school_code=$1 OR name ILIKE $1 LIMIT 1`, [school_code]);
     if (!school.rows.length)
       return res.json({ valid: false, error: 'School code not found. Check with your coordinator.' });
     res.json({ valid: true, school_name: school.rows[0].name || school_code, school_id: school.rows[0].id });
@@ -2027,9 +2027,12 @@ app.post('/api/lessons/start', async (req, res) => {
   try {
     const { video_id, video_name, subject, level, expected_duration,
             school_code, school_name, teacher_name, start_time, start_gps } = req.body;
-    const school = await db.pool.query(
-      `SELECT id FROM schools WHERE identifier=$1 OR name ILIKE $1 LIMIT 1`, [school_code]);
-    const school_id = school.rows[0]?.id || null;
+    let school_id = null;
+    try {
+      const school = await db.pool.query(
+        `SELECT id FROM schools WHERE school_code=$1 OR name ILIKE $1 LIMIT 1`, [school_code]);
+      school_id = school.rows[0]?.id || null;
+    } catch(e) { /* schools table may not exist yet — lesson still saves */ }
     await db.pool.query(`
       INSERT INTO lessons (video_id, video_name, subject, level, expected_duration,
         school_id, school_code, school_name, teacher_name, start_time,
@@ -2056,9 +2059,12 @@ app.post('/api/lessons/end', async (req, res) => {
             school_code, school_name, teacher_name, start_time, end_time,
             actual_duration, coverage_pct, start_gps, end_gps,
             gps_match, status, flagged } = req.body;
-    const school = await db.pool.query(
-      `SELECT id FROM schools WHERE identifier=$1 OR name ILIKE $1 LIMIT 1`, [school_code]);
-    const school_id = school.rows[0]?.id || null;
+    let school_id = null;
+    try {
+      const school = await db.pool.query(
+        `SELECT id FROM schools WHERE school_code=$1 OR name ILIKE $1 LIMIT 1`, [school_code]);
+      school_id = school.rows[0]?.id || null;
+    } catch(e) { /* schools table may not exist yet — lesson still saves */ }
 
     // Try to UPDATE the existing 'started' row first
     const updated = await db.pool.query(`
