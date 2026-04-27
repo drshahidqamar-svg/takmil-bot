@@ -951,9 +951,13 @@ app.get('/api/feedback', async (req, res) => {
       FROM schools s
       LEFT JOIN regional_coordinators rc ON rc.id = s.regional_coordinator_id
       LEFT JOIN school_coordinators   sc ON sc.id = s.school_coordinator_id
-      LEFT JOIN daily_feedback f ON (
-        f.school_identifier = s.identifier OR f.school_name ILIKE s.name
-      ) AND f.report_date = $1::date
+      LEFT JOIN LATERAL (
+        SELECT * FROM daily_feedback df
+        WHERE (df.school_identifier = s.identifier OR df.school_name ILIKE s.name)
+          AND df.report_date = $1::date
+        ORDER BY df.created_at DESC
+        LIMIT 1
+      ) f ON true
       WHERE s.identifier IS NOT NULL ${regionJoin}
       ORDER BY s.region, s.name
     `, params);
