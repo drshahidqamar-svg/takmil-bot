@@ -200,6 +200,14 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
     <option value="GB">GB</option>
     <option value="Baluchistan">Baluchistan</option>
   </select>
+  <span class="f-lbl">Regional Coord.</span>
+  <select class="f-inp f-sel" id="f-rc" onchange="onRCChange()">
+    <option value="">All RCs</option>
+  </select>
+  <span class="f-lbl">Coordinator</span>
+  <select class="f-inp f-sel" id="f-coord" onchange="filterCards()">
+    <option value="">All Coordinators</option>
+  </select>
   <span class="f-lbl">Status</span>
   <select class="f-inp f-sel" id="f-status" onchange="filterCards()">
     <option value="">All Schools</option>
@@ -264,6 +272,7 @@ async function load(){
     `;
 
     renderRegions(data.byRegion);
+    populateDropdowns(data.schools);
     filterCards();
 
     const now = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
@@ -319,6 +328,8 @@ function renderCard(s){
   <div class="school-card ${cardClass}"
        data-status="${submitted?'submitted':'missing'}"
        data-name="${(s.name||'').toLowerCase().replace(/_/g,' ')} ${(s.identifier||'').toLowerCase().replace(/_/g,' ')} ${fmtShort(s.name||'').toLowerCase()}"
+       data-rc="${(s.regional_coordinator||'').toLowerCase()}"
+       data-coord="${(s.school_coordinator||'').toLowerCase()}"
        onclick="showDetail('${s.feedback_id||''}','${(s.name||'').replace(/'/g,"\\'")}','${s.school_coordinator||''}')">
     <div class="sc-top">
       <div class="sc-name">${shortName}</div>
@@ -415,16 +426,48 @@ function closeModal(){
   document.getElementById('modal').classList.remove('on');
 }
 
+function populateDropdowns(schools){
+  // Build unique RC and coordinator lists
+  const rcs   = [...new Set(schools.map(s=>s.regional_coordinator).filter(Boolean))].sort();
+  const coords= [...new Set(schools.map(s=>s.school_coordinator).filter(Boolean))].sort();
+
+  const rcSel = document.getElementById('f-rc');
+  const curRC = rcSel.value;
+  rcSel.innerHTML = '<option value="">All RCs</option>' +
+    rcs.map(rc => `<option value="${rc.toLowerCase()}" ${curRC===rc.toLowerCase()?'selected':''}>${rc}</option>`).join('');
+
+  const coordSel = document.getElementById('f-coord');
+  const curCoord = coordSel.value;
+  // If RC is selected, only show coordinators under that RC
+  const selectedRC = rcSel.value;
+  const filteredCoords = selectedRC
+    ? [...new Set(schools.filter(s=>(s.regional_coordinator||'').toLowerCase()===selectedRC).map(s=>s.school_coordinator).filter(Boolean))].sort()
+    : coords;
+  coordSel.innerHTML = '<option value="">All Coordinators</option>' +
+    filteredCoords.map(c => `<option value="${c.toLowerCase()}" ${curCoord===c.toLowerCase()?'selected':''}>${c}</option>`).join('');
+}
+
+function onRCChange(){
+  // When RC changes, reset coordinator and re-filter
+  document.getElementById('f-coord').value = '';
+  if(allData) populateDropdowns(allData.schools);
+  filterCards();
+}
+
 function filterCards(){
   const status = document.getElementById('f-status').value;
-  // Normalize search: lowercase, strip underscores and extra spaces
+  const rc     = document.getElementById('f-rc').value.toLowerCase().trim();
+  const coord  = document.getElementById('f-coord').value.toLowerCase().trim();
   const raw    = document.getElementById('f-search').value.toLowerCase().trim();
   const search = raw.replace(/_/g,' ').replace(/\s+/g,' ');
+
   document.querySelectorAll('.school-card').forEach(c => {
     const matchStatus = !status || c.dataset.status === status;
-    const name = (c.dataset.name||'').replace(/_/g,' ');
+    const name        = (c.dataset.name||'').replace(/_/g,' ');
     const matchSearch = !search || name.includes(search);
-    c.classList.toggle('hidden', !(matchStatus && matchSearch));
+    const matchRC     = !rc    || (c.dataset.rc||'').includes(rc);
+    const matchCoord  = !coord || (c.dataset.coord||'') === coord;
+    c.classList.toggle('hidden', !(matchStatus && matchSearch && matchRC && matchCoord));
   });
 }
 
