@@ -310,7 +310,7 @@ function renderCard(s){
   const submitted = !!s.feedback_id;
   const cardClass = submitted ? 'submitted' : 'missing';
   const shortName = fmtShort(s.name||s.identifier);
-  const subjects  = submitted && s.subjects ? JSON.parse(s.subjects||'[]') : [];
+  const subjects  = submitted && s.subjects ? (typeof s.subjects === 'string' ? JSON.parse(s.subjects) : s.subjects) : [];
   const subjNames = subjects.map(x=>x.subject).filter(Boolean).join(', ');
   const attendPct = s.total_strength > 0
     ? Math.round((s.present/s.total_strength)*100) : null;
