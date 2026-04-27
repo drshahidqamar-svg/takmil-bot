@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Daily Feedback</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8faf9;--bg2:#ffffff;--panel:#f0f5f1;
+  --leaf:#16a34a;--leaf2:#22c55e;--leaf3:#dcfce7;
+  --border:#e2ece5;--border2:#c8dfd0;
+  --text:#1a2e1f;--text2:#4a6b52;--text3:#8aaa90;
+  --amber:#f59e0b;--amber2:#fef9c3;
+  --danger:#ef4444;--danger2:#fee2e2;
+  --ok:#16a34a;--ok2:#dcfce7;
+  --r:12px;--r2:8px;
+  --shadow:0 2px 12px rgba(0,0,0,0.06);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px}
+
+/* HEADER */
+.hdr{
+  background:var(--text);padding:0 28px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:20;
+}
+.logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;
+  color:#4ade80;letter-spacing:0.3px}
+.logo-sub{font-size:10px;color:#4a6b52;font-weight:600;
+  text-transform:uppercase;letter-spacing:1px}
+.hdr-right{display:flex;align-items:center;gap:10px}
+
+/* FILTERS */
+.filters{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:12px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.f-lbl{font-size:11px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.6px}
+.f-inp{
+  padding:7px 12px;background:var(--panel);border:1.5px solid var(--border2);
+  border-radius:var(--r2);font-size:13px;color:var(--text);
+  font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;
+}
+.f-inp:focus{border-color:var(--leaf)}
+.f-sel{appearance:none;padding-right:26px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238aaa90' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center}
+.refresh-btn{
+  margin-left:auto;padding:7px 16px;background:var(--leaf);
+  border:none;border-radius:var(--r2);font-size:12px;font-weight:700;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;
+}
+.refresh-btn:hover{background:#15803d;transform:translateY(-1px)}
+
+/* STATS */
+.stats{
+  display:grid;grid-template-columns:repeat(6,1fr);
+  gap:1px;background:var(--border);border-bottom:1px solid var(--border);
+}
+@media(max-width:900px){.stats{grid-template-columns:repeat(3,1fr)}}
+.stat{background:var(--bg2);padding:16px 20px;text-align:center}
+.stat-n{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
+.stat-l{font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.7px;margin-top:3px}
+
+/* BODY */
+.body{padding:20px 28px;max-width:1400px;margin:0 auto}
+
+/* REGION BLOCK */
+.region-block{margin-bottom:28px}
+.region-hdr{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 0;border-bottom:2px solid var(--border);margin-bottom:12px;
+}
+.region-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text)}
+.region-coord{font-size:12px;color:var(--text3)}
+.region-pills{margin-left:auto;display:flex;gap:6px}
+.rpill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.rpill-ok{background:var(--ok2);color:var(--ok)}
+.rpill-bad{background:var(--danger2);color:var(--danger)}
+
+/* SCHOOL GRID */
+.school-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+
+/* SCHOOL CARD */
+.school-card{
+  background:var(--bg2);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:14px 16px;
+  transition:all 0.15s;cursor:pointer;
+}
+.school-card:hover{border-color:var(--leaf);transform:translateY(-1px);box-shadow:var(--shadow)}
+.school-card.submitted{border-color:#86efac;background:#f0fdf4}
+.school-card.missing{border-left:3px solid var(--danger)}
+.school-card.hidden{display:none}
+
+.sc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.sc-name{font-size:12px;font-weight:700;color:var(--text);line-height:1.4;flex:1;margin-right:8px}
+.sc-badge{
+  font-size:10px;font-weight:700;padding:2px 8px;
+  border-radius:20px;white-space:nowrap;flex-shrink:0;
+}
+.badge-ok{background:var(--ok2);color:var(--ok)}
+.badge-miss{background:var(--danger2);color:var(--danger)}
+
+.sc-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px}
+.sc-stat{
+  background:var(--panel);border-radius:6px;padding:6px 8px;text-align:center;
+}
+.sc-stat-n{font-size:15px;font-weight:800;color:var(--text)}
+.sc-stat-l{font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase}
+
+.sc-chips{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.chip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px}
+.chip-ok{background:var(--ok2);color:var(--ok)}
+.chip-warn{background:var(--amber2);color:#92400e}
+.chip-off{background:var(--panel);color:var(--text3)}
+.chip-blue{background:#dbeafe;color:#1d4ed8}
+
+.sc-subjects{font-size:11px;color:var(--text2);line-height:1.6}
+.sc-time{font-size:10px;color:var(--text3);margin-top:4px}
+.sc-coord{font-size:10px;color:var(--text3)}
+
+/* MODAL */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,0.4);
+  display:none;align-items:center;justify-content:center;
+  z-index:100;backdrop-filter:blur(4px);padding:20px;
+}
+.modal-bg.on{display:flex}
+.modal{
+  background:var(--bg2);border-radius:20px;width:100%;max-width:560px;
+  max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.15);
+  animation:modal-in 0.25s ease;
+}
+@keyframes modal-in{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-hdr{
+  padding:20px 24px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;
+  position:sticky;top:0;background:var(--bg2);z-index:1;
+}
+.modal-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--text)}
+.modal-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.modal-close{
+  background:var(--panel);border:none;width:28px;height:28px;
+  border-radius:50%;cursor:pointer;font-size:14px;color:var(--text2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.modal-body{padding:20px 24px}
+.m-section{margin-bottom:20px}
+.m-section-title{
+  font-size:10px;font-weight:800;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;
+}
+.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.m-cell{background:var(--panel);border-radius:var(--r2);padding:10px 12px}
+.m-cell-l{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.m-cell-v{font-size:15px;font-weight:700;color:var(--text);margin-top:2px}
+.subj-card{
+  background:var(--panel);border-radius:var(--r2);padding:12px 14px;
+  margin-bottom:6px;border-left:3px solid var(--leaf);
+}
+.subj-name{font-size:13px;font-weight:800;color:var(--text);margin-bottom:6px}
+.subj-row{display:flex;gap:8px;font-size:12px;color:var(--text2);margin-bottom:2px}
+.subj-lbl{font-weight:700;color:var(--text3);min-width:60px}
+
+/* Loading */
+.loading-state{text-align:center;padding:60px 20px}
+.spin{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--leaf);
+  border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.last-upd{font-size:11px;color:var(--text3);text-align:center;padding:12px;
+  border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <div class="logo">TAKMIL — Daily Feedback</div>
+    <div class="logo-sub">Teacher Reports</div>
+  </div>
+  <div class="hdr-right">
+    <span id="upd-time" style="font-size:11px;color:#4a6b52">—</span>
+  </div>
+</div>
+
+<div class="filters">
+  <span class="f-lbl">Date</span>
+  <input type="date" class="f-inp" id="f-date" onchange="load()">
+  <span class="f-lbl">Region</span>
+  <select class="f-inp f-sel" id="f-region" onchange="load()">
+    <option value="">All Regions</option>
+    <option value="Sindh">Sindh</option>
+    <option value="Punjab">Punjab</option>
+    <option value="KPK">KPK</option>
+    <option value="GB">GB</option>
+    <option value="Baluchistan">Baluchistan</option>
+  </select>
+  <span class="f-lbl">Status</span>
+  <select class="f-inp f-sel" id="f-status" onchange="filterCards()">
+    <option value="">All Schools</option>
+    <option value="submitted">Submitted ✅</option>
+    <option value="missing">Not Submitted ❌</option>
+  </select>
+  <input type="text" class="f-inp" id="f-search" placeholder="Search school..."
+    oninput="filterCards()" style="min-width:160px">
+  <button class="refresh-btn" onclick="load()">↻ Refresh</button>
+</div>
+
+<div class="stats" id="stats"></div>
+<div class="body" id="body">
+  <div class="loading-state"><div class="spin"></div><p style="color:var(--text3)">Loading...</p></div>
+</div>
+<div class="last-upd" id="last-upd"></div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="m-title">School Report</div>
+        <div class="modal-sub" id="m-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+  </div>
+</div>
+
+<script>
+function fmt(v){ return v ?? '—'; }
+function fmtBool(v){ return v ? '✅ Yes' : '❌ No'; }
+function fmtShort(name){
+  return (name||'').replace(/_O_|_A_|_B_|_C_/,' ').replace(/_W\d+[A-Z]+$/,'').replace(/_/g,' ');
+}
+
+async function load(){
+  const date   = document.getElementById('f-date').value;
+  const region = document.getElementById('f-region').value;
+
+  document.getElementById('body').innerHTML =
+    '<div class="loading-state"><div class="spin"></div><p style="color:var(--text3)">Loading...</p></div>';
+
+  try {
+    let url = '/api/feedback?date='+date;
+    if(region) url += '&region='+encodeURIComponent(region);
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    // Stats bar
+    const attendPct = data.totalStrength > 0
+      ? Math.round((data.totalPresent / data.totalStrength)*100) : 0;
+    document.getElementById('stats').innerHTML = `
+      <div class="stat"><div class="stat-n" style="color:var(--text)">${data.total||0}</div><div class="stat-l">Total Schools</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--ok)">${data.submitted||0}</div><div class="stat-l">Submitted ✅</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--danger)">${data.missing||0}</div><div class="stat-l">Not Submitted ❌</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--text)">${attendPct}%</div><div class="stat-l">Attendance</div></div>
+      <div class="stat"><div class="stat-n" style="color:#2563eb">${data.techYes||0}</div><div class="stat-l">Tech Used</div></div>
+      <div class="stat"><div class="stat-n" style="color:#7c3aed">${data.assemblyYes||0}</div><div class="stat-l">Assembly ✅</div></div>
+    `;
+
+    renderRegions(data.byRegion);
+    filterCards();
+
+    const now = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('upd-time').textContent = 'Updated '+now;
+    document.getElementById('last-upd').textContent = 'Auto-refreshes every 5 minutes · Last updated '+now;
+  } catch(e) {
+    document.getElementById('body').innerHTML =
+      `<div class="loading-state"><p style="color:var(--danger)">Error: ${e.message}</p></div>`;
+  }
+}
+
+function renderRegions(byRegion){
+  if(!byRegion || !Object.keys(byRegion).length){
+    document.getElementById('body').innerHTML =
+      '<div class="loading-state"><p style="color:var(--text3)">No data found.</p></div>';
+    return;
+  }
+  const order = ['Sindh','Punjab','KPK','GB','Baluchistan'];
+  const regions = order.filter(r=>byRegion[r]).concat(
+    Object.keys(byRegion).filter(r=>!order.includes(r)));
+
+  document.getElementById('body').innerHTML = regions.map(reg => {
+    const schools = byRegion[reg]||[];
+    const sub = schools.filter(s=>s.feedback_id).length;
+    const coord = schools[0]?.regional_coordinator||'';
+    return `
+    <div class="region-block">
+      <div class="region-hdr">
+        <div class="region-name">${reg}</div>
+        ${coord?`<div class="region-coord">RC: ${coord}</div>`:''}
+        <div class="region-pills">
+          <span class="rpill rpill-ok">${sub} submitted</span>
+          <span class="rpill rpill-bad">${schools.length-sub} missing</span>
+        </div>
+      </div>
+      <div class="school-grid">
+        ${schools.map(s=>renderCard(s)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCard(s){
+  const submitted = !!s.feedback_id;
+  const cardClass = submitted ? 'submitted' : 'missing';
+  const shortName = fmtShort(s.name||s.identifier);
+  const subjects  = submitted && s.subjects ? JSON.parse(s.subjects||'[]') : [];
+  const subjNames = subjects.map(x=>x.subject).filter(Boolean).join(', ');
+  const attendPct = s.total_strength > 0
+    ? Math.round((s.present/s.total_strength)*100) : null;
+
+  return `
+  <div class="school-card ${cardClass}"
+       data-status="${submitted?'submitted':'missing'}"
+       data-name="${(s.name||'').toLowerCase()}"
+       onclick="showDetail('${s.feedback_id||''}','${(s.name||'').replace(/'/g,"\\'")}','${s.school_coordinator||''}')">
+    <div class="sc-top">
+      <div class="sc-name">${shortName}</div>
+      <div class="sc-badge ${submitted?'badge-ok':'badge-miss'}">${submitted?'✅ Done':'❌ Missing'}</div>
+    </div>
+    ${submitted ? `
+    <div class="sc-stats">
+      <div class="sc-stat">
+        <div class="sc-stat-n" style="color:${attendPct>=80?'var(--ok)':attendPct>=60?'#d97706':'var(--danger)'}">${s.present??'—'}</div>
+        <div class="sc-stat-l">Present</div>
+      </div>
+      <div class="sc-stat">
+        <div class="sc-stat-n">${s.absent??'—'}</div>
+        <div class="sc-stat-l">Absent</div>
+      </div>
+      <div class="sc-stat">
+        <div class="sc-stat-n">${attendPct!==null?attendPct+'%':'—'}</div>
+        <div class="sc-stat-l">Attend.</div>
+      </div>
+    </div>
+    <div class="sc-chips">
+      ${s.assembly_conducted?'<span class="chip chip-ok">Assembly ✅</span>':'<span class="chip chip-off">No Assembly</span>'}
+      ${s.technology_used?'<span class="chip chip-blue">Tech ✅</span>':'<span class="chip chip-off">No Tech</span>'}
+      ${s.cr_media_shared?'<span class="chip chip-ok">CR Media ✅</span>':''}
+    </div>
+    ${subjNames?`<div class="sc-subjects">📚 ${subjNames}</div>`:''}
+    <div class="sc-time">
+      ${s.check_in?'In: '+s.check_in:''}${s.check_in&&s.check_out?' · ':''}${s.check_out?'Out: '+s.check_out:''}
+      ${s.submitted_at?' · '+new Date(s.submitted_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}
+    </div>
+    ` : `<div class="sc-coord" style="margin-top:4px;color:var(--text3)">No report received today</div>`}
+    <div class="sc-coord">${s.school_coordinator||''}</div>
+  </div>`;
+}
+
+async function showDetail(feedbackId, schoolName, coord){
+  if(!feedbackId){ return; }
+  const resp = await fetch('/api/feedback/detail/'+feedbackId);
+  const f = await resp.json();
+  if(!f.id) return;
+
+  document.getElementById('m-title').textContent = fmtShort(schoolName);
+  document.getElementById('m-sub').textContent = `${f.report_date} · ${coord}`;
+
+  const subjects = f.subjects || [];
+  document.getElementById('m-body').innerHTML = `
+    <div class="m-section">
+      <div class="m-section-title">Attendance</div>
+      <div class="m-grid">
+        <div class="m-cell"><div class="m-cell-l">Total Strength</div><div class="m-cell-v">${fmt(f.total_strength)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Present</div><div class="m-cell-v" style="color:var(--ok)">${fmt(f.present)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Absent</div><div class="m-cell-v" style="color:var(--danger)">${fmt(f.absent)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Leave</div><div class="m-cell-v">${fmt(f.leave_count)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Boys</div><div class="m-cell-v">${fmt(f.boys)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Girls</div><div class="m-cell-v">${fmt(f.girls)}</div></div>
+      </div>
+    </div>
+    <div class="m-section">
+      <div class="m-section-title">Schedule</div>
+      <div class="m-grid">
+        <div class="m-cell"><div class="m-cell-l">Check In</div><div class="m-cell-v">${fmt(f.check_in)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Check Out</div><div class="m-cell-v">${fmt(f.check_out)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Grade</div><div class="m-cell-v">${fmt(f.grade)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Level</div><div class="m-cell-v">${fmt(f.level)}</div></div>
+      </div>
+    </div>
+    <div class="m-section">
+      <div class="m-section-title">Activities</div>
+      <div class="m-grid">
+        <div class="m-cell"><div class="m-cell-l">Assembly</div><div class="m-cell-v">${fmtBool(f.assembly_conducted)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Child of Day</div><div class="m-cell-v">${fmt(f.child_of_day)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Technology</div><div class="m-cell-v">${fmtBool(f.technology_used)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">CR Media</div><div class="m-cell-v">${fmtBool(f.cr_media_shared)}</div></div>
+      </div>
+      ${f.technology_reason?`<div style="margin-top:8px;padding:10px 12px;background:var(--amber2);border-radius:8px;font-size:12px;color:#92400e"><strong>Tech Reason:</strong> ${f.technology_reason}</div>`:''}
+    </div>
+    ${subjects.length ? `
+    <div class="m-section">
+      <div class="m-section-title">Subjects Taught (${subjects.length})</div>
+      ${subjects.map(s=>`
+      <div class="subj-card">
+        <div class="subj-name">${s.subject||'—'}</div>
+        <div class="subj-row"><span class="subj-lbl">Unit</span>${s.unit||'—'}</div>
+        <div class="subj-row"><span class="subj-lbl">Lesson</span>${s.lesson_no||'—'}</div>
+        <div class="subj-row"><span class="subj-lbl">Topic</span>${s.topic||'—'}</div>
+        <div class="subj-row"><span class="subj-lbl">Activity</span>${s.activity||'—'}</div>
+      </div>`).join('')}
+    </div>` : ''}
+  `;
+  document.getElementById('modal').classList.add('on');
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('on');
+}
+
+function filterCards(){
+  const status = document.getElementById('f-status').value;
+  const search = document.getElementById('f-search').value.toLowerCase();
+  document.querySelectorAll('.school-card').forEach(c => {
+    const ms = !status || c.dataset.status === status;
+    const ms2= !search || c.dataset.name.includes(search);
+    c.classList.toggle('hidden', !(ms && ms2));
+  });
+}
+
+document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+load();
+setInterval(load, 5*60*1000);
+</script>
+</body>
+</html>

@@ -785,11 +785,226 @@ async function handleOpsMessage(phone, text, upper) {
 
 // ── Webhook ──────────────────────────────────────────────────────────────────
 
+
+// ═══════════════════════════════════════════════════════════════
+//  DAILY FEEDBACK PARSER
+// ═══════════════════════════════════════════════════════════════
+
+function isFeedbackMessage(text) {
+  const t = text.toLowerCase();
+  return (t.includes('check in') || t.includes('check-in')) &&
+         (t.includes('present') || t.includes('absent')) &&
+         (t.includes('subject') || t.includes('lesson'));
+}
+
+function parseFeedback(text, teacherPhone) {
+  // Clean the message — strip asterisks, normalize spaces
+  const clean = line => line.replace(/\*/g, '').trim();
+  const val = line => {
+    const idx = line.indexOf(':');
+    return idx >= 0 ? line.slice(idx + 1).trim().replace(/\*/g, '').trim() : '';
+  };
+  const bool = v => /^yes$/i.test(v.trim());
+  const num = v => { const n = parseInt(v); return isNaN(n) ? null : n; };
+
+  const lines = text.split('\n').map(l => l.replace(/\*/g, '').trim()).filter(Boolean);
+
+  const fb = {
+    teacher_phone:     teacherPhone,
+    school_name:       null,
+    report_date:       null,
+    check_in:          null,
+    check_out:         null,
+    grade:             null,
+    level:             null,
+    total_strength:    null,
+    boys:              null,
+    girls:             null,
+    present:           null,
+    absent:            null,
+    leave_count:       null,
+    assembly_conducted:false,
+    child_of_day:      null,
+    technology_used:   false,
+    technology_reason: null,
+    cr_media_shared:   false,
+    tech_media_shared: false,
+    subjects:          [],
+    raw_message:       text,
+  };
+
+  let currentSubject = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const low  = line.toLowerCase();
+
+    if (/^check.?in/i.test(line))             { fb.check_in          = val(line); continue; }
+    if (/^check.?out/i.test(line))            { fb.check_out         = val(line); continue; }
+    if (/^date/i.test(line))                  { fb.report_date       = val(line); continue; }
+    if (/^grade/i.test(line))                 { fb.grade             = val(line); continue; }
+    if (/^level/i.test(line))                 { fb.level             = num(val(line)); continue; }
+    if (/^total.?strength/i.test(line))       { fb.total_strength    = num(val(line)); continue; }
+    if (/^boys/i.test(line))                  { fb.boys              = num(val(line)); continue; }
+    if (/^girls/i.test(line))                 { fb.girls             = num(val(line)); continue; }
+    if (/^present/i.test(line))               { fb.present           = num(val(line)); continue; }
+    if (/^absent/i.test(line))                { fb.absent            = num(val(line)); continue; }
+    if (/^leave/i.test(line))                 { fb.leave_count       = num(val(line)); continue; }
+    if (/^assembly.?conducted/i.test(line))   { fb.assembly_conducted= bool(val(line)); continue; }
+    if (/^name.?child/i.test(line))           { fb.child_of_day      = val(line); continue; }
+    if (/^technology.?used/i.test(line))      { fb.technology_used   = bool(val(line)); continue; }
+    if (/^if.?no.?reason/i.test(line))        { fb.technology_reason = lines[i+1] || val(line); continue; }
+    if (/^class.?room.*media/i.test(line))    { fb.cr_media_shared   = bool(val(line)); continue; }
+    if (/^technology.*tech.*media/i.test(line)){ fb.tech_media_shared= bool(val(line)); continue; }
+
+    // Subject block — starts a new subject entry
+    if (/^subject\s*:/i.test(line)) {
+      if (currentSubject) fb.subjects.push(currentSubject);
+      currentSubject = { subject: val(line), unit: null, lesson_no: null, topic: null, activity: null };
+      continue;
+    }
+    if (currentSubject) {
+      if (/^unit/i.test(line))       { currentSubject.unit      = val(line); continue; }
+      if (/^lesson.?no/i.test(line)) { currentSubject.lesson_no = val(line); continue; }
+      if (/^topic/i.test(line))      { currentSubject.topic     = val(line); continue; }
+      if (/^activity/i.test(line))   { currentSubject.activity  = val(line); continue; }
+    }
+  }
+  if (currentSubject) fb.subjects.push(currentSubject);
+
+  // Parse date — handle DD/MM/YYYY
+  if (fb.report_date) {
+    const parts = fb.report_date.split('/');
+    if (parts.length === 3) {
+      fb.report_date = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+    }
+  } else {
+    fb.report_date = new Date().toISOString().split('T')[0];
+  }
+
+  return fb;
+}
+
+async function saveFeedback(fb) {
+  // Match school by teacher phone
+  let schoolName = null, schoolId = null;
+  try {
+    const sr = await db.pool.query(
+      `SELECT id, name, identifier FROM schools WHERE teacher_phone=$1 LIMIT 1`,
+      [fb.teacher_phone.replace('whatsapp:','')]
+    );
+    if (sr.rows[0]) {
+      schoolName = sr.rows[0].name;
+      schoolId   = sr.rows[0].id;
+      fb.school_name = schoolName;
+      fb.school_identifier = sr.rows[0].identifier;
+    }
+  } catch(e) {}
+
+  await db.pool.query(`
+    INSERT INTO daily_feedback
+      (teacher_phone, school_name, school_identifier, report_date,
+       check_in, check_out, grade, level, total_strength,
+       boys, girls, present, absent, leave_count,
+       assembly_conducted, child_of_day, technology_used, technology_reason,
+       cr_media_shared, tech_media_shared, subjects, raw_message)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+    ON CONFLICT DO NOTHING`,
+    [fb.teacher_phone, fb.school_name||null, fb.school_identifier||null,
+     fb.report_date, fb.check_in, fb.check_out,
+     fb.grade, fb.level, fb.total_strength,
+     fb.boys, fb.girls, fb.present, fb.absent, fb.leave_count,
+     fb.assembly_conducted, fb.child_of_day,
+     fb.technology_used, fb.technology_reason,
+     fb.cr_media_shared, fb.tech_media_shared,
+     JSON.stringify(fb.subjects), fb.raw_message]
+  );
+}
+
+// ── Feedback API ─────────────────────────────────────────────
+app.get('/feedback', (req, res) => res.sendFile(path.join(__dirname, 'feedback.html')));
+
+app.get('/api/feedback', async (req, res) => {
+  try {
+    const date   = req.query.date   || new Date().toISOString().split('T')[0];
+    const region = req.query.region || null;
+    const params = [date];
+    let regionJoin = '';
+    if (region) {
+      params.push(region);
+      regionJoin = `AND s.region = $${params.length}`;
+    }
+
+    // All schools + whether they submitted feedback today
+    const r = await db.pool.query(`
+      SELECT
+        s.id, s.name, s.identifier, s.region,
+        rc.name AS regional_coordinator,
+        sc.name AS school_coordinator,
+        f.id        AS feedback_id,
+        f.check_in, f.check_out,
+        f.present, f.absent, f.total_strength,
+        f.assembly_conducted, f.technology_used,
+        f.cr_media_shared, f.subjects,
+        f.child_of_day, f.teacher_phone AS reporter_phone,
+        f.created_at AS submitted_at
+      FROM schools s
+      LEFT JOIN regional_coordinators rc ON rc.id = s.regional_coordinator_id
+      LEFT JOIN school_coordinators   sc ON sc.id = s.school_coordinator_id
+      LEFT JOIN daily_feedback f ON (
+        f.school_identifier = s.identifier OR f.school_name ILIKE s.name
+      ) AND f.report_date = $1::date
+      WHERE s.identifier IS NOT NULL ${regionJoin}
+      ORDER BY s.region, s.name
+    `, params);
+
+    const schools  = r.rows;
+    const total    = schools.length;
+    const submitted = schools.filter(s => s.feedback_id).length;
+    const missing   = total - submitted;
+    const techYes   = schools.filter(s => s.technology_used).length;
+    const assemblyYes = schools.filter(s => s.assembly_conducted).length;
+    const totalPresent = schools.reduce((a,s) => a + (parseInt(s.present)||0), 0);
+    const totalStrength= schools.reduce((a,s) => a + (parseInt(s.total_strength)||0), 0);
+
+    // Group by region
+    const byRegion = {};
+    for (const s of schools) {
+      const reg = s.region || 'Unknown';
+      if (!byRegion[reg]) byRegion[reg] = [];
+      byRegion[reg].push(s);
+    }
+
+    res.json({ date, total, submitted, missing, techYes, assemblyYes,
+               totalPresent, totalStrength, byRegion, schools });
+  } catch(err) {
+    console.log('feedback api error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/feedback/detail/:id', async (req, res) => {
+  try {
+    const r = await db.pool.query(`SELECT * FROM daily_feedback WHERE id=$1`, [req.params.id]);
+    res.json(r.rows[0] || {});
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 app.post('/webhook', async (req, res) => {
   const { From: from, Body: body } = req.body;
   if (!from || body === undefined) return res.status(400).send('Bad request');
   console.log(`📩 [${new Date().toISOString()}] From: ${from} | Msg: "${body}"`);
   try {
+    // Check if this is a daily feedback report
+    if (isFeedbackMessage(body)) {
+      const fb = parseFeedback(body, from);
+      await saveFeedback(fb);
+      const subjectList = fb.subjects.map(s => s.subject).filter(Boolean).join(', ');
+      const reply = `✅ Daily report received!\n\nDate: ${fb.report_date}\nPresent: ${fb.present||'—'} / ${fb.total_strength||'—'}\nSubjects: ${subjectList||'—'}\n\nThank you! 📊`;
+      res.set('Content-Type', 'text/xml');
+      return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(reply)}</Message></Response>`);
+    }
+
     const handled = await handleVideoCommands(from, body, res);
     if (handled) return;
 
@@ -2762,6 +2977,40 @@ app.get('/api/questions/breakdown', async (req, res) => {
     try {
       await db.pool.query(`ALTER TABLE pins DROP CONSTRAINT IF EXISTS pins_subject_check`);
     } catch(e) { /* ignore if already removed */ }
+
+
+// Create daily_feedback table
+    try {
+      await db.pool.query(`
+        CREATE TABLE IF NOT EXISTS daily_feedback (
+          id                SERIAL PRIMARY KEY,
+          teacher_phone     TEXT,
+          school_name       TEXT,
+          school_identifier TEXT,
+          report_date       DATE,
+          check_in          TEXT,
+          check_out         TEXT,
+          grade             TEXT,
+          level             INTEGER,
+          total_strength    INTEGER,
+          boys              INTEGER,
+          girls             INTEGER,
+          present           INTEGER,
+          absent            INTEGER,
+          leave_count       INTEGER,
+          assembly_conducted BOOLEAN DEFAULT FALSE,
+          child_of_day      TEXT,
+          technology_used   BOOLEAN DEFAULT FALSE,
+          technology_reason TEXT,
+          cr_media_shared   BOOLEAN DEFAULT FALSE,
+          tech_media_shared BOOLEAN DEFAULT FALSE,
+          subjects          JSONB DEFAULT '[]',
+          raw_message       TEXT,
+          created_at        TIMESTAMP DEFAULT NOW()
+        )
+      `);
+      console.log('daily_feedback table ready');
+    } catch(e) { console.log('daily_feedback note:', e.message); }
 
     app.listen(PORT, () => console.log(`🚀 TAKMIL Bot v3.0 running on port ${PORT}`));
   } catch (err) {
