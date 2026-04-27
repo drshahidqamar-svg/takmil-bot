@@ -360,6 +360,12 @@ function renderCard(s){
       ${s.check_in?'In: '+s.check_in:''}${s.check_in&&s.check_out?' · ':''}${s.check_out?'Out: '+s.check_out:''}
       ${s.submitted_at?' · '+new Date(s.submitted_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}
     </div>
+    ${s.photo_head_count!=null ? `
+    <div style="margin-top:6px;padding:6px 8px;border-radius:8px;font-size:11px;font-weight:700;
+      background:${s.photo_flag?'#fee2e2':'#dcfce7'};color:${s.photo_flag?'#991b1b':'#15803d'}">
+      📸 Photo: ${s.photo_head_count} counted / ${s.present} reported
+      ${s.photo_flag?'⚠️ '+s.photo_flag:'✅ Match'}
+    </div>` : '<div style="margin-top:6px;font-size:10px;color:var(--text3)">📸 No photo yet</div>'}
     ` : `<div class="sc-coord" style="margin-top:4px;color:var(--text3)">No report received today</div>`}
     <div class="sc-coord">${s.school_coordinator||''}</div>
   </div>`;
@@ -406,6 +412,27 @@ async function showDetail(feedbackId, schoolName, coord){
       </div>
       ${f.technology_reason?`<div style="margin-top:8px;padding:10px 12px;background:var(--amber2);border-radius:8px;font-size:12px;color:#92400e"><strong>Tech Reason:</strong> ${f.technology_reason}</div>`:''}
     </div>
+    ${f.photo_head_count != null ? `
+    <div class="m-section">
+      <div class="m-section-title">📸 Photo Verification</div>
+      <div class="m-grid">
+        <div class="m-cell"><div class="m-cell-l">Photo Count</div><div class="m-cell-v">${f.photo_head_count}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Reported Present</div><div class="m-cell-v">${fmt(f.present)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Difference</div>
+          <div class="m-cell-v" style="color:${Math.abs(f.head_count_diff||0)>3?'var(--danger)':'var(--ok)'}">${f.head_count_diff>0?'+':''}${f.head_count_diff??'—'}</div>
+        </div>
+        <div class="m-cell"><div class="m-cell-l">Status</div>
+          <div class="m-cell-v" style="font-size:13px">${f.photo_flag?'⚠️ Flagged':'✅ Verified'}</div>
+        </div>
+      </div>
+      ${f.photo_flag?`<div style="padding:10px 12px;background:var(--danger2);border-radius:8px;font-size:12px;color:var(--danger);font-weight:700;margin-top:8px">⚠️ ${f.photo_flag}</div>`:''}
+      ${f.photo_url?`<div style="margin-top:10px"><a href="${f.photo_url}" target="_blank" style="font-size:12px;color:var(--leaf);font-weight:700">📷 View Photo →</a></div>`:''}
+    </div>` : `
+    <div class="m-section">
+      <div class="m-section-title">📸 Photo Verification</div>
+      <div style="padding:12px;background:var(--panel);border-radius:8px;font-size:12px;color:var(--text3)">No class photo received yet</div>
+    </div>`}
+
     ${subjects.length ? `
     <div class="m-section">
       <div class="m-section-title">Subjects Taught (${subjects.length})</div>

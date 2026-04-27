@@ -1101,9 +1101,184 @@ app.get('/api/feedback/detail/:id', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+
+// ═══════════════════════════════════════════════════════════════
+//  CLASS PHOTO HEAD COUNT VERIFICATION
+// ═══════════════════════════════════════════════════════════════
+
+async function handleClassPhoto(from, mediaUrl, mediaType) {
+  try {
+    console.log(`📸 Class photo from ${from}: ${mediaUrl}`);
+
+    // Download the image from Twilio (requires auth)
+    const https = require('https');
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken  = process.env.TWILIO_AUTH_TOKEN;
+    const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+
+    const imageBase64 = await new Promise((resolve, reject) => {
+      const chunks = [];
+      const req = https.get(mediaUrl, {
+        headers: { Authorization: `Basic ${auth}` }
+      }, (res) => {
+        res.on('data', chunk => chunks.push(chunk));
+        res.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
+        res.on('error', reject);
+      });
+      req.on('error', reject);
+    });
+
+    // Send to Claude Vision API for head count
+    const apiResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 256,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mediaType || 'image/jpeg', data: imageBase64 }
+            },
+            {
+              type: 'text',
+              text: 'Count the number of people (students and teachers) visible in this classroom photo. Reply with ONLY a JSON object in this exact format: {"count": <number>, "confidence": "high|medium|low", "note": "<brief note if needed>"}'
+            }
+          ]
+        }]
+      })
+    });
+
+    const apiData = await apiResp.json();
+    const rawText = apiData.content?.[0]?.text || '{}';
+
+    let headCount = null, confidence = 'low', note = '';
+    try {
+      const cleaned = rawText.replace(/```json|```/g, '').trim();
+      const parsed  = JSON.parse(cleaned);
+      headCount  = parseInt(parsed.count);
+      confidence = parsed.confidence || 'medium';
+      note       = parsed.note || '';
+    } catch(e) {
+      // Try to extract number from text
+      const match = rawText.match(/\d+/);
+      if (match) headCount = parseInt(match[0]);
+    }
+
+    console.log(`📸 Head count: ${headCount} (${confidence}) — ${note}`);
+
+    // Find today's feedback from this teacher
+    const today = new Date().toISOString().split('T')[0];
+    const fbRow = await db.pool.query(`
+      SELECT id, present, school_name FROM daily_feedback
+      WHERE teacher_phone = $1
+        AND report_date = $2::date
+      ORDER BY created_at DESC LIMIT 1
+    `, [from, today]);
+
+    if (!fbRow.rows.length) {
+      return { headCount, message: `📸 Photo received! Counted ${headCount} people.
+
+No feedback report found for today to compare with. Please submit your daily report first.` };
+    }
+
+    const fb       = fbRow.rows[0];
+    const reported = parseInt(fb.present) || 0;
+    const diff     = headCount !== null ? headCount - reported : null;
+    const absDiff  = diff !== null ? Math.abs(diff) : null;
+    const pctDiff  = reported > 0 && diff !== null ? Math.round(Math.abs(diff)/reported*100) : null;
+
+    // Flag if difference > 3 students AND > 15%
+    const flagged = absDiff !== null && absDiff > 3 && pctDiff > 15;
+    const flag    = flagged
+      ? (diff > 0 ? `Photo shows ${diff} MORE than reported` : `Photo shows ${Math.abs(diff)} FEWER than reported`)
+      : null;
+
+    // Save to DB
+    await db.pool.query(`
+      UPDATE daily_feedback SET
+        photo_url = $1,
+        photo_head_count = $2,
+        head_count_diff  = $3,
+        photo_verified   = $4,
+        photo_flag       = $5
+      WHERE id = $6
+    `, [mediaUrl, headCount, diff, !flagged, flag, fb.id]);
+
+    // Build reply
+    let reply;
+    if (headCount === null) {
+      reply = `📸 Photo received but couldn't count people clearly. Please send a clearer photo.`;
+    } else if (flagged) {
+      reply = `📸 Photo verified — ⚠️ MISMATCH DETECTED
+
+Photo head count: ${headCount}
+Reported present: ${reported}
+Difference: ${diff > 0 ? '+' : ''}${diff} (${pctDiff}%)
+
+Your coordinator has been notified.`;
+      // Notify coordinator
+      try {
+        const coordRow = await db.pool.query(`
+          SELECT sc.phone FROM schools s
+          JOIN school_coordinators sc ON sc.id = s.school_coordinator_id
+          WHERE s.identifier = (
+            SELECT school_identifier FROM daily_feedback WHERE id = $1
+          ) LIMIT 1
+        `, [fb.id]);
+        if (coordRow.rows[0]?.phone) {
+          await sendWhatsApp(coordRow.rows[0].phone,
+            `⚠️ Attendance Mismatch — ${fb.school_name}
+
+Photo count: ${headCount}
+Reported: ${reported}
+Difference: ${diff > 0 ? '+' : ''}${diff}
+
+Please follow up.`
+          );
+        }
+      } catch(e) { console.log('coordinator notify error:', e.message); }
+    } else {
+      reply = `📸 Photo verified — ✅ MATCH
+
+Photo head count: ${headCount}
+Reported present: ${reported}
+${diff !== 0 ? `Difference: ${diff > 0 ? '+' : ''}${diff} (within acceptable range)` : 'Exact match!'}
+
+Thank you! 🎉`;
+    }
+
+    return { headCount, diff, flagged, message: reply };
+  } catch(err) {
+    console.log('photo handler error:', err.message);
+    return { message: '📸 Photo received but could not process it. Please try again.' };
+  }
+}
+
 app.post('/webhook', async (req, res) => {
-  const { From: from, Body: body } = req.body;
-  if (!from || body === undefined) return res.status(400).send('Bad request');
+  const { From: from, Body: body, NumMedia, MediaUrl0, MediaContentType0 } = req.body;
+  if (!from) return res.status(400).send('Bad request');
+
+  // ── Handle image/photo messages ──
+  if (parseInt(NumMedia) > 0 && MediaUrl0 && MediaContentType0?.startsWith('image/')) {
+    console.log(`📸 [${new Date().toISOString()}] Photo from: ${from}`);
+    try {
+      const result = await handleClassPhoto(from, MediaUrl0, MediaContentType0);
+      res.set('Content-Type', 'text/xml');
+      return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(result.message)}</Message></Response>`);
+    } catch(e) {
+      res.set('Content-Type', 'text/xml');
+      return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>Photo received but could not process. Please try again.</Message></Response>`);
+    }
+  }
+
+  if (body === undefined) return res.status(400).send('Bad request');
   console.log(`📩 [${new Date().toISOString()}] From: ${from} | Msg: "${body}"`);
   try {
     // Check if this is a daily feedback report
@@ -3121,6 +3296,12 @@ app.get('/api/questions/breakdown', async (req, res) => {
         )
       `);
       console.log('daily_feedback table ready');
+      // Add photo columns if not exists
+      await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_url TEXT`);
+      await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_head_count INTEGER`);
+      await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS head_count_diff INTEGER`);
+      await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_verified BOOLEAN DEFAULT FALSE`);
+      await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_flag TEXT`);
     } catch(e) { console.log('daily_feedback note:', e.message); }
 
     app.listen(PORT, () => console.log(`🚀 TAKMIL Bot v3.0 running on port ${PORT}`));
