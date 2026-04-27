@@ -1958,6 +1958,27 @@ app.post('/api/questions/csv-update', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Inspect mislabeled questions
+app.get('/api/questions/mislabeled', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT subject, level, question_id,
+        COALESCE(q_text_english, q_text_urdu) as question_text,
+        COUNT(*) OVER (PARTITION BY subject) as subject_total
+      FROM questions
+      WHERE subject IN ('Level 1','Level 2','Level 3','Unknown')
+      ORDER BY subject, level, question_id
+      LIMIT 20
+    `);
+    const counts = await db.pool.query(`
+      SELECT subject, COUNT(*) as total FROM questions
+      WHERE subject IN ('Level 1','Level 2','Level 3','Unknown')
+      GROUP BY subject ORDER BY subject
+    `);
+    res.json({ samples: r.rows, counts: counts.rows });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 // Bulk approve all pending questions
 app.post('/admin/questions/approve-all', async (req, res) => {
   try {
