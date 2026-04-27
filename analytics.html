@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f7f5;--bg2:#ffffff;--panel:#f0f4f1;
+  --leaf:#16a34a;--leaf2:#22c55e;--leaf3:#dcfce7;--leaf4:#bbf7d0;
+  --border:#e2ebe5;--border2:#c8dfd0;
+  --text:#1a2e1f;--text2:#4a6b52;--text3:#8aaa90;
+  --amber:#f59e0b;--amber2:#fef9c3;
+  --danger:#ef4444;--danger2:#fee2e2;
+  --blue:#3b82f6;--blue2:#dbeafe;
+  --purple:#8b5cf6;--purple2:#ede9fe;
+  --r:14px;--r2:10px;
+  --shadow:0 2px 12px rgba(0,0,0,0.06);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px}
+
+/* HEADER */
+.hdr{background:var(--text);padding:0 28px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:20}
+.logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#4ade80;letter-spacing:0.3px}
+.logo-sub{font-size:10px;color:#4a6b52;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.nav-links{display:flex;gap:8px}
+.nav-link{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;
+  text-decoration:none;color:#9dbfa5;transition:all 0.2s}
+.nav-link:hover,.nav-link.active{background:rgba(34,197,94,0.15);color:#4ade80}
+
+/* DATE CONTROLS */
+.date-bar{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:12px 28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.preset-btns{display:flex;gap:6px}
+.preset-btn{
+  padding:6px 14px;border:1.5px solid var(--border2);border-radius:20px;
+  font-size:12px;font-weight:700;color:var(--text2);background:var(--panel);
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;
+}
+.preset-btn:hover{border-color:var(--leaf);color:var(--leaf)}
+.preset-btn.active{background:var(--leaf);color:white;border-color:var(--leaf)}
+.date-sep{color:var(--text3);font-size:12px;font-weight:600}
+.date-inp{
+  padding:6px 12px;background:var(--panel);border:1.5px solid var(--border2);
+  border-radius:var(--r2);font-size:12px;color:var(--text);
+  font-family:'DM Sans',sans-serif;outline:none;
+}
+.date-inp:focus{border-color:var(--leaf)}
+.apply-btn{
+  padding:7px 16px;background:var(--leaf);border:none;border-radius:var(--r2);
+  font-size:12px;font-weight:700;color:white;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.2s;
+}
+.apply-btn:hover{background:#15803d}
+.date-range-lbl{font-size:11px;color:var(--text3);margin-left:auto}
+
+/* VIEW TABS */
+.view-tabs{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:0 28px;display:flex;gap:0;
+}
+.tab{
+  padding:12px 20px;font-size:13px;font-weight:700;color:var(--text3);
+  cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s;
+}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--leaf);border-bottom-color:var(--leaf)}
+
+/* BODY */
+.body{padding:20px 28px;max-width:1400px;margin:0 auto}
+
+/* SECTION */
+.section{margin-bottom:28px}
+.section-title{
+  font-family:'Syne',sans-serif;font-size:15px;font-weight:800;
+  color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;
+}
+.section-sub{font-size:12px;color:var(--text3);font-weight:500;margin-left:4px}
+
+/* SUMMARY CARDS */
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+@media(max-width:900px){.summary-grid{grid-template-columns:repeat(3,1fr)}}
+.sum-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--r);
+  padding:16px 20px;box-shadow:var(--shadow)}
+.sum-n{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
+.sum-l{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;
+  letter-spacing:0.6px;margin-top:4px}
+.sum-trend{font-size:11px;font-weight:700;margin-top:6px}
+.trend-up{color:var(--leaf)}
+.trend-dn{color:var(--danger)}
+
+/* CHART CARDS */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.chart-row.full{grid-template-columns:1fr}
+@media(max-width:900px){.chart-row{grid-template-columns:1fr}}
+.chart-card{background:var(--bg2);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.chart-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px}
+.chart-sub{font-size:11px;color:var(--text3);margin-bottom:16px}
+.chart-wrap{position:relative;height:240px}
+
+/* TABLE */
+.perf-table{width:100%;border-collapse:collapse;font-size:13px}
+.perf-table th{text-align:left;padding:8px 12px;color:var(--text3);
+  font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;
+  background:var(--panel);border-bottom:2px solid var(--border)}
+.perf-table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.perf-table tr:hover td{background:var(--panel)}
+.perf-table tr:last-child td{border-bottom:none}
+.rank{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:800;
+  background:var(--panel);color:var(--text2);
+}
+.rank-1{background:#fef9c3;color:#92400e}
+.rank-2{background:#f1f5f9;color:#475569}
+.rank-3{background:#fef3f2;color:#b91c1c}
+
+.bar-cell{display:flex;align-items:center;gap:8px}
+.mini-bar{height:6px;border-radius:3px;flex:1;background:var(--border);overflow:hidden}
+.mini-fill{height:100%;border-radius:3px;transition:width 0.5s}
+.pct{font-weight:700;font-size:12px;min-width:36px}
+
+.badge-sm{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px}
+.b-ok{background:var(--leaf3);color:var(--leaf)}
+.b-warn{background:var(--amber2);color:#92400e}
+.b-bad{background:var(--danger2);color:var(--danger)}
+
+/* LOADING */
+.loading-state{text-align:center;padding:60px;color:var(--text3)}
+.spin{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--leaf);
+  border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SCHOOL TABLE EXTRAS */
+.school-name-cell{max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.last-seen{font-size:11px;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <div class="logo">TAKMIL Analytics</div>
+    <div class="logo-sub">Performance Dashboard</div>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="/feedback">📋 Feedback</a>
+    <a class="nav-link" href="/lessons-admin">📹 Lessons</a>
+    <a class="nav-link" href="/compliance">✅ Compliance</a>
+    <a class="nav-link active" href="/analytics">📊 Analytics</a>
+  </div>
+</div>
+
+<!-- DATE BAR -->
+<div class="date-bar">
+  <div class="preset-btns">
+    <button class="preset-btn" onclick="setPreset('today')">Today</button>
+    <button class="preset-btn" onclick="setPreset('week')">This Week</button>
+    <button class="preset-btn active" onclick="setPreset('month')">This Month</button>
+    <button class="preset-btn" onclick="setPreset('quarter')">This Quarter</button>
+  </div>
+  <span class="date-sep">or</span>
+  <input type="date" class="date-inp" id="d-from">
+  <span class="date-sep">→</span>
+  <input type="date" class="date-inp" id="d-to">
+  <button class="apply-btn" onclick="load()">Apply</button>
+  <span class="date-range-lbl" id="range-lbl"></span>
+</div>
+
+<!-- VIEW TABS -->
+<div class="view-tabs">
+  <div class="tab active" onclick="switchTab('overview')">📊 Overview</div>
+  <div class="tab" onclick="switchTab('rc')">👥 Regional Coordinators</div>
+  <div class="tab" onclick="switchTab('coord')">🏫 Coordinators</div>
+  <div class="tab" onclick="switchTab('schools')">🏠 Schools</div>
+</div>
+
+<div class="body" id="body">
+  <div class="loading-state"><div class="spin"></div><p>Loading analytics...</p></div>
+</div>
+
+<script>
+let currentData = null;
+let currentTab  = 'overview';
+let charts      = {};
+
+// ── Date presets ────────────────────────────────────────────────
+function setPreset(p){
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  const today = new Date();
+  const fmt   = d => d.toISOString().split('T')[0];
+  let from, to = fmt(today);
+  if(p==='today'){
+    from = to;
+  } else if(p==='week'){
+    const d = new Date(today); d.setDate(d.getDate()-6); from=fmt(d);
+  } else if(p==='month'){
+    const d = new Date(today.getFullYear(), today.getMonth(), 1); from=fmt(d);
+  } else if(p==='quarter'){
+    const q = Math.floor(today.getMonth()/3);
+    const d = new Date(today.getFullYear(), q*3, 1); from=fmt(d);
+  }
+  document.getElementById('d-from').value = from;
+  document.getElementById('d-to').value   = to;
+  load();
+}
+
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  if(currentData) render(currentData);
+}
+
+// ── Load data ───────────────────────────────────────────────────
+async function load(){
+  const from = document.getElementById('d-from').value;
+  const to   = document.getElementById('d-to').value;
+  document.getElementById('body').innerHTML =
+    '<div class="loading-state"><div class="spin"></div><p>Loading analytics...</p></div>';
+  destroyCharts();
+  try{
+    const resp = await fetch(`/api/analytics?from=${from}&to=${to}`);
+    currentData = await resp.json();
+    if(currentData.error) throw new Error(currentData.error);
+    const days = Math.round((new Date(to)-new Date(from))/(1000*60*60*24))+1;
+    document.getElementById('range-lbl').textContent =
+      `${from} → ${to} (${days} day${days>1?'s':''})`;
+    render(currentData);
+  }catch(e){
+    document.getElementById('body').innerHTML =
+      `<div class="loading-state"><p style="color:var(--danger)">Error: ${e.message}</p></div>`;
+  }
+}
+
+function destroyCharts(){
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});
+  charts={};
+}
+
+// ── Main render ─────────────────────────────────────────────────
+function render(d){
+  destroyCharts();
+  if(currentTab==='overview') renderOverview(d);
+  else if(currentTab==='rc')   renderRC(d);
+  else if(currentTab==='coord')renderCoord(d);
+  else if(currentTab==='schools') renderSchools(d);
+}
+
+// ══════════════════════════════════════════════════════
+//  OVERVIEW TAB
+// ══════════════════════════════════════════════════════
+function renderOverview(d){
+  const trend = d.dailyTrend || [];
+  const totalSubs   = trend.reduce((a,r)=>a+parseInt(r.submissions||0),0);
+  const totalSchools= parseInt(trend[0]?.total_schools||0);
+  const avgAttend   = trend.length ? Math.round(trend.reduce((a,r)=>a+parseFloat(r.avg_attendance||0),0)/trend.length) : 0;
+  const avgTech     = trend.length ? Math.round(trend.reduce((a,r)=>a+parseInt(r.tech_count||0),0)/trend.length) : 0;
+  const avgAssembly = trend.length ? Math.round(trend.reduce((a,r)=>a+parseInt(r.assembly_count||0),0)/trend.length) : 0;
+  const subRate     = totalSchools && trend.length ? Math.round(totalSubs/(totalSchools*trend.length)*100) : 0;
+
+  document.getElementById('body').innerHTML = `
+  <div class="section">
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="sum-n" style="color:var(--leaf)">${subRate}%</div>
+        <div class="sum-l">Avg Submission Rate</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-n" style="color:var(--blue)">${avgAttend}%</div>
+        <div class="sum-l">Avg Attendance</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-n" style="color:var(--purple)">${totalSubs}</div>
+        <div class="sum-l">Total Reports</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-n" style="color:var(--amber)">${avgTech}</div>
+        <div class="sum-l">Avg Tech/Day</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-n" style="color:var(--text)">${avgAssembly}</div>
+        <div class="sum-l">Avg Assembly/Day</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-row full">
+    <div class="chart-card">
+      <div class="chart-title">📈 Daily Submission Rate</div>
+      <div class="chart-sub">% of schools submitting feedback each day</div>
+      <div class="chart-wrap"><canvas id="c-submissions"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-card">
+      <div class="chart-title">👥 Attendance Trend</div>
+      <div class="chart-sub">Average attendance % per day</div>
+      <div class="chart-wrap"><canvas id="c-attendance"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">💻 Technology & Assembly</div>
+      <div class="chart-sub">Schools using tech and running assembly per day</div>
+      <div class="chart-wrap"><canvas id="c-tech"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-card">
+      <div class="chart-title">🏆 Top Regional Coordinators</div>
+      <div class="chart-sub">Submission rate by RC</div>
+      <div class="chart-wrap"><canvas id="c-rc-bar"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📊 Attendance by RC</div>
+      <div class="chart-sub">Average attendance % by regional coordinator</div>
+      <div class="chart-wrap"><canvas id="c-rc-attend"></canvas></div>
+    </div>
+  </div>`;
+
+  // Charts
+  const labels = trend.map(r => fmtDate(r.day));
+  const subRates = trend.map(r =>
+    r.total_schools > 0 ? Math.round(parseInt(r.submissions)*100/parseInt(r.total_schools)) : 0);
+
+  mkLine('c-submissions', labels, [{
+    label:'Submission Rate %', data: subRates,
+    borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,0.1)',
+    fill:true, tension:0.4
+  }], {yMax:100, yLabel:'%'});
+
+  mkLine('c-attendance', labels, [{
+    label:'Attendance %', data: trend.map(r=>parseFloat(r.avg_attendance||0).toFixed(1)),
+    borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.1)',
+    fill:true, tension:0.4
+  }], {yMax:100, yLabel:'%'});
+
+  mkLine('c-tech', labels, [
+    {label:'Tech Used', data:trend.map(r=>parseInt(r.tech_count||0)),
+     borderColor:'#8b5cf6', backgroundColor:'rgba(139,92,246,0.1)', fill:false, tension:0.4},
+    {label:'Assembly', data:trend.map(r=>parseInt(r.assembly_count||0)),
+     borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.1)', fill:false, tension:0.4}
+  ], {yLabel:'Schools'});
+
+  const rcRows = (d.rcPerf||[]).filter(r=>r.rc_name);
+  mkBar('c-rc-bar',
+    rcRows.map(r=>r.rc_name+' ('+r.region+')'),
+    [{label:'Submission Rate %', data:rcRows.map(r=>parseFloat(r.submission_rate||0)),
+      backgroundColor: rcRows.map(r=>colorForPct(parseFloat(r.submission_rate||0)))}],
+    {yMax:100, yLabel:'%'});
+
+  mkBar('c-rc-attend',
+    rcRows.map(r=>r.rc_name+' ('+r.region+')'),
+    [{label:'Avg Attendance %', data:rcRows.map(r=>parseFloat(r.avg_attendance||0)),
+      backgroundColor:'rgba(59,130,246,0.7)'}],
+    {yMax:100, yLabel:'%'});
+}
+
+// ══════════════════════════════════════════════════════
+//  RC TAB
+// ══════════════════════════════════════════════════════
+function renderRC(d){
+  const rows = (d.rcPerf||[]).filter(r=>r.rc_name);
+  document.getElementById('body').innerHTML = `
+  <div class="section">
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-title">📤 Submission Rate by RC</div>
+        <div class="chart-sub">% of their schools submitting in the period</div>
+        <div class="chart-wrap"><canvas id="c-rc-sub"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">👥 Attendance by RC</div>
+        <div class="chart-sub">Average student attendance %</div>
+        <div class="chart-wrap"><canvas id="c-rc-att"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-title">💻 Technology Usage by RC</div>
+        <div class="chart-sub">Schools reporting technology used</div>
+        <div class="chart-wrap"><canvas id="c-rc-tech"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🏛️ Assembly Rate by RC</div>
+        <div class="chart-sub">Schools conducting assembly</div>
+        <div class="chart-wrap"><canvas id="c-rc-asm"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🏆 RC Leaderboard</div>
+    <div class="chart-card" style="padding:0;overflow:hidden">
+      <table class="perf-table">
+        <tr>
+          <th>#</th><th>Regional Coordinator</th><th>Region</th><th>Schools</th>
+          <th>Submissions</th><th>Sub. Rate</th><th>Avg Attend.</th><th>Tech</th><th>Assembly</th>
+        </tr>
+        ${rows.map((r,i)=>`<tr>
+          <td><span class="rank rank-${i<3?i+1:''}">${i+1}</span></td>
+          <td><strong>${r.rc_name}</strong></td>
+          <td>${r.region||'—'}</td>
+          <td>${r.total_schools}</td>
+          <td>${r.submissions} / ${r.total_schools}</td>
+          <td>
+            <div class="bar-cell">
+              <div class="mini-bar"><div class="mini-fill" style="width:${r.submission_rate||0}%;background:${colorForPct(parseFloat(r.submission_rate||0))}"></div></div>
+              <span class="pct" style="color:${colorForPct(parseFloat(r.submission_rate||0))}">${r.submission_rate||0}%</span>
+            </div>
+          </td>
+          <td><span class="badge-sm ${badgeClass(r.avg_attendance)}">${r.avg_attendance||'—'}%</span></td>
+          <td>${r.tech_count||0}</td>
+          <td>${r.assembly_count||0}</td>
+        </tr>`).join('')}
+      </table>
+    </div>
+  </div>`;
+
+  const labels = rows.map(r=>r.rc_name);
+  mkBar('c-rc-sub', labels,
+    [{label:'Submission Rate %', data:rows.map(r=>parseFloat(r.submission_rate||0)),
+      backgroundColor:rows.map(r=>colorForPct(parseFloat(r.submission_rate||0)))}],
+    {yMax:100, yLabel:'%'});
+  mkBar('c-rc-att', labels,
+    [{label:'Attendance %', data:rows.map(r=>parseFloat(r.avg_attendance||0)),
+      backgroundColor:'rgba(59,130,246,0.7)'}],
+    {yMax:100, yLabel:'%'});
+  mkBar('c-rc-tech', labels,
+    [{label:'Tech Reports', data:rows.map(r=>parseInt(r.tech_count||0)),
+      backgroundColor:'rgba(139,92,246,0.7)'}],
+    {yLabel:'Count'});
+  mkBar('c-rc-asm', labels,
+    [{label:'Assembly Count', data:rows.map(r=>parseInt(r.assembly_count||0)),
+      backgroundColor:'rgba(245,158,11,0.7)'}],
+    {yLabel:'Count'});
+}
+
+// ══════════════════════════════════════════════════════
+//  COORDINATOR TAB
+// ══════════════════════════════════════════════════════
+function renderCoord(d){
+  const rows = (d.coordPerf||[]).filter(r=>r.coord_name);
+  document.getElementById('body').innerHTML = `
+  <div class="section">
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-title">📤 Submission Rate by Coordinator</div>
+        <div class="chart-sub">Top 10 coordinators</div>
+        <div class="chart-wrap"><canvas id="c-co-sub"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">👥 Attendance by Coordinator</div>
+        <div class="chart-sub">Top 10 by attendance %</div>
+        <div class="chart-wrap"><canvas id="c-co-att"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📋 Coordinator Leaderboard <span class="section-sub">${rows.length} total</span></div>
+    <div class="chart-card" style="padding:0;overflow:hidden">
+      <table class="perf-table">
+        <tr>
+          <th>#</th><th>Coordinator</th><th>RC</th><th>Region</th><th>Schools</th>
+          <th>Sub. Rate</th><th>Avg Attend.</th><th>Tech</th><th>Assembly</th>
+        </tr>
+        ${rows.map((r,i)=>`<tr>
+          <td><span class="rank rank-${i<3?i+1:''}">${i+1}</span></td>
+          <td><strong>${r.coord_name}</strong></td>
+          <td>${r.rc_name||'—'}</td>
+          <td>${r.region||'—'}</td>
+          <td>${r.total_schools}</td>
+          <td>
+            <div class="bar-cell">
+              <div class="mini-bar"><div class="mini-fill" style="width:${r.submission_rate||0}%;background:${colorForPct(parseFloat(r.submission_rate||0))}"></div></div>
+              <span class="pct" style="color:${colorForPct(parseFloat(r.submission_rate||0))}">${r.submission_rate||0}%</span>
+            </div>
+          </td>
+          <td><span class="badge-sm ${badgeClass(r.avg_attendance)}">${r.avg_attendance||'—'}%</span></td>
+          <td>${r.tech_count||0}</td>
+          <td>${r.assembly_count||0}</td>
+        </tr>`).join('')}
+      </table>
+    </div>
+  </div>`;
+
+  const top10sub  = rows.slice(0,10);
+  const top10att  = [...rows].sort((a,b)=>parseFloat(b.avg_attendance||0)-parseFloat(a.avg_attendance||0)).slice(0,10);
+  mkBar('c-co-sub', top10sub.map(r=>r.coord_name),
+    [{label:'Submission %', data:top10sub.map(r=>parseFloat(r.submission_rate||0)),
+      backgroundColor:top10sub.map(r=>colorForPct(parseFloat(r.submission_rate||0)))}],
+    {yMax:100, yLabel:'%', horizontal:true});
+  mkBar('c-co-att', top10att.map(r=>r.coord_name),
+    [{label:'Attendance %', data:top10att.map(r=>parseFloat(r.avg_attendance||0)),
+      backgroundColor:'rgba(59,130,246,0.7)'}],
+    {yMax:100, yLabel:'%', horizontal:true});
+}
+
+// ══════════════════════════════════════════════════════
+//  SCHOOLS TAB
+// ══════════════════════════════════════════════════════
+function renderSchools(d){
+  const rows  = (d.schoolPerf||[]);
+  const active= rows.filter(r=>parseInt(r.submissions)>0);
+  const zero  = rows.filter(r=>parseInt(r.submissions)===0);
+
+  document.getElementById('body').innerHTML = `
+  <div class="section">
+    <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="sum-card">
+        <div class="sum-n" style="color:var(--leaf)">${active.length}</div>
+        <div class="sum-l">Active Schools</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-n" style="color:var(--danger)">${zero.length}</div>
+        <div class="sum-l">Zero Submissions</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-n" style="color:var(--blue)">
+          ${active.length ? Math.round(active.reduce((a,r)=>a+parseFloat(r.avg_attendance||0),0)/active.length) : 0}%
+        </div>
+        <div class="sum-l">Avg Attendance (active)</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-n" style="color:var(--amber)">
+          ${active.length ? Math.round(active.reduce((a,r)=>a+parseInt(r.tech_count||0),0)/active.length*10)/10 : 0}
+        </div>
+        <div class="sum-l">Avg Tech Reports</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🏠 All Schools <span class="section-sub">${rows.length} total</span></div>
+    <div class="chart-card" style="padding:0;overflow:hidden;max-height:600px;overflow-y:auto">
+      <table class="perf-table">
+        <tr>
+          <th>#</th><th>School</th><th>Region</th><th>Coordinator</th>
+          <th>Submissions</th><th>Sub. Rate</th><th>Avg Attend.</th><th>Tech</th><th>Last Report</th>
+        </tr>
+        ${rows.map((r,i)=>`<tr>
+          <td style="color:var(--text3)">${i+1}</td>
+          <td class="school-name-cell" title="${r.school_name}"><strong>${fmtSchoolName(r.school_name)}</strong></td>
+          <td>${r.region||'—'}</td>
+          <td>${r.coord_name||'—'}</td>
+          <td>${r.submissions}</td>
+          <td>
+            <div class="bar-cell">
+              <div class="mini-bar"><div class="mini-fill" style="width:${Math.min(r.submission_rate||0,100)}%;background:${colorForPct(parseFloat(r.submission_rate||0))}"></div></div>
+              <span class="pct" style="color:${colorForPct(parseFloat(r.submission_rate||0))}">${r.submission_rate||0}%</span>
+            </div>
+          </td>
+          <td><span class="badge-sm ${badgeClass(r.avg_attendance)}">${r.avg_attendance||'—'}%</span></td>
+          <td>${r.tech_count||0}</td>
+          <td class="last-seen">${r.last_submission ? fmtDate(r.last_submission) : '❌ Never'}</td>
+        </tr>`).join('')}
+      </table>
+    </div>
+  </div>`;
+}
+
+// ── Chart helpers ───────────────────────────────────────────────
+const CHART_DEFAULTS = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{labels:{font:{family:'DM Sans',size:11},color:'#4a6b52'}}},
+  scales:{
+    x:{ticks:{font:{family:'DM Sans',size:10},color:'#8aaa90'},grid:{color:'#e2ebe5'}},
+    y:{ticks:{font:{family:'DM Sans',size:10},color:'#8aaa90'},grid:{color:'#e2ebe5'}}
+  }
+};
+
+function mkLine(id, labels, datasets, opts={}){
+  const ctx = document.getElementById(id)?.getContext('2d');
+  if(!ctx) return;
+  const cfg = JSON.parse(JSON.stringify(CHART_DEFAULTS));
+  if(opts.yMax) cfg.scales.y.max = opts.yMax;
+  if(opts.yLabel) cfg.scales.y.title = {display:true,text:opts.yLabel,font:{size:10},color:'#8aaa90'};
+  charts[id] = new Chart(ctx, {type:'line', data:{labels, datasets}, options:cfg});
+}
+
+function mkBar(id, labels, datasets, opts={}){
+  const ctx = document.getElementById(id)?.getContext('2d');
+  if(!ctx) return;
+  const cfg = JSON.parse(JSON.stringify(CHART_DEFAULTS));
+  if(opts.yMax) cfg.scales.y.max = opts.yMax;
+  if(opts.yLabel) cfg.scales.y.title = {display:true,text:opts.yLabel,font:{size:10},color:'#8aaa90'};
+  if(opts.horizontal){
+    cfg.indexAxis = 'y';
+    // swap x/y scale labels
+    cfg.scales.x = cfg.scales.y;
+    cfg.scales.y = {ticks:{font:{family:'DM Sans',size:10},color:'#8aaa90'},grid:{display:false}};
+  }
+  charts[id] = new Chart(ctx, {type:'bar', data:{labels, datasets},
+    options:{...cfg, plugins:{...cfg.plugins, legend:{display:false}}}});
+}
+
+// ── Helpers ─────────────────────────────────────────────────────
+function fmtDate(d){
+  if(!d) return '—';
+  return new Date(d).toLocaleDateString([],{month:'short',day:'numeric'});
+}
+function fmtSchoolName(n){
+  return (n||'').replace(/_O_|_A_|_B_|_C_/,' ').replace(/_W\d+[A-Z]+$/,'').replace(/_/g,' ');
+}
+function colorForPct(p){
+  if(p>=75) return '#16a34a';
+  if(p>=50) return '#f59e0b';
+  return '#ef4444';
+}
+function badgeClass(v){
+  const n = parseFloat(v||0);
+  if(n>=75) return 'b-ok';
+  if(n>=50) return 'b-warn';
+  return 'b-bad';
+}
+
+// ── Init ────────────────────────────────────────────────────────
+(function init(){
+  const today = new Date();
+  const fmt   = d => d.toISOString().split('T')[0];
+  const first = new Date(today.getFullYear(), today.getMonth(), 1);
+  document.getElementById('d-from').value = fmt(first);
+  document.getElementById('d-to').value   = fmt(today);
+  load();
+})();
+</script>
+</body>
+</html>
