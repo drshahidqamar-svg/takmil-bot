@@ -2225,6 +2225,54 @@ Respond ONLY with a valid JSON array, no explanation, no markdown, just the JSON
   }
 });
 
+// Offline PWA routes
+app.get('/offline-portal', (req, res) => res.sendFile(path.join(__dirname, 'offline-portal.html')));
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.sendFile(path.join(__dirname, 'sw.js'));
+});
+app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'manifest.json')));
+
+// Offline sync endpoint — receives results from tablets
+app.post('/portal/offline/submit', async (req, res) => {
+  try {
+    const {
+      pin, student_name, student_id, subject, level,
+      score, total, pct, passed,
+      timestamp, gps_lat, gps_lng, gps_accuracy
+    } = req.body;
+
+    // Find pin record
+    const pinRec = await db.pool.query(
+      `SELECT * FROM pins WHERE pin=$1`, [pin]
+    );
+    const school_id = pinRec.rows[0]?.school_id || 1;
+    const pin_id    = pinRec.rows[0]?.id || null;
+
+    // Save assessment result
+    await db.pool.query(`
+      INSERT INTO student_assessments
+        (pin_id, school_id, teacher_phone, student_name, student_id,
+         level, subject, score_pct, passed,
+         gps_lat, gps_lng, gps_accuracy,
+         assessed_at, created_at)
+      VALUES ($1,$2,'offline',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
+      ON CONFLICT DO NOTHING`,
+      [pin_id, school_id, student_name, student_id || null,
+       parseInt(level), subject,
+       parseFloat(pct) || 0, !!passed,
+       gps_lat || null, gps_lng || null, gps_accuracy || null,
+       timestamp || new Date().toISOString()]
+    );
+
+    res.json({ synced: true });
+  } catch(err) {
+    console.log('offline submit error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Picture questions creator
 app.get('/picture-questions', (req, res) => {
   res.sendFile(path.join(__dirname, 'picture-questions.html'));
@@ -2333,6 +2381,17 @@ app.get('/api/questions/breakdown', async (req, res) => {
     res.json(bySubject);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
+
+// Add GPS and offline columns to student_assessments
+    try {
+      await db.pool.query(`ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS student_id TEXT`);
+      await db.pool.query(`ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS score_pct NUMERIC`);
+      await db.pool.query(`ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS passed BOOLEAN`);
+      await db.pool.query(`ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS gps_lat NUMERIC`);
+      await db.pool.query(`ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS gps_lng NUMERIC`);
+      await db.pool.query(`ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS gps_accuracy NUMERIC`);
+      await db.pool.query(`ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS assessed_at TIMESTAMP`);
+    } catch(e) { console.log('GPS columns note:', e.message); }
 
 // Add image_url column if not exists
     try {

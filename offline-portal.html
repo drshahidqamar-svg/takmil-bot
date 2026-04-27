@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a3a2a">
+<title>TAKMIL — Offline Assessment</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Nastaliq+Urdu&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --green:#1a5c36;--green2:#16a34a;--green3:#4ade80;
+  --amber:#d97706;--red:#dc2626;--blue:#2563eb;
+  --bg:#f0f7f3;--card:#ffffff;--text:#0f2419;--muted:#6b7280;
+  --border:#e2e8f0;--shadow:0 2px 16px rgba(0,0,0,0.08);
+  --r:16px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',sans-serif;color:var(--text)}
+
+/* ── SCREENS ── */
+.screen{display:none;position:fixed;inset:0;overflow-y:auto;padding:16px;background:var(--bg)}
+.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+
+/* ── HEADER ── */
+.app-header{
+  width:100%;max-width:480px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;background:var(--green);border-radius:var(--r);
+  margin-bottom:16px;color:white;
+}
+.app-header .logo{font-size:20px;font-weight:900;letter-spacing:1px;color:var(--green3)}
+.sync-badge{
+  font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;
+  background:rgba(255,255,255,0.15);
+}
+.sync-badge.online{background:#dcfce7;color:#15803d}
+.sync-badge.offline{background:#fef2f2;color:#dc2626}
+.sync-badge.syncing{background:#dbeafe;color:#1d4ed8}
+
+/* ── CARDS ── */
+.card{
+  width:100%;max-width:480px;background:var(--card);
+  border-radius:var(--r);padding:24px;box-shadow:var(--shadow);
+  margin-bottom:16px;
+}
+.card-title{font-size:18px;font-weight:800;color:var(--green);margin-bottom:4px}
+.card-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+
+/* ── BUTTONS ── */
+.btn{
+  width:100%;padding:16px;border:none;border-radius:12px;
+  font-size:16px;font-weight:800;cursor:pointer;
+  font-family:'Nunito',sans-serif;transition:all 0.15s;
+  letter-spacing:0.3px;
+}
+.btn-green{background:var(--green2);color:white}
+.btn-green:active{background:var(--green);transform:scale(0.98)}
+.btn-dark{background:var(--green);color:white}
+.btn-amber{background:var(--amber);color:white}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-sm{padding:10px 16px;font-size:14px;width:auto;border-radius:10px}
+
+/* ── INPUTS ── */
+.input{
+  width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:12px;
+  font-size:16px;font-family:'Nunito',sans-serif;color:var(--text);
+  outline:none;background:white;margin-bottom:12px;
+  transition:border-color 0.2s;
+}
+.input:focus{border-color:var(--green2)}
+.label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:0.5px;margin-bottom:6px;display:block}
+
+/* ── PROGRESS ── */
+.progress-wrap{margin-bottom:16px}
+.progress-label{display:flex;justify-content:space-between;font-size:13px;
+  font-weight:700;color:var(--muted);margin-bottom:8px}
+.progress-bar{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));
+  border-radius:4px;transition:width 0.4s ease}
+
+/* ── QUESTION ── */
+.question-img{
+  width:100%;height:200px;object-fit:cover;border-radius:12px;
+  margin-bottom:16px;border:2px solid var(--border);display:none;
+}
+.question-text{font-size:20px;font-weight:800;line-height:1.4;margin-bottom:20px;color:var(--text)}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.opt-btn{
+  padding:16px 12px;border:2px solid var(--border);border-radius:12px;
+  background:white;cursor:pointer;font-family:'Nunito',sans-serif;
+  font-size:14px;font-weight:700;color:var(--text);
+  transition:all 0.15s;text-align:left;
+}
+.opt-btn .opt-letter{
+  display:inline-block;width:26px;height:26px;border-radius:50%;
+  background:var(--bg);font-size:13px;font-weight:800;
+  text-align:center;line-height:26px;margin-right:8px;color:var(--green)
+}
+.opt-btn:active{transform:scale(0.97)}
+.opt-btn.selected{border-color:var(--green2);background:#f0fdf4}
+.opt-btn.selected .opt-letter{background:var(--green2);color:white}
+.opt-btn.correct{border-color:var(--green2);background:#dcfce7}
+.opt-btn.wrong{border-color:var(--red);background:#fef2f2}
+
+/* ── SUBJECT TRANSITION ── */
+.subject-transition{text-align:center;padding:20px 0}
+.subject-emoji{font-size:64px;margin-bottom:16px}
+.subject-done{font-size:22px;font-weight:900;color:var(--green);margin-bottom:8px}
+.subject-next{font-size:15px;color:var(--muted);margin-bottom:28px}
+
+/* ── RESULTS ── */
+.result-circle{
+  width:120px;height:120px;border-radius:50%;
+  background:conic-gradient(var(--green2) var(--pct), #e2e8f0 0);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;position:relative;
+}
+.result-circle::before{
+  content:'';position:absolute;inset:12px;border-radius:50%;background:white;
+}
+.result-pct{font-size:26px;font-weight:900;color:var(--green);position:relative;z-index:1}
+.result-badge{
+  padding:8px 20px;border-radius:20px;font-size:14px;font-weight:800;
+  display:inline-block;margin-bottom:20px;
+}
+.result-badge.pass{background:#dcfce7;color:#15803d}
+.result-badge.fail{background:#fef9c3;color:#854d0e}
+.subjects-breakdown{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.subj-card{padding:12px;border-radius:12px;text-align:center;background:var(--bg)}
+.subj-name{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase}
+.subj-score{font-size:20px;font-weight:900;color:var(--green)}
+.subj-pct{font-size:12px;color:var(--muted)}
+
+/* ── SYNC SCREEN ── */
+.sync-item{
+  display:flex;align-items:center;gap:12px;padding:12px;
+  border-radius:10px;background:var(--bg);margin-bottom:8px;
+  font-size:13px;font-weight:600;
+}
+.sync-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.sync-dot.pending{background:var(--amber)}
+.sync-dot.done{background:var(--green2)}
+.sync-dot.syncing{background:var(--blue);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* ── DOWNLOAD SCREEN ── */
+.dl-progress{
+  background:#e2e8f0;border-radius:8px;height:12px;margin:12px 0;overflow:hidden;
+}
+.dl-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));
+  border-radius:8px;transition:width 0.5s;width:0%}
+.stat-row{display:flex;justify-content:space-between;padding:10px 0;
+  border-bottom:1px solid var(--border);font-size:14px}
+.stat-val{font-weight:800;color:var(--green)}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:#1a3a2a;color:white;padding:12px 20px;border-radius:12px;
+  font-size:14px;font-weight:700;z-index:9999;display:none;
+  box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:340px;text-align:center;
+}
+</style>
+</head>
+<body>
+
+<!-- ── SCREEN: HOME ── -->
+<div class="screen active" id="s-home">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <div class="sync-badge offline" id="conn-badge">● Offline</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Student Assessment</div>
+    <div class="card-sub">طالب علم امتحان — Enter PIN from your teacher</div>
+    <label class="label">Assessment PIN</label>
+    <input class="input" id="pin-input" type="text" maxlength="10"
+      placeholder="e.g. X4K9MN" autocomplete="off" style="text-transform:uppercase;font-size:22px;letter-spacing:4px;font-weight:900;text-align:center">
+    <label class="label">Your Full Name — اپنا نام</label>
+    <input class="input" id="name-input" type="text" placeholder="Student name">
+    <label class="label">Student ID (optional)</label>
+    <input class="input" id="id-input" type="text" placeholder="Roll number or ID">
+    <div style="height:4px"></div>
+    <button class="btn btn-green" onclick="startAssessment()">Start Assessment — شروع کریں ▶</button>
+    <div id="home-err" style="color:#dc2626;font-size:13px;font-weight:700;text-align:center;margin-top:12px;display:none"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="font-size:15px">📥 Offline Mode</div>
+    <div id="dl-stats" style="margin:8px 0">
+      <div class="stat-row"><span>Questions downloaded</span><span class="stat-val" id="q-count">0</span></div>
+      <div class="stat-row"><span>PINs cached</span><span class="stat-val" id="pin-count">0</span></div>
+      <div class="stat-row"><span>Results pending sync</span><span class="stat-val" id="pending-count">0</span></div>
+    </div>
+    <div class="dl-progress"><div class="dl-fill" id="dl-fill"></div></div>
+    <div id="dl-status" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px">Tap Download to cache questions</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-dark btn-sm" style="flex:1" onclick="downloadForOffline()">⬇ Download</button>
+      <button class="btn btn-outline btn-sm" style="flex:1" onclick="showSyncScreen()">↑ Sync Results</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCREEN: LOADING ── -->
+<div class="screen" id="s-loading">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <div class="sync-badge" id="load-badge">Loading...</div>
+  </div>
+  <div class="card" style="text-align:center;padding:40px">
+    <div style="font-size:48px;margin-bottom:16px">📚</div>
+    <div style="font-size:18px;font-weight:800;color:var(--green)" id="load-msg">Loading questions...</div>
+    <div style="font-size:14px;color:var(--muted);margin-top:8px" id="load-sub">Please wait</div>
+  </div>
+</div>
+
+<!-- ── SCREEN: QUESTION ── -->
+<div class="screen" id="s-question">
+  <div class="app-header">
+    <div class="logo" id="q-name" style="font-size:14px;font-weight:700;color:white"></div>
+    <div style="font-size:13px;font-weight:700;color:var(--green3)" id="q-subject"></div>
+  </div>
+
+  <div style="width:100%;max-width:480px">
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span id="q-prog-label">Question 1 of 10</span>
+        <span id="q-level-badge" style="color:var(--green2)"></span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="q-prog-fill" style="width:0%"></div></div>
+    </div>
+
+    <div class="card">
+      <img class="question-img" id="q-img" src="" alt="">
+      <div class="question-text" id="q-text"></div>
+      <div class="options-grid" id="q-opts"></div>
+      <button class="btn btn-green" id="q-next" onclick="nextQuestion()" disabled>
+        Next — اگلا ▶
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCREEN: SUBJECT TRANSITION ── -->
+<div class="screen" id="s-transition">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <div class="sync-badge online">✓ Great job!</div>
+  </div>
+  <div class="card" style="text-align:center">
+    <div class="subject-transition">
+      <div class="subject-emoji" id="tr-emoji">✅</div>
+      <div class="subject-done" id="tr-done"></div>
+      <div class="subject-next" id="tr-next"></div>
+      <button class="btn btn-green" onclick="loadNextSubject()">
+        Continue — جاری رکھیں ▶
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCREEN: RESULTS ── -->
+<div class="screen" id="s-results">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <div class="sync-badge" id="res-sync-badge">Saving...</div>
+  </div>
+  <div class="card" style="text-align:center">
+    <div style="font-size:22px;font-weight:900;color:var(--green);margin-bottom:4px" id="res-name"></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="res-level"></div>
+    <div class="result-circle" id="res-circle">
+      <div class="result-pct" id="res-pct">0%</div>
+    </div>
+    <div class="result-badge" id="res-badge">Calculating...</div>
+    <div class="subjects-breakdown" id="res-breakdown"></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="res-sync-msg">
+      Results saved offline. Will sync when internet available.
+    </div>
+    <button class="btn btn-green" onclick="newStudent()" style="margin-bottom:10px">
+      Next Student — اگلا طالب علم
+    </button>
+    <button class="btn btn-outline" onclick="showScreen('s-home')">Home</button>
+  </div>
+</div>
+
+<!-- ── SCREEN: SYNC ── -->
+<div class="screen" id="s-sync">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <button onclick="showScreen('s-home')" style="background:none;border:none;color:white;font-size:22px;cursor:pointer">←</button>
+  </div>
+  <div class="card">
+    <div class="card-title">↑ Sync Results</div>
+    <div class="card-sub" id="sync-summary">Checking pending results...</div>
+    <div id="sync-list"></div>
+    <div style="height:8px"></div>
+    <button class="btn btn-green" id="sync-btn" onclick="syncNow()">Sync Now ↑</button>
+    <div id="sync-result" style="margin-top:12px;text-align:center;font-size:13px;font-weight:700;display:none"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = '';
+const DB_NAME = 'takmil_offline';
+const DB_VERSION = 1;
+
+let db;
+let session = {
+  pin: '', name: '', studentId: '', level: 0,
+  subjects: ['Math', 'English', 'Urdu'],
+  subjectIdx: 0,
+  subjectResults: [],
+  currentQuestions: [],
+  answers: [],
+  currentQ: 0,
+};
+
+// ── IndexedDB setup ────────────────────────────────────────────────
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('questions'))
+        d.createObjectStore('questions', { keyPath: 'question_id' });
+      if (!d.objectStoreNames.contains('pins'))
+        d.createObjectStore('pins', { keyPath: 'pin' });
+      if (!d.objectStoreNames.contains('results'))
+        d.createObjectStore('results', { autoIncrement: true, keyPath: 'local_id' });
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbGet(store, key) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbPut(store, val) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(val);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbGetAll(store) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbDelete(store, key) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).delete(key);
+    req.onsuccess = () => res();
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbCount(store) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).count();
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+// ── Connectivity ──────────────────────────────────────────────────
+function isOnline() { return navigator.onLine; }
+
+function updateConnBadge() {
+  const b = document.getElementById('conn-badge');
+  if (isOnline()) {
+    b.textContent = '● Online';
+    b.className = 'sync-badge online';
+  } else {
+    b.textContent = '● Offline';
+    b.className = 'sync-badge offline';
+  }
+}
+window.addEventListener('online', () => { updateConnBadge(); autoSync(); });
+window.addEventListener('offline', updateConnBadge);
+
+// ── Download for offline ──────────────────────────────────────────
+async function downloadForOffline() {
+  if (!isOnline()) { showToast('Need internet to download questions'); return; }
+  const btn = document.querySelector('[onclick="downloadForOffline()"]');
+  btn.disabled = true;
+  btn.textContent = '⬇ Downloading...';
+  setDlStatus('Connecting to server...', 5);
+
+  try {
+    // Download all approved questions
+    setDlStatus('Downloading questions...', 20);
+    const resp = await fetch(BASE + '/api/questions/export?status=approved');
+    const text = await resp.text();
+    const rows = parseCSV(text);
+    setDlStatus('Saving ' + rows.length + ' questions...', 60);
+
+    // Save to IndexedDB
+    let saved = 0;
+    for (const row of rows) {
+      await dbPut('questions', {
+        question_id:   row.question_id,
+        subject:       row.subject,
+        level:         parseInt(row.level) || 1,
+        topic_tag:     row.topic_tag,
+        question_text: row.question_text || row.q_text_english,
+        image_url:     row.image_url || null,
+        option_a: row.option_a, option_b: row.option_b,
+        option_c: row.option_c, option_d: row.option_d,
+        correct_option: row.correct_option
+      });
+      saved++;
+    }
+
+    // Download recent PINs (last 50 active)
+    setDlStatus('Downloading PINs...', 80);
+    try {
+      const presp = await fetch(BASE + '/admin/pins/list');
+      const pins  = await presp.json();
+      for (const p of pins) {
+        if (p.is_active) await dbPut('pins', p);
+      }
+    } catch(e) {}
+
+    setDlStatus('Done! ' + saved + ' questions ready offline.', 100);
+    updateStats();
+    showToast('Downloaded! App works offline now.');
+
+  } catch(e) {
+    setDlStatus('Error: ' + e.message, 0);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇ Download';
+  }
+}
+
+function setDlStatus(msg, pct) {
+  document.getElementById('dl-status').textContent = msg;
+  document.getElementById('dl-fill').style.width = pct + '%';
+}
+
+async function updateStats() {
+  const qc = await dbCount('questions');
+  const pc = await dbCount('pins');
+  const results = await dbGetAll('results');
+  const pending = results.filter(r => !r.synced).length;
+  document.getElementById('q-count').textContent = qc;
+  document.getElementById('pin-count').textContent = pc;
+  document.getElementById('pending-count').textContent = pending;
+}
+
+// ── CSV parser ────────────────────────────────────────────────────
+function parseCSV(text) {
+  text = text.replace(/^\uFEFF/, '');
+  const lines = text.split('\n').filter(l => l.trim());
+  if (!lines.length) return [];
+  const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = []; let cur = ''; let inQ = false;
+    for (const ch of lines[i]) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { vals.push(cur); cur = ''; }
+      else { cur += ch; }
+    }
+    vals.push(cur);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = (vals[idx] || '').replace(/"/g,'').trim(); });
+    if (row.question_id) rows.push(row);
+  }
+  return rows;
+}
+
+// ── PIN validation ────────────────────────────────────────────────
+async function validatePin(pin) {
+  // Try online first
+  if (isOnline()) {
+    try {
+      const resp = await fetch(BASE + '/portal/session/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, studentName: session.name, subject: null })
+      });
+      const data = await resp.json();
+      if (!resp.ok || data.error) return { valid: false, error: data.error };
+      return { valid: true, level: data.level, online: true, sessionId: data.sessionId };
+    } catch(e) {}
+  }
+  // Offline: check local PIN cache
+  const pinRec = await dbGet('pins', pin.toUpperCase());
+  if (!pinRec) return { valid: false, error: 'PIN not found. Download PINs when online.' };
+  if (!pinRec.is_active) return { valid: false, error: 'PIN is not active.' };
+  const expires = new Date(pinRec.expires_at);
+  if (expires < new Date()) return { valid: false, error: 'PIN has expired.' };
+  return { valid: true, level: pinRec.level, online: false };
+}
+
+// ── Get questions for subject/level ──────────────────────────────
+async function getQuestions(subject, level) {
+  if (isOnline()) {
+    try {
+      const resp = await fetch(BASE + '/portal/session/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: session.pin, studentName: session.name, subject })
+      });
+      const data = await resp.json();
+      if (data.questions) return data.questions;
+    } catch(e) {}
+  }
+  // Offline: get from IndexedDB
+  const all = await dbGetAll('questions');
+  const filtered = all.filter(q =>
+    q.subject === subject && parseInt(q.level) === parseInt(level)
+  );
+  // Shuffle and take 10
+  for (let i = filtered.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+  }
+  return filtered.slice(0, 10).map(q => ({
+    id: q.question_id,
+    level: q.level,
+    question_text: q.question_text,
+    image_url: q.image_url || null,
+    option_a: q.option_a, option_b: q.option_b,
+    option_c: q.option_c, option_d: q.option_d,
+    correct: q.correct_option
+  }));
+}
+
+// ── Start assessment ──────────────────────────────────────────────
+async function startAssessment() {
+  const pin  = document.getElementById('pin-input').value.trim().toUpperCase();
+  const name = document.getElementById('name-input').value.trim();
+  const sid  = document.getElementById('id-input').value.trim();
+  const err  = document.getElementById('home-err');
+
+  err.style.display = 'none';
+  if (pin.length < 4) { err.textContent = 'Please enter a valid PIN.'; err.style.display='block'; return; }
+  if (name.length < 2) { err.textContent = 'Please enter your name.'; err.style.display='block'; return; }
+
+  showScreen('s-loading');
+  document.getElementById('load-msg').textContent = 'Validating PIN...';
+
+  const result = await validatePin(pin);
+  if (!result.valid) {
+    document.getElementById('home-err').textContent = result.error;
+    document.getElementById('home-err').style.display = 'block';
+    showScreen('s-home');
+    return;
+  }
+
+  session.pin = pin;
+  session.name = name;
+  session.studentId = sid;
+  session.level = result.level;
+  session.subjectIdx = 0;
+  session.subjectResults = [];
+
+  // Get GPS
+  session.gps = null;
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => { session.gps = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }; },
+      () => {}
+    );
+  }
+
+  await loadSubject(session.subjects[0]);
+}
+
+async function loadSubject(subject) {
+  showScreen('s-loading');
+  document.getElementById('load-msg').textContent = 'Loading ' + subject + ' questions...';
+  document.getElementById('load-sub').textContent = 'Subject ' + (session.subjectIdx + 1) + ' of 3';
+
+  const questions = await getQuestions(subject, session.level);
+  if (!questions || questions.length === 0) {
+    showToast('No ' + subject + ' questions for Level ' + session.level + '. Skipping...');
+    session.subjectResults.push({ subject, score: 0, total: 0, pct: 0 });
+    session.subjectIdx++;
+    if (session.subjectIdx < session.subjects.length) {
+      await loadSubject(session.subjects[session.subjectIdx]);
+    } else {
+      showFinalResults();
+    }
+    return;
+  }
+
+  session.currentQuestions = questions;
+  session.answers = new Array(questions.length).fill(null);
+  session.currentQ = 0;
+  session.currentSubject = subject;
+
+  document.getElementById('q-name').textContent = session.name;
+  document.getElementById('q-subject').textContent = subject + ' • L' + session.level;
+
+  showQuestion(0);
+  showScreen('s-question');
+}
+
+function showQuestion(idx) {
+  const q    = session.currentQuestions[idx];
+  const total= session.currentQuestions.length;
+
+  document.getElementById('q-prog-label').textContent = 'Question ' + (idx+1) + ' of ' + total;
+  document.getElementById('q-level-badge').textContent = 'Level ' + session.level;
+  document.getElementById('q-prog-fill').style.width = ((idx / total) * 100) + '%';
+  document.getElementById('q-text').textContent = q.question_text || '';
+
+  // Image
+  const img = document.getElementById('q-img');
+  if (q.image_url) { img.src = q.image_url; img.style.display = 'block'; }
+  else { img.style.display = 'none'; img.src = ''; }
+
+  // Options
+  const opts = document.getElementById('q-opts');
+  opts.innerHTML = '';
+  ['a','b','c','d'].forEach(l => {
+    const text = q['option_' + l] || '';
+    if (!text) return;
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = '<span class="opt-letter">' + l.toUpperCase() + '</span>' + text;
+    btn.onclick = () => selectOption(l.toUpperCase(), btn);
+    opts.appendChild(btn);
+  });
+
+  document.getElementById('q-next').disabled = true;
+}
+
+function selectOption(letter, btn) {
+  if (session.answers[session.currentQ] !== null) return;
+  session.answers[session.currentQ] = letter;
+
+  document.querySelectorAll('.opt-btn').forEach(b => b.style.pointerEvents = 'none');
+  btn.classList.add('selected');
+
+  const q = session.currentQuestions[session.currentQ];
+  const correct = (q.correct || q.correct_option || '').toUpperCase();
+  if (letter === correct) {
+    btn.classList.add('correct');
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.opt-btn').forEach(b => {
+      const l = b.querySelector('.opt-letter');
+      if (l && l.textContent === correct) b.classList.add('correct');
+    });
+  }
+  document.getElementById('q-next').disabled = false;
+}
+
+function nextQuestion() {
+  const next = session.currentQ + 1;
+  if (next < session.currentQuestions.length) {
+    session.currentQ = next;
+    showQuestion(next);
+  } else {
+    finishSubject();
+  }
+}
+
+function finishSubject() {
+  const qs = session.currentQuestions;
+  let score = 0;
+  qs.forEach((q, i) => {
+    const correct = (q.correct || q.correct_option || '').toUpperCase();
+    if (session.answers[i] === correct) score++;
+  });
+  const pct = Math.round((score / qs.length) * 100);
+  session.subjectResults.push({ subject: session.currentSubject, score, total: qs.length, pct });
+  session.subjectIdx++;
+
+  if (session.subjectIdx < session.subjects.length) {
+    const next = session.subjects[session.subjectIdx];
+    const emojis = { Math: '🔢', English: '📖', Urdu: '✍️' };
+    document.getElementById('tr-emoji').textContent = emojis[session.currentSubject] || '✅';
+    document.getElementById('tr-done').textContent = session.currentSubject + ' Complete! (' + score + '/' + qs.length + ')';
+    document.getElementById('tr-next').textContent = 'Next: ' + next + ' Assessment (' + (session.subjectIdx + 1) + '/3)';
+    showScreen('s-transition');
+  } else {
+    showFinalResults();
+  }
+}
+
+async function loadNextSubject() {
+  await loadSubject(session.subjects[session.subjectIdx]);
+}
+
+async function showFinalResults() {
+  const results = session.subjectResults;
+  const totalScore = results.reduce((s, r) => s + r.score, 0);
+  const totalQ = results.reduce((s, r) => s + r.total, 0);
+  const overallPct = totalQ ? Math.round((totalScore / totalQ) * 100) : 0;
+  const passed = overallPct >= 80;
+
+  document.getElementById('res-name').textContent = session.name;
+  document.getElementById('res-level').textContent = 'Level ' + session.level + ' • ' + (session.studentId || '');
+  document.getElementById('res-pct').textContent = overallPct + '%';
+  document.getElementById('res-circle').style.setProperty('--pct', overallPct + '%');
+
+  const badge = document.getElementById('res-badge');
+  badge.textContent = passed ? '✅ Passed — کامیاب' : '📚 Needs Review — دوبارہ کوشش';
+  badge.className = 'result-badge ' + (passed ? 'pass' : 'fail');
+
+  const breakdown = document.getElementById('res-breakdown');
+  breakdown.innerHTML = results.map(r => `
+    <div class="subj-card">
+      <div class="subj-name">${r.subject}</div>
+      <div class="subj-score">${r.score}/${r.total}</div>
+      <div class="subj-pct">${r.pct}%</div>
+    </div>`).join('');
+
+  // Save result locally
+  const resultRecord = {
+    synced: false,
+    timestamp: new Date().toISOString(),
+    gps: session.gps,
+    pin: session.pin,
+    student_name: session.name,
+    student_id: session.studentId,
+    level: session.level,
+    overall_pct: overallPct,
+    passed,
+    subjects: results,
+  };
+
+  // Try to sync now if online
+  const syncBadge = document.getElementById('res-sync-badge');
+  const syncMsg   = document.getElementById('res-sync-msg');
+
+  if (isOnline()) {
+    syncBadge.textContent = '↑ Syncing...';
+    syncBadge.className = 'sync-badge syncing';
+    const ok = await syncResult(resultRecord);
+    if (ok) {
+      resultRecord.synced = true;
+      syncBadge.textContent = '✓ Saved';
+      syncBadge.className = 'sync-badge online';
+      syncMsg.textContent = 'Results saved to server ✓';
+    } else {
+      await dbPut('results', resultRecord);
+      syncBadge.textContent = '⚠ Saved Offline';
+      syncBadge.className = 'sync-badge offline';
+      syncMsg.textContent = 'Saved offline. Will sync when internet returns.';
+    }
+  } else {
+    await dbPut('results', resultRecord);
+    syncBadge.textContent = '● Offline';
+    syncBadge.className = 'sync-badge offline';
+    syncMsg.textContent = 'No internet — saved on tablet. Sync later.';
+  }
+
+  updateStats();
+  showScreen('s-results');
+}
+
+// ── Sync ──────────────────────────────────────────────────────────
+async function syncResult(record) {
+  try {
+    // Submit each subject as a separate session
+    for (const subj of record.subjects) {
+      if (subj.total === 0) continue;
+      await fetch(BASE + '/portal/offline/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pin:          record.pin,
+          student_name: record.student_name,
+          student_id:   record.student_id,
+          subject:      subj.subject,
+          level:        record.level,
+          score:        subj.score,
+          total:        subj.total,
+          pct:          subj.pct,
+          passed:       subj.pct >= 80,
+          timestamp:    record.timestamp,
+          gps_lat:      record.gps?.lat || null,
+          gps_lng:      record.gps?.lng || null,
+          gps_accuracy: record.gps?.acc || null,
+        })
+      });
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+async function autoSync() {
+  const results = await dbGetAll('results');
+  const pending = results.filter(r => !r.synced);
+  for (const rec of pending) {
+    const ok = await syncResult(rec);
+    if (ok) {
+      rec.synced = true;
+      await dbPut('results', rec);
+    }
+  }
+  updateStats();
+}
+
+async function showSyncScreen() {
+  showScreen('s-sync');
+  const results = await dbGetAll('results');
+  const pending = results.filter(r => !r.synced);
+  document.getElementById('sync-summary').textContent =
+    pending.length + ' result(s) pending sync • ' + (isOnline() ? 'Online ✓' : 'Offline');
+  const list = document.getElementById('sync-list');
+  list.innerHTML = results.slice(-10).reverse().map(r => `
+    <div class="sync-item">
+      <div class="sync-dot ${r.synced ? 'done' : 'pending'}"></div>
+      <div style="flex:1">
+        <strong>${r.student_name}</strong> — Level ${r.level} — ${r.overall_pct}%
+        <div style="font-size:11px;color:var(--muted)">${r.timestamp?.split('T')[0]} • ${r.synced ? 'Synced ✓' : 'Pending'}</div>
+      </div>
+    </div>`).join('') || '<div style="color:var(--muted);text-align:center;padding:20px">No results yet</div>';
+  document.getElementById('sync-btn').disabled = !isOnline() || pending.length === 0;
+}
+
+async function syncNow() {
+  if (!isOnline()) { showToast('No internet connection'); return; }
+  const btn = document.getElementById('sync-btn');
+  btn.disabled = true;
+  btn.textContent = 'Syncing...';
+  await autoSync();
+  const results = await dbGetAll('results');
+  const remaining = results.filter(r => !r.synced).length;
+  document.getElementById('sync-result').style.display = 'block';
+  document.getElementById('sync-result').textContent =
+    remaining === 0 ? '✅ All results synced!' : remaining + ' results still pending';
+  btn.textContent = 'Sync Now ↑';
+  btn.disabled = false;
+  showSyncScreen();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function newStudent() {
+  document.getElementById('name-input').value = '';
+  document.getElementById('id-input').value = '';
+  showScreen('s-home');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+async function init() {
+  await openDB();
+  updateConnBadge();
+  updateStats();
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+
+  // Auto-sync if online
+  if (isOnline()) setTimeout(autoSync, 2000);
+}
+
+init();
+</script>
+</body>
+</html>
