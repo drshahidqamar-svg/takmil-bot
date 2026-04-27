@@ -318,7 +318,7 @@ function renderCard(s){
   return `
   <div class="school-card ${cardClass}"
        data-status="${submitted?'submitted':'missing'}"
-       data-name="${(s.name||'').toLowerCase()}"
+       data-name="${(s.name||'').toLowerCase().replace(/_/g,' ')} ${(s.identifier||'').toLowerCase().replace(/_/g,' ')} ${fmtShort(s.name||'').toLowerCase()}"
        onclick="showDetail('${s.feedback_id||''}','${(s.name||'').replace(/'/g,"\\'")}','${s.school_coordinator||''}')">
     <div class="sc-top">
       <div class="sc-name">${shortName}</div>
@@ -417,11 +417,14 @@ function closeModal(){
 
 function filterCards(){
   const status = document.getElementById('f-status').value;
-  const search = document.getElementById('f-search').value.toLowerCase();
+  // Normalize search: lowercase, strip underscores and extra spaces
+  const raw    = document.getElementById('f-search').value.toLowerCase().trim();
+  const search = raw.replace(/_/g,' ').replace(/\s+/g,' ');
   document.querySelectorAll('.school-card').forEach(c => {
-    const ms = !status || c.dataset.status === status;
-    const ms2= !search || c.dataset.name.includes(search);
-    c.classList.toggle('hidden', !(ms && ms2));
+    const matchStatus = !status || c.dataset.status === status;
+    const name = (c.dataset.name||'').replace(/_/g,' ');
+    const matchSearch = !search || name.includes(search);
+    c.classList.toggle('hidden', !(matchStatus && matchSearch));
   });
 }
 
