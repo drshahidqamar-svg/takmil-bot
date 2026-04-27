@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Lesson Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;min-height:100vh}
+.header{background:#1a3a2a;color:white;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:20px;font-weight:800;color:#4ade80}
+.container{max-width:1100px;margin:0 auto;padding:20px 16px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+@media(max-width:640px){.stats-grid{grid-template-columns:1fr 1fr}}
+.stat-card{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);text-align:center}
+.stat-num{font-size:32px;font-weight:800;color:#1a3a2a}
+.stat-lbl{font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;margin-top:4px}
+.card{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:20px}
+.filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.filters select,.filters input{padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none}
+.filters select:focus,.filters input:focus{border-color:#16a34a}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:10px 12px;color:#64748b;border-bottom:2px solid #f1f5f9;font-weight:700;background:#f8fafc}
+.tbl td{padding:10px 12px;border-bottom:1px solid #f8fafc;color:#374151}
+.tbl tr:hover td{background:#f8fafc}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.badge-green{background:#dcfce7;color:#15803d}
+.badge-amber{background:#fef9c3;color:#92400e}
+.badge-red{background:#fee2e2;color:#991b1b}
+.badge-grey{background:#f1f5f9;color:#94a3b8}
+.cov-bar{height:6px;background:#e2e8f0;border-radius:3px;margin-top:4px;overflow:hidden;width:80px}
+.cov-fill{height:100%;border-radius:3px}
+.gps-link{color:#2563eb;font-size:11px;text-decoration:none}
+.gps-link:hover{text-decoration:underline}
+.loading{text-align:center;padding:40px;color:#94a3b8}
+.refresh-btn{background:#16a34a;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">TAKMIL — Lesson Tracker</div>
+  <button class="refresh-btn" onclick="loadLessons()">↻ Refresh</button>
+</div>
+<div class="container">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num" id="s-total">—</div><div class="stat-lbl">Total Lessons</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-confirmed" style="color:#16a34a">—</div><div class="stat-lbl">Confirmed ✅</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-flagged" style="color:#d97706">—</div><div class="stat-lbl">Flagged ⚠️</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-today">—</div><div class="stat-lbl">Today</div></div>
+  </div>
+  <div class="card">
+    <div class="filters">
+      <input type="date" id="f-date" onchange="loadLessons()">
+      <select id="f-subject" onchange="loadLessons()">
+        <option value="">All Subjects</option>
+        <option value="Math">Math</option>
+        <option value="English">English</option>
+        <option value="Urdu">Urdu</option>
+        <option value="Science">Science</option>
+      </select>
+      <select id="f-status" onchange="loadLessons()">
+        <option value="">All Status</option>
+        <option value="completed">Confirmed ✅</option>
+        <option value="short">Short ⚠️</option>
+        <option value="suspicious">Suspicious 🚨</option>
+        <option value="started">In Progress</option>
+      </select>
+      <input type="text" id="f-school" placeholder="School name..." oninput="loadLessons()">
+    </div>
+    <div id="lessons-table"><div class="loading">Loading lessons...</div></div>
+  </div>
+</div>
+<script>
+async function loadLessons(){
+  const date    = document.getElementById('f-date').value;
+  const subject = document.getElementById('f-subject').value;
+  const status  = document.getElementById('f-status').value;
+  const school  = document.getElementById('f-school').value;
+
+  let url = '/api/lessons?';
+  if(date)    url += 'date='+date+'&';
+  if(subject) url += 'subject='+subject+'&';
+  if(status)  url += 'status='+status+'&';
+  if(school)  url += 'school_code='+encodeURIComponent(school)+'&';
+
+  const div = document.getElementById('lessons-table');
+  div.innerHTML = '<div class="loading">Loading...</div>';
+  try{
+    const resp = await fetch(url);
+    const data = await resp.json();
+    const lessons = data.lessons || [];
+
+    // Stats
+    document.getElementById('s-total').textContent = lessons.length;
+    document.getElementById('s-confirmed').textContent = lessons.filter(l=>l.status==='completed').length;
+    document.getElementById('s-flagged').textContent   = lessons.filter(l=>l.flagged).length;
+    const today = new Date().toDateString();
+    document.getElementById('s-today').textContent = lessons.filter(l=>new Date(l.start_time).toDateString()===today).length;
+
+    if(!lessons.length){ div.innerHTML='<div class="loading">No lessons found</div>'; return; }
+
+    div.innerHTML = `<table class="tbl">
+      <tr>
+        <th>Teacher</th><th>School</th><th>Video</th>
+        <th>Subject</th><th>Started</th><th>Duration</th>
+        <th>Coverage</th><th>Status</th><th>GPS</th>
+      </tr>
+      ${lessons.map(l=>{
+        const pct = Math.round(l.coverage_pct||0);
+        const badge = l.status==='completed'?'badge-green':l.status==='short'?'badge-amber':l.status==='suspicious'?'badge-red':'badge-grey';
+        const label = l.status==='completed'?'✅ Confirmed':l.status==='short'?'⚠️ Short':l.status==='suspicious'?'🚨 Flagged':l.status==='started'?'▶ In Progress':'—';
+        const mins  = Math.floor((l.actual_duration||0)/60);
+        const secs  = (l.actual_duration||0)%60;
+        const gps   = l.start_gps_lat ? `<a class="gps-link" href="https://maps.google.com/?q=${l.start_gps_lat},${l.start_gps_lng}" target="_blank">📍 Map</a>` : '—';
+        return `<tr>
+          <td><strong>${l.teacher_name||'—'}</strong></td>
+          <td>${l.school_name||l.school_code||'—'}</td>
+          <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.video_name||l.video_id||'—'}</td>
+          <td>${l.subject||'—'} L${l.level||'—'}</td>
+          <td>${l.start_time?new Date(l.start_time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}</td>
+          <td>${l.actual_duration?mins+'m '+secs+'s':'—'}</td>
+          <td>
+            <strong style="color:${pct>=80?'#16a34a':pct>=50?'#d97706':'#dc2626'}">${pct}%</strong>
+            <div class="cov-bar"><div class="cov-fill" style="width:${pct}%;background:${pct>=80?'#16a34a':pct>=50?'#f59e0b':'#dc2626'}"></div></div>
+          </td>
+          <td><span class="badge ${badge}">${label}</span></td>
+          <td>${gps}</td>
+        </tr>`;
+      }).join('')}
+    </table>`;
+  }catch(e){ div.innerHTML='<div class="loading">Error: '+e.message+'</div>'; }
+}
+
+// Set today as default date
+document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+loadLessons();
+setInterval(loadLessons, 60000); // Auto-refresh every minute
+</script>
+</body>
+</html>

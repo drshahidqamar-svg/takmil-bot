@@ -1959,6 +1959,8 @@ app.post('/api/questions/csv-update', async (req, res) => {
 });
 
 
+app.get('/lessons-admin', (req, res) => res.sendFile(path.join(__dirname, 'lessons-admin.html')));
+
 // ── TEACHER PORTAL ──────────────────────────────────────────────
 
 app.get('/teacher-portal', (req, res) => res.sendFile(path.join(__dirname, 'teacher-portal.html')));
@@ -2086,12 +2088,14 @@ app.post('/api/lessons/end', async (req, res) => {
 
 app.get('/api/lessons', async (req, res) => {
   try {
-    const { school_code, date } = req.query;
+    const { school_code, date, subject, status } = req.query;
     let query = `SELECT * FROM lessons WHERE 1=1`;
     const params = [];
-    if (school_code) { params.push(school_code); query += ` AND school_code=$${params.length}`; }
-    if (date) { params.push(date); query += ` AND DATE(start_time)=$${params.length}`; }
-    query += ` ORDER BY start_time DESC LIMIT 100`;
+    if (school_code) { params.push(school_code); query += ` AND (school_code=$${params.length} OR school_name ILIKE $${params.length})`; }
+    if (date)        { params.push(date);         query += ` AND DATE(start_time)=$${params.length}`; }
+    if (subject)     { params.push(subject);      query += ` AND subject=$${params.length}`; }
+    if (status)      { params.push(status);       query += ` AND status=$${params.length}`; }
+    query += ` ORDER BY start_time DESC LIMIT 200`;
     const r = await db.pool.query(query, params);
     res.json({ lessons: r.rows });
   } catch(err) { res.status(500).json({ lessons: [], error: err.message }); }

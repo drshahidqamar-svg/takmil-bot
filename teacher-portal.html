@@ -166,6 +166,11 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
   padding:12px 16px;font-size:13px;color:#991b1b;font-weight:600;
   margin-top:10px;display:none}
 
+@keyframes pulse-btn{
+  0%,100%{box-shadow:0 4px 16px rgba(220,38,38,0.35)}
+  50%{box-shadow:0 4px 32px rgba(220,38,38,0.7);transform:scale(1.02)}
+}
+
 /* MODE BANNER */
 .mode-banner{
   width:100%;max-width:440px;margin-bottom:12px;
@@ -580,18 +585,24 @@ async function startLesson(){
 }
 
 function updateTimer(startTime){
-  const elapsed = Math.floor((new Date() - startTime)/1000);
+  const elapsed  = Math.floor((new Date() - startTime)/1000);
   const expected = currentLesson.expected_duration;
-  const pct = Math.min(100, Math.round((elapsed/expected)*100));
+  const pct      = Math.min(100, Math.round((elapsed/expected)*100));
 
   document.getElementById('lesson-timer').textContent = formatDur(elapsed);
   document.getElementById('cov-pct').textContent = pct+'%';
 
-  const fill = document.getElementById('cov-fill');
+  const fill  = document.getElementById('cov-fill');
   const timer = document.getElementById('lesson-timer');
   const hint  = document.getElementById('cov-hint');
 
-  if(pct >= 80){
+  if(pct >= 100){
+    fill.style.background='#16a34a';
+    timer.className='timer ok';
+    hint.textContent='✅ Video complete! Tap End Lesson now.';
+    // Flash the end button to prompt teacher
+    document.getElementById('end-btn').style.animation='pulse-btn 1s infinite';
+  } else if(pct >= 80){
     fill.style.background='#16a34a';
     timer.className='timer ok';
     hint.textContent='✅ Coverage target reached!';
