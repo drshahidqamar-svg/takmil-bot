@@ -2135,6 +2135,66 @@ app.get('/api/lessons', async (req, res) => {
   } catch(err) { res.status(500).json({ lessons: [], error: err.message }); }
 });
 
+// ── School Compliance Dashboard API ──────────────────────────────
+app.get('/api/compliance', async (req, res) => {
+  try {
+    const date = req.query.date || new Date().toISOString().split('T')[0];
+    const region = req.query.region || null;
+
+    let regionFilter = '';
+    const params = [date];
+    if (region) { params.push(region); regionFilter = `AND s.region = $${params.length}`; }
+
+    const r = await db.pool.query(`
+      SELECT
+        s.id, s.name, s.identifier, s.region,
+        rc.name  AS regional_coordinator,
+        sc.name  AS school_coordinator,
+        COUNT(l.id)                        AS lesson_count,
+        MAX(l.coverage_pct)                AS max_coverage,
+        MAX(l.start_time)                  AS last_lesson_time,
+        BOOL_OR(l.status = 'completed')    AS has_completed,
+        BOOL_OR(l.flagged = TRUE)          AS has_flagged
+      FROM schools s
+      LEFT JOIN regional_coordinators rc ON rc.id = s.regional_coordinator_id
+      LEFT JOIN school_coordinators   sc ON sc.id = s.school_coordinator_id
+      LEFT JOIN lessons l ON (
+        l.school_code ILIKE s.identifier
+        OR l.school_code ILIKE s.name
+        OR l.school_name ILIKE s.name
+        OR l.school_name ILIKE s.identifier
+      ) AND DATE(l.start_time AT TIME ZONE 'UTC') = $1::date
+      WHERE s.identifier IS NOT NULL
+      ${regionFilter}
+      GROUP BY s.id, s.name, s.identifier, s.region, rc.name, sc.name
+      ORDER BY s.region, s.name
+    `, params);
+
+    // Summary stats
+    const schools    = r.rows;
+    const total      = schools.length;
+    const active     = schools.filter(s => parseInt(s.lesson_count) > 0).length;
+    const confirmed  = schools.filter(s => s.has_completed).length;
+    const flagged    = schools.filter(s => s.has_flagged && !s.has_completed).length;
+    const inactive   = total - active;
+
+    // Group by region
+    const byRegion = {};
+    for (const s of schools) {
+      const reg = s.region || 'Unknown';
+      if (!byRegion[reg]) byRegion[reg] = [];
+      byRegion[reg].push(s);
+    }
+
+    res.json({ date, total, active, confirmed, flagged, inactive, byRegion, schools });
+  } catch(err) {
+    console.log('compliance error:', err.message);
+    res.status(500).json({ error: err.message, byRegion: {}, schools: [] });
+  }
+});
+
+app.get('/compliance', (req, res) => res.sendFile(require('path').join(__dirname, 'compliance.html')));
+
 
 // Fix mislabeled question subjects
 app.post('/api/questions/fix-subjects', async (req, res) => {

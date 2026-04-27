@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — School Compliance</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060e09;--bg2:#0c1810;--bg3:#102014;
+  --panel:#131f16;--panel2:#192819;
+  --leaf:#22c55e;--leaf2:#16a34a;--leaf3:#4ade80;--leaf4:#86efac;
+  --border:#1e3522;--border2:#27452c;
+  --text:#dff0e4;--text2:#7fa888;--text3:#4a6b52;
+  --amber:#f59e0b;--danger:#ef4444;--ok:#22c55e;
+  --r:14px;--r2:10px;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px}
+
+/* ── HEADER ── */
+.hdr{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:0 28px;height:58px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:20;
+}
+.hdr-left{display:flex;align-items:center;gap:16px}
+.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;
+  color:var(--leaf3);letter-spacing:0.5px}
+.logo-sub{font-size:11px;font-weight:600;color:var(--text3);
+  text-transform:uppercase;letter-spacing:1px;padding-top:2px}
+.hdr-right{display:flex;align-items:center;gap:10px}
+
+/* ── FILTERS ── */
+.filters{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:12px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.f-inp{
+  padding:8px 12px;background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--r2);font-size:13px;color:var(--text);
+  font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;
+}
+.f-inp:focus{border-color:var(--leaf2)}
+.f-sel{appearance:none;padding-right:28px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%234a6b52' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;cursor:pointer}
+.f-lbl{font-size:11px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.6px;white-space:nowrap}
+.refresh-btn{
+  margin-left:auto;padding:8px 16px;background:var(--leaf2);
+  border:none;border-radius:var(--r2);font-size:12px;font-weight:700;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all 0.2s;display:flex;align-items:center;gap:6px;
+}
+.refresh-btn:hover{background:var(--leaf);transform:translateY(-1px)}
+.refresh-btn.loading{opacity:0.6;cursor:wait}
+
+/* ── STATS BAR ── */
+.stats{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  gap:1px;background:var(--border);border-bottom:1px solid var(--border);
+}
+.stat{
+  background:var(--bg2);padding:18px 24px;text-align:center;
+}
+.stat-n{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;line-height:1}
+.stat-l{font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.8px;margin-top:4px}
+.n-total{color:var(--text)}
+.n-active{color:var(--leaf3)}
+.n-confirmed{color:#4ade80}
+.n-flagged{color:var(--amber)}
+.n-inactive{color:var(--danger)}
+
+/* ── BODY ── */
+.body{padding:24px 28px;max-width:1400px;margin:0 auto}
+
+/* ── REGION SECTION ── */
+.region-block{margin-bottom:32px}
+.region-hdr{
+  display:flex;align-items:center;gap:12px;margin-bottom:14px;
+  padding-bottom:10px;border-bottom:1px solid var(--border);
+}
+.region-name{
+  font-family:'Syne',sans-serif;font-size:16px;font-weight:800;
+  color:var(--text);letter-spacing:0.3px;
+}
+.region-coord{font-size:12px;color:var(--text3);font-weight:500}
+.region-pill{
+  margin-left:auto;display:flex;gap:8px;align-items:center;
+}
+.rpill{
+  font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;
+}
+.rpill-ok{background:rgba(34,197,94,0.12);color:var(--leaf3);border:1px solid rgba(34,197,94,0.2)}
+.rpill-bad{background:rgba(239,68,68,0.1);color:#fca5a5;border:1px solid rgba(239,68,68,0.2)}
+
+/* ── SCHOOL GRID ── */
+.school-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:8px;
+}
+.school-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px 16px;
+  transition:all 0.2s;position:relative;overflow:hidden;
+  cursor:default;
+}
+.school-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+}
+.school-card.active::before{background:var(--leaf2)}
+.school-card.flagged::before{background:var(--amber)}
+.school-card.inactive::before{background:var(--border2)}
+.school-card.active{border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.04)}
+.school-card.flagged{border-color:rgba(245,158,11,0.25);background:rgba(245,158,11,0.04)}
+
+.sc-name{
+  font-size:12px;font-weight:700;color:var(--text);
+  line-height:1.4;margin-bottom:8px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sc-status{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.sc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-ok{background:var(--leaf3)}
+.dot-warn{background:var(--amber)}
+.dot-off{background:var(--border2)}
+.sc-status-txt{font-size:11px;font-weight:700}
+.txt-ok{color:var(--leaf3)}
+.txt-warn{color:#fcd34d}
+.txt-off{color:var(--text3)}
+
+.sc-meta{font-size:11px;color:var(--text3);line-height:1.6}
+.sc-cov{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:700;
+}
+.sc-time{font-size:10px;color:var(--text3)}
+
+.sc-bar{height:3px;background:var(--border2);border-radius:2px;
+  margin-top:8px;overflow:hidden}
+.sc-bar-fill{height:100%;border-radius:2px;transition:width 0.5s}
+
+/* ── LOADING / EMPTY ── */
+.loading-state{
+  text-align:center;padding:80px 20px;
+}
+.loading-state .spin{
+  width:32px;height:32px;border:3px solid var(--border2);
+  border-top-color:var(--leaf2);border-radius:50%;
+  animation:spin 0.8s linear infinite;margin:0 auto 16px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-state p{color:var(--text3);font-size:14px}
+
+.empty-region{
+  font-size:12px;color:var(--text3);padding:20px;
+  text-align:center;border:1px dashed var(--border);
+  border-radius:var(--r);
+}
+
+/* ── LAST UPDATED ── */
+.last-upd{
+  font-size:11px;color:var(--text3);text-align:center;
+  padding:16px;border-top:1px solid var(--border);margin-top:8px;
+}
+
+/* TOOLTIP */
+.sc-coord{font-size:10px;color:var(--text3);margin-top:4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Search highlight */
+.school-card.hidden{display:none}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div>
+      <div class="logo">TAKMIL</div>
+      <div class="logo-sub">School Compliance</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span id="last-upd" style="font-size:11px;color:var(--text3)">—</span>
+  </div>
+</div>
+
+<div class="filters">
+  <span class="f-lbl">Date</span>
+  <input type="date" class="f-inp" id="f-date" onchange="load()">
+
+  <span class="f-lbl">Region</span>
+  <select class="f-inp f-sel" id="f-region" onchange="load()">
+    <option value="">All Regions</option>
+    <option value="Sindh">Sindh</option>
+    <option value="Punjab">Punjab</option>
+    <option value="KPK">KPK</option>
+    <option value="GB">GB</option>
+    <option value="Baluchistan">Baluchistan</option>
+  </select>
+
+  <span class="f-lbl">Status</span>
+  <select class="f-inp f-sel" id="f-status" onchange="filterCards()">
+    <option value="">All Schools</option>
+    <option value="active">Active ✅</option>
+    <option value="inactive">Not Run ❌</option>
+    <option value="flagged">Flagged ⚠️</option>
+  </select>
+
+  <span class="f-lbl">Search</span>
+  <input type="text" class="f-inp" id="f-search" placeholder="School name..."
+    oninput="filterCards()" style="min-width:180px">
+
+  <button class="refresh-btn" id="refresh-btn" onclick="load()">
+    ↻ Refresh
+  </button>
+</div>
+
+<div class="stats" id="stats-bar">
+  <div class="stat"><div class="stat-n n-total" id="s-total">—</div><div class="stat-l">Total Schools</div></div>
+  <div class="stat"><div class="stat-n n-active" id="s-active">—</div><div class="stat-l">Active Today</div></div>
+  <div class="stat"><div class="stat-n n-confirmed" id="s-confirmed">—</div><div class="stat-l">Confirmed ✅</div></div>
+  <div class="stat"><div class="stat-n n-flagged" id="s-flagged">—</div><div class="stat-l">Flagged ⚠️</div></div>
+  <div class="stat"><div class="stat-n n-inactive" id="s-inactive">—</div><div class="stat-l">No Lesson ❌</div></div>
+</div>
+
+<div class="body" id="body">
+  <div class="loading-state">
+    <div class="spin"></div>
+    <p>Loading school data...</p>
+  </div>
+</div>
+
+<div class="last-upd" id="last-upd-footer"></div>
+
+<script>
+let allData = null;
+
+function fmtTime(iso){
+  if(!iso) return '';
+  return new Date(iso).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+
+function fmtShortName(name){
+  // Shorten long school names for the card
+  return name.replace(/_O_|_A_|_B_|_C_/, ' ').replace(/_W\d+[A-Z]+$/, '').replace(/_/g,' ');
+}
+
+async function load(){
+  const date   = document.getElementById('f-date').value;
+  const region = document.getElementById('f-region').value;
+  const btn    = document.getElementById('refresh-btn');
+
+  btn.classList.add('loading');
+  btn.textContent = '⏳ Loading...';
+
+  try{
+    let url = '/api/compliance?date='+date;
+    if(region) url += '&region='+encodeURIComponent(region);
+
+    const resp = await fetch(url);
+    const data = await resp.json();
+    allData = data;
+
+    // Update stats
+    document.getElementById('s-total').textContent     = data.total     || 0;
+    document.getElementById('s-active').textContent    = data.active    || 0;
+    document.getElementById('s-confirmed').textContent = data.confirmed || 0;
+    document.getElementById('s-flagged').textContent   = data.flagged   || 0;
+    document.getElementById('s-inactive').textContent  = data.inactive  || 0;
+
+    renderRegions(data.byRegion);
+
+    const now = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('last-upd').textContent = 'Updated ' + now;
+    document.getElementById('last-upd-footer').textContent =
+      'Auto-refreshes every 5 minutes · Last updated ' + now;
+
+    filterCards();
+  }catch(e){
+    document.getElementById('body').innerHTML =
+      `<div class="loading-state"><p style="color:#fca5a5">Error loading data: ${e.message}</p></div>`;
+  }
+
+  btn.classList.remove('loading');
+  btn.innerHTML = '↻ Refresh';
+}
+
+function renderRegions(byRegion){
+  const body = document.getElementById('body');
+  if(!byRegion || !Object.keys(byRegion).length){
+    body.innerHTML = `<div class="loading-state"><p>No school data found.</p></div>`;
+    return;
+  }
+
+  const regionOrder = ['Sindh','Punjab','KPK','GB','Baluchistan'];
+  const regions = regionOrder.filter(r => byRegion[r]).concat(
+    Object.keys(byRegion).filter(r => !regionOrder.includes(r))
+  );
+
+  body.innerHTML = regions.map(region => {
+    const schools = byRegion[region] || [];
+    const active  = schools.filter(s => parseInt(s.lesson_count) > 0).length;
+    const coord   = schools[0]?.regional_coordinator || '';
+
+    return `
+    <div class="region-block" data-region="${region}">
+      <div class="region-hdr">
+        <div class="region-name">${region}</div>
+        ${coord ? `<div class="region-coord">RC: ${coord}</div>` : ''}
+        <div class="region-pill">
+          <span class="rpill rpill-ok">${active} active</span>
+          <span class="rpill rpill-bad">${schools.length - active} inactive</span>
+        </div>
+      </div>
+      <div class="school-grid">
+        ${schools.map(s => renderSchoolCard(s)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSchoolCard(s){
+  const count    = parseInt(s.lesson_count) || 0;
+  const cov      = Math.round(parseFloat(s.max_coverage) || 0);
+  const isActive = count > 0;
+  const isFlagged= s.has_flagged && !s.has_completed;
+  const cardClass= isActive ? (isFlagged ? 'flagged' : 'active') : 'inactive';
+
+  let statusDot  = isActive ? 'dot-ok'  : 'dot-off';
+  let statusTxt  = isActive ? 'txt-ok'  : 'txt-off';
+  let statusLbl  = isActive ? (s.has_completed ? '✅ Confirmed' : '⚠️ Flagged') : '❌ No Lesson';
+  if(isFlagged){ statusDot='dot-warn'; statusTxt='txt-warn'; }
+
+  const barColor = cov >= 80 ? '#22c55e' : cov >= 50 ? '#f59e0b' : '#ef4444';
+  const shortName = fmtShortName(s.name || s.identifier);
+
+  return `
+  <div class="school-card ${cardClass}"
+       data-name="${(s.name||'').toLowerCase()}"
+       data-status="${cardClass}"
+       title="${s.name}&#10;Coordinator: ${s.school_coordinator||'—'}&#10;Lessons: ${count}&#10;Coverage: ${cov}%">
+    <div class="sc-name">${shortName}</div>
+    <div class="sc-status">
+      <div class="sc-dot ${statusDot}"></div>
+      <div class="sc-status-txt ${statusTxt}">${statusLbl}</div>
+    </div>
+    ${isActive ? `
+    <div class="sc-meta">
+      <span class="sc-cov" style="color:${barColor}">${cov}% coverage</span>
+      · ${count} lesson${count>1?'s':''}
+      ${s.last_lesson_time ? `<div class="sc-time">Last: ${fmtTime(s.last_lesson_time)}</div>` : ''}
+    </div>
+    <div class="sc-bar"><div class="sc-bar-fill" style="width:${cov}%;background:${barColor}"></div></div>
+    ` : `<div class="sc-meta" style="color:var(--text3)">No lesson recorded</div>`}
+    <div class="sc-coord">${s.school_coordinator || ''}</div>
+  </div>`;
+}
+
+function filterCards(){
+  const status = document.getElementById('f-status').value;
+  const search = document.getElementById('f-search').value.toLowerCase().trim();
+
+  document.querySelectorAll('.school-card').forEach(card => {
+    const matchStatus = !status || card.dataset.status === status ||
+      (status === 'active' && card.dataset.status === 'active') ||
+      (status === 'inactive' && card.dataset.status === 'inactive') ||
+      (status === 'flagged' && card.dataset.status === 'flagged');
+    const matchSearch = !search || card.dataset.name.includes(search);
+    card.classList.toggle('hidden', !(matchStatus && matchSearch));
+  });
+}
+
+// Init
+document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+load();
+
+// Auto-refresh every 5 minutes
+setInterval(load, 5 * 60 * 1000);
+</script>
+</body>
+</html>
