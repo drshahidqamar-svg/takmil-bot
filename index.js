@@ -1977,18 +1977,48 @@ app.post('/api/teacher/validate', async (req, res) => {
 
 app.get('/api/teacher/videos', async (req, res) => {
   try {
-    const r = await db.pool.query(`
-      SELECT DISTINCT subject, level, topic_tag as unit
-      FROM questions WHERE active=1 AND subject IN ('Math','English','Urdu','Science')
-      ORDER BY subject, level LIMIT 200`);
-    const videos = r.rows.map((row, i) => ({
-      id: `${(row.subject||'').toUpperCase().replace(/\s/g,'')}-L${row.level}-${i}`,
-      name: `${row.subject} Level ${row.level} — ${row.unit || 'General'}`,
+    const { subject, level } = req.query;
+    let query = `SELECT * FROM video_catalog WHERE 1=1`;
+    const params = [];
+    if (subject) { params.push(subject); query += ` AND subject=$${params.length}`; }
+    if (level)   { params.push(parseInt(level)); query += ` AND level=$${params.length}`; }
+    query += ` ORDER BY subject, level, name LIMIT 500`;
+    const r = await db.pool.query(query, params);
+    if (r.rows.length) return res.json({ videos: r.rows });
+    // Fallback — generate from questions if catalog empty
+    const q = await db.pool.query(`
+      SELECT DISTINCT subject, level FROM questions
+      WHERE active=1 AND subject IN ('Math','English','Urdu','Science')
+      ORDER BY subject, level LIMIT 50`);
+    const videos = q.rows.map((row,i) => ({
+      id: `${(row.subject||'').replace(/\s/g,'').toUpperCase()}-L${row.level}-${i}`,
+      name: `${row.subject} — Level ${row.level}`,
       subject: row.subject, level: parseInt(row.level),
-      unit: row.unit || 'Unit 1', duration: 600
+      unit: 'General', duration: 480
     }));
     res.json({ videos });
   } catch(err) { res.status(500).json({ videos: [], error: err.message }); }
+});
+
+// Upload video catalog from transcript filenames
+app.post('/api/teacher/catalog/upload', async (req, res) => {
+  try {
+    const { videos } = req.body;
+    if (!videos || !Array.isArray(videos))
+      return res.status(400).json({ error: 'videos array required' });
+    let saved = 0;
+    for (const v of videos) {
+      await db.pool.query(`
+        INSERT INTO video_catalog (id, name, subject, level, unit, package, filename, duration)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        ON CONFLICT (id) DO UPDATE SET
+          name=$2, subject=$3, level=$4, unit=$5, package=$6, filename=$7, duration=$8`,
+        [v.id, v.name, v.subject, parseInt(v.level)||1,
+         v.unit||'Unit 1', v.package||'', v.filename||'', parseInt(v.duration)||480]);
+      saved++;
+    }
+    res.json({ saved, message: `${saved} videos in catalog` });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/lessons/start', async (req, res) => {
@@ -2572,6 +2602,24 @@ app.get('/api/questions/breakdown', async (req, res) => {
       await db.pool.query(`ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS gps_accuracy NUMERIC`);
       await db.pool.query(`ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS assessed_at TIMESTAMP`);
     } catch(e) { console.log('GPS columns note:', e.message); }
+
+    // Create video catalog table
+    try {
+      await db.pool.query(`
+        CREATE TABLE IF NOT EXISTS video_catalog (
+          id           TEXT PRIMARY KEY,
+          name         TEXT,
+          subject      TEXT,
+          level        INTEGER,
+          unit         TEXT,
+          package      TEXT,
+          filename     TEXT,
+          duration     INTEGER DEFAULT 480,
+          created_at   TIMESTAMP DEFAULT NOW()
+        )
+      `);
+      console.log('video_catalog table ready');
+    } catch(e) { console.log('video_catalog note:', e.message); }
 
     // Create lessons table for teacher lesson tracking
     try {
