@@ -197,14 +197,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
     <div id="dl-stats" style="margin:8px 0">
       <div class="stat-row"><span>Questions downloaded</span><span class="stat-val" id="q-count">0</span></div>
       <div class="stat-row"><span>PINs cached</span><span class="stat-val" id="pin-count">0</span></div>
-      <div class="stat-row"><span>Results pending sync</span><span class="stat-val" id="pending-count">0</span></div>
     </div>
     <div class="dl-progress"><div class="dl-fill" id="dl-fill"></div></div>
     <div id="dl-status" style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px">Tap Download to cache questions</div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-dark btn-sm" style="flex:1" onclick="downloadForOffline()">⬇ Download</button>
-      <button class="btn btn-outline btn-sm" style="flex:1" onclick="showSyncScreen()">↑ Sync Results</button>
-    </div>
+    <button class="btn btn-dark" onclick="downloadForOffline()">⬇ Download Questions</button>
+    <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.6">
+      Results saved automatically on tablet.<br>Coordinator syncs when visiting school.
+    </p>
   </div>
 </div>
 
