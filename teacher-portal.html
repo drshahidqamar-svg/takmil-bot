@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f2419">
+<title>TAKMIL — Teacher Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --ink:#0f2419;--ink2:#1a3a2a;--ink3:#2d5a3d;
+  --leaf:#16a34a;--leaf2:#22c55e;--leaf3:#bbf7d0;
+  --sand:#fefce8;--clay:#92400e;--amber:#d97706;
+  --fog:#f0f7f2;--mist:#e2f0e8;--border:#c8e6d0;
+  --danger:#dc2626;--warn:#f59e0b;--ok:#16a34a;
+  --white:#ffffff;--shadow:0 4px 24px rgba(15,36,25,0.12);
+  --r:20px;--r2:14px;
+}
+html,body{height:100%;overflow:hidden;background:var(--fog);
+  font-family:'DM Sans',sans-serif;color:var(--ink)}
+
+/* SCREENS */
+.scr{display:none;position:fixed;inset:0;overflow-y:auto;background:var(--fog)}
+.scr.on{display:flex;flex-direction:column;align-items:center}
+
+/* HEADER */
+.hdr{
+  width:100%;background:var(--ink2);
+  padding:16px 20px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:10;
+}
+.hdr-logo{font-size:22px;font-weight:800;color:var(--leaf2);letter-spacing:0.5px}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.net-pill{
+  font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;
+  display:flex;align-items:center;gap:5px;
+}
+.net-pill.online{background:#dcfce7;color:#15803d}
+.net-pill.offline{background:#fee2e2;color:#991b1b}
+.net-dot{width:6px;height:6px;border-radius:50%}
+.net-pill.online .net-dot{background:#16a34a}
+.net-pill.offline .net-dot{background:#dc2626;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* BODY WRAP */
+.wrap{width:100%;max-width:440px;padding:20px 16px 40px}
+
+/* CARDS */
+.card{background:var(--white);border-radius:var(--r);padding:24px;
+  box-shadow:var(--shadow);margin-bottom:16px;border:1.5px solid var(--border)}
+.card-icon{font-size:36px;margin-bottom:12px}
+.card-title{font-size:20px;font-weight:800;color:var(--ink2);margin-bottom:4px}
+.card-sub{font-size:13px;color:#6b7280;margin-bottom:20px;line-height:1.5}
+.card-sub-ur{font-family:'Noto Nastaliq Urdu',serif;direction:rtl;text-align:right;
+  font-size:15px;color:#6b7280;display:block;margin-bottom:20px}
+
+/* INPUTS */
+.lbl{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
+  letter-spacing:0.6px;margin-bottom:6px;display:block}
+.inp{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:var(--r2);
+  font-size:16px;font-family:'DM Sans',sans-serif;color:var(--ink);
+  background:var(--fog);outline:none;transition:all 0.2s;margin-bottom:14px}
+.inp:focus{border-color:var(--leaf);background:white}
+.inp-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' fill='none' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center}
+
+/* BUTTONS */
+.btn{width:100%;padding:17px;border:none;border-radius:var(--r2);
+  font-size:17px;font-weight:800;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.18s;
+  letter-spacing:0.2px;position:relative;overflow:hidden}
+.btn::after{content:'';position:absolute;inset:0;background:white;opacity:0;transition:opacity 0.2s}
+.btn:active::after{opacity:0.15}
+.btn-green{background:linear-gradient(135deg,var(--leaf),var(--ink3));color:white;
+  box-shadow:0 4px 16px rgba(22,163,74,0.35)}
+.btn-green:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,163,74,0.4)}
+.btn-red{background:linear-gradient(135deg,#dc2626,#991b1b);color:white;
+  box-shadow:0 4px 16px rgba(220,38,38,0.35)}
+.btn-red:hover{transform:translateY(-1px)}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--ink);font-size:15px;padding:13px}
+.btn-outline:hover{border-color:var(--leaf);color:var(--leaf)}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important}
+.btn-sm{padding:10px 16px;font-size:14px;width:auto;border-radius:10px}
+.btn-gap{height:10px}
+
+/* VIDEO LIST */
+.video-item{
+  display:flex;align-items:center;gap:12px;padding:14px;
+  border:1.5px solid var(--border);border-radius:var(--r2);
+  margin-bottom:10px;cursor:pointer;transition:all 0.2s;background:var(--fog);
+}
+.video-item:hover,.video-item.sel{border-color:var(--leaf);background:var(--mist)}
+.video-item.sel{background:#f0fdf4}
+.vi-dot{width:10px;height:10px;border-radius:50%;background:var(--border);flex-shrink:0}
+.video-item.sel .vi-dot{background:var(--leaf)}
+.vi-body{flex:1;min-width:0}
+.vi-name{font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vi-meta{font-size:12px;color:#6b7280;margin-top:2px}
+.vi-dur{font-size:12px;font-weight:700;color:var(--ink3);flex-shrink:0}
+
+/* STATUS CARD */
+.status-card{
+  border-radius:var(--r);padding:24px;margin-bottom:16px;
+  border:2px solid;text-align:center;
+}
+.status-card.recording{
+  background:linear-gradient(135deg,#fef9c3,#fef3c7);
+  border-color:var(--amber);
+  animation:pulse-border 2s infinite;
+}
+@keyframes pulse-border{0%,100%{border-color:var(--amber)}50%{border-color:#f59e0b}}
+.status-card.done{background:#f0fdf4;border-color:var(--leaf)}
+.status-card.flagged{background:#fef2f2;border-color:var(--danger)}
+
+.rec-indicator{
+  width:16px;height:16px;border-radius:50%;background:#dc2626;
+  display:inline-block;margin-right:8px;animation:rec 1s infinite;
+}
+@keyframes rec{0%,100%{opacity:1}50%{opacity:0.3}}
+
+.timer{font-size:52px;font-weight:800;color:var(--ink2);
+  font-variant-numeric:tabular-nums;letter-spacing:-1px;margin:16px 0}
+.timer.warn{color:var(--amber)}
+.timer.ok{color:var(--leaf)}
+
+/* COVERAGE BAR */
+.cov-wrap{margin:16px 0}
+.cov-label{display:flex;justify-content:space-between;font-size:13px;
+  font-weight:700;margin-bottom:8px}
+.cov-bar{height:12px;background:var(--mist);border-radius:6px;overflow:hidden}
+.cov-fill{height:100%;border-radius:6px;transition:width 0.5s,background 0.5s}
+
+/* RESULT */
+.result-big{font-size:64px;margin:16px 0}
+.result-title{font-size:24px;font-weight:800;margin-bottom:8px}
+.result-meta{font-size:14px;color:#6b7280;line-height:1.8}
+
+/* GPS */
+.gps-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;
+  background:var(--mist);color:var(--ink3);margin-top:10px;
+}
+.gps-badge.confirmed{background:#dcfce7;color:#15803d}
+.gps-badge.searching{background:#fef9c3;color:#92400e}
+
+/* HISTORY */
+.hist-item{padding:14px;border-radius:var(--r2);background:var(--fog);
+  border:1.5px solid var(--border);margin-bottom:10px}
+.hist-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.hist-name{font-size:14px;font-weight:700;color:var(--ink)}
+.hist-time{font-size:12px;color:#6b7280}
+.hist-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px}
+.chip-green{background:#dcfce7;color:#15803d}
+.chip-amber{background:#fef9c3;color:#92400e}
+.chip-red{background:#fee2e2;color:#991b1b}
+.chip-blue{background:#dbeafe;color:#1d4ed8}
+
+.err-box{background:#fee2e2;border:1.5px solid #fca5a5;border-radius:var(--r2);
+  padding:12px 16px;font-size:13px;color:#991b1b;font-weight:600;
+  margin-top:10px;display:none}
+
+/* MODE BANNER */
+.mode-banner{
+  width:100%;max-width:440px;margin-bottom:12px;
+  padding:10px 16px;border-radius:var(--r2);
+  font-size:13px;font-weight:700;text-align:center;
+}
+.mode-online{background:#dcfce7;color:#15803d}
+.mode-offline{background:#fef9c3;color:#92400e}
+
+/* SYNC NOTICE */
+.sync-notice{
+  background:var(--mist);border:1.5px dashed var(--leaf);
+  border-radius:var(--r2);padding:14px;text-align:center;
+  font-size:13px;color:var(--ink3);margin-top:12px;display:none;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ SCREEN: LOGIN ══ -->
+<div class="scr on" id="s-login">
+  <div class="hdr">
+    <div class="hdr-logo">TAKMIL</div>
+    <div class="net-pill offline" id="net-badge-login">
+      <div class="net-dot"></div><span id="net-txt-login">Offline</span>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <div class="card-icon">👨‍🏫</div>
+      <div class="card-title">Teacher Login</div>
+      <div class="card-sub">استاد لاگ ان — Select your school and enter your code</div>
+      <label class="lbl">Your Name</label>
+      <input class="inp" id="t-name" type="text" placeholder="Muhammad Inayat" autocomplete="name">
+      <label class="lbl">School Code</label>
+      <input class="inp" id="t-school" type="text" placeholder="e.g. INL-003" autocomplete="off" style="text-transform:uppercase">
+      <label class="lbl">Teacher PIN</label>
+      <input class="inp" id="t-pin" type="password" placeholder="4-digit PIN">
+      <div class="err-box" id="login-err">Invalid school code or PIN. Please try again.</div>
+      <div class="btn-gap"></div>
+      <button class="btn btn-green" onclick="doLogin()">Login — لاگ ان ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: SELECT VIDEO ══ -->
+<div class="scr" id="s-select">
+  <div class="hdr">
+    <div class="hdr-logo">TAKMIL</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="net-pill" id="net-badge-sel"><div class="net-dot"></div><span id="net-txt-sel">—</span></div>
+      <button onclick="doLogout()" style="background:rgba(255,255,255,0.1);border:none;color:white;padding:6px 12px;border-radius:10px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Logout</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div id="mode-banner-sel" class="mode-banner mode-offline" style="display:none"></div>
+
+    <div class="card" style="padding:16px 20px">
+      <div style="font-size:13px;color:#6b7280">Logged in as</div>
+      <div style="font-size:18px;font-weight:800;color:var(--ink2)" id="sel-teacher-name"></div>
+      <div style="font-size:13px;color:var(--leaf);font-weight:600" id="sel-school-name"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="font-size:17px;margin-bottom:4px">📹 Select Today's Video</div>
+      <div class="card-sub" style="margin-bottom:14px">آج کا ویڈیو منتخب کریں</div>
+      <label class="lbl">Subject</label>
+      <select class="inp inp-select" id="sel-subject" onchange="filterVideos()">
+        <option value="">All Subjects</option>
+        <option value="Math">Math — ریاضی</option>
+        <option value="English">English — انگریزی</option>
+        <option value="Urdu">Urdu — اردو</option>
+        <option value="Science">Science — سائنس</option>
+      </select>
+      <label class="lbl">Level</label>
+      <select class="inp inp-select" id="sel-level" onchange="filterVideos()">
+        <option value="">All Levels</option>
+        <option value="1">Level 1</option><option value="2">Level 2</option>
+        <option value="3">Level 3</option><option value="4">Level 4</option>
+        <option value="5">Level 5</option><option value="6">Level 6</option>
+        <option value="7">Level 7</option><option value="8">Level 8</option>
+        <option value="9">Level 9</option><option value="10">Level 10</option>
+        <option value="11">Level 11</option>
+      </select>
+      <div id="video-list" style="max-height:320px;overflow-y:auto"></div>
+      <div class="btn-gap"></div>
+      <button class="btn btn-green" id="start-btn" onclick="goToLesson()" disabled>
+        Start Lesson — سبق شروع کریں ▶
+      </button>
+    </div>
+
+    <div class="card" style="padding:16px 20px">
+      <div style="font-size:14px;font-weight:700;color:var(--ink2);margin-bottom:10px">📋 Today's Lessons</div>
+      <div id="today-lessons"><div style="font-size:13px;color:#6b7280;text-align:center;padding:12px">No lessons recorded today yet</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: LESSON ACTIVE ══ -->
+<div class="scr" id="s-lesson">
+  <div class="hdr">
+    <div class="hdr-logo">TAKMIL</div>
+    <div class="net-pill" id="net-badge-lesson"><div class="net-dot"></div><span id="net-txt-lesson">—</span></div>
+  </div>
+  <div class="wrap">
+    <div class="status-card recording" id="lesson-status-card">
+      <div style="font-size:14px;font-weight:700;color:var(--amber);margin-bottom:8px">
+        <span class="rec-indicator"></span>LESSON IN PROGRESS — سبق جاری ہے
+      </div>
+      <div style="font-size:18px;font-weight:800;color:var(--ink2);margin-bottom:4px" id="active-video-name"></div>
+      <div style="font-size:13px;color:#6b7280" id="active-video-meta"></div>
+      <div class="timer" id="lesson-timer">0:00</div>
+      <div class="cov-wrap">
+        <div class="cov-label">
+          <span>Coverage</span>
+          <span id="cov-pct">0%</span>
+        </div>
+        <div class="cov-bar">
+          <div class="cov-fill" id="cov-fill" style="width:0%;background:#e2e8f0"></div>
+        </div>
+        <div style="font-size:12px;color:#6b7280;margin-top:6px;text-align:center" id="cov-hint">
+          Keep going — minimum 80% required
+        </div>
+      </div>
+      <div class="gps-badge searching" id="gps-badge">
+        📍 Getting location...
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;color:#6b7280;margin-bottom:12px;text-align:center">
+        Play the video on the projector, then tap End when it finishes
+      </div>
+      <button class="btn btn-red" id="end-btn" onclick="endLesson()">
+        ⏹ End Lesson — سبق ختم کریں
+      </button>
+      <div style="height:10px"></div>
+      <button class="btn btn-outline" onclick="cancelLesson()">
+        Cancel — منسوخ کریں
+      </button>
+    </div>
+
+    <div class="card" style="background:#fef9c3;border-color:#fde68a;padding:16px">
+      <div style="font-size:13px;color:#92400e;font-weight:600;line-height:1.7">
+        ⚠️ <strong>Do not close this page</strong> while lesson is running.<br>
+        یہ صفحہ بند نہ کریں — اسبق کے دوران فون کو روشن رکھیں
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: RESULT ══ -->
+<div class="scr" id="s-result">
+  <div class="hdr">
+    <div class="hdr-logo">TAKMIL</div>
+    <div class="net-pill" id="net-badge-res"><div class="net-dot"></div><span id="net-txt-res">—</span></div>
+  </div>
+  <div class="wrap">
+    <div class="status-card" id="result-card">
+      <div class="result-big" id="result-emoji">✅</div>
+      <div class="result-title" id="result-title">Lesson Confirmed!</div>
+      <div class="result-meta" id="result-meta"></div>
+      <div class="gps-badge confirmed" id="result-gps">📍 Location confirmed</div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;color:var(--ink2);margin-bottom:14px">📊 Lesson Summary</div>
+      <div id="result-summary"></div>
+    </div>
+
+    <div class="sync-notice" id="sync-notice">
+      📤 Saved offline — will sync automatically when internet returns.<br>
+      آف لائن محفوظ ہوگیا — انٹرنیٹ آنے پر خود بخود بھیجا جائے گا
+    </div>
+
+    <button class="btn btn-green" onclick="goBackToSelect()">
+      ▶ Next Lesson — اگلا سبق
+    </button>
+  </div>
+</div>
+
+<script>
+const BASE = '';
+const DB_KEY = 'takmil_lessons';
+let currentTeacher = null;
+let currentLesson  = null;
+let timerInterval  = null;
+let gpsData        = null;
+let selectedVideo  = null;
+
+// ── Video catalog (populated from server or cached) ──────────────
+let videoCatalog = [];
+
+// Sample video list — will be fetched from server
+const SAMPLE_VIDEOS = [
+  {id:'MATH-L1-U1-COUNTING',name:'1.1 Counting 1-10',subject:'Math',level:1,duration:480,unit:'Unit 1'},
+  {id:'MATH-L1-U1-NUMBERS',name:'1.2 Numbers and Symbols',subject:'Math',level:1,duration:540,unit:'Unit 1'},
+  {id:'MATH-L1-U1-SHAPES',name:'1.3 Basic Shapes',subject:'Math',level:1,duration:420,unit:'Unit 1'},
+  {id:'MATH-L1-U2-ADDITION',name:'2.1 Addition Basics',subject:'Math',level:1,duration:600,unit:'Unit 2'},
+  {id:'MATH-L2-U1-FRACTIONS',name:'3.1 Introduction to Fractions',subject:'Math',level:2,duration:660,unit:'Unit 1'},
+  {id:'ENG-L1-U1-ALPHABET',name:'1.1 The Alphabet A-E',subject:'English',level:1,duration:480,unit:'Unit 1'},
+  {id:'ENG-L1-U1-PHONICS',name:'1.2 Phonics Sounds',subject:'English',level:1,duration:520,unit:'Unit 1'},
+  {id:'ENG-L1-U2-WORDS',name:'2.1 Simple Words',subject:'English',level:1,duration:440,unit:'Unit 2'},
+  {id:'ENG-L2-U1-SENTENCES',name:'3.1 Simple Sentences',subject:'English',level:2,duration:580,unit:'Unit 1'},
+  {id:'URD-L1-U1-HAROOF',name:'1.1 حروف تہجی',subject:'Urdu',level:1,duration:500,unit:'Unit 1'},
+  {id:'URD-L1-U1-WORDS',name:'1.2 آسان الفاظ',subject:'Urdu',level:1,duration:460,unit:'Unit 1'},
+  {id:'SCI-L1-U1-BODY',name:'1.1 Human Body Parts',subject:'Science',level:1,duration:540,unit:'Unit 1'},
+  {id:'SCI-L1-U1-PLANTS',name:'1.2 Plants Around Us',subject:'Science',level:1,duration:510,unit:'Unit 1'},
+];
+
+// ── IndexedDB for offline storage ────────────────────────────────
+let idb;
+function openIDB(){
+  return new Promise((res,rej)=>{
+    const req = indexedDB.open('takmil_teacher',1);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('lessons'))
+        d.createObjectStore('lessons',{keyPath:'local_id',autoIncrement:true});
+      if(!d.objectStoreNames.contains('catalog'))
+        d.createObjectStore('catalog',{keyPath:'id'});
+    };
+    req.onsuccess = e => { idb=e.target.result; res(idb); };
+    req.onerror = ()=>rej(req.error);
+  });
+}
+function idbPut(store,val){return new Promise((res,rej)=>{const tx=idb.transaction(store,'readwrite');const req=tx.objectStore(store).put(val);req.onsuccess=()=>res(req.result);req.onerror=()=>rej(req.error);});}
+function idbGetAll(store){return new Promise((res,rej)=>{const tx=idb.transaction(store,'readonly');const req=tx.objectStore(store).getAll();req.onsuccess=()=>res(req.result);req.onerror=()=>rej([]);});}
+
+// ── Connectivity ─────────────────────────────────────────────────
+function isOnline(){ return navigator.onLine; }
+function updateNetBadges(){
+  const on = isOnline();
+  ['login','sel','lesson','res'].forEach(id=>{
+    const b=document.getElementById('net-badge-'+id);
+    const t=document.getElementById('net-txt-'+id);
+    if(!b||!t) return;
+    b.className='net-pill '+(on?'online':'offline');
+    t.textContent=on?'Online':'Offline';
+  });
+  const mb=document.getElementById('mode-banner-sel');
+  if(mb){
+    mb.style.display='block';
+    mb.className='mode-banner '+(on?'mode-online':'mode-offline');
+    mb.textContent=on?'🌐 Online — lessons sync immediately':'📴 Offline — lessons saved on phone, sync when internet returns';
+  }
+  if(on) autoSync();
+}
+window.addEventListener('online',()=>{ updateNetBadges(); autoSync(); });
+window.addEventListener('offline', updateNetBadges);
+
+// ── GPS ──────────────────────────────────────────────────────────
+function getGPS(){
+  return new Promise((res)=>{
+    if(!navigator.geolocation){ res(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos=>res({lat:pos.coords.latitude,lng:pos.coords.longitude,acc:pos.coords.accuracy}),
+      ()=>res(null),
+      {enableHighAccuracy:true,timeout:10000,maximumAge:60000}
+    );
+  });
+}
+
+// ── Login ────────────────────────────────────────────────────────
+async function doLogin(){
+  const name   = document.getElementById('t-name').value.trim();
+  const school = document.getElementById('t-school').value.trim().toUpperCase();
+  const pin    = document.getElementById('t-pin').value.trim();
+  const err    = document.getElementById('login-err');
+
+  if(!name||!school||!pin){ err.style.display='block'; err.textContent='Please fill in all fields.'; return; }
+
+  // Simple validation — in production verify against DB
+  // For now accept any school code with PIN "1234" or server validation
+  let schoolName = school;
+  if(isOnline()){
+    try{
+      const resp = await fetch(BASE+'/api/teacher/validate',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({school_code:school,pin,name})
+      });
+      const data = await resp.json();
+      if(!data.valid){ err.style.display='block'; err.textContent=data.error||'Invalid credentials.'; return; }
+      schoolName = data.school_name || school;
+    }catch(e){
+      // Offline — accept if PIN is 4 digits
+      if(pin.length<4){ err.style.display='block'; err.textContent='PIN must be at least 4 digits.'; return; }
+    }
+  } else {
+    if(pin.length<4){ err.style.display='block'; err.textContent='PIN must be at least 4 digits.'; return; }
+  }
+
+  err.style.display='none';
+  currentTeacher = {name,school_code:school,school_name:schoolName};
+  localStorage.setItem('takmil_teacher', JSON.stringify(currentTeacher));
+
+  document.getElementById('sel-teacher-name').textContent = name;
+  document.getElementById('sel-school-name').textContent  = schoolName;
+
+  await loadVideoCatalog();
+  showScreen('s-select');
+  loadTodayLessons();
+}
+
+function doLogout(){
+  currentTeacher=null;
+  localStorage.removeItem('takmil_teacher');
+  showScreen('s-login');
+}
+
+// ── Video catalog ────────────────────────────────────────────────
+async function loadVideoCatalog(){
+  if(isOnline()){
+    try{
+      const resp = await fetch(BASE+'/api/teacher/videos');
+      const data = await resp.json();
+      if(data.videos && data.videos.length){
+        videoCatalog = data.videos;
+        for(const v of videoCatalog) await idbPut('catalog',v);
+        return;
+      }
+    }catch(e){}
+  }
+  // Try cached
+  const cached = await idbGetAll('catalog');
+  videoCatalog = cached.length ? cached : SAMPLE_VIDEOS;
+  filterVideos();
+}
+
+function filterVideos(){
+  const subj  = document.getElementById('sel-subject').value;
+  const level = document.getElementById('sel-level').value;
+  const list  = document.getElementById('video-list');
+  let filtered = videoCatalog;
+  if(subj)  filtered = filtered.filter(v=>v.subject===subj);
+  if(level) filtered = filtered.filter(v=>parseInt(v.level)===parseInt(level));
+  if(!filtered.length){
+    list.innerHTML='<div style="font-size:13px;color:#6b7280;text-align:center;padding:20px">No videos found for this filter</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(v=>`
+    <div class="video-item" id="vi-${v.id}" onclick="selectVideo('${v.id}')">
+      <div class="vi-dot"></div>
+      <div class="vi-body">
+        <div class="vi-name">${v.name}</div>
+        <div class="vi-meta">${v.subject} · Level ${v.level} · ${v.unit||''}</div>
+      </div>
+      <div class="vi-dur">${formatDur(v.duration||0)}</div>
+    </div>`).join('');
+}
+
+function selectVideo(id){
+  selectedVideo = videoCatalog.find(v=>v.id===id);
+  document.querySelectorAll('.video-item').forEach(el=>el.classList.remove('sel'));
+  document.getElementById('vi-'+id)?.classList.add('sel');
+  document.getElementById('start-btn').disabled = false;
+}
+
+function goToLesson(){
+  if(!selectedVideo) return;
+  showScreen('s-lesson');
+  startLesson();
+}
+
+// ── Lesson tracking ──────────────────────────────────────────────
+async function startLesson(){
+  const startTime = new Date();
+  gpsData = null;
+
+  // Get GPS in background
+  getGPS().then(gps=>{
+    gpsData = gps;
+    if(gps){
+      document.getElementById('gps-badge').className='gps-badge confirmed';
+      document.getElementById('gps-badge').textContent='📍 Location: '+gps.lat.toFixed(4)+', '+gps.lng.toFixed(4)+' (±'+Math.round(gps.acc)+'m)';
+    } else {
+      document.getElementById('gps-badge').textContent='📍 Location unavailable';
+    }
+  });
+
+  document.getElementById('active-video-name').textContent = selectedVideo.name;
+  document.getElementById('active-video-meta').textContent =
+    selectedVideo.subject + ' · Level ' + selectedVideo.level + ' · Expected: ' + formatDur(selectedVideo.duration||0);
+
+  currentLesson = {
+    video_id:          selectedVideo.id,
+    video_name:        selectedVideo.name,
+    subject:           selectedVideo.subject,
+    level:             selectedVideo.level,
+    expected_duration: selectedVideo.duration || 600,
+    start_time:        startTime.toISOString(),
+    school_code:       currentTeacher.school_code,
+    school_name:       currentTeacher.school_name,
+    teacher_name:      currentTeacher.name,
+    start_gps:         null,
+    status:            'started',
+    synced:            false,
+  };
+
+  // Save start record
+  if(isOnline()){
+    try{
+      await fetch(BASE+'/api/lessons/start',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({...currentLesson,start_gps:gpsData})
+      });
+    }catch(e){}
+  }
+
+  // Start timer
+  timerInterval = setInterval(()=>updateTimer(startTime), 1000);
+}
+
+function updateTimer(startTime){
+  const elapsed = Math.floor((new Date() - startTime)/1000);
+  const expected = currentLesson.expected_duration;
+  const pct = Math.min(100, Math.round((elapsed/expected)*100));
+
+  document.getElementById('lesson-timer').textContent = formatDur(elapsed);
+  document.getElementById('cov-pct').textContent = pct+'%';
+
+  const fill = document.getElementById('cov-fill');
+  const timer = document.getElementById('lesson-timer');
+  const hint  = document.getElementById('cov-hint');
+
+  if(pct >= 80){
+    fill.style.background='#16a34a';
+    timer.className='timer ok';
+    hint.textContent='✅ Coverage target reached!';
+  } else if(pct >= 50){
+    fill.style.background='#f59e0b';
+    timer.className='timer warn';
+    hint.textContent='Keep going — '+pct+'% of '+formatDur(expected)+' complete';
+  } else {
+    fill.style.background='#e2e8f0';
+    timer.className='timer';
+    hint.textContent='Minimum 80% required ('+formatDur(Math.round(expected*0.8))+')';
+  }
+  fill.style.width = pct+'%';
+}
+
+async function endLesson(){
+  clearInterval(timerInterval);
+  const endTime = new Date();
+  const startTime = new Date(currentLesson.start_time);
+  const actualDuration = Math.floor((endTime - startTime)/1000);
+  const expected = currentLesson.expected_duration;
+  const pct = Math.round((actualDuration/expected)*100);
+
+  // Get end GPS
+  const endGps = await getGPS();
+
+  // Determine status
+  let status, emoji, title, flagged;
+  if(pct >= 80){
+    status='completed'; emoji='✅'; title='Lesson Confirmed!'; flagged=false;
+  } else if(pct >= 50){
+    status='short'; emoji='⚠️'; title='Short Lesson'; flagged=true;
+  } else if(pct < 20){
+    status='suspicious'; emoji='🚨'; title='Too Short — Flagged!'; flagged=true;
+  } else {
+    status='short'; emoji='⚠️'; title='Lesson Incomplete'; flagged=true;
+  }
+
+  // GPS match check
+  let gpsMatch = true;
+  if(gpsData && endGps){
+    const dist = getDistance(gpsData.lat,gpsData.lng,endGps.lat,endGps.lng);
+    gpsMatch = dist < 200; // within 200 meters
+  }
+
+  const record = {
+    ...currentLesson,
+    end_time:        endTime.toISOString(),
+    actual_duration: actualDuration,
+    coverage_pct:    pct,
+    end_gps:         endGps,
+    start_gps:       gpsData,
+    gps_match:       gpsMatch,
+    status,
+    flagged,
+    synced:          false,
+  };
+
+  // Save offline first
+  const localId = await idbPut('lessons', record);
+  record.local_id = localId;
+
+  // Try sync
+  let synced = false;
+  if(isOnline()){
+    try{
+      const resp = await fetch(BASE+'/api/lessons/end',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(record)
+      });
+      const data = await resp.json();
+      if(data.saved){
+        record.synced = true;
+        await idbPut('lessons', record);
+        synced = true;
+      }
+    }catch(e){}
+  }
+
+  // Show result
+  const card = document.getElementById('result-card');
+  card.className = 'status-card ' + (flagged ? 'flagged' : 'done');
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-meta').innerHTML =
+    `<strong>${record.video_name}</strong><br>
+     ${record.subject} · Level ${record.level}<br>
+     Duration: ${formatDur(actualDuration)} / ${formatDur(expected)} expected<br>
+     Coverage: ${pct}%<br>
+     Started: ${new Date(record.start_time).toLocaleTimeString()}<br>
+     Ended: ${endTime.toLocaleTimeString()}`;
+
+  const gpsEl = document.getElementById('result-gps');
+  if(gpsData){
+    gpsEl.className = 'gps-badge confirmed';
+    gpsEl.textContent = '📍 '+gpsData.lat.toFixed(4)+', '+gpsData.lng.toFixed(4);
+  } else {
+    gpsEl.className = 'gps-badge searching';
+    gpsEl.textContent = '📍 Location not available';
+  }
+
+  const sumEl = document.getElementById('result-summary');
+  sumEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:var(--fog);border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:24px;font-weight:800;color:var(--ink2)">${formatDur(actualDuration)}</div>
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:700">Duration</div>
+      </div>
+      <div style="background:var(--fog);border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:24px;font-weight:800;color:${pct>=80?'#16a34a':pct>=50?'#f59e0b':'#dc2626'}">${pct}%</div>
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;font-weight:700">Coverage</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:12px;background:${synced?'#f0fdf4':'#fef9c3'};border-radius:12px;font-size:13px;font-weight:600;text-align:center;color:${synced?'#15803d':'#92400e'}">
+      ${synced?'✅ Synced to server — WhatsApp sent to coordinator':'📴 Saved on phone — will sync when internet available'}
+    </div>`;
+
+  document.getElementById('sync-notice').style.display = synced ? 'none' : 'block';
+  showScreen('s-result');
+  currentLesson = null;
+}
+
+async function cancelLesson(){
+  if(!confirm('Cancel this lesson? No record will be saved.')) return;
+  clearInterval(timerInterval);
+  currentLesson = null;
+  showScreen('s-select');
+}
+
+function goBackToSelect(){
+  selectedVideo = null;
+  document.getElementById('start-btn').disabled = true;
+  document.querySelectorAll('.video-item').forEach(el=>el.classList.remove('sel'));
+  loadTodayLessons();
+  showScreen('s-select');
+}
+
+// ── Auto sync ────────────────────────────────────────────────────
+async function autoSync(){
+  const lessons = await idbGetAll('lessons');
+  const pending = lessons.filter(l=>!l.synced);
+  for(const l of pending){
+    try{
+      const resp = await fetch(BASE+'/api/lessons/end',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(l)
+      });
+      const data = await resp.json();
+      if(data.saved){
+        l.synced = true;
+        await idbPut('lessons',l);
+      }
+    }catch(e){}
+  }
+  loadTodayLessons();
+}
+
+// ── Today's lessons ──────────────────────────────────────────────
+async function loadTodayLessons(){
+  const all = await idbGetAll('lessons');
+  const today = new Date().toDateString();
+  const todayLessons = all.filter(l=>new Date(l.start_time).toDateString()===today);
+  const el = document.getElementById('today-lessons');
+  if(!todayLessons.length){
+    el.innerHTML='<div style="font-size:13px;color:#6b7280;text-align:center;padding:12px">No lessons recorded today yet</div>';
+    return;
+  }
+  el.innerHTML = todayLessons.reverse().map(l=>`
+    <div class="hist-item">
+      <div class="hist-top">
+        <div class="hist-name">${l.video_name||l.video_id}</div>
+        <div class="hist-time">${new Date(l.start_time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <div class="hist-row">
+        <span class="chip chip-blue">${l.subject} L${l.level}</span>
+        <span class="chip ${l.coverage_pct>=80?'chip-green':l.coverage_pct>=50?'chip-amber':'chip-red'}">${l.coverage_pct||0}% coverage</span>
+        <span class="chip ${l.synced?'chip-green':'chip-amber'}">${l.synced?'Synced':'Pending sync'}</span>
+        ${l.flagged?'<span class="chip chip-red">⚠️ Flagged</span>':''}
+      </div>
+    </div>`).join('');
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+function formatDur(sec){
+  const m=Math.floor(sec/60), s=sec%60;
+  return m+'m '+(s<10?'0':'')+s+'s';
+}
+
+function getDistance(lat1,lng1,lat2,lng2){
+  const R=6371000;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function showScreen(id){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  window.scrollTo(0,0);
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+async function init(){
+  await openIDB();
+  updateNetBadges();
+
+  // Auto-login if saved session
+  const saved = localStorage.getItem('takmil_teacher');
+  if(saved){
+    try{
+      currentTeacher = JSON.parse(saved);
+      document.getElementById('sel-teacher-name').textContent = currentTeacher.name;
+      document.getElementById('sel-school-name').textContent  = currentTeacher.school_name||currentTeacher.school_code;
+      await loadVideoCatalog();
+      filterVideos();
+      showScreen('s-select');
+      loadTodayLessons();
+      if(isOnline()) autoSync();
+      return;
+    }catch(e){ localStorage.removeItem('takmil_teacher'); }
+  }
+  showScreen('s-login');
+}
+
+init();
+</script>
+</body>
+</html>

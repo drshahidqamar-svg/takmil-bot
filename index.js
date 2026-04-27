@@ -1958,6 +1958,116 @@ app.post('/api/questions/csv-update', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+
+// ── TEACHER PORTAL ──────────────────────────────────────────────
+
+app.get('/teacher-portal', (req, res) => res.sendFile(path.join(__dirname, 'teacher-portal.html')));
+
+app.post('/api/teacher/validate', async (req, res) => {
+  try {
+    const { school_code, pin, name } = req.body;
+    if (!school_code || !pin) return res.json({ valid: false, error: 'School code and PIN required.' });
+    const school = await db.pool.query(
+      `SELECT * FROM schools WHERE identifier=$1 OR name ILIKE $1 LIMIT 1`, [school_code]);
+    if (!school.rows.length)
+      return res.json({ valid: false, error: 'School code not found. Check with your coordinator.' });
+    res.json({ valid: true, school_name: school.rows[0].name || school_code, school_id: school.rows[0].id });
+  } catch(err) { res.json({ valid: true, school_name: req.body.school_code }); }
+});
+
+app.get('/api/teacher/videos', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT DISTINCT subject, level, topic_tag as unit
+      FROM questions WHERE active=1 AND subject IN ('Math','English','Urdu','Science')
+      ORDER BY subject, level LIMIT 200`);
+    const videos = r.rows.map((row, i) => ({
+      id: `${(row.subject||'').toUpperCase().replace(/\s/g,'')}-L${row.level}-${i}`,
+      name: `${row.subject} Level ${row.level} — ${row.unit || 'General'}`,
+      subject: row.subject, level: parseInt(row.level),
+      unit: row.unit || 'Unit 1', duration: 600
+    }));
+    res.json({ videos });
+  } catch(err) { res.status(500).json({ videos: [], error: err.message }); }
+});
+
+app.post('/api/lessons/start', async (req, res) => {
+  try {
+    const { video_id, video_name, subject, level, expected_duration,
+            school_code, school_name, teacher_name, start_time, start_gps } = req.body;
+    const school = await db.pool.query(
+      `SELECT id FROM schools WHERE identifier=$1 OR name ILIKE $1 LIMIT 1`, [school_code]);
+    const school_id = school.rows[0]?.id || null;
+    await db.pool.query(`
+      INSERT INTO lessons (video_id, video_name, subject, level, expected_duration,
+        school_id, school_code, school_name, teacher_name, start_time,
+        start_gps_lat, start_gps_lng, start_gps_acc, status, created_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'started',NOW())`,
+      [video_id, video_name, subject, parseInt(level), parseInt(expected_duration)||600,
+       school_id, school_code, school_name, teacher_name,
+       start_time || new Date().toISOString(),
+       start_gps?.lat||null, start_gps?.lng||null, start_gps?.acc||null]);
+    const mapsLink = start_gps ? `maps.google.com/?q=${start_gps.lat},${start_gps.lng}` : 'Location unavailable';
+    const msg = `▶️ *Lesson Started*\n\nSchool: ${school_name||school_code}\nTeacher: ${teacher_name}\nVideo: ${video_name}\nLevel: ${subject} L${level}\nTime: ${new Date().toLocaleTimeString()}\n📍 ${mapsLink}`;
+    const ops = await db.pool.query(`SELECT phone FROM ops_team WHERE is_active=TRUE LIMIT 1`);
+    if (ops.rows[0]?.phone) await sendWhatsApp(ops.rows[0].phone, msg);
+    res.json({ saved: true });
+  } catch(err) {
+    console.log('lesson start error:', err.message);
+    res.status(500).json({ saved: false, error: err.message });
+  }
+});
+
+app.post('/api/lessons/end', async (req, res) => {
+  try {
+    const { video_id, video_name, subject, level, expected_duration,
+            school_code, school_name, teacher_name, start_time, end_time,
+            actual_duration, coverage_pct, start_gps, end_gps,
+            gps_match, status, flagged } = req.body;
+    const school = await db.pool.query(
+      `SELECT id FROM schools WHERE identifier=$1 OR name ILIKE $1 LIMIT 1`, [school_code]);
+    const school_id = school.rows[0]?.id || null;
+    await db.pool.query(`
+      INSERT INTO lessons (video_id, video_name, subject, level, expected_duration,
+        school_id, school_code, school_name, teacher_name, start_time, end_time,
+        actual_duration, coverage_pct, start_gps_lat, start_gps_lng,
+        end_gps_lat, end_gps_lng, gps_match, status, flagged, created_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,NOW())
+      ON CONFLICT DO NOTHING`,
+      [video_id, video_name, subject, parseInt(level), parseInt(expected_duration)||600,
+       school_id, school_code, school_name, teacher_name, start_time, end_time,
+       parseInt(actual_duration)||0, parseFloat(coverage_pct)||0,
+       start_gps?.lat||null, start_gps?.lng||null,
+       end_gps?.lat||null, end_gps?.lng||null,
+       !!gps_match, status||'completed', !!flagged]);
+    const mins = Math.floor((actual_duration||0)/60);
+    const secs = (actual_duration||0) % 60;
+    const statusEmoji = status==='completed' ? '✅' : status==='short' ? '⚠️' : '🚨';
+    const mapsLink = start_gps ? `maps.google.com/?q=${start_gps.lat},${start_gps.lng}` : 'No location';
+    const msg = `${statusEmoji} *Lesson ${(status||'completed').toUpperCase()}*\n\nSchool: ${school_name||school_code}\nTeacher: ${teacher_name}\nVideo: ${video_name}\nDuration: ${mins}m ${secs}s / ${Math.floor((expected_duration||600)/60)}m expected\nCoverage: ${Math.round(coverage_pct||0)}%\n📍 ${mapsLink}${flagged ? '\n\n⚠️ Flagged for review' : ''}`;
+    const ops = await db.pool.query(`SELECT phone FROM ops_team WHERE is_active=TRUE LIMIT 1`);
+    if (ops.rows[0]?.phone) await sendWhatsApp(ops.rows[0].phone, msg);
+    res.json({ saved: true });
+  } catch(err) {
+    console.log('lesson end error:', err.message);
+    res.status(500).json({ saved: false, error: err.message });
+  }
+});
+
+app.get('/api/lessons', async (req, res) => {
+  try {
+    const { school_code, date } = req.query;
+    let query = `SELECT * FROM lessons WHERE 1=1`;
+    const params = [];
+    if (school_code) { params.push(school_code); query += ` AND school_code=$${params.length}`; }
+    if (date) { params.push(date); query += ` AND DATE(start_time)=$${params.length}`; }
+    query += ` ORDER BY start_time DESC LIMIT 100`;
+    const r = await db.pool.query(query, params);
+    res.json({ lessons: r.rows });
+  } catch(err) { res.status(500).json({ lessons: [], error: err.message }); }
+});
+
+
 // Fix mislabeled question subjects
 app.post('/api/questions/fix-subjects', async (req, res) => {
   try {
@@ -2462,6 +2572,38 @@ app.get('/api/questions/breakdown', async (req, res) => {
       await db.pool.query(`ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS gps_accuracy NUMERIC`);
       await db.pool.query(`ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS assessed_at TIMESTAMP`);
     } catch(e) { console.log('GPS columns note:', e.message); }
+
+    // Create lessons table for teacher lesson tracking
+    try {
+      await db.pool.query(`
+        CREATE TABLE IF NOT EXISTS lessons (
+          id                SERIAL PRIMARY KEY,
+          video_id          TEXT,
+          video_name        TEXT,
+          subject           TEXT,
+          level             INTEGER,
+          expected_duration INTEGER,
+          school_id         INTEGER,
+          school_code       TEXT,
+          school_name       TEXT,
+          teacher_name      TEXT,
+          start_time        TIMESTAMP,
+          end_time          TIMESTAMP,
+          actual_duration   INTEGER,
+          coverage_pct      NUMERIC,
+          start_gps_lat     NUMERIC,
+          start_gps_lng     NUMERIC,
+          start_gps_acc     NUMERIC,
+          end_gps_lat       NUMERIC,
+          end_gps_lng       NUMERIC,
+          gps_match         BOOLEAN,
+          status            TEXT DEFAULT 'started',
+          flagged           BOOLEAN DEFAULT FALSE,
+          created_at        TIMESTAMP DEFAULT NOW()
+        )
+      `);
+      console.log('lessons table ready');
+    } catch(e) { console.log('lessons table note:', e.message); }
 
 // Add image_url column if not exists
     try {
