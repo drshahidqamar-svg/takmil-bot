@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TAKMIL — Class Register</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f0f5f1;--bg2:#ffffff;--panel:#e8f0ea;
+  --leaf:#16a34a;--leaf2:#22c55e;--leaf3:#dcfce7;
+  --border:#d0e4d5;--text:#1a2e1f;--text2:#4a6b52;--text3:#8aaa90;
+  --danger:#ef4444;--danger2:#fee2e2;
+  --amber:#f59e0b;--amber2:#fef9c3;
+  --r:14px;--r2:10px;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:15px}
+
+/* SCREENS */
+.scr{display:none}
+.scr.on{display:block}
+
+/* ── LOGIN SCREEN ── */
+#s-login{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(135deg,#0a1f0e 0%,#0d2d14 100%);
+}
+.login-logo{font-size:36px;font-weight:900;color:#4ade80;letter-spacing:1px;margin-bottom:4px;text-align:center}
+.login-sub{font-size:13px;color:#4a6b52;margin-bottom:40px;text-align:center;text-transform:uppercase;letter-spacing:1px}
+.login-card{background:#fff;border-radius:20px;padding:32px 28px;width:100%;max-width:380px}
+.inp-label{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:8px}
+.inp{
+  width:100%;padding:16px;background:var(--bg);border:2px solid var(--border);
+  border-radius:var(--r2);font-size:16px;font-weight:600;color:var(--text);
+  font-family:'DM Sans',sans-serif;outline:none;margin-bottom:20px;
+  text-transform:uppercase;letter-spacing:1px;
+}
+.inp:focus{border-color:var(--leaf)}
+.inp.normal{text-transform:none;letter-spacing:0;font-weight:500;font-size:15px}
+.login-btn{
+  width:100%;padding:18px;background:linear-gradient(135deg,#16a34a,#0d5c29);
+  border:none;border-radius:var(--r2);font-size:17px;font-weight:800;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
+  box-shadow:0 4px 20px rgba(22,163,74,0.35);transition:all 0.2s;
+}
+.login-btn:hover{transform:translateY(-2px)}
+.login-btn:active{transform:translateY(0)}
+.login-err{color:var(--danger);font-size:13px;text-align:center;margin-top:12px;font-weight:600}
+
+/* ── REGISTER SCREEN ── */
+#s-register{min-height:100vh;display:flex;flex-direction:column}
+
+.reg-header{
+  background:#1a2e1f;color:white;padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:10;
+}
+.reg-school{font-size:15px;font-weight:800;color:#4ade80}
+.reg-date{font-size:12px;color:#4a6b52;margin-top:2px}
+.reg-logout{font-size:12px;color:#4a6b52;cursor:pointer;padding:6px 10px;
+  border:1px solid #2d4a35;border-radius:8px}
+
+.reg-summary{
+  background:var(--bg2);padding:14px 20px;
+  display:flex;gap:0;border-bottom:1px solid var(--border);
+}
+.sum-item{flex:1;text-align:center}
+.sum-n{font-size:24px;font-weight:900;line-height:1}
+.sum-l{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+.n-total{color:var(--text)}
+.n-present{color:var(--leaf)}
+.n-absent{color:var(--danger)}
+.n-leave{color:var(--amber)}
+
+/* QUICK MARK ALL */
+.quick-bar{
+  background:var(--bg2);padding:10px 16px;
+  display:flex;gap:8px;border-bottom:1px solid var(--border);
+}
+.quick-btn{
+  flex:1;padding:10px;border-radius:var(--r2);font-size:13px;font-weight:700;
+  border:2px solid transparent;cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all 0.15s;
+}
+.qb-all-p{background:var(--leaf3);color:var(--leaf);border-color:var(--leaf)}
+.qb-clear{background:var(--panel);color:var(--text3);border-color:var(--border)}
+
+/* STUDENT LIST */
+.student-list{flex:1;padding:12px 16px;padding-bottom:100px}
+
+.s-item{
+  background:var(--bg2);border-radius:var(--r);padding:14px 16px;
+  margin-bottom:8px;display:flex;align-items:center;gap:12px;
+  border:2px solid var(--border);transition:all 0.1s;
+}
+.s-item.is-p{background:#f0fdf4;border-color:#86efac}
+.s-item.is-a{background:#fff5f5;border-color:#fca5a5}
+.s-item.is-l{background:#fefce8;border-color:#fde047}
+
+.s-roll{
+  font-size:11px;font-weight:700;color:var(--text3);
+  min-width:28px;text-align:center;
+}
+.s-name{flex:1;font-size:15px;font-weight:700;color:var(--text)}
+.s-btns{display:flex;gap:6px}
+
+.att-btn{
+  width:40px;height:40px;border-radius:10px;border:2px solid transparent;
+  font-size:14px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all 0.1s;display:flex;align-items:center;justify-content:center;
+}
+.att-btn.p{background:var(--panel);color:var(--text3);border-color:var(--border)}
+.att-btn.a{background:var(--panel);color:var(--text3);border-color:var(--border)}
+.att-btn.l{background:var(--panel);color:var(--text3);border-color:var(--border)}
+.att-btn.p.sel{background:var(--leaf);color:white;border-color:var(--leaf)}
+.att-btn.a.sel{background:var(--danger);color:white;border-color:var(--danger)}
+.att-btn.l.sel{background:var(--amber);color:white;border-color:var(--amber)}
+
+/* SUBMIT BUTTON */
+.submit-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:16px 20px;background:white;
+  border-top:1px solid var(--border);
+  box-shadow:0 -4px 20px rgba(0,0,0,0.08);
+}
+.submit-btn{
+  width:100%;padding:18px;background:linear-gradient(135deg,#16a34a,#0d5c29);
+  border:none;border-radius:var(--r2);font-size:17px;font-weight:800;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
+  box-shadow:0 4px 16px rgba(22,163,74,0.3);transition:all 0.2s;
+}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.submit-btn:active:not(:disabled){transform:scale(0.98)}
+
+/* RESULT SCREEN */
+#s-result{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(135deg,#0a1f0e 0%,#0d2d14 100%);
+}
+.result-icon{font-size:72px;text-align:center;margin-bottom:16px}
+.result-title{font-size:26px;font-weight:900;color:white;text-align:center;margin-bottom:8px}
+.result-sub{font-size:14px;color:#4a6b52;text-align:center;margin-bottom:32px;line-height:1.6}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:320px;margin-bottom:28px}
+.rg-cell{background:rgba(255,255,255,0.08);border-radius:var(--r2);padding:16px;text-align:center}
+.rg-n{font-size:28px;font-weight:900;color:white}
+.rg-l{font-size:11px;font-weight:700;color:#4a6b52;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px}
+.result-btn{
+  width:100%;max-width:320px;padding:16px;background:rgba(255,255,255,0.1);
+  border:1.5px solid rgba(255,255,255,0.2);border-radius:var(--r2);
+  font-size:15px;font-weight:700;color:white;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.2s;margin-bottom:8px;
+}
+.result-btn:hover{background:rgba(255,255,255,0.15)}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:var(--text3)}
+.spin{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--leaf);
+  border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="scr on" id="s-login">
+  <div class="login-logo">TAKMIL</div>
+  <div class="login-sub">Class Register</div>
+  <div class="login-card">
+    <label class="inp-label">School Code</label>
+    <input class="inp" id="l-code" type="text" placeholder="e.g. SHADBAGH" maxlength="50"
+      oninput="this.value=this.value.toUpperCase()">
+    <label class="inp-label">Date</label>
+    <input class="inp normal" id="l-date" type="date">
+    <button class="login-btn" onclick="doLogin()">Load Students →</button>
+    <div class="login-err" id="l-err"></div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div class="scr" id="s-register">
+  <div class="reg-header">
+    <div>
+      <div class="reg-school" id="r-school">—</div>
+      <div class="reg-date" id="r-date">—</div>
+    </div>
+    <div class="reg-logout" onclick="logout()">← Back</div>
+  </div>
+
+  <div class="reg-summary">
+    <div class="sum-item"><div class="sum-n n-total" id="s-total">0</div><div class="sum-l">Total</div></div>
+    <div class="sum-item"><div class="sum-n n-present" id="s-present">0</div><div class="sum-l">Present</div></div>
+    <div class="sum-item"><div class="sum-n n-absent" id="s-absent">0</div><div class="sum-l">Absent</div></div>
+    <div class="sum-item"><div class="sum-n n-leave" id="s-leave">0</div><div class="sum-l">Leave</div></div>
+  </div>
+
+  <div class="quick-bar">
+    <button class="quick-btn qb-all-p" onclick="markAll('P')">✅ Mark All Present</button>
+    <button class="quick-btn qb-clear" onclick="clearAll()">↺ Clear All</button>
+  </div>
+
+  <div class="student-list" id="student-list">
+    <div class="loading"><div class="spin"></div>Loading students...</div>
+  </div>
+
+  <div class="submit-bar">
+    <button class="submit-btn" id="submit-btn" onclick="submitAttendance()" disabled>
+      Submit Attendance
+    </button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="scr" id="s-result">
+  <div class="result-icon">🎉</div>
+  <div class="result-title" id="res-title">Attendance Saved!</div>
+  <div class="result-sub" id="res-sub"></div>
+  <div class="result-grid" id="res-grid"></div>
+  <button class="result-btn" onclick="takeNewAttendance()">📋 Take Another Day's Attendance</button>
+  <button class="result-btn" onclick="logout()">← Back to Login</button>
+</div>
+
+<script>
+let students = [];
+let attendance = {}; // roll_number → 'P'|'A'|'L'
+let schoolInfo = null;
+let currentDate = '';
+
+function showScr(id){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+
+// Init date
+document.getElementById('l-date').value = new Date().toISOString().split('T')[0];
+
+async function doLogin(){
+  const code = document.getElementById('l-code').value.trim();
+  const date = document.getElementById('l-date').value;
+  const err  = document.getElementById('l-err');
+  if(!code){ err.textContent = 'Please enter school code'; return; }
+
+  const btn = document.querySelector('.login-btn');
+  btn.textContent = 'Loading...'; btn.disabled = true;
+  err.textContent = '';
+
+  try{
+    const resp = await fetch(`/api/register/students?school_code=${encodeURIComponent(code)}&date=${date}`);
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error);
+    if(!data.students.length) throw new Error('No students found for school code: ' + code);
+
+    students   = data.students;
+    schoolInfo = data.school;
+    currentDate= date;
+
+    // Pre-fill any existing attendance
+    attendance = {};
+    students.forEach(s => { if(s.status) attendance[s.roll_number] = s.status; });
+
+    document.getElementById('r-school').textContent = data.school.name || code;
+    document.getElementById('r-date').textContent   = formatDate(date);
+    document.getElementById('s-total').textContent  = data.total;
+
+    renderStudents();
+    updateSummary();
+    showScr('s-register');
+  }catch(e){
+    err.textContent = e.message;
+  }
+  btn.textContent = 'Load Students →'; btn.disabled = false;
+}
+
+function renderStudents(){
+  const list = document.getElementById('student-list');
+  if(!students.length){
+    list.innerHTML = '<div class="loading">No students found</div>';
+    return;
+  }
+
+  list.innerHTML = students.map((s, i) => {
+    const roll = s.roll_number;
+    const status = attendance[roll] || '';
+    return `
+    <div class="s-item ${status==='P'?'is-p':status==='A'?'is-a':status==='L'?'is-l':''}" id="si-${roll}">
+      <div class="s-roll">${i+1}</div>
+      <div class="s-name">${s.student_name}</div>
+      <div class="s-btns">
+        <button class="att-btn p ${status==='P'?'sel':''}" onclick="mark('${roll}','P')">P</button>
+        <button class="att-btn a ${status==='A'?'sel':''}" onclick="mark('${roll}','A')">A</button>
+        <button class="att-btn l ${status==='L'?'sel':''}" onclick="mark('${roll}','L')">L</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function mark(roll, status){
+  // Toggle off if already selected
+  if(attendance[roll] === status) {
+    delete attendance[roll];
+  } else {
+    attendance[roll] = status;
+  }
+  updateCard(roll);
+  updateSummary();
+}
+
+function updateCard(roll){
+  const item = document.getElementById('si-' + roll);
+  if(!item) return;
+  const status = attendance[roll] || '';
+  item.className = `s-item ${status==='P'?'is-p':status==='A'?'is-a':status==='L'?'is-l':''}`;
+  item.querySelectorAll('.att-btn').forEach(btn => {
+    btn.classList.remove('sel');
+    if(btn.classList.contains(status.toLowerCase())) btn.classList.add('sel');
+  });
+}
+
+function markAll(status){
+  students.forEach(s => { attendance[s.roll_number] = status; });
+  renderStudents();
+  updateSummary();
+}
+
+function clearAll(){
+  attendance = {};
+  renderStudents();
+  updateSummary();
+}
+
+function updateSummary(){
+  const vals = Object.values(attendance);
+  const p = vals.filter(v=>v==='P').length;
+  const a = vals.filter(v=>v==='A').length;
+  const l = vals.filter(v=>v==='L').length;
+  document.getElementById('s-present').textContent = p;
+  document.getElementById('s-absent').textContent  = a;
+  document.getElementById('s-leave').textContent   = l;
+
+  const all = students.every(s => attendance[s.roll_number]);
+  document.getElementById('submit-btn').disabled = !all;
+  document.getElementById('submit-btn').textContent = all
+    ? `Submit Attendance (${p}P / ${a}A / ${l}L)`
+    : `Mark all students first (${students.length - vals.length} remaining)`;
+}
+
+async function submitAttendance(){
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Saving...';
+
+  const payload = students.map(s => ({
+    roll_number:  s.roll_number,
+    student_name: s.student_name,
+    status:       attendance[s.roll_number]
+  }));
+
+  try{
+    const resp = await fetch('/api/register/submit', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        school_code: schoolInfo.identifier || schoolInfo.name,
+        date:        currentDate,
+        attendance:  payload,
+        submitted_by: schoolInfo.identifier
+      })
+    });
+    const data = await resp.json();
+    if(!data.saved) throw new Error('Save failed');
+
+    // Show result
+    document.getElementById('res-title').textContent = '✅ Attendance Saved!';
+    document.getElementById('res-sub').textContent   =
+      `${schoolInfo.name} · ${formatDate(currentDate)}`;
+    document.getElementById('res-grid').innerHTML = `
+      <div class="rg-cell"><div class="rg-n" style="color:#4ade80">${data.present}</div><div class="rg-l">Present</div></div>
+      <div class="rg-cell"><div class="rg-n" style="color:#fca5a5">${data.absent}</div><div class="rg-l">Absent</div></div>
+      <div class="rg-cell"><div class="rg-n" style="color:#fde047">${data.leave}</div><div class="rg-l">Leave</div></div>
+      <div class="rg-cell"><div class="rg-n">${data.total}</div><div class="rg-l">Total</div></div>
+    `;
+    showScr('s-result');
+  }catch(e){
+    btn.disabled = false;
+    btn.textContent = '⚠️ Error — Tap to Retry';
+    alert('Error saving: ' + e.message);
+  }
+}
+
+function takeNewAttendance(){
+  // Move date forward by 1 day
+  const d = new Date(currentDate);
+  d.setDate(d.getDate()+1);
+  document.getElementById('l-date').value = d.toISOString().split('T')[0];
+  document.getElementById('l-code').value = schoolInfo.identifier || '';
+  showScr('s-login');
+}
+
+function logout(){
+  attendance = {};
+  students   = [];
+  showScr('s-login');
+}
+
+function formatDate(d){
+  return new Date(d+'T12:00:00').toLocaleDateString([],
+    {weekday:'short',day:'numeric',month:'short',year:'numeric'});
+}
+</script>
+</body>
+</html>

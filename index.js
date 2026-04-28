@@ -1042,6 +1042,137 @@ app.get('/api/analytics', async (req, res) => {
   }
 });
 
+
+// ═══════════════════════════════════════════════════════════════
+//  STUDENT ATTENDANCE REGISTER
+// ═══════════════════════════════════════════════════════════════
+
+app.get('/register', (req, res) => res.sendFile(path.join(__dirname, 'register.html')));
+
+// Get students for a school
+app.get('/api/register/students', async (req, res) => {
+  try {
+    const { school_code, date } = req.query;
+    if (!school_code) return res.status(400).json({ error: 'school_code required' });
+    const attDate = date || new Date().toISOString().split('T')[0];
+
+    const r = await db.pool.query(`
+      SELECT
+        sr.id, sr.roll_number, sr.student_name, sr.teacher_name,
+        sr.school_identifier,
+        sa.status, sa.attendance_date
+      FROM students_register sr
+      LEFT JOIN student_attendance sa
+        ON sa.roll_number = sr.roll_number
+        AND sa.attendance_date = $2::date
+      WHERE sr.school_identifier ILIKE $1
+        AND sr.active = TRUE
+      ORDER BY sr.roll_number
+    `, [school_code, attDate]);
+
+    // Get school info
+    const school = await db.pool.query(
+      `SELECT name, identifier FROM schools WHERE identifier ILIKE $1 OR school_code ILIKE $1 LIMIT 1`,
+      [school_code]
+    );
+
+    res.json({
+      school: school.rows[0] || { name: school_code, identifier: school_code },
+      date: attDate,
+      students: r.rows,
+      total: r.rows.length,
+      present: r.rows.filter(s => s.status === 'P').length,
+      absent:  r.rows.filter(s => s.status === 'A').length,
+      leave:   r.rows.filter(s => s.status === 'L').length,
+    });
+  } catch(err) {
+    console.log('register error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Submit attendance
+app.post('/api/register/submit', async (req, res) => {
+  try {
+    const { school_code, date, attendance, submitted_by } = req.body;
+    // attendance = [{ roll_number, student_name, status }]
+    if (!attendance?.length) return res.status(400).json({ error: 'No attendance data' });
+    const attDate = date || new Date().toISOString().split('T')[0];
+
+    for (const s of attendance) {
+      await db.pool.query(`
+        INSERT INTO student_attendance (roll_number, student_name, school_identifier, attendance_date, status, submitted_by)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (roll_number, attendance_date)
+        DO UPDATE SET status = EXCLUDED.status, submitted_by = EXCLUDED.submitted_by
+      `, [s.roll_number, s.student_name, school_code, attDate, s.status, submitted_by || school_code]);
+    }
+
+    const present = attendance.filter(s => s.status === 'P').length;
+    const absent  = attendance.filter(s => s.status === 'A').length;
+    const leave   = attendance.filter(s => s.status === 'L').length;
+
+    res.json({ saved: true, total: attendance.length, present, absent, leave });
+  } catch(err) {
+    console.log('submit attendance error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get attendance history for dashboard
+app.get('/api/register/history', async (req, res) => {
+  try {
+    const { school_code, date } = req.query;
+    const attDate = date || new Date().toISOString().split('T')[0];
+
+    let whereClause = 'WHERE sa.attendance_date = $1::date';
+    const params = [attDate];
+    if (school_code) {
+      params.push(school_code);
+      whereClause += ` AND sa.school_identifier ILIKE $${params.length}`;
+    }
+
+    const r = await db.pool.query(`
+      SELECT
+        sa.school_identifier,
+        s.name AS school_name,
+        COUNT(*) AS total,
+        SUM(CASE WHEN sa.status='P' THEN 1 ELSE 0 END) AS present,
+        SUM(CASE WHEN sa.status='A' THEN 1 ELSE 0 END) AS absent,
+        SUM(CASE WHEN sa.status='L' THEN 1 ELSE 0 END) AS leave_count,
+        ROUND(SUM(CASE WHEN sa.status='P' THEN 1 ELSE 0 END)*100.0/COUNT(*),1) AS attendance_pct,
+        MAX(sa.created_at) AS submitted_at,
+        json_agg(json_build_object('name',sa.student_name,'roll',sa.roll_number,'status',sa.status) ORDER BY sa.roll_number) AS students
+      FROM student_attendance sa
+      LEFT JOIN schools s ON s.identifier ILIKE sa.school_identifier
+      ${whereClause}
+      GROUP BY sa.school_identifier, s.name
+      ORDER BY sa.school_identifier
+    `, params);
+
+    res.json({ date: attDate, records: r.rows });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Absent students for a date
+app.get('/api/register/absent', async (req, res) => {
+  try {
+    const { date } = req.query;
+    const attDate = date || new Date().toISOString().split('T')[0];
+    const r = await db.pool.query(`
+      SELECT sa.student_name, sa.roll_number, sa.school_identifier,
+             s.name AS school_name, sa.attendance_date
+      FROM student_attendance sa
+      LEFT JOIN schools s ON s.identifier ILIKE sa.school_identifier
+      WHERE sa.attendance_date = $1::date AND sa.status = 'A'
+      ORDER BY sa.school_identifier, sa.student_name
+    `, [attDate]);
+    res.json({ date: attDate, absent: r.rows });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 // ── Feedback API ─────────────────────────────────────────────
 app.get('/feedback', (req, res) => res.sendFile(path.join(__dirname, 'feedback.html')));
 
@@ -3390,6 +3521,22 @@ app.get('/api/questions/breakdown', async (req, res) => {
         )
       `);
       console.log('daily_feedback table ready');
+      // Students register tables
+      await db.pool.query(`CREATE TABLE IF NOT EXISTS students_register (
+        id SERIAL PRIMARY KEY, school_identifier TEXT NOT NULL,
+        roll_number TEXT UNIQUE NOT NULL, student_name TEXT NOT NULL,
+        teacher_name TEXT, province TEXT, regional_coordinator TEXT,
+        school_coordinator TEXT, active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT NOW()
+      )`);
+      await db.pool.query(`CREATE TABLE IF NOT EXISTS student_attendance (
+        id SERIAL PRIMARY KEY, roll_number TEXT NOT NULL,
+        student_name TEXT NOT NULL, school_identifier TEXT NOT NULL,
+        attendance_date DATE NOT NULL, status TEXT NOT NULL,
+        submitted_by TEXT, created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(roll_number, attendance_date)
+      )`);
+      console.log('attendance tables ready');
       // Add photo columns if not exists
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_url TEXT`);
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_head_count INTEGER`);
