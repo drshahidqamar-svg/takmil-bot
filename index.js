@@ -1184,18 +1184,18 @@ async function handleClassPhoto(from, mediaUrl, mediaType) {
             },
             {
               type: 'text',
-              text: `Analyze this classroom photo and return ONLY a JSON object with these exact fields:
+              text: `You are analyzing a classroom photo from a school in rural Pakistan. Analyze carefully and return ONLY a JSON object:
 {
-  "head_count": <number of people visible>,
-  "projector_visible": <true or false>,
-  "screen_visible": <true or false>,
-  "content_on_screen": <true or false - is something being displayed>,
-  "students_facing_screen": <true or false>,
+  "head_count": <count ALL people - students and teachers>,
+  "projector_visible": <true if you can see ANY of: projector device, projected image on wall/board, bright rectangle of light on a surface, whiteboard with projected content, or any projection equipment>,
+  "screen_visible": <true if you can see a whiteboard, wall, or surface with projected or written content>,
+  "content_on_screen": <true if whiteboard/wall shows any content - written, projected, or displayed>,
+  "students_facing_screen": <true if students are sitting and facing toward a board or screen>,
   "confidence": "high|medium|low",
-  "lesson_verified": <true if projector is on AND students are present AND content showing>,
-  "note": "<brief observation>"
+  "lesson_verified": <true if students are present AND (projector OR whiteboard with content is visible)>,
+  "note": "<describe what you see: projector location, screen content, student count, anything relevant>"
 }
-Be strict: projector_visible is true only if you can see a projector or projection screen. content_on_screen is true only if something is clearly displayed on the screen.`
+IMPORTANT: In Pakistani classrooms projectors are often small portable devices placed on boxes or tables. Projected images may appear faint on whiteboards. Look carefully for: small white device on a surface, rectangle of light on whiteboard, faint projected text/images. Do not miss subtle projectors.`
             }
           ]
         }]
