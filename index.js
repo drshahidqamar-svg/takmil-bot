@@ -1110,23 +1110,36 @@ async function handleClassPhoto(from, mediaUrl, mediaType) {
   try {
     console.log(`📸 Class photo from ${from}: ${mediaUrl}`);
 
-    // Download the image from Twilio (requires auth)
-    const https = require('https');
+    // Download the image from Twilio using fetch with auth + redirect following
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken  = process.env.TWILIO_AUTH_TOKEN;
     const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
 
-    const imageBase64 = await new Promise((resolve, reject) => {
-      const chunks = [];
-      const req = https.get(mediaUrl, {
-        headers: { Authorization: `Basic ${auth}` }
-      }, (res) => {
-        res.on('data', chunk => chunks.push(chunk));
-        res.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
-        res.on('error', reject);
-      });
-      req.on('error', reject);
+    console.log('📸 Downloading image from Twilio...');
+    const imgResp = await fetch(mediaUrl, {
+      headers: { Authorization: `Basic ${auth}` },
+      redirect: 'follow'
     });
+
+    if (!imgResp.ok) {
+      console.log('📸 Download failed:', imgResp.status, imgResp.statusText);
+      const errText = await imgResp.text();
+      console.log('📸 Download error body:', errText.substring(0, 300));
+      throw new Error(`Image download failed: ${imgResp.status}`);
+    }
+
+    const contentType = imgResp.headers.get('content-type') || mediaType || 'image/jpeg';
+    const mimeType = contentType.split(';')[0].trim();
+    console.log('📸 Downloaded. Content-Type:', mimeType, 'Status:', imgResp.status);
+
+    const imageBuffer = await imgResp.arrayBuffer();
+    const imageBase64 = Buffer.from(imageBuffer).toString('base64');
+    console.log('📸 Image size (base64 chars):', imageBase64.length);
+
+    // Validate it looks like an image (not HTML error page)
+    if (imageBase64.length < 1000) {
+      throw new Error('Downloaded content too small — likely not a real image');
+    }
 
     // Send to Claude Vision API for head count
     const apiResp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1144,7 +1157,7 @@ async function handleClassPhoto(from, mediaUrl, mediaType) {
           content: [
             {
               type: 'image',
-              source: { type: 'base64', media_type: mediaType || 'image/jpeg', data: imageBase64 }
+              source: { type: 'base64', media_type: mimeType || 'image/jpeg', data: imageBase64 }
             },
             {
               type: 'text',
