@@ -3,7 +3,13 @@ const express = require('express');
 const twilio = require('twilio');
 const db = require('./database');
 const path = require('path');
-const app = express();
+const fs   = require('fs');
+const app  = express();
+
+// Serve photos publicly
+const PHOTOS_DIR = path.join(__dirname, 'public', 'photos');
+if (!fs.existsSync(PHOTOS_DIR)) fs.mkdirSync(PHOTOS_DIR, { recursive: true });
+app.use('/photos', express.static(path.join(__dirname, 'public', 'photos')));
 // CORS — allow classroom player (file://) and all other origins
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -1139,13 +1145,22 @@ async function handleClassPhoto(from, mediaUrl, mediaType) {
     console.log('📸 Downloaded. Content-Type:', mimeType, 'Status:', imgResp.status);
 
     const imageBuffer = await imgResp.arrayBuffer();
-    const imageBase64 = Buffer.from(imageBuffer).toString('base64');
+    const imageBytes  = Buffer.from(imageBuffer);
+    const imageBase64 = imageBytes.toString('base64');
     console.log('📸 Image size (base64 chars):', imageBase64.length);
 
     // Validate it looks like an image (not HTML error page)
     if (imageBase64.length < 1000) {
       throw new Error('Downloaded content too small — likely not a real image');
     }
+
+    // Save photo to public folder so coordinators can view without Twilio auth
+    const ext       = mimeType.includes('png') ? 'png' : mimeType.includes('gif') ? 'gif' : 'jpg';
+    const filename  = `photo_${Date.now()}_${from.replace(/[^0-9]/g,'')}.${ext}`;
+    const filepath  = path.join(__dirname, 'public', 'photos', filename);
+    fs.writeFileSync(filepath, imageBytes);
+    const publicUrl = `/photos/${filename}`;
+    console.log('📸 Saved to:', publicUrl);
 
     // Send to Claude Vision API for head count
     const apiResp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1273,7 +1288,7 @@ No feedback report found for today to compare with. Please submit your daily rep
         projector_visible= $6,
         lesson_verified  = $7
       WHERE id = $8
-    `, [mediaUrl, headCount, diff, !flagged, flag,
+    `, [publicUrl, headCount, diff, !flagged, flag,
         visionResult.projector_visible || false,
         visionResult.lesson_verified || false,
         fb.id]);

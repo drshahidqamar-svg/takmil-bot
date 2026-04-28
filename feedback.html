@@ -433,7 +433,7 @@ async function showDetail(feedbackId, schoolName, coord){
         </div>
       </div>
       ${f.photo_flag?`<div style="padding:10px 12px;background:var(--danger2);border-radius:8px;font-size:12px;color:var(--danger);font-weight:700;margin-top:8px">⚠️ ${f.photo_flag}</div>`:''}
-      ${f.photo_url?`<div style="margin-top:10px"><a href="${f.photo_url}" target="_blank" style="font-size:12px;color:var(--leaf);font-weight:700">📷 View Photo →</a></div>`:''}
+      ${f.photo_url?`<div style="margin-top:10px"><a href="${f.photo_url.startsWith('/') ? location.origin+f.photo_url : f.photo_url}" target="_blank" style="font-size:12px;color:var(--leaf);font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:var(--leaf3);border-radius:8px">📷 View Class Photo →</a></div>`:''}
     </div>` : `
     <div class="m-section">
       <div class="m-section-title">📸 Photo Verification</div>
