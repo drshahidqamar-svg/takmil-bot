@@ -792,9 +792,15 @@ async function handleOpsMessage(phone, text, upper) {
 
 function isFeedbackMessage(text) {
   const t = text.toLowerCase();
-  return (t.includes('check in') || t.includes('check-in')) &&
-         (t.includes('present') || t.includes('absent')) &&
-         (t.includes('subject') || t.includes('lesson'));
+  const hasAttendance = t.includes('present') && t.includes('absent');
+  const hasSubject    = t.includes('subject') || t.includes('lesson no');
+  const hasCheckin    = t.includes('check in') || t.includes('check-in') || t.includes('check out');
+  const hasDate       = t.includes('date :') || t.includes('date:');
+  const hasGrade      = t.includes('grade') || t.includes('level');
+  // Accept if: has attendance + subject, OR has checkin + attendance, OR has date + attendance + grade
+  return (hasAttendance && hasSubject) ||
+         (hasCheckin && hasAttendance) ||
+         (hasDate && hasAttendance && hasGrade);
 }
 
 function parseFeedback(text, teacherPhone) {
@@ -1208,14 +1214,16 @@ async function handleClassPhoto(from, mediaUrl, mediaType) {
 
     console.log(`📸 Head count: ${headCount} (${confidence}) — ${note}`);
 
-    // Find today's feedback from this teacher
-    const today = new Date().toISOString().split('T')[0];
+    // Find most recent feedback from this teacher (last 24 hours)
+    // Normalize phone — match with or without whatsapp: prefix
+    const phoneNorm = from.replace('whatsapp:', '');
     const fbRow = await db.pool.query(`
-      SELECT id, present, school_name FROM daily_feedback
-      WHERE teacher_phone = $1
-        AND report_date = $2::date
+      SELECT id, present, school_name, school_identifier FROM daily_feedback
+      WHERE (teacher_phone = $1 OR teacher_phone = $2 OR teacher_phone = $3)
+        AND created_at > NOW() - INTERVAL '24 hours'
       ORDER BY created_at DESC LIMIT 1
-    `, [from, today]);
+    `, [from, phoneNorm, 'whatsapp:' + phoneNorm]);
+    console.log('📸 Feedback lookup for phone:', from, '— found:', fbRow.rows.length > 0 ? fbRow.rows[0].id : 'none');
 
     if (!fbRow.rows.length) {
       return { headCount, message: `📸 Photo received! Counted ${headCount} people.
