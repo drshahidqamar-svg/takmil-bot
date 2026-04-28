@@ -1137,7 +1137,7 @@ async function handleClassPhoto(from, mediaUrl, mediaType) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-opus-4-5-20251101',
         max_tokens: 256,
         messages: [{
           role: 'user',
@@ -1156,7 +1156,16 @@ async function handleClassPhoto(from, mediaUrl, mediaType) {
     });
 
     const apiData = await apiResp.json();
-    const rawText = apiData.content?.[0]?.text || '{}';
+    console.log('📸 Full Vision API response:', JSON.stringify(apiData).substring(0, 500));
+    // Handle API errors
+    if (apiData.error) {
+      console.log('📸 Vision API error:', apiData.error.message);
+      throw new Error('Vision API error: ' + apiData.error.message);
+    }
+    const rawText = apiData.content?.[0]?.text || '';
+    if (!rawText) {
+      console.log('📸 Empty response from Vision API, apiData type:', apiData.type, 'stop_reason:', apiData.stop_reason);
+    }
 
     let headCount = null, confidence = 'medium', note = '';
     try {
@@ -1283,10 +1292,13 @@ app.post('/webhook', async (req, res) => {
     console.log(`📸 [${new Date().toISOString()}] Photo from: ${from}`);
     try {
       // If message also has feedback text, save feedback first
-      if (body && isFeedbackMessage(body)) {
+      if (body && body.trim().length > 50 && isFeedbackMessage(body)) {
         console.log('📸 + feedback text in same message — saving feedback first');
         const fb = parseFeedback(body, from);
         await saveFeedback(fb);
+        console.log('📸 Feedback saved from combined message');
+      } else if (body) {
+        console.log('📸 Body text present but not recognized as feedback:', body.substring(0,100));
       }
       const result = await handleClassPhoto(from, MediaUrl0, MediaContentType0);
       res.set('Content-Type', 'text/xml');
