@@ -1167,7 +1167,18 @@ async function handleClassPhoto(from, mediaUrl, mediaType) {
             },
             {
               type: 'text',
-              text: 'Count the number of people (students and teachers) visible in this classroom photo. Reply with ONLY a JSON object in this exact format: {"count": <number>, "confidence": "high|medium|low", "note": "<brief note if needed>"}'
+              text: `Analyze this classroom photo and return ONLY a JSON object with these exact fields:
+{
+  "head_count": <number of people visible>,
+  "projector_visible": <true or false>,
+  "screen_visible": <true or false>,
+  "content_on_screen": <true or false - is something being displayed>,
+  "students_facing_screen": <true or false>,
+  "confidence": "high|medium|low",
+  "lesson_verified": <true if projector is on AND students are present AND content showing>,
+  "note": "<brief observation>"
+}
+Be strict: projector_visible is true only if you can see a projector or projection screen. content_on_screen is true only if something is clearly displayed on the screen.`
             }
           ]
         }]
@@ -1187,16 +1198,24 @@ async function handleClassPhoto(from, mediaUrl, mediaType) {
     }
 
     let headCount = null, confidence = 'medium', note = '';
+    const visionResult = {};
     try {
       // Try JSON parse first
       const cleaned = rawText.replace(/```json|```/g, '').trim();
-      const jsonMatch = cleaned.match(/\{[^}]+\}/);
+      // Match multiline JSON
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-        const raw = parsed.count ?? parsed.number ?? parsed.total ?? parsed.people;
+        const raw = parsed.head_count ?? parsed.count ?? parsed.number ?? parsed.total;
         headCount  = raw !== undefined ? parseInt(raw) : null;
         confidence = parsed.confidence || 'medium';
         note       = parsed.note || '';
+        // Store extra fields for lesson verification
+        visionResult.projector_visible     = parsed.projector_visible || false;
+        visionResult.screen_visible        = parsed.screen_visible || false;
+        visionResult.content_on_screen     = parsed.content_on_screen || false;
+        visionResult.students_facing_screen= parsed.students_facing_screen || false;
+        visionResult.lesson_verified       = parsed.lesson_verified || false;
       }
     } catch(e) {}
     // Fallback: extract any number from the response text
@@ -1246,13 +1265,18 @@ No feedback report found for today to compare with. Please submit your daily rep
     // Save to DB
     await db.pool.query(`
       UPDATE daily_feedback SET
-        photo_url = $1,
+        photo_url        = $1,
         photo_head_count = $2,
         head_count_diff  = $3,
         photo_verified   = $4,
-        photo_flag       = $5
-      WHERE id = $6
-    `, [mediaUrl, headCount, diff, !flagged, flag, fb.id]);
+        photo_flag       = $5,
+        projector_visible= $6,
+        lesson_verified  = $7
+      WHERE id = $8
+    `, [mediaUrl, headCount, diff, !flagged, flag,
+        visionResult.projector_visible || false,
+        visionResult.lesson_verified || false,
+        fb.id]);
 
     // Build reply
     let reply;
@@ -3355,6 +3379,8 @@ app.get('/api/questions/breakdown', async (req, res) => {
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS head_count_diff INTEGER`);
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_verified BOOLEAN DEFAULT FALSE`);
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_flag TEXT`);
+      await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS projector_visible BOOLEAN DEFAULT FALSE`);
+      await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS lesson_verified BOOLEAN DEFAULT FALSE`);
     } catch(e) { console.log('daily_feedback note:', e.message); }
 
     app.listen(PORT, () => console.log(`🚀 TAKMIL Bot v3.0 running on port ${PORT}`));
