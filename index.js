@@ -1093,7 +1093,7 @@ app.get('/api/register/students', async (req, res) => {
       LEFT JOIN student_attendance sa
         ON sa.roll_number = sr.roll_number
         AND sa.attendance_date = $2::date
-      WHERE sr.school_identifier ILIKE $1
+      WHERE LOWER(sr.school_identifier) = LOWER($1)
         AND sr.active = TRUE
       ORDER BY sr.roll_number
     `, [school_code, attDate]);
