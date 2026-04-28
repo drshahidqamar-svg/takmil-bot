@@ -1048,6 +1048,7 @@ app.get('/api/analytics', async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 
 app.get('/register', (req, res) => res.sendFile(path.join(__dirname, 'register.html')));
+app.get('/attendance', (req, res) => res.sendFile(path.join(__dirname, 'attendance.html')));
 
 
 // ── Bulk student import endpoint ─────────────────────────────

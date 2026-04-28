@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Attendance Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f7f5;--bg2:#ffffff;--panel:#eef2ef;
+  --leaf:#16a34a;--leaf2:#22c55e;--leaf3:#dcfce7;--leaf4:#bbf7d0;
+  --border:#dde8df;--border2:#c5d9c8;
+  --text:#1a2e1f;--text2:#4a6b52;--text3:#8aaa90;
+  --danger:#ef4444;--danger2:#fee2e2;
+  --amber:#f59e0b;--amber2:#fef9c3;
+  --blue:#3b82f6;--blue2:#dbeafe;
+  --r:14px;--r2:10px;
+  --shadow:0 2px 12px rgba(0,0,0,0.06);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px}
+
+/* HEADER */
+.hdr{background:#1a2e1f;padding:0 28px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:20}
+.logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#4ade80}
+.logo-sub{font-size:10px;color:#4a6b52;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.nav{display:flex;gap:8px}
+.nav a{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;
+  text-decoration:none;color:#4a6b52;transition:all 0.2s}
+.nav a:hover,.nav a.active{background:rgba(34,197,94,0.15);color:#4ade80}
+
+/* CONTROLS */
+.controls{background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:12px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.f-lbl{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px}
+.f-inp{padding:7px 12px;background:var(--panel);border:1.5px solid var(--border2);
+  border-radius:var(--r2);font-size:13px;color:var(--text);
+  font-family:'DM Sans',sans-serif;outline:none}
+.f-inp:focus{border-color:var(--leaf)}
+.refresh-btn{margin-left:auto;padding:7px 18px;background:var(--leaf);border:none;
+  border-radius:var(--r2);font-size:12px;font-weight:700;color:white;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+.refresh-btn:hover{background:#15803d}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;
+  background:var(--border);border-bottom:1px solid var(--border)}
+@media(max-width:700px){.stats{grid-template-columns:repeat(3,1fr)}}
+.stat{background:var(--bg2);padding:16px 20px;text-align:center}
+.stat-n{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;line-height:1}
+.stat-l{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;
+  letter-spacing:0.7px;margin-top:3px}
+
+/* BODY */
+.body{padding:20px 28px;max-width:1400px;margin:0 auto}
+
+/* SCHOOL CARDS */
+.school-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+
+.school-card{background:var(--bg2);border:1.5px solid var(--border);
+  border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.school-card.submitted{border-color:#86efac}
+.school-card.missing{border-left:4px solid var(--danger)}
+
+/* Card header */
+.sc-hdr{padding:14px 16px;display:flex;align-items:flex-start;
+  justify-content:space-between;border-bottom:1px solid var(--border)}
+.sc-name{font-size:13px;font-weight:800;color:var(--text);line-height:1.3}
+.sc-coord{font-size:11px;color:var(--text3);margin-top:2px}
+.sc-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;
+  white-space:nowrap;flex-shrink:0;margin-left:8px}
+.badge-ok{background:var(--leaf3);color:var(--leaf)}
+.badge-miss{background:var(--danger2);color:var(--danger)}
+
+/* Attendance bar */
+.att-bar-wrap{padding:12px 16px;border-bottom:1px solid var(--border)}
+.att-stats{display:flex;gap:0;margin-bottom:8px}
+.att-stat{flex:1;text-align:center}
+.att-n{font-size:18px;font-weight:900}
+.att-l{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px}
+.att-pct{font-size:12px;font-weight:700;text-align:right;margin-bottom:4px}
+.bar{height:8px;background:var(--panel);border-radius:4px;overflow:hidden;display:flex}
+.bar-p{background:var(--leaf2);height:100%;transition:width 0.5s}
+.bar-a{background:var(--danger);height:100%;transition:width 0.5s}
+.bar-l{background:var(--amber);height:100%;transition:width 0.5s}
+
+/* Student list toggle */
+.sc-toggle{padding:8px 16px;font-size:12px;font-weight:700;color:var(--leaf);
+  cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel);border-top:1px solid var(--border)}
+.sc-toggle:hover{background:var(--leaf3)}
+
+.student-list{display:none;padding:8px 16px 12px;max-height:260px;overflow-y:auto}
+.student-list.open{display:block}
+.student-list::-webkit-scrollbar{width:4px}
+.student-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.s-row{display:flex;align-items:center;gap:8px;padding:5px 0;
+  border-bottom:1px solid var(--border);font-size:12px}
+.s-row:last-child{border-bottom:none}
+.s-num{color:var(--text3);font-weight:600;min-width:20px}
+.s-name{flex:1;color:var(--text);font-weight:600}
+.s-status{font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px}
+.ss-p{background:var(--leaf3);color:var(--leaf)}
+.ss-a{background:var(--danger2);color:var(--danger)}
+.ss-l{background:var(--amber2);color:#92400e}
+
+/* Missing card */
+.missing-body{padding:14px 16px;font-size:12px;color:var(--text3)}
+
+/* ABSENT LIST SECTION */
+.absent-section{margin-top:24px}
+.sec-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;
+  color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.absent-table-wrap{background:var(--bg2);border:1.5px solid var(--border);
+  border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.absent-table{width:100%;border-collapse:collapse;font-size:13px}
+.absent-table th{text-align:left;padding:10px 14px;color:var(--text3);
+  font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;
+  background:var(--panel);border-bottom:2px solid var(--border)}
+.absent-table td{padding:10px 14px;border-bottom:1px solid var(--border)}
+.absent-table tr:hover td{background:var(--panel)}
+.absent-table tr:last-child td{border-bottom:none}
+.consecutive{display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
+  background:var(--danger2);color:var(--danger)}
+
+/* LOADING */
+.loading-state{text-align:center;padding:60px;color:var(--text3)}
+.spin{width:28px;height:28px;border:2px solid var(--border2);
+  border-top-color:var(--leaf);border-radius:50%;
+  animation:spin 0.8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-msg{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <div class="logo">TAKMIL</div>
+    <div class="logo-sub">Attendance Dashboard</div>
+  </div>
+  <div class="nav">
+    <a href="/feedback">📋 Feedback</a>
+    <a href="/lessons-admin">📹 Lessons</a>
+    <a href="/compliance">✅ Compliance</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/attendance" class="active">👥 Attendance</a>
+    <a href="/register" target="_blank">📝 Register</a>
+  </div>
+</div>
+
+<div class="controls">
+  <span class="f-lbl">Date</span>
+  <input type="date" class="f-inp" id="f-date" onchange="load()">
+  <span class="f-lbl">Region</span>
+  <select class="f-inp" id="f-region" onchange="load()">
+    <option value="">All Regions</option>
+    <option value="Sindh">Sindh</option>
+    <option value="Punjab">Punjab</option>
+    <option value="KPK">KPK</option>
+    <option value="GilgitBaltistan">GilgitBaltistan</option>
+    <option value="Balochistan">Balochistan</option>
+  </select>
+  <span class="f-lbl">Status</span>
+  <select class="f-inp" id="f-status" onchange="filterCards()">
+    <option value="">All Schools</option>
+    <option value="submitted">Submitted ✅</option>
+    <option value="missing">Not Submitted ❌</option>
+  </select>
+  <input type="text" class="f-inp" id="f-search" placeholder="Search school..."
+    oninput="filterCards()" style="min-width:160px">
+  <button class="refresh-btn" onclick="load()">↻ Refresh</button>
+</div>
+
+<div class="stats" id="stats">
+  <div class="stat"><div class="stat-n" id="s-schools" style="color:var(--text)">—</div><div class="stat-l">Schools</div></div>
+  <div class="stat"><div class="stat-n" id="s-submitted" style="color:var(--leaf)">—</div><div class="stat-l">Submitted</div></div>
+  <div class="stat"><div class="stat-n" id="s-present" style="color:var(--leaf)">—</div><div class="stat-l">Present</div></div>
+  <div class="stat"><div class="stat-n" id="s-absent" style="color:var(--danger)">—</div><div class="stat-l">Absent</div></div>
+  <div class="stat"><div class="stat-n" id="s-pct" style="color:var(--blue)">—</div><div class="stat-l">Avg Attendance</div></div>
+</div>
+
+<div class="body">
+  <div class="school-grid" id="school-grid">
+    <div class="loading-state"><div class="spin"></div><p>Loading attendance...</p></div>
+  </div>
+
+  <div class="absent-section">
+    <div class="sec-title">❌ Absent Students Today <span id="absent-count" style="font-size:13px;font-weight:600;color:var(--text3)"></span></div>
+    <div class="absent-table-wrap" id="absent-wrap">
+      <div class="empty-msg">No absent students recorded yet</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let allData = { records: [], absent: [] };
+let schoolsList = [];
+
+async function load(){
+  const date   = document.getElementById('f-date').value;
+  const region = document.getElementById('f-region').value;
+
+  document.getElementById('school-grid').innerHTML =
+    '<div class="loading-state"><div class="spin"></div><p>Loading...</p></div>';
+
+  try {
+    // Load attendance records and absent list in parallel
+    const [histResp, absentResp, schoolsResp] = await Promise.all([
+      fetch(`/api/register/history?date=${date}`),
+      fetch(`/api/register/absent?date=${date}`),
+      fetch(`/api/compliance?date=${date}${region?'&region='+encodeURIComponent(region):''}`)
+    ]);
+
+    const histData    = await histResp.json();
+    const absentData  = await absentResp.json();
+    const schoolsData = await schoolsResp.json();
+
+    allData.records = histData.records || [];
+    allData.absent  = absentData.absent || [];
+    schoolsList     = schoolsData.schools || [];
+
+    // Build lookup of attendance by school identifier
+    const attMap = {};
+    allData.records.forEach(r => { attMap[r.school_identifier?.toLowerCase()] = r; });
+
+    // Merge with schools list
+    const merged = schoolsList.map(s => ({
+      ...s,
+      attendance: attMap[(s.identifier||'').toLowerCase()] || null
+    }));
+
+    // Stats
+    const submitted = merged.filter(s => s.attendance).length;
+    const totalP    = allData.records.reduce((a,r) => a + parseInt(r.present||0), 0);
+    const totalA    = allData.records.reduce((a,r) => a + parseInt(r.absent||0), 0);
+    const avgPct    = allData.records.length
+      ? Math.round(allData.records.reduce((a,r) => a + parseFloat(r.attendance_pct||0), 0) / allData.records.length)
+      : 0;
+
+    document.getElementById('s-schools').textContent   = merged.length;
+    document.getElementById('s-submitted').textContent = submitted;
+    document.getElementById('s-present').textContent   = totalP;
+    document.getElementById('s-absent').textContent    = totalA;
+    document.getElementById('s-pct').textContent       = avgPct + '%';
+
+    renderSchools(merged);
+    renderAbsent(allData.absent);
+    filterCards();
+  } catch(e) {
+    document.getElementById('school-grid').innerHTML =
+      `<div class="loading-state"><p style="color:var(--danger)">Error: ${e.message}</p></div>`;
+  }
+}
+
+function fmtShort(name){
+  return (name||'').replace(/_O_|_A_|_B_|_C_/,' ').replace(/_W\d+[A-Z]+$/,'').replace(/_/g,' ');
+}
+
+function renderSchools(schools){
+  const grid = document.getElementById('school-grid');
+  if(!schools.length){ grid.innerHTML = '<div class="empty-msg">No schools found</div>'; return; }
+
+  grid.innerHTML = schools.map(s => {
+    const att  = s.attendance;
+    const submitted = !!att;
+    const p    = parseInt(att?.present||0);
+    const a    = parseInt(att?.absent||0);
+    const l    = parseInt(att?.leave_count||0);
+    const tot  = parseInt(att?.total||0);
+    const pct  = parseFloat(att?.attendance_pct||0);
+    const pW   = tot > 0 ? Math.round(p/tot*100) : 0;
+    const aW   = tot > 0 ? Math.round(a/tot*100) : 0;
+    const lW   = tot > 0 ? Math.round(l/tot*100) : 0;
+    const students = att?.students ? (typeof att.students === 'string' ? JSON.parse(att.students) : att.students) : [];
+    const shortName = fmtShort(s.name);
+    const cardId = `card-${(s.identifier||'').replace(/[^a-z0-9]/gi,'_')}`;
+
+    if(!submitted) return `
+      <div class="school-card missing"
+           data-status="missing"
+           data-name="${(s.name||'').toLowerCase().replace(/_/g,' ')}">
+        <div class="sc-hdr">
+          <div>
+            <div class="sc-name">${shortName}</div>
+            <div class="sc-coord">${s.school_coordinator||''}</div>
+          </div>
+          <span class="sc-badge badge-miss">❌ No Register</span>
+        </div>
+        <div class="missing-body">No attendance submitted today</div>
+      </div>`;
+
+    return `
+      <div class="school-card submitted"
+           data-status="submitted"
+           data-name="${(s.name||'').toLowerCase().replace(/_/g,' ')}">
+        <div class="sc-hdr">
+          <div>
+            <div class="sc-name">${shortName}</div>
+            <div class="sc-coord">${s.school_coordinator||''} · ${att.submitted_at ? new Date(att.submitted_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</div>
+          </div>
+          <span class="sc-badge badge-ok">✅ Submitted</span>
+        </div>
+        <div class="att-bar-wrap">
+          <div class="att-stats">
+            <div class="att-stat">
+              <div class="att-n" style="color:var(--leaf)">${p}</div>
+              <div class="att-l">Present</div>
+            </div>
+            <div class="att-stat">
+              <div class="att-n" style="color:var(--danger)">${a}</div>
+              <div class="att-l">Absent</div>
+            </div>
+            <div class="att-stat">
+              <div class="att-n" style="color:var(--amber)">${l}</div>
+              <div class="att-l">Leave</div>
+            </div>
+            <div class="att-stat">
+              <div class="att-n">${tot}</div>
+              <div class="att-l">Total</div>
+            </div>
+          </div>
+          <div class="att-pct" style="color:${pct>=80?'var(--leaf)':pct>=60?'var(--amber)':'var(--danger)'}">${pct}%</div>
+          <div class="bar">
+            <div class="bar-p" style="width:${pW}%"></div>
+            <div class="bar-a" style="width:${aW}%"></div>
+            <div class="bar-l" style="width:${lW}%"></div>
+          </div>
+        </div>
+        ${students.length ? `
+        <div class="sc-toggle" onclick="toggleStudents('${cardId}')">
+          <span>👥 ${students.length} students</span>
+          <span id="arr-${cardId}">▼</span>
+        </div>
+        <div class="student-list" id="${cardId}">
+          ${students.map((st,i) => `
+          <div class="s-row">
+            <div class="s-num">${i+1}</div>
+            <div class="s-name">${st.name}</div>
+            <span class="s-status ${st.status==='P'?'ss-p':st.status==='A'?'ss-a':'ss-l'}">${st.status==='P'?'Present':st.status==='A'?'Absent':'Leave'}</span>
+          </div>`).join('')}
+        </div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function toggleStudents(id){
+  const list = document.getElementById(id);
+  const arr  = document.getElementById('arr-'+id);
+  const open = list.classList.toggle('open');
+  if(arr) arr.textContent = open ? '▲' : '▼';
+}
+
+function renderAbsent(absent){
+  const wrap  = document.getElementById('absent-wrap');
+  const count = document.getElementById('absent-count');
+  count.textContent = `(${absent.length})`;
+
+  if(!absent.length){
+    wrap.innerHTML = '<div class="empty-msg">No absent students recorded today</div>';
+    return;
+  }
+
+  wrap.innerHTML = `
+    <table class="absent-table">
+      <tr>
+        <th>#</th><th>Student Name</th><th>School</th><th>Roll No</th>
+      </tr>
+      ${absent.map((s,i) => `
+      <tr>
+        <td style="color:var(--text3)">${i+1}</td>
+        <td><strong>${s.student_name}</strong></td>
+        <td>${fmtShort(s.school_name||s.school_identifier)}</td>
+        <td style="color:var(--text3);font-size:11px">${s.roll_number}</td>
+      </tr>`).join('')}
+    </table>`;
+}
+
+function filterCards(){
+  const status = document.getElementById('f-status').value;
+  const search = document.getElementById('f-search').value.toLowerCase().trim().replace(/_/g,' ');
+  document.querySelectorAll('.school-card').forEach(c => {
+    const ms = !status || c.dataset.status === status;
+    const ms2= !search || (c.dataset.name||'').includes(search);
+    c.style.display = ms && ms2 ? '' : 'none';
+  });
+}
+
+// Init
+document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+load();
+setInterval(load, 5*60*1000);
+</script>
+</body>
+</html>
