@@ -1049,6 +1049,34 @@ app.get('/api/analytics', async (req, res) => {
 
 app.get('/register', (req, res) => res.sendFile(path.join(__dirname, 'register.html')));
 
+
+// ── Bulk student import endpoint ─────────────────────────────
+app.post('/api/register/import', async (req, res) => {
+  try {
+    const students = req.body;
+    if (!Array.isArray(students)) return res.status(400).json({ error: 'Expected array' });
+    let imported = 0, skipped = 0;
+    for (const s of students) {
+      try {
+        await db.pool.query(`
+          INSERT INTO students_register
+            (school_identifier, roll_number, student_name, teacher_name, province, regional_coordinator, school_coordinator)
+          VALUES ($1,$2,$3,$4,$5,$6,$7)
+          ON CONFLICT (roll_number) DO UPDATE SET
+            student_name=EXCLUDED.student_name,
+            teacher_name=EXCLUDED.teacher_name
+        `, [s.school_identifier, s.roll_number, s.student_name,
+            s.teacher_name, s.province, s.regional_coordinator, s.school_coordinator]);
+        imported++;
+      } catch(e) { skipped++; }
+    }
+    console.log(`Students imported: ${imported}, skipped: ${skipped}`);
+    res.json({ imported, skipped, total: students.length });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get students for a school
 app.get('/api/register/students', async (req, res) => {
   try {
