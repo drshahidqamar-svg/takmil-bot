@@ -843,6 +843,7 @@ function parseFeedback(text, teacherPhone) {
     tech_media_shared: false,
     subjects:          [],
     raw_message:       text,
+    projector_shown:   null,
   };
 
   let currentSubject = null;
@@ -863,6 +864,7 @@ function parseFeedback(text, teacherPhone) {
     if (/^absent/i.test(line))                { fb.absent            = num(val(line)); continue; }
     if (/^leave/i.test(line))                 { fb.leave_count       = num(val(line)); continue; }
     if (/^assembly.?conducted/i.test(line))   { fb.assembly_conducted= bool(val(line)); continue; }
+    if (/^projector.?shown/i.test(line))       { fb.projector_shown    = bool(val(line)); continue; }
     if (/^name.?child/i.test(line))           { fb.child_of_day      = val(line); continue; }
     if (/^technology.?used/i.test(line))      { fb.technology_used   = bool(val(line)); continue; }
     if (/^if.?no.?reason/i.test(line))        { fb.technology_reason = lines[i+1] || val(line); continue; }
@@ -919,8 +921,8 @@ async function saveFeedback(fb) {
        check_in, check_out, grade, level, total_strength,
        boys, girls, present, absent, leave_count,
        assembly_conducted, child_of_day, technology_used, technology_reason,
-       cr_media_shared, tech_media_shared, subjects, raw_message)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+       cr_media_shared, tech_media_shared, subjects, raw_message, projector_shown)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
     ON CONFLICT DO NOTHING`,
     [fb.teacher_phone, fb.school_name||null, fb.school_identifier||null,
      fb.report_date, fb.check_in, fb.check_out,
@@ -929,7 +931,7 @@ async function saveFeedback(fb) {
      fb.assembly_conducted, fb.child_of_day,
      fb.technology_used, fb.technology_reason,
      fb.cr_media_shared, fb.tech_media_shared,
-     JSON.stringify(fb.subjects), fb.raw_message]
+     JSON.stringify(fb.subjects), fb.raw_message, fb.projector_shown ?? null]
   );
 }
 
@@ -3395,6 +3397,7 @@ app.get('/api/questions/breakdown', async (req, res) => {
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_verified BOOLEAN DEFAULT FALSE`);
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_flag TEXT`);
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS projector_visible BOOLEAN DEFAULT FALSE`);
+      await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS projector_shown BOOLEAN DEFAULT NULL`);
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS lesson_verified BOOLEAN DEFAULT FALSE`);
     } catch(e) { console.log('daily_feedback note:', e.message); }
 

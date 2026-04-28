@@ -354,6 +354,7 @@ function renderCard(s){
       ${s.assembly_conducted?'<span class="chip chip-ok">Assembly ✅</span>':'<span class="chip chip-off">No Assembly</span>'}
       ${s.technology_used?'<span class="chip chip-blue">Tech ✅</span>':'<span class="chip chip-off">No Tech</span>'}
       ${s.cr_media_shared?'<span class="chip chip-ok">CR Media ✅</span>':''}
+      ${s.projector_shown===true?'<span class="chip chip-ok">📽️ Projector ✅</span>':s.projector_shown===false?'<span class="chip chip-warn">📽️ No Projector</span>':''}
     </div>
     ${subjNames?`<div class="sc-subjects">📚 ${subjNames}</div>`:''}
     <div class="sc-time">
@@ -410,6 +411,9 @@ async function showDetail(feedbackId, schoolName, coord){
         <div class="m-cell"><div class="m-cell-l">Child of Day</div><div class="m-cell-v">${fmt(f.child_of_day)}</div></div>
         <div class="m-cell"><div class="m-cell-l">Technology</div><div class="m-cell-v">${fmtBool(f.technology_used)}</div></div>
         <div class="m-cell"><div class="m-cell-l">CR Media</div><div class="m-cell-v">${fmtBool(f.cr_media_shared)}</div></div>
+        <div class="m-cell"><div class="m-cell-l">Projector Shown</div>
+          <div class="m-cell-v">${f.projector_shown===true?'✅ Yes':f.projector_shown===false?'❌ No':'— Not reported'}</div>
+        </div>
       </div>
       ${f.technology_reason?`<div style="margin-top:8px;padding:10px 12px;background:var(--amber2);border-radius:8px;font-size:12px;color:#92400e"><strong>Tech Reason:</strong> ${f.technology_reason}</div>`:''}
     </div>
