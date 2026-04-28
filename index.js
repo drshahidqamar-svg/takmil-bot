@@ -1100,7 +1100,7 @@ app.get('/api/register/students', async (req, res) => {
 
     // Get school info
     const school = await db.pool.query(
-      `SELECT name, identifier FROM schools WHERE identifier ILIKE $1 OR school_code ILIKE $1 LIMIT 1`,
+      `SELECT name, identifier FROM schools WHERE identifier ILIKE $1 OR name ILIKE $1 LIMIT 1`,
       [school_code]
     );
 
