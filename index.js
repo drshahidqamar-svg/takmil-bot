@@ -1158,18 +1158,31 @@ async function handleClassPhoto(from, mediaUrl, mediaType) {
     const apiData = await apiResp.json();
     const rawText = apiData.content?.[0]?.text || '{}';
 
-    let headCount = null, confidence = 'low', note = '';
+    let headCount = null, confidence = 'medium', note = '';
     try {
+      // Try JSON parse first
       const cleaned = rawText.replace(/```json|```/g, '').trim();
-      const parsed  = JSON.parse(cleaned);
-      headCount  = parseInt(parsed.count);
-      confidence = parsed.confidence || 'medium';
-      note       = parsed.note || '';
-    } catch(e) {
-      // Try to extract number from text
-      const match = rawText.match(/\d+/);
-      if (match) headCount = parseInt(match[0]);
+      const jsonMatch = cleaned.match(/\{[^}]+\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        const raw = parsed.count ?? parsed.number ?? parsed.total ?? parsed.people;
+        headCount  = raw !== undefined ? parseInt(raw) : null;
+        confidence = parsed.confidence || 'medium';
+        note       = parsed.note || '';
+      }
+    } catch(e) {}
+    // Fallback: extract any number from the response text
+    if (headCount === null || isNaN(headCount)) {
+      const numMatches = rawText.match(/\b(\d+)\b/g);
+      if (numMatches) {
+        // Take the first reasonable number (between 1-200)
+        for (const m of numMatches) {
+          const n = parseInt(m);
+          if (n >= 1 && n <= 200) { headCount = n; break; }
+        }
+      }
     }
+    console.log(`📸 Raw Vision response: ${rawText.substring(0,200)}`);
 
     console.log(`📸 Head count: ${headCount} (${confidence}) — ${note}`);
 
@@ -1269,10 +1282,17 @@ app.post('/webhook', async (req, res) => {
   if (parseInt(NumMedia) > 0 && MediaUrl0 && MediaContentType0?.startsWith('image/')) {
     console.log(`📸 [${new Date().toISOString()}] Photo from: ${from}`);
     try {
+      // If message also has feedback text, save feedback first
+      if (body && isFeedbackMessage(body)) {
+        console.log('📸 + feedback text in same message — saving feedback first');
+        const fb = parseFeedback(body, from);
+        await saveFeedback(fb);
+      }
       const result = await handleClassPhoto(from, MediaUrl0, MediaContentType0);
       res.set('Content-Type', 'text/xml');
       return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(result.message)}</Message></Response>`);
     } catch(e) {
+      console.log('photo error:', e.message);
       res.set('Content-Type', 'text/xml');
       return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>Photo received but could not process. Please try again.</Message></Response>`);
     }
