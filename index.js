@@ -1305,7 +1305,8 @@ app.get('/api/assess/questions/:pin', async (req, res) => {
         `, [parseInt(s.level), subj, QUESTIONS_PER_SUBJECT]);
 
         if (qs.rows.length === 0) {
-          // Fallback: any subject for this level
+          // Fallback: same subject, any level (never drop subject filter)
+          console.log(`⚠️ No questions found for subject=${subj} level=${s.level} — trying any level`);
           const fallback = await db.pool.query(`
             SELECT question_id AS id,
                    COALESCE(q_text_english, q_text_urdu) AS question_text,
@@ -1313,9 +1314,9 @@ app.get('/api/assess/questions/:pin', async (req, res) => {
                    option_a, option_b, option_c, option_d,
                    correct_option, subject, level, image_url
             FROM questions
-            WHERE active=1 AND level=$1::integer
+            WHERE active=1 AND subject ILIKE $1
             ORDER BY RANDOM() LIMIT $2
-          `, [parseInt(s.level), QUESTIONS_PER_SUBJECT]);
+          `, [subj, QUESTIONS_PER_SUBJECT]);
           allQuestions = allQuestions.concat(fallback.rows);
         } else {
           allQuestions = allQuestions.concat(qs.rows);
@@ -1551,16 +1552,13 @@ app.post('/api/auth/coordinator-login', async (req, res) => {
 
   const client = await db.pool.connect();
   try {
-    // 1. Check regional_coordinators
     const regional = await client.query(
       `SELECT rc.id, rc.name, rc.region, rc.phone,
               COALESCE(
                 json_agg(
                   json_build_object(
-                    'id',         s.id,
-                    'name',       s.name,
-                    'identifier', s.identifier,
-                    'district',   s.district
+                    'id', s.id, 'name', s.name,
+                    'identifier', s.identifier, 'district', s.district
                   )
                 ) FILTER (WHERE s.id IS NOT NULL),
                 '[]'::json
@@ -1571,29 +1569,19 @@ app.post('/api/auth/coordinator-login', async (req, res) => {
        GROUP BY rc.id, rc.name, rc.region, rc.phone`,
       [phone, password]
     );
-
     if (regional.rows.length > 0) {
-      const coord = regional.rows[0];
-      return res.status(200).json({
-        role:    'regional',
-        id:      coord.id,
-        name:    coord.name,
-        region:  coord.region,
-        schools: coord.schools,
-      });
+      const c = regional.rows[0];
+      return res.status(200).json({ role: 'regional', id: c.id, name: c.name, region: c.region, schools: c.schools });
     }
 
-    // 2. Check school_coordinators
     const school = await client.query(
       `SELECT sc.id, sc.name, sc.phone, sc.regional_coordinator_id,
               rc.region,
               COALESCE(
                 json_agg(
                   json_build_object(
-                    'id',         s.id,
-                    'name',       s.name,
-                    'identifier', s.identifier,
-                    'district',   s.district
+                    'id', s.id, 'name', s.name,
+                    'identifier', s.identifier, 'district', s.district
                   )
                 ) FILTER (WHERE s.id IS NOT NULL),
                 '[]'::json
@@ -1605,20 +1593,12 @@ app.post('/api/auth/coordinator-login', async (req, res) => {
        GROUP BY sc.id, sc.name, sc.phone, sc.regional_coordinator_id, rc.region`,
       [phone, password]
     );
-
     if (school.rows.length > 0) {
-      const coord = school.rows[0];
-      return res.status(200).json({
-        role:    'school',
-        id:      coord.id,
-        name:    coord.name,
-        region:  coord.region,
-        schools: coord.schools,
-      });
+      const c = school.rows[0];
+      return res.status(200).json({ role: 'school', id: c.id, name: c.name, region: c.region, schools: c.schools });
     }
 
     return res.status(401).json({ error: 'Invalid phone number or password' });
-
   } catch (err) {
     console.error('Login error:', err.message);
     return res.status(500).json({ error: 'Server error. Please try again.' });
