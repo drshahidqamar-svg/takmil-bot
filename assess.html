@@ -438,17 +438,24 @@ async function submitAnswers(){
     });
     const data = await resp.json();
 
-    assessedStudents.push({ name: currentStudent, score: data.score_pct, passed: data.passed,
-                            correct: data.correct, total: data.total });
+
 
     // Show result
-    const pct = data.score_pct;
+    // Handle both field name variants from API
+    const pct     = parseFloat(data.score_pct ?? data.scorePct ?? 0);
+    const correct = parseInt(data.correct ?? data.correctAnswers ?? 0);
+    const total   = parseInt(data.total ?? data.totalQuestions ?? answers.length);
+    const wrong   = total - correct;
+
     document.getElementById('r-emoji').textContent   = pct>=80?'🎉':pct>=60?'👍':'📚';
     document.getElementById('r-name').textContent    = currentStudent;
-    document.getElementById('r-score').textContent   = pct+'%';
+    document.getElementById('r-score').textContent   = pct.toFixed(0)+'%';
     document.getElementById('r-score').style.color   = pct>=80?'#16a34a':pct>=60?'#f59e0b':'#ef4444';
-    document.getElementById('r-correct').textContent = data.correct;
-    document.getElementById('r-wrong').textContent   = data.total - data.correct;
+    document.getElementById('r-correct').textContent = correct;
+    document.getElementById('r-wrong').textContent   = wrong;
+    
+    // Store for session view
+    assessedStudents.push({ name: currentStudent, score: pct, passed: data.passed, correct, total });
 
     const statusEl = document.getElementById('r-status');
     if(data.passed){
