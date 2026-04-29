@@ -1525,7 +1525,7 @@ app.get('/api/results/sessions', async (req, res) => {
         COUNT(tr.id)                                          AS student_count,
         ROUND(AVG(tr.score_pct),1)                           AS avg_score,
         SUM(CASE WHEN tr.passed THEN 1 ELSE 0 END)           AS passed_count,
-        BOOL_OR(AVG(tr.score_pct) >= 80)                     AS cohort_passed
+        CASE WHEN AVG(tr.score_pct) >= 80 THEN true ELSE false END AS cohort_passed
       FROM tablet_sessions ts
       LEFT JOIN schools s ON s.identifier ILIKE ts.school_identifier
       LEFT JOIN tablet_results tr ON tr.session_id = ts.id
