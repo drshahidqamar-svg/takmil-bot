@@ -38,7 +38,7 @@ const STATE = {
   SESSION_COMPLETE:      'SESSION_COMPLETE',
 };
 
-const QUESTIONS_PER_SESSION = 20;
+const QUESTIONS_PER_SESSION = 4; // TODO: change back to 20 for production
 const PASS_THRESHOLD = 80;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -1275,7 +1275,7 @@ app.get('/api/assess/questions/:pin', async (req, res) => {
                correct_option, subject, level, image_url
         FROM questions
         WHERE active=1 AND level BETWEEN 1 AND 11
-        ORDER BY RANDOM() LIMIT 20
+        ORDER BY RANDOM() LIMIT 4
       `);
     } else {
       qs = await db.pool.query(`
