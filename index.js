@@ -1541,6 +1541,92 @@ app.get('/api/cohort/:school_identifier', async (req, res) => {
 // ── Assessment Results Dashboard ──────────────────────────────
 app.get('/results', (req, res) => res.sendFile(path.join(__dirname, 'results.html')));
 
+
+// ── Coordinator Login ─────────────────────────────────────────────────
+app.post('/api/auth/coordinator-login', async (req, res) => {
+  const { phone, password } = req.body;
+  if (!phone || !password) {
+    return res.status(400).json({ error: 'Phone and password required' });
+  }
+
+  const client = await db.pool.connect();
+  try {
+    // 1. Check regional_coordinators
+    const regional = await client.query(
+      `SELECT rc.id, rc.name, rc.region, rc.phone,
+              COALESCE(
+                json_agg(
+                  json_build_object(
+                    'id',         s.id,
+                    'name',       s.name,
+                    'identifier', s.identifier,
+                    'district',   s.district
+                  )
+                ) FILTER (WHERE s.id IS NOT NULL),
+                '[]'::json
+              ) AS schools
+       FROM regional_coordinators rc
+       LEFT JOIN schools s ON s.regional_coordinator_id = rc.id
+       WHERE rc.phone = $1 AND rc.password = $2
+       GROUP BY rc.id, rc.name, rc.region, rc.phone`,
+      [phone, password]
+    );
+
+    if (regional.rows.length > 0) {
+      const coord = regional.rows[0];
+      return res.status(200).json({
+        role:    'regional',
+        id:      coord.id,
+        name:    coord.name,
+        region:  coord.region,
+        schools: coord.schools,
+      });
+    }
+
+    // 2. Check school_coordinators
+    const school = await client.query(
+      `SELECT sc.id, sc.name, sc.phone, sc.regional_coordinator_id,
+              rc.region,
+              COALESCE(
+                json_agg(
+                  json_build_object(
+                    'id',         s.id,
+                    'name',       s.name,
+                    'identifier', s.identifier,
+                    'district',   s.district
+                  )
+                ) FILTER (WHERE s.id IS NOT NULL),
+                '[]'::json
+              ) AS schools
+       FROM school_coordinators sc
+       JOIN regional_coordinators rc ON rc.id = sc.regional_coordinator_id
+       LEFT JOIN schools s ON s.regional_coordinator_id = rc.id
+       WHERE sc.phone = $1 AND sc.password = $2
+       GROUP BY sc.id, sc.name, sc.phone, sc.regional_coordinator_id, rc.region`,
+      [phone, password]
+    );
+
+    if (school.rows.length > 0) {
+      const coord = school.rows[0];
+      return res.status(200).json({
+        role:    'school',
+        id:      coord.id,
+        name:    coord.name,
+        region:  coord.region,
+        schools: coord.schools,
+      });
+    }
+
+    return res.status(401).json({ error: 'Invalid phone number or password' });
+
+  } catch (err) {
+    console.error('Login error:', err.message);
+    return res.status(500).json({ error: 'Server error. Please try again.' });
+  } finally {
+    client.release();
+  }
+});
+
 app.get('/pin-generator', (req, res) => res.sendFile(path.join(__dirname, 'pin-generator.html')));
 
 // Question count per level+subject (for PIN generator UI)

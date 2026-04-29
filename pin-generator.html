@@ -3,347 +3,591 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TAKMIL — PIN Generator v2</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>TAKMIL PIN Generator</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --navy:#1a2e7a;--navy2:#0f1d54;--orange:#F74F22;--orange2:#fff0ec;
-  --green:#16a34a;--green2:#dcfce7;--green3:#bbf7d0;
-  --bg:#f5f7ff;--bg2:#ffffff;--border:#e0e4f5;
-  --text:#1a1f3a;--text2:#4a5080;--text3:#8a90b8;
-  --r:16px;--r2:12px;--shadow:0 4px 24px rgba(26,46,122,0.08);
-}
-html,body{min-height:100%;background:var(--bg);color:var(--text);
-  font-family:'DM Sans',sans-serif;font-size:15px}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; }
 
-.hdr{background:var(--bg2);border-bottom:1px solid var(--border);
-  padding:0 28px;height:56px;display:flex;align-items:center;
-  justify-content:space-between;box-shadow:0 1px 8px rgba(0,0,0,0.05)}
-.logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--navy)}
-.nav a{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;
-  text-decoration:none;color:var(--text2);background:var(--bg);
-  border:1.5px solid var(--border);transition:all 0.2s}
-.nav a:hover{border-color:var(--navy);color:var(--navy)}
+  /* ── LOGIN SCREEN ── */
+  #loginScreen {
+    min-height: 100vh; display: flex; align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #e8f5e9 0%, #e3f2fd 100%);
+    padding: 16px;
+  }
+  .login-card {
+    background: white; border-radius: 20px; padding: 40px 36px;
+    width: 100%; max-width: 380px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+  }
+  .login-logo {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, #01796F, #019587);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px; font-size: 32px;
+    box-shadow: 0 4px 16px rgba(1,121,111,0.3);
+  }
+  .login-title { text-align: center; margin-bottom: 28px; }
+  .login-title h2 { font-size: 22px; color: #1a2e44; font-weight: 700; }
+  .login-title p { font-size: 13px; color: #64748b; margin-top: 6px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 11px 14px; border-radius: 10px;
+    border: 1.5px solid #d1d5db; font-size: 15px; font-family: inherit;
+    outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus { border-color: #01796F; }
+  .btn-primary {
+    width: 100%; padding: 13px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #01796F, #019587);
+    color: white; font-size: 16px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 12px rgba(1,121,111,0.3);
+    transition: all 0.2s; font-family: inherit;
+  }
+  .btn-primary:disabled { background: #9ca3af; box-shadow: none; cursor: not-allowed; }
+  .error-box {
+    background: #fee2e2; color: #dc2626; padding: 10px 14px;
+    border-radius: 8px; font-size: 13px; margin-bottom: 14px;
+    border: 1px solid #fecaca; display: none;
+  }
+  .login-footer { text-align: center; margin-top: 18px; font-size: 12px; color: #94a3b8; }
 
-.body{max-width:900px;margin:0 auto;padding:32px 24px;
-  display:grid;grid-template-columns:1fr 1fr;gap:24px}
-@media(max-width:700px){.body{grid-template-columns:1fr}}
-
-/* CARD */
-.card{background:var(--bg2);border:1.5px solid var(--border);
-  border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
-.card-hdr{padding:18px 22px;border-bottom:1px solid var(--border);
-  font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text)}
-.card-body{padding:22px}
-
-/* FORM */
-.f-group{margin-bottom:18px}
-.f-label{font-size:11px;font-weight:700;color:var(--text3);
-  text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:8px}
-.f-inp{width:100%;padding:12px 14px;background:var(--bg);
-  border:1.5px solid var(--border);border-radius:var(--r2);
-  font-size:14px;font-weight:600;color:var(--text);
-  font-family:'DM Sans',sans-serif;outline:none;transition:border 0.2s}
-.f-inp:focus{border-color:var(--navy)}
-select.f-inp{cursor:pointer}
-
-/* SUBJECTS */
-.subjects-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.subj-btn{
-  padding:10px 8px;border:2px solid var(--border);border-radius:var(--r2);
-  background:var(--bg);cursor:pointer;text-align:center;
-  font-size:13px;font-weight:700;color:var(--text2);
-  transition:all 0.15s;font-family:'DM Sans',sans-serif;
-}
-.subj-btn.selected{background:var(--green2);border-color:var(--green);color:var(--green)}
-.subj-btn:hover{border-color:var(--navy)}
-.subj-icon{font-size:20px;display:block;margin-bottom:4px}
-
-/* Q COUNT INFO */
-.q-counts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
-.qc-item{background:var(--bg);border-radius:var(--r2);padding:8px;text-align:center}
-.qc-n{font-size:18px;font-weight:900;color:var(--navy)}
-.qc-l{font-size:10px;color:var(--text3);font-weight:600;margin-top:2px}
-
-/* GENERATE BTN */
-.gen-btn{
-  width:100%;padding:16px;background:linear-gradient(135deg,var(--navy),var(--navy2));
-  border:none;border-radius:var(--r2);font-size:16px;font-weight:800;
-  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
-  box-shadow:0 4px 16px rgba(26,46,122,0.25);transition:all 0.2s;
-  margin-top:8px;
-}
-.gen-btn:hover{transform:translateY(-2px)}
-.gen-btn:active{transform:scale(0.98)}
-.gen-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
-
-/* PIN RESULT */
-.pin-result{display:none;text-align:center;padding:24px;
-  background:linear-gradient(135deg,var(--navy2),var(--navy));
-  border-radius:var(--r);margin-top:16px}
-.pin-result.show{display:block}
-.pin-label{font-size:12px;font-weight:700;color:rgba(255,255,255,0.6);
-  text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-.pin-number{font-family:'Syne',sans-serif;font-size:56px;font-weight:800;
-  color:white;letter-spacing:8px;margin-bottom:8px}
-.pin-info{font-size:13px;color:rgba(255,255,255,0.7);line-height:1.6}
-.pin-url{font-size:12px;color:rgba(255,255,255,0.5);margin-top:8px;
-  font-family:monospace;background:rgba(255,255,255,0.1);
-  padding:6px 12px;border-radius:8px;display:inline-block}
-.copy-btn{
-  margin-top:14px;padding:10px 24px;background:rgba(255,255,255,0.15);
-  border:1.5px solid rgba(255,255,255,0.3);border-radius:var(--r2);
-  font-size:13px;font-weight:700;color:white;cursor:pointer;
-  font-family:'DM Sans',sans-serif;transition:all 0.2s;
-}
-.copy-btn:hover{background:rgba(255,255,255,0.25)}
-
-/* HISTORY */
-.hist-item{padding:12px 0;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:12px}
-.hist-item:last-child{border-bottom:none}
-.hist-pin{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;
-  color:var(--navy);letter-spacing:2px;min-width:80px}
-.hist-info{flex:1}
-.hist-school{font-size:13px;font-weight:700;color:var(--text)}
-.hist-meta{font-size:11px;color:var(--text3);margin-top:2px}
-.hist-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
-.b-active{background:var(--green2);color:var(--green)}
-.b-expired{background:#f1f5f9;color:var(--text3)}
-.empty-hist{text-align:center;padding:24px;color:var(--text3);font-size:13px}
+  /* ── MAIN APP ── */
+  #appScreen { display: none; }
+  .topbar {
+    background: linear-gradient(135deg, #01796F, #019587);
+    padding: 14px 24px; display: flex; align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .topbar-left .icon { font-size: 22px; }
+  .topbar-title { color: white; font-weight: 700; font-size: 16px; }
+  .topbar-sub { color: rgba(255,255,255,0.75); font-size: 12px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .coord-name { color: white; font-size: 13px; font-weight: 600; text-align: right; }
+  .coord-role { color: rgba(255,255,255,0.7); font-size: 11px; }
+  .btn-logout {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px; padding: 6px 14px; cursor: pointer;
+    font-size: 13px; color: white; font-weight: 500; font-family: inherit;
+  }
+  .main-content {
+    max-width: 920px; margin: 0 auto; padding: 24px 16px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  }
+  @media (max-width: 640px) { .main-content { grid-template-columns: 1fr; } }
+  .card {
+    background: white; border-radius: 16px; padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .card-title { font-size: 17px; font-weight: 700; color: #1a2e44; margin-bottom: 20px; }
+  .form-field { margin-bottom: 16px; }
+  .form-field label { display: block; font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; }
+  .form-field select, .form-field input[type=number] {
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    border: 1.5px solid #d1d5db; font-size: 14px; font-family: inherit;
+    outline: none; background: white; color: #1a2e44;
+    transition: border-color 0.2s;
+  }
+  .form-field select:focus, .form-field input[type=number]:focus { border-color: #01796F; }
+  .subjects-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .subject-btn {
+    padding: 8px 20px; border-radius: 8px;
+    border: 2px solid #d1d5db; background: white;
+    color: #374151; font-weight: 600; font-size: 14px;
+    cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .subject-btn.active { border-color: #01796F; background: #01796F; color: white; }
+  .btn-row { display: flex; gap: 10px; margin-top: 4px; }
+  .btn-generate {
+    flex: 1; padding: 13px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #01796F, #019587);
+    color: white; font-size: 15px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 12px rgba(1,121,111,0.3);
+    font-family: inherit; transition: all 0.2s;
+  }
+  .btn-generate:disabled { background: #9ca3af; box-shadow: none; cursor: not-allowed; }
+  .btn-reset {
+    padding: 13px 20px; border-radius: 10px;
+    border: 1.5px solid #d1d5db; background: white;
+    color: #64748b; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  /* PIN results */
+  .pin-results {
+    background: #f0fdf4; border: 2px solid #86efac;
+    border-radius: 14px; padding: 20px; margin-top: 16px; display: none;
+  }
+  .pin-results h4 { color: #166534; font-size: 15px; margin-bottom: 14px; }
+  .pin-card {
+    background: white; border-radius: 10px; padding: 14px 18px;
+    margin-bottom: 10px; display: flex; align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .pin-subject { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 2px; }
+  .pin-code { font-family: monospace; font-size: 28px; font-weight: 900; color: #01796F; letter-spacing: 5px; }
+  .pin-expiry { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+  .btn-copy {
+    background: #f1f5f9; border: none; border-radius: 8px;
+    padding: 8px 14px; cursor: pointer; font-size: 13px;
+    color: #374151; font-weight: 600; font-family: inherit;
+    flex-shrink: 0;
+  }
+  .btn-copy:hover { background: #e2e8f0; }
+  .pin-note { font-size: 12px; color: #15803d; margin-top: 6px; }
+  /* Activity log */
+  .log-empty { text-align: center; padding: 40px 20px; color: #94a3b8; }
+  .log-empty .log-icon { font-size: 36px; margin-bottom: 8px; }
+  .log-item {
+    background: #f8fafc; border-radius: 10px; padding: 12px 16px;
+    margin-bottom: 10px; border-left: 3px solid #01796F;
+  }
+  .log-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .log-school { font-weight: 600; font-size: 13px; color: #1a2e44; }
+  .log-time { font-size: 11px; color: #94a3b8; }
+  .log-details { font-size: 12px; color: #64748b; }
+  .log-pins { font-family: monospace; font-size: 13px; font-weight: 700; color: #01796F; margin-top: 4px; }
+  /* Stats card */
+  .stat-card {
+    background: white; border-radius: 16px; padding: 18px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    display: flex; align-items: center; gap: 14px; margin-top: 16px;
+  }
+  .stat-icon {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: #e8f5e9; display: flex; align-items: center;
+    justify-content: center; font-size: 22px; flex-shrink: 0;
+  }
+  .stat-num { font-size: 22px; font-weight: 700; color: #1a2e44; }
+  .stat-label { font-size: 13px; color: #64748b; }
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #1a2e44; color: white; padding: 10px 20px;
+    border-radius: 8px; font-size: 14px; z-index: 999;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
 </style>
 </head>
 <body>
 
-<div class="hdr">
-  <div class="logo">TAKMIL — PIN Generator</div>
-  <div class="nav">
-    <a href="/">← Hub</a>
+<!-- ═══════════════════════════════════ LOGIN ═══════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">🏫</div>
+    <div class="login-title">
+      <h2>TAKMIL Coordinator</h2>
+      <p>Sign in to generate assessment PINs</p>
+    </div>
+
+    <div class="field">
+      <label>Phone Number</label>
+      <input type="tel" id="loginPhone" placeholder="+923001234567" autocomplete="tel">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
+    </div>
+
+    <div class="error-box" id="loginError"></div>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">Sign In →</button>
+    <p class="login-footer">Contact your regional coordinator if you need access</p>
   </div>
 </div>
 
-<div class="body">
+<!-- ═══════════════════════════════════ APP ═══════════════════════════════════ -->
+<div id="appScreen">
 
-  <!-- LEFT: GENERATOR -->
-  <div>
-    <div class="card">
-      <div class="card-hdr">🔑 Generate Assessment PIN</div>
-      <div class="card-body">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="icon">🔑</div>
+      <div>
+        <div class="topbar-title">PIN Generator</div>
+        <div class="topbar-sub">TAKMIL Assessment System</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div>
+        <div class="coord-name" id="coordName">—</div>
+        <div class="coord-role" id="coordRole">—</div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
 
-        <div class="f-group">
-          <label class="f-label">School</label>
-          <select class="f-inp" id="school-sel">
-            <option value="">Loading schools...</option>
+  <!-- Content -->
+  <div class="main-content">
+
+    <!-- LEFT: Generator Form -->
+    <div>
+      <div class="card">
+        <div class="card-title">Generate Assessment PINs</div>
+
+        <!-- School -->
+        <div class="form-field">
+          <label>Select School</label>
+          <select id="schoolSelect">
+            <option value="">— Choose a school —</option>
           </select>
-        </div>
-
-        <div class="f-group">
-          <label class="f-label">Level</label>
-          <select class="f-inp" id="level-sel" onchange="loadQCounts()">
-            <option value="">Select level...</option>
-            ${Array.from({length:11},(_,i)=>`<option value="${i+1}">Level ${i+1}</option>`).join('')}
-            <option value="12">Level 12 — Grand Assessment</option>
-          </select>
-        </div>
-
-        <div class="f-group">
-          <label class="f-label">Subjects</label>
-          <div class="subjects-grid">
-            <button class="subj-btn selected" data-subj="Math" onclick="toggleSubj(this)">
-              <span class="subj-icon">🔢</span>Math
-            </button>
-            <button class="subj-btn selected" data-subj="English" onclick="toggleSubj(this)">
-              <span class="subj-icon">📖</span>English
-            </button>
-            <button class="subj-btn selected" data-subj="Urdu" onclick="toggleSubj(this)">
-              <span class="subj-icon">اردو</span>Urdu
-            </button>
+          <div id="noSchoolsMsg" style="display:none; font-size:12px; color:#ef4444; margin-top:4px;">
+            ⚠️ No schools linked to your account yet
           </div>
         </div>
 
-        <div class="f-group" id="q-counts-wrap" style="display:none">
-          <label class="f-label">Available Questions per Subject</label>
-          <div class="q-counts" id="q-counts"></div>
+        <!-- Level -->
+        <div class="form-field">
+          <label>Level</label>
+          <select id="levelSelect">
+            <option value="">— Choose a level —</option>
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+            <option value="4">Level 4</option>
+            <option value="5">Level 5</option>
+            <option value="6">Level 6</option>
+            <option value="7">Level 7</option>
+            <option value="8">Level 8</option>
+            <option value="9">Level 9</option>
+            <option value="10">Level 10</option>
+            <option value="11">Level 11</option>
+            <option value="12">Level 12</option>
+          </select>
         </div>
 
-        <button class="gen-btn" id="gen-btn" onclick="generatePin()">
-          Generate PIN →
-        </button>
-
-        <div class="pin-result" id="pin-result">
-          <div class="pin-label">Assessment PIN</div>
-          <div class="pin-number" id="pin-number">——</div>
-          <div class="pin-info" id="pin-info"></div>
-          <div class="pin-url" id="pin-url"></div>
-          <br>
-          <button class="copy-btn" onclick="copyPin()">📋 Copy PIN</button>
-          <button class="copy-btn" onclick="copyMessage()">📱 Copy WhatsApp Message</button>
+        <!-- Subjects -->
+        <div class="form-field">
+          <label>Subjects (select one or more)</label>
+          <div class="subjects-row">
+            <button class="subject-btn" data-subject="Math" onclick="toggleSubject(this)">Math</button>
+            <button class="subject-btn" data-subject="English" onclick="toggleSubject(this)">English</button>
+            <button class="subject-btn" data-subject="Urdu" onclick="toggleSubject(this)">Urdu</button>
+          </div>
         </div>
 
+        <!-- Cohort Size -->
+        <div class="form-field">
+          <label>Cohort Size (number of students)</label>
+          <input type="number" id="cohortSize" placeholder="e.g. 25" min="1">
+        </div>
+
+        <!-- Error -->
+        <div class="error-box" id="formError"></div>
+
+        <!-- Buttons -->
+        <div class="btn-row">
+          <button class="btn-generate" id="generateBtn" onclick="generatePins()">Generate PIN</button>
+          <button class="btn-reset" id="resetBtn" style="display:none" onclick="resetForm()">Reset</button>
+        </div>
+      </div>
+
+      <!-- PIN Results -->
+      <div class="pin-results" id="pinResults">
+        <h4>✅ PINs Generated Successfully!</h4>
+        <div id="pinList"></div>
+        <p class="pin-note">📱 Share these PINs with teachers via WhatsApp. Valid for 24 hours.</p>
       </div>
     </div>
-  </div>
 
-  <!-- RIGHT: RECENT PINS -->
-  <div>
-    <div class="card">
-      <div class="card-hdr">📋 Recent PINs</div>
-      <div class="card-body" id="history">
-        <div class="empty-hist">Loading...</div>
+    <!-- RIGHT: Activity Log -->
+    <div>
+      <div class="card">
+        <div class="card-title">📋 Activity Log</div>
+        <div id="activityLog">
+          <div class="log-empty">
+            <div class="log-icon">📝</div>
+            <p style="font-size:14px;">PINs you generate this session will appear here</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stat-card">
+        <div class="stat-icon">🏫</div>
+        <div>
+          <div class="stat-num" id="schoolCount">0</div>
+          <div class="stat-label">Schools in your region</div>
+        </div>
       </div>
     </div>
-  </div>
 
+  </div>
 </div>
 
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script>
-const BASE = window.location.origin;
-let currentPin = null;
-let currentSchool = null;
-let currentLevel = null;
+  let coordinator = null;
+  let selectedSubjects = [];
+  let activityLog = [];
 
-// Load schools
-async function loadSchools(){
-  try {
-    const r = await fetch('/api/compliance');
-    const d = await r.json();
-    const schools = d.schools || [];
-    const sel = document.getElementById('school-sel');
-    sel.innerHTML = '<option value="">Select school...</option>' +
-      schools.map(s => `<option value="${s.identifier}">${s.name||s.identifier}</option>`).join('');
-  } catch(e) {
-    document.getElementById('school-sel').innerHTML = '<option value="">Error loading schools</option>';
-  }
-}
+  // ── On Load: check session ──────────────────────────────────────
+  window.onload = function() {
+    const stored = sessionStorage.getItem('takmil_coordinator');
+    if (stored) {
+      try {
+        coordinator = JSON.parse(stored);
+        showApp();
+      } catch(e) {}
+    }
 
-// Toggle subject selection
-function toggleSubj(btn){
-  btn.classList.toggle('selected');
-}
-
-function getSelectedSubjects(){
-  return [...document.querySelectorAll('.subj-btn.selected')].map(b => b.dataset.subj);
-}
-
-// Load question counts per subject for selected level
-async function loadQCounts(){
-  const level = document.getElementById('level-sel').value;
-  if(!level) return;
-  const wrap = document.getElementById('q-counts-wrap');
-  const container = document.getElementById('q-counts');
-  wrap.style.display = 'block';
-  container.innerHTML = '<div style="color:var(--text3);font-size:12px">Loading...</div>';
-
-  try {
-    const subjects = ['Math','English','Urdu'];
-    const counts = await Promise.all(subjects.map(async subj => {
-      const r = await fetch(`/api/questions/count?level=${level}&subject=${subj}`);
-      const d = await r.json();
-      return { subj, count: d.count || 0 };
-    }));
-    container.innerHTML = counts.map(c => `
-      <div class="qc-item">
-        <div class="qc-n" style="color:${c.count>=20?'var(--green)':c.count>=5?'var(--orange)':'var(--red,#ef4444)'}">${c.count}</div>
-        <div class="qc-l">${c.subj}</div>
-      </div>`).join('');
-  } catch(e) {
-    container.innerHTML = '<div style="color:var(--text3);font-size:12px">Could not load counts</div>';
-  }
-}
-
-// Generate PIN
-async function generatePin(){
-  const school = document.getElementById('school-sel').value;
-  const level  = document.getElementById('level-sel').value;
-  const subjects = getSelectedSubjects();
-
-  if(!school){ alert('Please select a school'); return; }
-  if(!level) { alert('Please select a level');  return; }
-  if(!subjects.length){ alert('Please select at least one subject'); return; }
-
-  const btn = document.getElementById('gen-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Generating...';
-
-  try {
-    const r = await fetch('/api/assess/generate-pin', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ school_identifier: school, level: parseInt(level), subjects, created_by: 'coordinator' })
+    // Enter key on login
+    ['loginPhone','loginPassword'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') doLogin();
+      });
     });
-    const d = await r.json();
-    if(!d.pin_code) throw new Error(d.error||'Failed');
+  };
 
-    currentPin    = d.pin_code;
-    currentSchool = school;
-    currentLevel  = level;
+  // ── LOGIN ───────────────────────────────────────────────────────
+  async function doLogin() {
+    const phone    = document.getElementById('loginPhone').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    const errBox   = document.getElementById('loginError');
+    const btn      = document.getElementById('loginBtn');
 
-    const schoolName = document.getElementById('school-sel').selectedOptions[0]?.text || school;
-    const subjStr    = subjects.join(', ');
-    const total      = subjects.length * 5; // 5 per subject for testing
+    errBox.style.display = 'none';
+    if (!phone)    return showLoginError('Please enter your phone number');
+    if (!password) return showLoginError('Please enter your password');
 
-    document.getElementById('pin-number').textContent = d.pin_code;
-    document.getElementById('pin-info').innerHTML =
-      `<strong>${schoolName}</strong><br>Level ${level} · ${subjStr}<br>${total} questions (${subjects.length} subjects × 5)`;
-    document.getElementById('pin-url').textContent = `${BASE}/assess`;
-    document.getElementById('pin-result').classList.add('show');
+    btn.disabled = true;
+    btn.textContent = '⏳ Signing in...';
 
-    loadHistory();
-  } catch(e) {
-    alert('Error: ' + e.message);
+    try {
+      const res  = await fetch('/api/auth/coordinator-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showLoginError(data.error || 'Invalid phone number or password');
+      } else {
+        coordinator = data;
+        sessionStorage.setItem('takmil_coordinator', JSON.stringify(data));
+        showApp();
+      }
+    } catch(e) {
+      showLoginError('Connection error. Please check your internet and try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Sign In →';
+    }
   }
-  btn.disabled = false;
-  btn.textContent = 'Generate PIN →';
-}
 
-function copyPin(){
-  navigator.clipboard.writeText(currentPin);
-  alert(`PIN ${currentPin} copied!`);
-}
+  function showLoginError(msg) {
+    const box = document.getElementById('loginError');
+    box.textContent = '⚠️ ' + msg;
+    box.style.display = 'block';
+  }
 
-function copyMessage(){
-  const schoolName = document.getElementById('school-sel').selectedOptions[0]?.text || currentSchool;
-  const subjects = getSelectedSubjects().join(', ');
-  const msg = `🎓 TAKMIL Assessment\n\nSchool: ${schoolName}\nLevel: ${currentLevel}\nSubjects: ${subjects}\n\nPIN: ${currentPin}\n\nOpen: ${BASE}/assess\nEnter the PIN and your name to start.`;
-  navigator.clipboard.writeText(msg);
-  alert('WhatsApp message copied! Paste it in WhatsApp.');
-}
+  // ── LOGOUT ──────────────────────────────────────────────────────
+  function doLogout() {
+    sessionStorage.removeItem('takmil_coordinator');
+    coordinator = null;
+    document.getElementById('appScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('loginPhone').value    = '';
+    document.getElementById('loginPassword').value = '';
+  }
 
-// Load recent PINs
-async function loadHistory(){
-  try {
-    const r = await fetch('/api/results/sessions');
-    const d = await r.json();
-    const sessions = (d.sessions||[]).slice(0,8);
-    const hist = document.getElementById('history');
-    if(!sessions.length){
-      hist.innerHTML = '<div class="empty-hist">No PINs generated yet</div>';
+  // ── SHOW APP ────────────────────────────────────────────────────
+  function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display   = 'block';
+
+    // Fill top bar
+    document.getElementById('coordName').textContent = '👤 ' + coordinator.name;
+    document.getElementById('coordRole').textContent =
+      coordinator.role === 'regional'
+        ? 'Regional · ' + coordinator.region
+        : 'School Coordinator · ' + coordinator.region;
+
+    // Fill schools dropdown
+    const schools = coordinator.schools || [];
+    const sel = document.getElementById('schoolSelect');
+    sel.innerHTML = '<option value="">— Choose a school —</option>';
+
+    if (schools.length === 0) {
+      document.getElementById('noSchoolsMsg').style.display = 'block';
+    } else {
+      schools.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.dataset.identifier = s.identifier || '';
+        opt.textContent = s.name + (s.district ? ' · ' + s.district : '');
+        sel.appendChild(opt);
+      });
+    }
+
+    document.getElementById('schoolCount').textContent = schools.length;
+  }
+
+  // ── SUBJECT TOGGLE ──────────────────────────────────────────────
+  function toggleSubject(btn) {
+    const subj = btn.dataset.subject;
+    if (selectedSubjects.includes(subj)) {
+      selectedSubjects = selectedSubjects.filter(s => s !== subj);
+      btn.classList.remove('active');
+    } else {
+      selectedSubjects.push(subj);
+      btn.classList.add('active');
+    }
+    updateGenerateBtn();
+  }
+
+  function updateGenerateBtn() {
+    const btn = document.getElementById('generateBtn');
+    btn.textContent = selectedSubjects.length > 1
+      ? 'Generate ' + selectedSubjects.length + ' PINs'
+      : 'Generate PIN';
+  }
+
+  // ── GENERATE ────────────────────────────────────────────────────
+  async function generatePins() {
+    const errBox = document.getElementById('formError');
+    errBox.style.display = 'none';
+
+    const schoolSel = document.getElementById('schoolSelect');
+    const schoolId  = schoolSel.value;
+    const schoolOpt = schoolSel.options[schoolSel.selectedIndex];
+    const schoolIdentifier = schoolOpt?.dataset?.identifier || '';
+    const level     = document.getElementById('levelSelect').value;
+    const cohort    = document.getElementById('cohortSize').value;
+    const schoolName = schoolOpt?.textContent || '';
+
+    if (!schoolId)              return showFormError('Please select a school');
+    if (!level)                 return showFormError('Please select a level');
+    if (selectedSubjects.length === 0) return showFormError('Please select at least one subject');
+    if (!cohort || cohort < 1)  return showFormError('Please enter a valid cohort size');
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating...';
+
+    document.getElementById('pinResults').style.display = 'none';
+
+    const results = [];
+    try {
+      for (const subject of selectedSubjects) {
+        const res = await fetch('/api/assess/generate-pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            school_identifier: schoolIdentifier || schoolId,
+            level: parseInt(level),
+            subjects: [subject],
+            created_by: coordinator.name
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to generate PIN for ' + subject);
+        results.push({ subject, pin: data.pin_code, expiresAt: data.expires_at });
+      }
+
+      // Show PINs
+      showPins(results);
+
+      // Add to activity log
+      addToLog({
+        school: schoolName.split(' · ')[0],
+        level, subjects: selectedSubjects.join(', '),
+        cohort, pins: results.map(r => r.pin).join(', ')
+      });
+
+      document.getElementById('resetBtn').style.display = 'block';
+
+    } catch(e) {
+      showFormError(e.message);
+    } finally {
+      btn.disabled = false;
+      updateGenerateBtn();
+    }
+  }
+
+  function showFormError(msg) {
+    const box = document.getElementById('formError');
+    box.textContent = '⚠️ ' + msg;
+    box.style.display = 'block';
+  }
+
+  // ── SHOW GENERATED PINS ─────────────────────────────────────────
+  function showPins(results) {
+    const list = document.getElementById('pinList');
+    list.innerHTML = '';
+    results.forEach(({ subject, pin, expiresAt }) => {
+      const expiry = expiresAt ? new Date(expiresAt).toLocaleString() : '';
+      list.innerHTML += `
+        <div class="pin-card">
+          <div>
+            <div class="pin-subject">${subject}</div>
+            <div class="pin-code">${pin}</div>
+            ${expiry ? `<div class="pin-expiry">Expires: ${expiry}</div>` : ''}
+          </div>
+          <button class="btn-copy" onclick="copyPin('${pin}', this)">📋 Copy</button>
+        </div>`;
+    });
+    document.getElementById('pinResults').style.display = 'block';
+  }
+
+  function copyPin(pin, btn) {
+    navigator.clipboard.writeText(pin).then(() => {
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = '📋 Copy', 1500);
+    });
+  }
+
+  // ── ACTIVITY LOG ────────────────────────────────────────────────
+  function addToLog(entry) {
+    entry.time = new Date().toLocaleTimeString();
+    activityLog.unshift(entry);
+    if (activityLog.length > 20) activityLog.pop();
+    renderLog();
+  }
+
+  function renderLog() {
+    const container = document.getElementById('activityLog');
+    if (activityLog.length === 0) {
+      container.innerHTML = `<div class="log-empty"><div class="log-icon">📝</div><p style="font-size:14px;">PINs you generate this session will appear here</p></div>`;
       return;
     }
-    hist.innerHTML = sessions.map(s => {
-      const exp = new Date(s.created_at);
-      exp.setDate(exp.getDate()+1);
-      const active = exp > new Date();
-      const school = (s.school_name||s.school_identifier).replace(/_O_|_A_/,' ').replace(/_W\d+[A-Z]+$/,'').replace(/_/g,' ');
-      return `<div class="hist-item">
-        <div class="hist-pin">${s.pin_code}</div>
-        <div class="hist-info">
-          <div class="hist-school">${school}</div>
-          <div class="hist-meta">Level ${s.level} · ${s.subject||'All subjects'} · ${s.student_count||0} students</div>
+    container.innerHTML = activityLog.map(e => `
+      <div class="log-item">
+        <div class="log-header">
+          <span class="log-school">${e.school}</span>
+          <span class="log-time">${e.time}</span>
         </div>
-        <span class="hist-badge ${active?'b-active':'b-expired'}">${active?'Active':'Expired'}</span>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    document.getElementById('history').innerHTML = '<div class="empty-hist">Could not load history</div>';
+        <div class="log-details">Level ${e.level} · ${e.subjects} · ${e.cohort} students</div>
+        <div class="log-pins">${e.pins}</div>
+      </div>`).join('');
   }
-}
 
-// Add question count API endpoint check
-loadSchools();
-loadHistory();
-setInterval(loadHistory, 30000);
+  // ── RESET ───────────────────────────────────────────────────────
+  function resetForm() {
+    document.getElementById('schoolSelect').value = '';
+    document.getElementById('levelSelect').value  = '';
+    document.getElementById('cohortSize').value   = '';
+    document.getElementById('formError').style.display  = 'none';
+    document.getElementById('pinResults').style.display = 'none';
+    document.getElementById('resetBtn').style.display   = 'none';
+    selectedSubjects = [];
+    document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('active'));
+    updateGenerateBtn();
+  }
+
+  // ── TOAST ───────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
 </script>
 </body>
 </html>
