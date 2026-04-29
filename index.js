@@ -1338,7 +1338,7 @@ app.post('/api/assess/submit', async (req, res) => {
 
     const total    = answers.length;
     const scorePct = Math.round(correct / total * 100);
-    const passed   = scorePct >= 80;
+    const passed   = scorePct >= PASS_THRESHOLD;
 
     // Save to tablet_results (try, but don't fail if table missing)
     try {
@@ -1393,7 +1393,7 @@ app.get('/api/assess/results/:pin', async (req, res) => {
     const total    = students.length;
     const passed   = students.filter(r => r.passed).length;
     const avgScore = total ? Math.round(students.reduce((a,r) => a + parseFloat(r.score_pct), 0) / total) : 0;
-    const cohortPassed = avgScore >= 80;
+    const cohortPassed = avgScore >= PASS_THRESHOLD;
 
     // Get competency flags for this session
     const flags = await db.pool.query(`
