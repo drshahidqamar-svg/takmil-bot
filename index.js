@@ -1286,11 +1286,11 @@ app.get('/api/assess/questions/:pin', async (req, res) => {
                correct_option, subject, level, image_url
         FROM questions
         WHERE active=1 AND level=$1
-        ORDER BY RANDOM() LIMIT 20
+        ORDER BY RANDOM() LIMIT 4
       `, [s.level]);
     }
 
-    if (qs.rows.length < 5) return res.status(400).json({ error: 'Not enough approved questions for this level. Please approve more questions first.' });
+    if (qs.rows.length < 2) return res.status(400).json({ error: 'Not enough approved questions for this level. Please approve more questions first.' });
 
     // Send questions as-is — correct_option stays A/B/C/D matching the options
     const questions = qs.rows.map(q => ({
