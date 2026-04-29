@@ -195,6 +195,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
     <div class="pin-info" id="pin-info" style="display:none">
       <div class="pi-school" id="pi-school"></div>
       <div class="pi-level" id="pi-level"></div>
+      <div class="pi-level" id="pi-subject" style="color:#01796F;font-weight:700;margin-top:2px"></div>
     </div>
   </div>
 </div>
@@ -297,13 +298,16 @@ async function validatePin(){
     document.getElementById('pi-level').textContent = data.level === 12
       ? '🏆 Grand Assessment — All Levels'
       : `📚 Level ${data.level} Assessment`;
+    const subjDisplay = data.subject === 'All' ? '📖 All Subjects' : `📖 ${data.subject}`;
+    document.getElementById('pi-subject').textContent = subjDisplay;
     err.textContent = '';
 
     setTimeout(()=>{
       document.getElementById('name-school').textContent = data.school_name || data.school_identifier;
+      const subjLabel = data.subject === 'All' ? 'All Subjects' : data.subject;
       document.getElementById('name-level').textContent  = data.level === 12
         ? 'Grand Assessment — All Levels'
-        : `Level ${data.level} · 20 Questions`;
+        : `Level ${data.level} · ${subjLabel} · 5 Questions`;
       showScr('s-name');
       document.getElementById('name-inp').focus();
     }, 800);
