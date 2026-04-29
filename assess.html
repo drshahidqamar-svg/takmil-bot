@@ -489,40 +489,38 @@ function nextStudent(){
 }
 
 async function showSessionResults(){
-  const resp = await fetch(`/api/assess/results/${currentPin}`);
-  const data = await resp.json();
+  // Use local assessedStudents array — no DB dependency
+  const students   = assessedStudents;
+  const total      = students.length;
+  const passed     = students.filter(s => s.passed).length;
+  const avgScore   = total ? Math.round(students.reduce((a,s) => a + s.score, 0) / total) : 0;
+  const cohortPass = avgScore >= 80;
+  const school     = sessionData?.school_identifier || sessionData?.school_name || '';
+  const level      = sessionData?.level || '';
 
   document.getElementById('sess-sub').textContent =
-    `${data.session?.school_identifier} · Level ${data.session?.level} · ${data.total} students`;
+    `${school} · Level ${level} · ${total} student${total!==1?'s':''}`;
 
-  const avgScore   = data.avgScore;
-  const passClass  = data.cohortPassed ? 'cc-pass' : 'cc-fail';
+  const passClass = cohortPass ? 'cc-pass' : 'cc-fail';
 
   let html = `
     <div class="cohort-card ${passClass}">
-      <div class="cc-n" style="color:${data.cohortPassed?'#16a34a':'#ef4444'}">${avgScore}%</div>
-      <div class="cc-l">Class Average · ${data.passed}/${data.total} students passed</div>
-      <div style="margin-top:10px;font-size:13px;font-weight:700;color:${data.cohortPassed?'#15803d':'#991b1b'}">
-        ${data.cohortPassed?'✅ Cohort passed threshold — Advancement requested!':'📚 Below 80% threshold — Re-assessment in 7 days'}
+      <div class="cc-n" style="color:${cohortPass?'#16a34a':'#ef4444'}">${avgScore}%</div>
+      <div class="cc-l">Class Average · ${passed}/${total} students passed</div>
+      <div style="margin-top:10px;font-size:13px;font-weight:700;color:${cohortPass?'#15803d':'#991b1b'}">
+        ${cohortPass?'✅ Cohort passed threshold — Advancement requested!':'📚 Below 80% threshold — Re-assessment needed'}
       </div>
     </div>
-    <div>${(data.students||[]).map(s=>`
+    <div>${students.map(s=>`
       <div class="student-row">
-        <div class="sr-name">${s.student_name}</div>
-        <div class="sr-score" style="color:${parseFloat(s.score_pct)>=80?'#16a34a':parseFloat(s.score_pct)>=60?'#f59e0b':'#ef4444'}">${parseFloat(s.score_pct).toFixed(0)}%</div>
+        <div class="sr-name">${s.name}</div>
+        <div class="sr-score" style="color:${s.score>=80?'#16a34a':s.score>=60?'#f59e0b':'#ef4444'}">${s.score}%</div>
         <span class="sr-badge ${s.passed?'b-pass':'b-fail'}">${s.passed?'✅ Pass':'📚 Retry'}</span>
       </div>`).join('')}
     </div>`;
 
-  if(data.competencyFlags?.length){
-    html += `<div class="flag-section">
-      <div class="flag-title">⚠️ Reinforce These Topics (≥80% students failed):</div>
-      ${data.competencyFlags.map(f=>`
-        <div class="flag-item">
-          <div class="flag-rate">${f.topic} — ${f.fail_rate}% fail rate (${f.students_failed}/${f.total_students} students)</div>
-          <div style="font-size:12px;color:#92400e;margin-top:4px">${f.question_text||''}</div>
-        </div>`).join('')}
-    </div>`;
+  if(!total){
+    html = '<div style="text-align:center;padding:40px;color:#8a90b8">No students assessed yet</div>';
   }
 
   html += `<button class="new-session-btn" onclick="location.reload()">Start New Session</button>`;
