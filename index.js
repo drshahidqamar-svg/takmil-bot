@@ -1504,6 +1504,75 @@ app.get('/api/cohort/:school_identifier', async (req, res) => {
 // Teacher texts: GENERATE PIN 3  (for level 3)
 // Or:            PIN LEVEL 3
 
+
+// ── Assessment Results Dashboard ──────────────────────────────
+app.get('/results', (req, res) => res.sendFile(path.join(__dirname, 'results.html')));
+
+app.get('/api/results/sessions', async (req, res) => {
+  try {
+    const { school, level, date_from, date_to } = req.query;
+    let where = 'WHERE 1=1';
+    const params = [];
+    if (school) { params.push(school); where += ` AND ts.school_identifier ILIKE $${params.length}`; }
+    if (level)  { params.push(parseInt(level)); where += ` AND ts.level=$${params.length}`; }
+    if (date_from) { params.push(date_from); where += ` AND ts.created_at::date >= $${params.length}::date`; }
+    if (date_to)   { params.push(date_to);   where += ` AND ts.created_at::date <= $${params.length}::date`; }
+
+    const r = await db.pool.query(`
+      SELECT
+        ts.id, ts.pin_code, ts.school_identifier, ts.level, ts.created_at,
+        s.name AS school_name,
+        COUNT(tr.id)                                          AS student_count,
+        ROUND(AVG(tr.score_pct),1)                           AS avg_score,
+        SUM(CASE WHEN tr.passed THEN 1 ELSE 0 END)           AS passed_count,
+        BOOL_OR(AVG(tr.score_pct) >= 80)                     AS cohort_passed
+      FROM tablet_sessions ts
+      LEFT JOIN schools s ON s.identifier ILIKE ts.school_identifier
+      LEFT JOIN tablet_results tr ON tr.session_id = ts.id
+      ${where}
+      GROUP BY ts.id, ts.pin_code, ts.school_identifier, ts.level, ts.created_at, s.name
+      ORDER BY ts.created_at DESC
+      LIMIT 200
+    `, params);
+    res.json({ sessions: r.rows });
+  } catch(err) {
+    console.log('results sessions error:', err.message);
+    res.status(500).json({ error: err.message, sessions: [] });
+  }
+});
+
+app.get('/api/results/session/:id', async (req, res) => {
+  try {
+    const sess = await db.pool.query(
+      `SELECT ts.*, s.name AS school_name FROM tablet_sessions ts
+       LEFT JOIN schools s ON s.identifier ILIKE ts.school_identifier
+       WHERE ts.id=$1`, [req.params.id]);
+    const students = await db.pool.query(
+      `SELECT * FROM tablet_results WHERE session_id=$1 ORDER BY completed_at`, [req.params.id]);
+    const rows = students.rows;
+    const avg  = rows.length ? Math.round(rows.reduce((a,r)=>a+parseFloat(r.score_pct),0)/rows.length) : 0;
+    res.json({ session: sess.rows[0], students: rows, avgScore: avg, cohortPassed: avg >= 80 });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/results/school/:identifier', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT tr.student_name,
+             COUNT(*)                                    AS sessions_taken,
+             ROUND(AVG(tr.score_pct),1)                 AS avg_score,
+             MAX(tr.score_pct)                           AS best_score,
+             SUM(CASE WHEN tr.passed THEN 1 ELSE 0 END) AS times_passed,
+             MAX(tr.completed_at)                        AS last_assessed
+      FROM tablet_results tr
+      WHERE tr.school_identifier ILIKE $1
+      GROUP BY tr.student_name
+      ORDER BY avg_score DESC
+    `, [req.params.identifier]);
+    res.json({ students: r.rows });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 // ── Feedback API ─────────────────────────────────────────────
 app.get('/feedback', (req, res) => res.sendFile(path.join(__dirname, 'feedback.html')));
 
