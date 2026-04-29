@@ -494,7 +494,7 @@ async function showSessionResults(){
   const total      = students.length;
   const passed     = students.filter(s => s.passed).length;
   const avgScore   = total ? Math.round(students.reduce((a,s) => a + s.score, 0) / total) : 0;
-  const cohortPass = avgScore >= 80;
+  const cohortPass = avgScore >= 60;
   const school     = sessionData?.school_identifier || sessionData?.school_name || '';
   const level      = sessionData?.level || '';
 

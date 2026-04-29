@@ -38,8 +38,8 @@ const STATE = {
   SESSION_COMPLETE:      'SESSION_COMPLETE',
 };
 
-const QUESTIONS_PER_SESSION = 4; // TODO: change back to 20 for production
-const PASS_THRESHOLD = 80;
+const QUESTIONS_PER_SESSION = 5; // TODO: change back to 20 for production
+const PASS_THRESHOLD = 60; // TODO: change back to 80 for production
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1275,7 +1275,7 @@ app.get('/api/assess/questions/:pin', async (req, res) => {
                correct_option, subject, level, image_url
         FROM questions
         WHERE active=1 AND level BETWEEN 1 AND 11
-        ORDER BY RANDOM() LIMIT 4
+        ORDER BY RANDOM() LIMIT 5
       `);
     } else {
       qs = await db.pool.query(`
@@ -1285,12 +1285,12 @@ app.get('/api/assess/questions/:pin', async (req, res) => {
                option_a, option_b, option_c, option_d,
                correct_option, subject, level, image_url
         FROM questions
-        WHERE active=1 AND level=$1
-        ORDER BY RANDOM() LIMIT 4
-      `, [s.level]);
+        WHERE active=1 AND level=$1::integer
+        ORDER BY RANDOM() LIMIT 5
+      `, [parseInt(s.level)]);
     }
 
-    if (qs.rows.length < 2) return res.status(400).json({ error: 'Not enough approved questions for this level. Please approve more questions first.' });
+    if (qs.rows.length < 1) return res.status(400).json({ error: 'Not enough approved questions for this level. Please approve more questions first.' });
 
     // Send questions as-is — correct_option stays A/B/C/D matching the options
     const questions = qs.rows.map(q => ({
@@ -1525,7 +1525,7 @@ app.get('/api/results/sessions', async (req, res) => {
         COUNT(tr.id)                                          AS student_count,
         ROUND(AVG(tr.score_pct),1)                           AS avg_score,
         SUM(CASE WHEN tr.passed THEN 1 ELSE 0 END)           AS passed_count,
-        CASE WHEN AVG(tr.score_pct) >= 80 THEN true ELSE false END AS cohort_passed
+        CASE WHEN AVG(tr.score_pct) >= 60 THEN true ELSE false END AS cohort_passed
       FROM tablet_sessions ts
       LEFT JOIN schools s ON s.identifier ILIKE ts.school_identifier
       LEFT JOIN tablet_results tr ON tr.session_id = ts.id
@@ -3963,6 +3963,35 @@ app.get('/api/questions/breakdown', async (req, res) => {
         UNIQUE(roll_number, attendance_date)
       )`);
       console.log('attendance tables ready');
+      await db.pool.query(`CREATE TABLE IF NOT EXISTS tablet_responses (
+        id SERIAL PRIMARY KEY,
+        session_id INTEGER,
+        student_name TEXT NOT NULL,
+        school_identifier TEXT NOT NULL,
+        level INTEGER NOT NULL,
+        question_id TEXT,
+        selected_option TEXT,
+        correct_option TEXT,
+        is_correct BOOLEAN DEFAULT FALSE,
+        time_taken_secs INTEGER,
+        answered_at TIMESTAMP DEFAULT NOW()
+      )`);
+      await db.pool.query(`CREATE TABLE IF NOT EXISTS tablet_results (
+        id SERIAL PRIMARY KEY,
+        session_id INTEGER,
+        student_name TEXT NOT NULL,
+        school_identifier TEXT NOT NULL,
+        level INTEGER NOT NULL,
+        total_questions INTEGER DEFAULT 5,
+        correct_answers INTEGER DEFAULT 0,
+        score_pct NUMERIC(5,2) DEFAULT 0,
+        passed BOOLEAN DEFAULT FALSE,
+        completed_at TIMESTAMP DEFAULT NOW()
+      )`);
+      console.log('tablet tables ready');
+      // Clean bad image URLs that don't belong to TAKMIL
+      await db.pool.query(`UPDATE questions SET image_url = NULL WHERE image_url IS NOT NULL AND image_url NOT LIKE '%takmil%' AND image_url NOT LIKE '%railway%' AND image_url NOT LIKE '%upload%'`);
+      console.log('bad images cleaned');
 
       // ── Assessment infrastructure tables ──────────────────────
       // Track which level each school cohort is currently on
