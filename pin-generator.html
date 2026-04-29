@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — PIN Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#1a2e7a;--navy2:#0f1d54;--orange:#F74F22;--orange2:#fff0ec;
+  --green:#16a34a;--green2:#dcfce7;--green3:#bbf7d0;
+  --bg:#f5f7ff;--bg2:#ffffff;--border:#e0e4f5;
+  --text:#1a1f3a;--text2:#4a5080;--text3:#8a90b8;
+  --r:16px;--r2:12px;--shadow:0 4px 24px rgba(26,46,122,0.08);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:15px}
+
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:0 28px;height:56px;display:flex;align-items:center;
+  justify-content:space-between;box-shadow:0 1px 8px rgba(0,0,0,0.05)}
+.logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--navy)}
+.nav a{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;
+  text-decoration:none;color:var(--text2);background:var(--bg);
+  border:1.5px solid var(--border);transition:all 0.2s}
+.nav a:hover{border-color:var(--navy);color:var(--navy)}
+
+.body{max-width:900px;margin:0 auto;padding:32px 24px;
+  display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:700px){.body{grid-template-columns:1fr}}
+
+/* CARD */
+.card{background:var(--bg2);border:1.5px solid var(--border);
+  border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.card-hdr{padding:18px 22px;border-bottom:1px solid var(--border);
+  font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text)}
+.card-body{padding:22px}
+
+/* FORM */
+.f-group{margin-bottom:18px}
+.f-label{font-size:11px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:8px}
+.f-inp{width:100%;padding:12px 14px;background:var(--bg);
+  border:1.5px solid var(--border);border-radius:var(--r2);
+  font-size:14px;font-weight:600;color:var(--text);
+  font-family:'DM Sans',sans-serif;outline:none;transition:border 0.2s}
+.f-inp:focus{border-color:var(--navy)}
+select.f-inp{cursor:pointer}
+
+/* SUBJECTS */
+.subjects-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.subj-btn{
+  padding:10px 8px;border:2px solid var(--border);border-radius:var(--r2);
+  background:var(--bg);cursor:pointer;text-align:center;
+  font-size:13px;font-weight:700;color:var(--text2);
+  transition:all 0.15s;font-family:'DM Sans',sans-serif;
+}
+.subj-btn.selected{background:var(--green2);border-color:var(--green);color:var(--green)}
+.subj-btn:hover{border-color:var(--navy)}
+.subj-icon{font-size:20px;display:block;margin-bottom:4px}
+
+/* Q COUNT INFO */
+.q-counts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.qc-item{background:var(--bg);border-radius:var(--r2);padding:8px;text-align:center}
+.qc-n{font-size:18px;font-weight:900;color:var(--navy)}
+.qc-l{font-size:10px;color:var(--text3);font-weight:600;margin-top:2px}
+
+/* GENERATE BTN */
+.gen-btn{
+  width:100%;padding:16px;background:linear-gradient(135deg,var(--navy),var(--navy2));
+  border:none;border-radius:var(--r2);font-size:16px;font-weight:800;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
+  box-shadow:0 4px 16px rgba(26,46,122,0.25);transition:all 0.2s;
+  margin-top:8px;
+}
+.gen-btn:hover{transform:translateY(-2px)}
+.gen-btn:active{transform:scale(0.98)}
+.gen-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+/* PIN RESULT */
+.pin-result{display:none;text-align:center;padding:24px;
+  background:linear-gradient(135deg,var(--navy2),var(--navy));
+  border-radius:var(--r);margin-top:16px}
+.pin-result.show{display:block}
+.pin-label{font-size:12px;font-weight:700;color:rgba(255,255,255,0.6);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.pin-number{font-family:'Syne',sans-serif;font-size:56px;font-weight:800;
+  color:white;letter-spacing:8px;margin-bottom:8px}
+.pin-info{font-size:13px;color:rgba(255,255,255,0.7);line-height:1.6}
+.pin-url{font-size:12px;color:rgba(255,255,255,0.5);margin-top:8px;
+  font-family:monospace;background:rgba(255,255,255,0.1);
+  padding:6px 12px;border-radius:8px;display:inline-block}
+.copy-btn{
+  margin-top:14px;padding:10px 24px;background:rgba(255,255,255,0.15);
+  border:1.5px solid rgba(255,255,255,0.3);border-radius:var(--r2);
+  font-size:13px;font-weight:700;color:white;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.2s;
+}
+.copy-btn:hover{background:rgba(255,255,255,0.25)}
+
+/* HISTORY */
+.hist-item{padding:12px 0;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px}
+.hist-item:last-child{border-bottom:none}
+.hist-pin{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;
+  color:var(--navy);letter-spacing:2px;min-width:80px}
+.hist-info{flex:1}
+.hist-school{font-size:13px;font-weight:700;color:var(--text)}
+.hist-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.hist-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+.b-active{background:var(--green2);color:var(--green)}
+.b-expired{background:#f1f5f9;color:var(--text3)}
+.empty-hist{text-align:center;padding:24px;color:var(--text3);font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">TAKMIL — PIN Generator</div>
+  <div class="nav">
+    <a href="/">← Hub</a>
+  </div>
+</div>
+
+<div class="body">
+
+  <!-- LEFT: GENERATOR -->
+  <div>
+    <div class="card">
+      <div class="card-hdr">🔑 Generate Assessment PIN</div>
+      <div class="card-body">
+
+        <div class="f-group">
+          <label class="f-label">School</label>
+          <select class="f-inp" id="school-sel">
+            <option value="">Loading schools...</option>
+          </select>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Level</label>
+          <select class="f-inp" id="level-sel" onchange="loadQCounts()">
+            <option value="">Select level...</option>
+            ${Array.from({length:11},(_,i)=>`<option value="${i+1}">Level ${i+1}</option>`).join('')}
+            <option value="12">Level 12 — Grand Assessment</option>
+          </select>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Subjects</label>
+          <div class="subjects-grid">
+            <button class="subj-btn selected" data-subj="Math" onclick="toggleSubj(this)">
+              <span class="subj-icon">🔢</span>Math
+            </button>
+            <button class="subj-btn selected" data-subj="English" onclick="toggleSubj(this)">
+              <span class="subj-icon">📖</span>English
+            </button>
+            <button class="subj-btn selected" data-subj="Urdu" onclick="toggleSubj(this)">
+              <span class="subj-icon">اردو</span>Urdu
+            </button>
+          </div>
+        </div>
+
+        <div class="f-group" id="q-counts-wrap" style="display:none">
+          <label class="f-label">Available Questions per Subject</label>
+          <div class="q-counts" id="q-counts"></div>
+        </div>
+
+        <button class="gen-btn" id="gen-btn" onclick="generatePin()">
+          Generate PIN →
+        </button>
+
+        <div class="pin-result" id="pin-result">
+          <div class="pin-label">Assessment PIN</div>
+          <div class="pin-number" id="pin-number">——</div>
+          <div class="pin-info" id="pin-info"></div>
+          <div class="pin-url" id="pin-url"></div>
+          <br>
+          <button class="copy-btn" onclick="copyPin()">📋 Copy PIN</button>
+          <button class="copy-btn" onclick="copyMessage()">📱 Copy WhatsApp Message</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: RECENT PINS -->
+  <div>
+    <div class="card">
+      <div class="card-hdr">📋 Recent PINs</div>
+      <div class="card-body" id="history">
+        <div class="empty-hist">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const BASE = window.location.origin;
+let currentPin = null;
+let currentSchool = null;
+let currentLevel = null;
+
+// Load schools
+async function loadSchools(){
+  try {
+    const r = await fetch('/api/compliance');
+    const d = await r.json();
+    const schools = d.schools || [];
+    const sel = document.getElementById('school-sel');
+    sel.innerHTML = '<option value="">Select school...</option>' +
+      schools.map(s => `<option value="${s.identifier}">${s.name||s.identifier}</option>`).join('');
+  } catch(e) {
+    document.getElementById('school-sel').innerHTML = '<option value="">Error loading schools</option>';
+  }
+}
+
+// Toggle subject selection
+function toggleSubj(btn){
+  btn.classList.toggle('selected');
+}
+
+function getSelectedSubjects(){
+  return [...document.querySelectorAll('.subj-btn.selected')].map(b => b.dataset.subj);
+}
+
+// Load question counts per subject for selected level
+async function loadQCounts(){
+  const level = document.getElementById('level-sel').value;
+  if(!level) return;
+  const wrap = document.getElementById('q-counts-wrap');
+  const container = document.getElementById('q-counts');
+  wrap.style.display = 'block';
+  container.innerHTML = '<div style="color:var(--text3);font-size:12px">Loading...</div>';
+
+  try {
+    const subjects = ['Math','English','Urdu'];
+    const counts = await Promise.all(subjects.map(async subj => {
+      const r = await fetch(`/api/questions/count?level=${level}&subject=${subj}`);
+      const d = await r.json();
+      return { subj, count: d.count || 0 };
+    }));
+    container.innerHTML = counts.map(c => `
+      <div class="qc-item">
+        <div class="qc-n" style="color:${c.count>=20?'var(--green)':c.count>=5?'var(--orange)':'var(--red,#ef4444)'}">${c.count}</div>
+        <div class="qc-l">${c.subj}</div>
+      </div>`).join('');
+  } catch(e) {
+    container.innerHTML = '<div style="color:var(--text3);font-size:12px">Could not load counts</div>';
+  }
+}
+
+// Generate PIN
+async function generatePin(){
+  const school = document.getElementById('school-sel').value;
+  const level  = document.getElementById('level-sel').value;
+  const subjects = getSelectedSubjects();
+
+  if(!school){ alert('Please select a school'); return; }
+  if(!level) { alert('Please select a level');  return; }
+  if(!subjects.length){ alert('Please select at least one subject'); return; }
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating...';
+
+  try {
+    const r = await fetch('/api/assess/generate-pin', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ school_identifier: school, level: parseInt(level), subjects, created_by: 'coordinator' })
+    });
+    const d = await r.json();
+    if(!d.pin_code) throw new Error(d.error||'Failed');
+
+    currentPin    = d.pin_code;
+    currentSchool = school;
+    currentLevel  = level;
+
+    const schoolName = document.getElementById('school-sel').selectedOptions[0]?.text || school;
+    const subjStr    = subjects.join(', ');
+    const total      = subjects.length * 5; // 5 per subject for testing
+
+    document.getElementById('pin-number').textContent = d.pin_code;
+    document.getElementById('pin-info').innerHTML =
+      `<strong>${schoolName}</strong><br>Level ${level} · ${subjStr}<br>${total} questions (${subjects.length} subjects × 5)`;
+    document.getElementById('pin-url').textContent = `${BASE}/assess`;
+    document.getElementById('pin-result').classList.add('show');
+
+    loadHistory();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Generate PIN →';
+}
+
+function copyPin(){
+  navigator.clipboard.writeText(currentPin);
+  alert(`PIN ${currentPin} copied!`);
+}
+
+function copyMessage(){
+  const schoolName = document.getElementById('school-sel').selectedOptions[0]?.text || currentSchool;
+  const subjects = getSelectedSubjects().join(', ');
+  const msg = `🎓 TAKMIL Assessment\n\nSchool: ${schoolName}\nLevel: ${currentLevel}\nSubjects: ${subjects}\n\nPIN: ${currentPin}\n\nOpen: ${BASE}/assess\nEnter the PIN and your name to start.`;
+  navigator.clipboard.writeText(msg);
+  alert('WhatsApp message copied! Paste it in WhatsApp.');
+}
+
+// Load recent PINs
+async function loadHistory(){
+  try {
+    const r = await fetch('/api/results/sessions');
+    const d = await r.json();
+    const sessions = (d.sessions||[]).slice(0,8);
+    const hist = document.getElementById('history');
+    if(!sessions.length){
+      hist.innerHTML = '<div class="empty-hist">No PINs generated yet</div>';
+      return;
+    }
+    hist.innerHTML = sessions.map(s => {
+      const exp = new Date(s.created_at);
+      exp.setDate(exp.getDate()+1);
+      const active = exp > new Date();
+      const school = (s.school_name||s.school_identifier).replace(/_O_|_A_/,' ').replace(/_W\d+[A-Z]+$/,'').replace(/_/g,' ');
+      return `<div class="hist-item">
+        <div class="hist-pin">${s.pin_code}</div>
+        <div class="hist-info">
+          <div class="hist-school">${school}</div>
+          <div class="hist-meta">Level ${s.level} · ${s.subject||'All subjects'} · ${s.student_count||0} students</div>
+        </div>
+        <span class="hist-badge ${active?'b-active':'b-expired'}">${active?'Active':'Expired'}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('history').innerHTML = '<div class="empty-hist">Could not load history</div>';
+  }
+}
+
+// Add question count API endpoint check
+loadSchools();
+loadHistory();
+setInterval(loadHistory, 30000);
+</script>
+</body>
+</html>

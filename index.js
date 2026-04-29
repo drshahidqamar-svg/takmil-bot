@@ -1215,8 +1215,12 @@ app.get('/assess', (req, res) => res.sendFile(path.join(__dirname, 'assess.html'
 // Teacher generates PIN via API (also called from WhatsApp GENERATE PIN command)
 app.post('/api/assess/generate-pin', async (req, res) => {
   try {
-    const { school_identifier, level, subject, created_by } = req.body;
+    const { school_identifier, level, subjects, subject, created_by } = req.body;
     if (!school_identifier || !level) return res.status(400).json({ error: 'school_identifier and level required' });
+
+    // subjects can be array ['Math','English','Urdu'] or single string
+    const subjectList = subjects || (subject ? [subject] : ['Math','English','Urdu']);
+    const subjectStr  = Array.isArray(subjectList) ? subjectList.join(',') : subjectList;
 
     // Generate 6-digit PIN
     const pin_code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -1231,9 +1235,9 @@ app.post('/api/assess/generate-pin', async (req, res) => {
     const r = await db.pool.query(`
       INSERT INTO tablet_sessions (pin_code, school_identifier, level, subject, created_by, expires_at)
       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id
-    `, [pin_code, school_identifier, parseInt(level), subject||'All', created_by||'teacher', expires_at]);
+    `, [pin_code, school_identifier, parseInt(level), subjectStr, created_by||'coordinator', expires_at]);
 
-    res.json({ pin_code, expires_at, session_id: r.rows[0].id, level, school_identifier });
+    res.json({ pin_code, expires_at, session_id: r.rows[0].id, level, school_identifier, subjects: subjectList });
   } catch(err) {
     console.log('generate pin error:', err.message);
     res.status(500).json({ error: err.message });
@@ -1264,10 +1268,17 @@ app.get('/api/assess/questions/:pin', async (req, res) => {
     if (!sess.rows.length) return res.status(404).json({ error: 'Invalid or expired PIN' });
     const s = sess.rows[0];
 
+    // Parse subjects from session
+    const subjectList = s.subject && s.subject !== 'All'
+      ? s.subject.split(',').map(x => x.trim())
+      : ['Math', 'English', 'Urdu'];
+
+    const QUESTIONS_PER_SUBJECT = QUESTIONS_PER_SESSION; // 5 for testing, 20 for production
+    let allQuestions = [];
+
     // Level 12 = Grand Assessment — pull from all levels 1-11
-    let qs;
     if (parseInt(s.level) === 12) {
-      qs = await db.pool.query(`
+      const qs = await db.pool.query(`
         SELECT question_id AS id,
                COALESCE(q_text_english, q_text_urdu) AS question_text,
                q_text_urdu, q_text_english,
@@ -1275,25 +1286,47 @@ app.get('/api/assess/questions/:pin', async (req, res) => {
                correct_option, subject, level, image_url
         FROM questions
         WHERE active=1 AND level BETWEEN 1 AND 11
-        ORDER BY RANDOM() LIMIT 5
-      `);
+        ORDER BY RANDOM() LIMIT $1
+      `, [QUESTIONS_PER_SUBJECT * subjectList.length]);
+      allQuestions = qs.rows;
     } else {
-      qs = await db.pool.query(`
-        SELECT question_id AS id,
-               COALESCE(q_text_english, q_text_urdu) AS question_text,
-               q_text_urdu, q_text_english,
-               option_a, option_b, option_c, option_d,
-               correct_option, subject, level, image_url
-        FROM questions
-        WHERE active=1 AND level=$1::integer
-        ORDER BY RANDOM() LIMIT 5
-      `, [parseInt(s.level)]);
+      // Pull QUESTIONS_PER_SUBJECT questions per subject
+      for (const subj of subjectList) {
+        const qs = await db.pool.query(`
+          SELECT question_id AS id,
+                 COALESCE(q_text_english, q_text_urdu) AS question_text,
+                 q_text_urdu, q_text_english,
+                 option_a, option_b, option_c, option_d,
+                 correct_option, subject, level, image_url
+          FROM questions
+          WHERE active=1 AND level=$1::integer
+            AND subject ILIKE $2
+          ORDER BY RANDOM() LIMIT $3
+        `, [parseInt(s.level), subj, QUESTIONS_PER_SUBJECT]);
+
+        if (qs.rows.length === 0) {
+          // Fallback: any subject for this level
+          const fallback = await db.pool.query(`
+            SELECT question_id AS id,
+                   COALESCE(q_text_english, q_text_urdu) AS question_text,
+                   q_text_urdu, q_text_english,
+                   option_a, option_b, option_c, option_d,
+                   correct_option, subject, level, image_url
+            FROM questions
+            WHERE active=1 AND level=$1::integer
+            ORDER BY RANDOM() LIMIT $2
+          `, [parseInt(s.level), QUESTIONS_PER_SUBJECT]);
+          allQuestions = allQuestions.concat(fallback.rows);
+        } else {
+          allQuestions = allQuestions.concat(qs.rows);
+        }
+      }
     }
 
-    if (qs.rows.length < 1) return res.status(400).json({ error: 'Not enough approved questions for this level. Please approve more questions first.' });
+    if (allQuestions.length < 1) return res.status(400).json({ error: 'Not enough questions for this level. Please approve more questions first.' });
 
     // Send questions as-is — correct_option stays A/B/C/D matching the options
-    const questions = qs.rows.map(q => ({
+    const questions = allQuestions.map(q => ({
       id: q.id,
       question_text: q.question_text,
       q_text_urdu: q.q_text_urdu,
@@ -1308,7 +1341,7 @@ app.get('/api/assess/questions/:pin', async (req, res) => {
       correct_option: (q.correct_option||'A').toUpperCase(),
     }));
 
-    res.json({ session: s, questions });
+    res.json({ session: s, questions, subjects: subjectList });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -1507,6 +1540,22 @@ app.get('/api/cohort/:school_identifier', async (req, res) => {
 
 // ── Assessment Results Dashboard ──────────────────────────────
 app.get('/results', (req, res) => res.sendFile(path.join(__dirname, 'results.html')));
+
+app.get('/pin-generator', (req, res) => res.sendFile(path.join(__dirname, 'pin-generator.html')));
+
+// Question count per level+subject (for PIN generator UI)
+app.get('/api/questions/count', async (req, res) => {
+  try {
+    const { level, subject } = req.query;
+    let query = 'SELECT COUNT(*) FROM questions WHERE active=1';
+    const params = [];
+    if (level)   { params.push(parseInt(level)); query += ` AND level=$${params.length}`; }
+    if (subject) { params.push(subject);          query += ` AND subject ILIKE $${params.length}`; }
+    const r = await db.pool.query(query, params);
+    res.json({ count: parseInt(r.rows[0].count) });
+  } catch(err) { res.status(500).json({ count: 0, error: err.message }); }
+});
+
 
 app.get('/api/results/sessions', async (req, res) => {
   try {
