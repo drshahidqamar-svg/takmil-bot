@@ -366,7 +366,11 @@ function renderQuestion(){
       ${['A','B','C','D'].map(label => {
         const text = q['option_'+label.toLowerCase()];
         if(!text) return '';
-        return `<div class="opt" id="opt-${label}" onclick="selectOption('${label}','${q.correct_option}',${q.id})">
+        return `<div class="opt" id="opt-${label}" 
+          data-label="${label}" 
+          data-correct="${q.correct_option}" 
+          data-qid="${q.id||''}"
+          onclick="handleOptClick(this)">
           <div class="opt-label">${label}</div>
           <div class="opt-text ${isUrdu?'urdu':''}">${text}</div>
         </div>`;
@@ -383,6 +387,13 @@ function startTimer(){
     const m = Math.floor(secs/60), s = secs%60;
     document.getElementById('q-timer').textContent = `${m}:${s<10?'0':''}${s}`;
   }, 1000);
+}
+
+function handleOptClick(el){
+  const label   = el.dataset.label;
+  const correct = el.dataset.correct;
+  const qId     = el.dataset.qid;
+  selectOption(label, correct, qId);
 }
 
 function selectOption(selected, correct, qId){
