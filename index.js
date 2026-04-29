@@ -1292,25 +1292,21 @@ app.get('/api/assess/questions/:pin', async (req, res) => {
 
     if (qs.rows.length < 5) return res.status(400).json({ error: 'Not enough approved questions for this level. Please approve more questions first.' });
 
-    // Shuffle options for each question
-    const questions = qs.rows.map(q => {
-      const opts = [
-        { label:'A', text: q.option_a },
-        { label:'B', text: q.option_b },
-        { label:'C', text: q.option_c },
-        { label:'D', text: q.option_d },
-      ];
-      const shuffled = opts.sort(() => Math.random() - 0.5);
-      const correctText = opts.find(o => o.label === q.correct_option)?.text;
-      const newCorrect = shuffled.find(o => o.text === correctText)?.label || 'A';
-      return {
-        id: q.id, question_text: q.question_text, subject: q.subject,
-        level: q.level, image_url: q.image_url,
-        option_a: shuffled[0].text, option_b: shuffled[1].text,
-        option_c: shuffled[2].text, option_d: shuffled[3].text,
-        correct_option: newCorrect,
-      };
-    });
+    // Send questions as-is — correct_option stays A/B/C/D matching the options
+    const questions = qs.rows.map(q => ({
+      id: q.id,
+      question_text: q.question_text,
+      q_text_urdu: q.q_text_urdu,
+      q_text_english: q.q_text_english,
+      subject: q.subject,
+      level: q.level,
+      image_url: q.image_url,
+      option_a: q.option_a,
+      option_b: q.option_b,
+      option_c: q.option_c,
+      option_d: q.option_d,
+      correct_option: (q.correct_option||'A').toUpperCase(),
+    }));
 
     res.json({ session: s, questions });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -1333,9 +1329,11 @@ app.post('/api/assess/submit', async (req, res) => {
 
     // Save individual responses
     let correct = 0;
+    console.log('📝 Answers received:', JSON.stringify(answers.slice(0,2)));
     for (const a of answers) {
-      const isCorrect = a.selected_option === a.correct_option;
+      const isCorrect = (a.selected_option||'').toUpperCase().trim() === (a.correct_option||'').toUpperCase().trim();
       if (isCorrect) correct++;
+      console.log(`Q${a.question_id}: selected=${a.selected_option} correct=${a.correct_option} isCorrect=${isCorrect}`);
       await db.pool.query(`
         INSERT INTO tablet_responses
           (session_id, student_name, school_identifier, level, question_id,
