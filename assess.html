@@ -350,12 +350,18 @@ function renderQuestion(){
 
   let html = '';
   if(q.image_url) html += `<img class="q-image" src="${q.image_url}" alt="Question image">`;
+  
+  // Show both Urdu and English if available
+  const urduText   = q.q_text_urdu    || (isUrdu ? q.question_text : '');
+  const englishText= q.q_text_english || (!isUrdu ? q.question_text : '');
+
   html += `
     <div class="q-meta">
       <span class="q-num">${n}</span>
       <span class="q-subj">${q.subject||''} · L${q.level}</span>
     </div>
-    <div class="q-text ${isUrdu?'urdu':''}">${q.question_text}</div>
+    ${urduText ? `<div class="q-text urdu">${urduText}</div>` : ''}
+    ${englishText ? `<div class="q-text">${englishText}</div>` : ''}
     <div class="options">
       ${['A','B','C','D'].map(label => {
         const text = q['option_'+label.toLowerCase()];

@@ -1268,18 +1268,24 @@ app.get('/api/assess/questions/:pin', async (req, res) => {
     let qs;
     if (parseInt(s.level) === 12) {
       qs = await db.pool.query(`
-        SELECT id, question_text, option_a, option_b, option_c, option_d,
+        SELECT question_id AS id,
+               COALESCE(q_text_english, q_text_urdu) AS question_text,
+               q_text_urdu, q_text_english,
+               option_a, option_b, option_c, option_d,
                correct_option, subject, level, image_url
         FROM questions
-        WHERE approved=TRUE AND level BETWEEN 1 AND 11
+        WHERE active=1 AND level BETWEEN 1 AND 11
         ORDER BY RANDOM() LIMIT 20
       `);
     } else {
       qs = await db.pool.query(`
-        SELECT id, question_text, option_a, option_b, option_c, option_d,
+        SELECT question_id AS id,
+               COALESCE(q_text_english, q_text_urdu) AS question_text,
+               q_text_urdu, q_text_english,
+               option_a, option_b, option_c, option_d,
                correct_option, subject, level, image_url
         FROM questions
-        WHERE approved=TRUE AND level=$1
+        WHERE active=1 AND level=$1
         ORDER BY RANDOM() LIMIT 20
       `, [s.level]);
     }
@@ -1423,7 +1429,7 @@ async function analyzeCompetency(sessionId, schoolIdentifier, level) {
     const failRate = Math.round(stats.failed / stats.total * 100);
     if (failRate >= 80) {
       // Get question topic
-      const q = await db.pool.query(`SELECT topic, subject FROM questions WHERE id=$1`, [qId]);
+      const q = await db.pool.query(`SELECT topic_tag AS topic, subject FROM questions WHERE question_id=$1`, [qId]);
       const topic = q.rows[0]?.topic || q.rows[0]?.subject || 'Unknown';
       await db.pool.query(`
         INSERT INTO competency_flags
