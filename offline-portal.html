@@ -2,881 +2,877 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1a3a2a">
-<title>TAKMIL — Offline Assessment</title>
+<meta name="theme-color" content="#01796F">
+<title>TAKMIL Assessment</title>
 <link rel="manifest" href="/manifest.json">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Nastaliq+Urdu&display=swap');
-
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --green:#1a5c36;--green2:#16a34a;--green3:#4ade80;
-  --amber:#d97706;--red:#dc2626;--blue:#2563eb;
-  --bg:#f0f7f3;--card:#ffffff;--text:#0f2419;--muted:#6b7280;
-  --border:#e2e8f0;--shadow:0 2px 16px rgba(0,0,0,0.08);
-  --r:16px;
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --teal: #01796F; --teal2: #019587; --navy: #1a2e44;
+  --green: #166534; --green-bg: #f0fdf4; --green-border: #86efac;
+  --red: #dc2626; --red-bg: #fee2e2;
+  --gray: #64748b; --light: #f8fafc; --white: #ffffff;
+  --border: #e2e8f0;
 }
-html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',sans-serif;color:var(--text)}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--light); min-height: 100vh; }
 
 /* ── SCREENS ── */
-.screen{display:none;position:fixed;inset:0;overflow-y:auto;padding:16px;background:var(--bg)}
-.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
 
-/* ── HEADER ── */
-.app-header{
-  width:100%;max-width:480px;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 16px;background:var(--green);border-radius:var(--r);
-  margin-bottom:16px;color:white;
+/* ── TOPBAR ── */
+.topbar {
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  padding: 14px 20px; display: flex; align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15); flex-shrink: 0;
 }
-.app-header .logo{font-size:20px;font-weight:900;letter-spacing:1px;color:var(--green3)}
-.sync-badge{
-  font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;
-  background:rgba(255,255,255,0.15);
+.topbar-title { color: white; font-weight: 700; font-size: 17px; }
+.topbar-sub { color: rgba(255,255,255,0.75); font-size: 12px; margin-top: 2px; }
+.topbar-right { text-align: right; }
+.topbar-badge {
+  background: rgba(255,255,255,0.2); color: white;
+  font-size: 11px; padding: 3px 10px; border-radius: 20px;
+  font-weight: 600;
 }
-.sync-badge.online{background:#dcfce7;color:#15803d}
-.sync-badge.offline{background:#fef2f2;color:#dc2626}
-.sync-badge.syncing{background:#dbeafe;color:#1d4ed8}
 
-/* ── CARDS ── */
-.card{
-  width:100%;max-width:480px;background:var(--card);
-  border-radius:var(--r);padding:24px;box-shadow:var(--shadow);
-  margin-bottom:16px;
+/* ── CARD ── */
+.card {
+  background: white; border-radius: 16px; padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin: 16px;
 }
-.card-title{font-size:18px;font-weight:800;color:var(--green);margin-bottom:4px}
-.card-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.card-title { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+.card-sub { font-size: 13px; color: var(--gray); margin-bottom: 20px; }
+
+/* ── FORM ── */
+.field { margin-bottom: 16px; }
+.field label { display: block; font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; }
+.field input {
+  width: 100%; padding: 13px 16px; border-radius: 12px;
+  border: 1.5px solid var(--border); font-size: 16px;
+  font-family: inherit; outline: none; transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+.field input:focus { border-color: var(--teal); }
 
 /* ── BUTTONS ── */
-.btn{
-  width:100%;padding:16px;border:none;border-radius:12px;
-  font-size:16px;font-weight:800;cursor:pointer;
-  font-family:'Nunito',sans-serif;transition:all 0.15s;
-  letter-spacing:0.3px;
+.btn-primary {
+  width: 100%; padding: 15px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, var(--teal), var(--teal2));
+  color: white; font-size: 16px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 12px rgba(1,121,111,0.3);
+  transition: opacity 0.2s;
 }
-.btn-green{background:var(--green2);color:white}
-.btn-green:active{background:var(--green);transform:scale(0.98)}
-.btn-dark{background:var(--green);color:white}
-.btn-amber{background:var(--amber);color:white}
-.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}
-.btn:disabled{opacity:0.5;cursor:not-allowed}
-.btn-sm{padding:10px 16px;font-size:14px;width:auto;border-radius:10px}
-
-/* ── INPUTS ── */
-.input{
-  width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:12px;
-  font-size:16px;font-family:'Nunito',sans-serif;color:var(--text);
-  outline:none;background:white;margin-bottom:12px;
-  transition:border-color 0.2s;
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary {
+  width: 100%; padding: 13px; border-radius: 12px;
+  border: 1.5px solid var(--border); background: white;
+  color: var(--gray); font-size: 15px; font-weight: 600;
+  cursor: pointer; font-family: inherit; margin-top: 10px;
 }
-.input:focus{border-color:var(--green2)}
-.label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;
-  letter-spacing:0.5px;margin-bottom:6px;display:block}
+.btn-success {
+  width: 100%; padding: 15px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, #166534, #15803d);
+  color: white; font-size: 16px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 12px rgba(22,101,52,0.3);
+}
+.btn-danger {
+  width: 100%; padding: 13px; border-radius: 12px; border: none;
+  background: #dc2626; color: white; font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: inherit; margin-top: 10px;
+}
 
-/* ── PROGRESS ── */
-.progress-wrap{margin-bottom:16px}
-.progress-label{display:flex;justify-content:space-between;font-size:13px;
-  font-weight:700;color:var(--muted);margin-bottom:8px}
-.progress-bar{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));
-  border-radius:4px;transition:width 0.4s ease}
+/* ── ERROR / INFO BOXES ── */
+.error-box {
+  background: var(--red-bg); color: var(--red); padding: 12px 16px;
+  border-radius: 10px; font-size: 13px; margin-bottom: 14px;
+  border: 1px solid #fecaca; display: none;
+}
+.info-box {
+  background: var(--green-bg); border: 2px solid var(--green-border);
+  border-radius: 12px; padding: 16px; margin-bottom: 16px;
+}
+.info-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.info-label { font-size: 13px; color: var(--gray); }
+.info-value { font-size: 13px; font-weight: 700; color: var(--navy); }
+.info-subject { font-size: 15px; font-weight: 800; color: var(--teal); }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap { background: #e2e8f0; border-radius: 99px; height: 8px; margin-bottom: 20px; }
+.progress-fill { background: linear-gradient(90deg, var(--teal), var(--teal2)); height: 8px; border-radius: 99px; transition: width 0.4s; }
 
 /* ── QUESTION ── */
-.question-img{
-  width:100%;height:200px;object-fit:cover;border-radius:12px;
-  margin-bottom:16px;border:2px solid var(--border);display:none;
+.q-counter { font-size: 13px; font-weight: 700; color: var(--gray); margin-bottom: 8px; }
+.q-text { font-size: 18px; font-weight: 600; color: var(--navy); line-height: 1.5; margin-bottom: 20px; }
+.q-urdu { font-size: 16px; color: var(--gray); direction: rtl; text-align: right;
+  margin-bottom: 20px; font-family: 'Noto Nastaliq Urdu', serif; }
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option {
+  padding: 14px 18px; border-radius: 12px;
+  border: 2px solid var(--border); background: white;
+  cursor: pointer; font-size: 15px; font-family: inherit;
+  text-align: left; transition: all 0.15s; color: var(--navy);
+  display: flex; align-items: center; gap: 12px;
 }
-.question-text{font-size:20px;font-weight:800;line-height:1.4;margin-bottom:20px;color:var(--text)}
-.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
-.opt-btn{
-  padding:16px 12px;border:2px solid var(--border);border-radius:12px;
-  background:white;cursor:pointer;font-family:'Nunito',sans-serif;
-  font-size:14px;font-weight:700;color:var(--text);
-  transition:all 0.15s;text-align:left;
+.option:active { transform: scale(0.98); }
+.option.selected { border-color: var(--teal); background: #f0fdfa; }
+.option.correct { border-color: #16a34a; background: #f0fdf4; color: #166534; }
+.option.wrong { border-color: var(--red); background: var(--red-bg); color: var(--red); }
+.option-letter {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--light); border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px; flex-shrink: 0;
 }
-.opt-btn .opt-letter{
-  display:inline-block;width:26px;height:26px;border-radius:50%;
-  background:var(--bg);font-size:13px;font-weight:800;
-  text-align:center;line-height:26px;margin-right:8px;color:var(--green)
-}
-.opt-btn:active{transform:scale(0.97)}
-.opt-btn.selected{border-color:var(--green2);background:#f0fdf4}
-.opt-btn.selected .opt-letter{background:var(--green2);color:white}
-.opt-btn.correct{border-color:var(--green2);background:#dcfce7}
-.opt-btn.wrong{border-color:var(--red);background:#fef2f2}
+.option.selected .option-letter { background: var(--teal); border-color: var(--teal); color: white; }
+.option.correct .option-letter { background: #16a34a; border-color: #16a34a; color: white; }
+.option.wrong .option-letter { background: var(--red); border-color: var(--red); color: white; }
 
-/* ── SUBJECT TRANSITION ── */
-.subject-transition{text-align:center;padding:20px 0}
-.subject-emoji{font-size:64px;margin-bottom:16px}
-.subject-done{font-size:22px;font-weight:900;color:var(--green);margin-bottom:8px}
-.subject-next{font-size:15px;color:var(--muted);margin-bottom:28px}
+/* ── SCORE ── */
+.score-circle {
+  width: 120px; height: 120px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  margin: 0 auto 20px; border: 6px solid;
+}
+.score-circle.pass { border-color: #16a34a; background: #f0fdf4; }
+.score-circle.fail { border-color: var(--red); background: var(--red-bg); }
+.score-pct { font-size: 32px; font-weight: 900; }
+.score-circle.pass .score-pct { color: #166534; }
+.score-circle.fail .score-pct { color: var(--red); }
+.score-label { font-size: 12px; font-weight: 700; }
+.score-circle.pass .score-label { color: #166534; }
+.score-circle.fail .score-label { color: var(--red); }
+.result-tag {
+  text-align: center; font-size: 20px; font-weight: 800; margin-bottom: 16px;
+}
+.result-tag.pass { color: #166534; }
+.result-tag.fail { color: var(--red); }
 
-/* ── RESULTS ── */
-.result-circle{
-  width:120px;height:120px;border-radius:50%;
-  background:conic-gradient(var(--green2) var(--pct), #e2e8f0 0);
-  display:flex;align-items:center;justify-content:center;
-  margin:0 auto 20px;position:relative;
+/* ── SESSION COMPLETE ── */
+.student-list { margin-bottom: 16px; }
+.student-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-radius: 10px; margin-bottom: 8px;
+  background: var(--light); border: 1px solid var(--border);
 }
-.result-circle::before{
-  content:'';position:absolute;inset:12px;border-radius:50%;background:white;
-}
-.result-pct{font-size:26px;font-weight:900;color:var(--green);position:relative;z-index:1}
-.result-badge{
-  padding:8px 20px;border-radius:20px;font-size:14px;font-weight:800;
-  display:inline-block;margin-bottom:20px;
-}
-.result-badge.pass{background:#dcfce7;color:#15803d}
-.result-badge.fail{background:#fef9c3;color:#854d0e}
-.subjects-breakdown{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
-.subj-card{padding:12px;border-radius:12px;text-align:center;background:var(--bg)}
-.subj-name{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase}
-.subj-score{font-size:20px;font-weight:900;color:var(--green)}
-.subj-pct{font-size:12px;color:var(--muted)}
+.student-name { font-size: 14px; font-weight: 600; color: var(--navy); }
+.student-score { font-size: 13px; }
+.student-score.pass { color: #166534; font-weight: 700; }
+.student-score.fail { color: var(--red); font-weight: 700; }
 
-/* ── SYNC SCREEN ── */
-.sync-item{
-  display:flex;align-items:center;gap:12px;padding:12px;
-  border-radius:10px;background:var(--bg);margin-bottom:8px;
-  font-size:13px;font-weight:600;
+/* ── SYNC STATUS ── */
+.sync-status {
+  text-align: center; padding: 12px; border-radius: 10px;
+  font-size: 14px; font-weight: 600; margin-bottom: 14px;
 }
-.sync-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.sync-dot.pending{background:var(--amber)}
-.sync-dot.done{background:var(--green2)}
-.sync-dot.syncing{background:var(--blue);animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-status.pending { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.sync-status.synced { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.sync-status.error { background: var(--red-bg); color: var(--red); border: 1px solid #fecaca; }
 
-/* ── DOWNLOAD SCREEN ── */
-.dl-progress{
-  background:#e2e8f0;border-radius:8px;height:12px;margin:12px 0;overflow:hidden;
+/* ── OFFLINE BANNER ── */
+.offline-banner {
+  background: #fef3c7; color: #92400e; text-align: center;
+  padding: 8px; font-size: 12px; font-weight: 600;
+  display: none; flex-shrink: 0;
 }
-.dl-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));
-  border-radius:8px;transition:width 0.5s;width:0%}
-.stat-row{display:flex;justify-content:space-between;padding:10px 0;
-  border-bottom:1px solid var(--border);font-size:14px}
-.stat-val{font-weight:800;color:var(--green)}
+.offline-banner.show { display: block; }
 
-/* ── TOAST ── */
-.toast{
-  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-  background:#1a3a2a;color:white;padding:12px 20px;border-radius:12px;
-  font-size:14px;font-weight:700;z-index:9999;display:none;
-  box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:340px;text-align:center;
+/* ── PENDING BADGE ── */
+.pending-badge {
+  background: #f59e0b; color: white; border-radius: 99px;
+  font-size: 11px; padding: 2px 8px; font-weight: 700;
+  margin-left: 6px;
 }
+
+.center { text-align: center; }
+.mt { margin-top: 16px; }
+.scroll-content { flex: 1; overflow-y: auto; padding-bottom: 20px; }
 </style>
 </head>
 <body>
 
-<!-- ── SCREEN: HOME ── -->
-<div class="screen active" id="s-home">
-  <div class="app-header">
-    <div class="logo">TAKMIL</div>
-    <div style="font-size:13px;color:rgba(255,255,255,0.7)">طالب علم امتحان</div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Student Assessment</div>
-    <div class="card-sub">طالب علم امتحان — Enter PIN from your teacher</div>
-    <label class="label">Assessment PIN</label>
-    <input class="input" id="pin-input" type="text" maxlength="10"
-      placeholder="e.g. X4K9MN" autocomplete="off" style="text-transform:uppercase;font-size:22px;letter-spacing:4px;font-weight:900;text-align:center">
-    <label class="label">Your Full Name — اپنا نام</label>
-    <input class="input" id="name-input" type="text" placeholder="Student name">
-    <label class="label">Student ID (optional)</label>
-    <input class="input" id="id-input" type="text" placeholder="Roll number or ID">
-    <div style="height:4px"></div>
-    <button class="btn btn-green" onclick="startAssessment()">Start Assessment — شروع کریں ▶</button>
-    <div id="home-err" style="color:#dc2626;font-size:13px;font-weight:700;text-align:center;margin-top:12px;display:none"></div>
-  </div>
+<!-- ═══════════════ OFFLINE BANNER ═══════════════ -->
+<div class="offline-banner" id="offlineBanner">
+  📵 No internet — results will sync when connection returns
 </div>
 
-<!-- ── SCREEN: LOADING ── -->
-<div class="screen" id="s-loading">
-  <div class="app-header">
-    <div class="logo">TAKMIL</div>
-    <div class="sync-badge" id="load-badge">Loading...</div>
+<!-- ═══════════════ SCREEN 1: PIN ENTRY ═══════════════ -->
+<div class="screen active" id="sc-pin">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">🎓 TAKMIL Assessment</div>
+      <div class="topbar-sub">Student Tablet Portal</div>
+    </div>
+    <div id="installBtn" style="display:none">
+      <button onclick="installApp()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:white;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">
+        📲 Install App
+      </button>
+    </div>
   </div>
-  <div class="card" style="text-align:center;padding:40px">
-    <div style="font-size:48px;margin-bottom:16px">📚</div>
-    <div style="font-size:18px;font-weight:800;color:var(--green)" id="load-msg">Loading questions...</div>
-    <div style="font-size:14px;color:var(--muted);margin-top:8px" id="load-sub">Please wait</div>
-  </div>
-</div>
-
-<!-- ── SCREEN: QUESTION ── -->
-<div class="screen" id="s-question">
-  <div class="app-header">
-    <div class="logo" id="q-name" style="font-size:14px;font-weight:700;color:white"></div>
-    <div style="font-size:13px;font-weight:700;color:var(--green3)" id="q-subject"></div>
-  </div>
-
-  <div style="width:100%;max-width:480px">
-    <div class="progress-wrap">
-      <div class="progress-label">
-        <span id="q-prog-label">Question 1 of 10</span>
-        <span id="q-level-badge" style="color:var(--green2)"></span>
+  <div class="scroll-content">
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Enter Assessment PIN</div>
+      <div class="card-sub">Teacher will provide the 6-digit PIN</div>
+      <div class="field">
+        <label>PIN Code</label>
+        <input type="number" id="pinInput" placeholder="e.g. 662590"
+          inputmode="numeric" maxlength="6" autocomplete="off">
       </div>
-      <div class="progress-bar"><div class="progress-fill" id="q-prog-fill" style="width:0%"></div></div>
+      <div class="error-box" id="pinError"></div>
+      <button class="btn-primary" id="pinBtn" onclick="validatePin()">
+        Verify PIN →
+      </button>
     </div>
 
-    <div class="card">
-      <img class="question-img" id="q-img" src="" alt="">
-      <div class="question-text" id="q-text"></div>
-      <div class="options-grid" id="q-opts"></div>
-      <button class="btn btn-green" id="q-next" onclick="nextQuestion()" disabled>
-        Next — اگلا ▶
+    <!-- Cached session notice -->
+    <div id="cachedSession" style="display:none" class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--teal);margin-bottom:8px">
+        ⚡ Session Already Loaded
+      </div>
+      <div id="cachedInfo" style="font-size:13px;color:var(--gray);margin-bottom:12px"></div>
+      <button class="btn-primary" onclick="useCachedSession()">
+        Continue with Cached Session →
+      </button>
+      <button class="btn-secondary" onclick="clearCache()">
+        Clear & Enter New PIN
+      </button>
+    </div>
+
+    <!-- Pending results notice -->
+    <div id="pendingNotice" style="display:none" class="card">
+      <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:8px">
+        📤 Unsynced Results
+      </div>
+      <div id="pendingCount" style="font-size:13px;color:var(--gray);margin-bottom:12px"></div>
+      <button class="btn-success" onclick="syncPending()">
+        Sync Results Now
       </button>
     </div>
   </div>
 </div>
 
-<!-- ── SCREEN: SUBJECT TRANSITION ── -->
-<div class="screen" id="s-transition">
-  <div class="app-header">
-    <div class="logo">TAKMIL</div>
-    <div class="sync-badge online">✓ Great job!</div>
+<!-- ═══════════════ SCREEN 2: SESSION INFO ═══════════════ -->
+<div class="screen" id="sc-info">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="infoSchool">—</div>
+      <div class="topbar-sub" id="infoLevel">—</div>
+    </div>
+    <div class="topbar-badge" id="infoSubject">—</div>
   </div>
-  <div class="card" style="text-align:center">
-    <div class="subject-transition">
-      <div class="subject-emoji" id="tr-emoji">✅</div>
-      <div class="subject-done" id="tr-done"></div>
-      <div class="subject-next" id="tr-next"></div>
-      <button class="btn btn-green" onclick="loadNextSubject()">
-        Continue — جاری رکھیں ▶
+  <div class="scroll-content">
+    <div class="card" style="margin-top:16px">
+      <div class="info-box">
+        <div class="info-row">
+          <span class="info-label">School</span>
+          <span class="info-value" id="infoSchool2">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Level</span>
+          <span class="info-value" id="infoLevel2">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Subject</span>
+          <span class="info-subject" id="infoSubject2">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Questions per student</span>
+          <span class="info-value" id="infoQCount">—</span>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--gray);margin-bottom:16px;line-height:1.6">
+        ✅ Questions loaded and cached.<br>
+        📵 Tablets can now work without internet.
+      </div>
+    </div>
+    <div class="card" style="margin-top:0">
+      <div class="card-title">Start Student Assessment</div>
+      <div class="card-sub">Enter the student's name to begin</div>
+      <div class="field">
+        <label>Student Name</label>
+        <input type="text" id="nameInput" placeholder="Full name"
+          autocomplete="off" autocorrect="off">
+      </div>
+      <div class="error-box" id="nameError"></div>
+      <button class="btn-primary" onclick="startAssessment()">
+        Start Assessment →
       </button>
     </div>
   </div>
 </div>
 
-<!-- ── SCREEN: RESULTS ── -->
-<div class="screen" id="s-results">
-  <div class="app-header">
-    <div class="logo">TAKMIL</div>
-    <div class="sync-badge" id="res-sync-badge">Saving...</div>
+<!-- ═══════════════ SCREEN 3: QUESTION ═══════════════ -->
+<div class="screen" id="sc-question">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="qStudentName">—</div>
+      <div class="topbar-sub" id="qSubjectLevel">—</div>
+    </div>
+    <div class="topbar-badge" id="qCounter">1/5</div>
   </div>
-  <div class="card" style="text-align:center">
-    <div style="font-size:22px;font-weight:900;color:var(--green);margin-bottom:4px" id="res-name"></div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="res-level"></div>
-    <div class="result-circle" id="res-circle">
-      <div class="result-pct" id="res-pct">0%</div>
+  <div class="scroll-content">
+    <div class="card" style="margin-top:16px">
+      <div class="progress-wrap">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div class="q-text" id="qText">—</div>
+      <div class="q-urdu" id="qUrdu" style="display:none"></div>
+      <div class="options" id="optionsWrap"></div>
+      <button class="btn-primary mt" id="nextBtn" onclick="nextQuestion()" style="display:none">
+        Next →
+      </button>
     </div>
-    <div class="result-badge" id="res-badge">Calculating...</div>
-    <div class="subjects-breakdown" id="res-breakdown"></div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="res-sync-msg">
-      Results saved offline. Will sync when internet available.
-    </div>
-    <button class="btn btn-green" onclick="newStudent()" style="margin-bottom:10px">
-      Next Student — اگلا طالب علم
-    </button>
-    <button class="btn btn-outline" onclick="showScreen('s-home')">Home</button>
   </div>
 </div>
 
-<!-- ── SCREEN: SYNC ── -->
-<div class="screen" id="s-sync">
-  <div class="app-header">
-    <div class="logo">TAKMIL</div>
-    <button onclick="showScreen('s-home')" style="background:none;border:none;color:white;font-size:22px;cursor:pointer">←</button>
+<!-- ═══════════════ SCREEN 4: STUDENT RESULT ═══════════════ -->
+<div class="screen" id="sc-result">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="resStudentName">—</div>
+      <div class="topbar-sub">Assessment Complete</div>
+    </div>
   </div>
-  <div class="card">
-    <div class="card-title">↑ Sync Results</div>
-    <div class="card-sub" id="sync-summary">Checking pending results...</div>
-    <div id="sync-list"></div>
-    <div style="height:8px"></div>
-    <button class="btn btn-green" id="sync-btn" onclick="syncNow()">Sync Now ↑</button>
-    <div id="sync-result" style="margin-top:12px;text-align:center;font-size:13px;font-weight:700;display:none"></div>
+  <div class="scroll-content">
+    <div class="card center" style="margin-top:16px">
+      <div class="score-circle" id="scoreCircle">
+        <div class="score-pct" id="scorePct">0%</div>
+        <div class="score-label" id="scoreLabel">—</div>
+      </div>
+      <div class="result-tag" id="resultTag">—</div>
+      <div style="font-size:14px;color:var(--gray);margin-bottom:20px" id="scoreDetail">—</div>
+      <button class="btn-primary" onclick="nextStudent()">
+        Next Student →
+      </button>
+      <button class="btn-secondary" onclick="finishSession()">
+        Finish Session & Sync
+      </button>
+    </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ═══════════════ SCREEN 5: SESSION COMPLETE ═══════════════ -->
+<div class="screen" id="sc-complete">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Session Complete</div>
+      <div class="topbar-sub" id="completeSchool">—</div>
+    </div>
+  </div>
+  <div class="scroll-content">
+    <div class="card" style="margin-top:16px">
+      <!-- Summary stats -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="text-align:center;background:var(--light);border-radius:10px;padding:12px">
+          <div style="font-size:24px;font-weight:900;color:var(--navy)" id="statTotal">0</div>
+          <div style="font-size:11px;color:var(--gray)">Students</div>
+        </div>
+        <div style="text-align:center;background:var(--green-bg);border-radius:10px;padding:12px">
+          <div style="font-size:24px;font-weight:900;color:#166534" id="statPassed">0</div>
+          <div style="font-size:11px;color:var(--gray)">Passed</div>
+        </div>
+        <div style="text-align:center;background:var(--light);border-radius:10px;padding:12px">
+          <div style="font-size:24px;font-weight:900;color:var(--teal)" id="statAvg">0%</div>
+          <div style="font-size:11px;color:var(--gray)">Avg Score</div>
+        </div>
+      </div>
+
+      <!-- Student results list -->
+      <div class="student-list" id="studentList"></div>
+
+      <!-- Sync status -->
+      <div class="sync-status pending" id="syncStatus">
+        📤 Results saved locally — tap Sync to upload
+      </div>
+
+      <button class="btn-success" id="syncBtn" onclick="syncResults()">
+        📤 Sync Results to Server
+      </button>
+      <button class="btn-secondary" onclick="startNewSession()">
+        New Session (Different PIN)
+      </button>
+      <button class="btn-secondary" onclick="addMoreStudents()">
+        Add More Students (Same PIN)
+      </button>
+    </div>
+  </div>
+</div>
 
 <script>
-const BASE = '';
-const DB_NAME = 'takmil_offline';
-const DB_VERSION = 1;
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+const PASS_THRESHOLD = 60; // TODO: change to 80 for production
+const STORAGE_SESSION = 'takmil_session_v2';
+const STORAGE_PENDING = 'takmil_pending_v2';
 
-let db;
-let session = {
-  pin: '', name: '', studentId: '', level: 0,
-  subjects: ['Math', 'English', 'Urdu'],
-  subjectIdx: 0,
-  subjectResults: [],
-  currentQuestions: [],
-  answers: [],
-  currentQ: 0,
+let session = null;   // { pin, school, level, subject, questions[] }
+let current = null;   // current student { name, answers[], qIndex, startTime }
+let deferredInstall = null;
+
+// ── On Load ──────────────────────────────────────────────
+window.onload = function() {
+  registerSW();
+  checkOnlineStatus();
+  checkCachedSession();
+  checkPending();
+
+  window.addEventListener('online',  () => { checkOnlineStatus(); autoSync(); });
+  window.addEventListener('offline', () => checkOnlineStatus());
+
+  document.getElementById('pinInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') validatePin();
+  });
+  document.getElementById('nameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') startAssessment();
+  });
+
+  // Install prompt
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); deferredInstall = e;
+    document.getElementById('installBtn').style.display = 'block';
+  });
 };
 
-// ── IndexedDB setup ────────────────────────────────────────────────
-function openDB() {
-  return new Promise((res, rej) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = e => {
-      const d = e.target.result;
-      if (!d.objectStoreNames.contains('questions'))
-        d.createObjectStore('questions', { keyPath: 'question_id' });
-      if (!d.objectStoreNames.contains('pins'))
-        d.createObjectStore('pins', { keyPath: 'pin' });
-      if (!d.objectStoreNames.contains('results'))
-        d.createObjectStore('results', { autoIncrement: true, keyPath: 'local_id' });
-    };
-    req.onsuccess = e => { db = e.target.result; res(db); };
-    req.onerror = () => rej(req.error);
-  });
-}
-
-function dbGet(store, key) {
-  return new Promise((res, rej) => {
-    const tx = db.transaction(store, 'readonly');
-    const req = tx.objectStore(store).get(key);
-    req.onsuccess = () => res(req.result);
-    req.onerror = () => rej(req.error);
-  });
-}
-
-function dbPut(store, val) {
-  return new Promise((res, rej) => {
-    const tx = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).put(val);
-    req.onsuccess = () => res(req.result);
-    req.onerror = () => rej(req.error);
-  });
-}
-
-function dbGetAll(store) {
-  return new Promise((res, rej) => {
-    const tx = db.transaction(store, 'readonly');
-    const req = tx.objectStore(store).getAll();
-    req.onsuccess = () => res(req.result);
-    req.onerror = () => rej(req.error);
-  });
-}
-
-function dbDelete(store, key) {
-  return new Promise((res, rej) => {
-    const tx = db.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).delete(key);
-    req.onsuccess = () => res();
-    req.onerror = () => rej(req.error);
-  });
-}
-
-function dbCount(store) {
-  return new Promise((res, rej) => {
-    const tx = db.transaction(store, 'readonly');
-    const req = tx.objectStore(store).count();
-    req.onsuccess = () => res(req.result);
-    req.onerror = () => rej(req.error);
-  });
-}
-
-// ── Connectivity ──────────────────────────────────────────────────
-function isOnline() { return navigator.onLine; }
-
-function updateConnBadge() {
-  const b = document.getElementById('conn-badge');
-  if (isOnline()) {
-    b.textContent = '● Online';
-    b.className = 'sync-badge online';
-  } else {
-    b.textContent = '● Offline';
-    b.className = 'sync-badge offline';
-  }
-}
-window.addEventListener('online', () => { updateConnBadge(); autoSync(); });
-window.addEventListener('offline', updateConnBadge);
-
-// ── Download for offline ──────────────────────────────────────────
-async function downloadForOffline() {
-  if (!isOnline()) { showToast('Need internet to download questions'); return; }
-  const btn = document.querySelector('[onclick="downloadForOffline()"]');
-  btn.disabled = true;
-  btn.textContent = '⬇ Downloading...';
-  setDlStatus('Connecting to server...', 5);
-
-  try {
-    // Download all approved questions
-    setDlStatus('Downloading questions...', 20);
-    const resp = await fetch(BASE + '/api/questions/export?status=approved');
-    const text = await resp.text();
-    const rows = parseCSV(text);
-    setDlStatus('Saving ' + rows.length + ' questions...', 60);
-
-    // Save to IndexedDB
-    let saved = 0;
-    for (const row of rows) {
-      await dbPut('questions', {
-        question_id:   row.question_id,
-        subject:       row.subject,
-        level:         parseInt(row.level) || 1,
-        topic_tag:     row.topic_tag,
-        question_text: row.question_text || row.q_text_english,
-        image_url:     row.image_url || null,
-        option_a: row.option_a, option_b: row.option_b,
-        option_c: row.option_c, option_d: row.option_d,
-        correct_option: row.correct_option
-      });
-      saved++;
-    }
-
-    // Download recent PINs (last 50 active)
-    setDlStatus('Downloading PINs...', 80);
-    try {
-      const presp = await fetch(BASE + '/admin/pins/list');
-      const pins  = await presp.json();
-      for (const p of pins) {
-        if (p.is_active) await dbPut('pins', p);
-      }
-    } catch(e) {}
-
-    setDlStatus('Done! ' + saved + ' questions ready offline.', 100);
-    updateStats();
-    showToast('Downloaded! App works offline now.');
-
-  } catch(e) {
-    setDlStatus('Error: ' + e.message, 0);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '⬇ Download';
-  }
-}
-
-function setDlStatus(msg, pct) {
-  document.getElementById('dl-status').textContent = msg;
-  document.getElementById('dl-fill').style.width = pct + '%';
-}
-
-async function updateStats() {
-  const qc = await dbCount('questions');
-  const pc = await dbCount('pins');
-  const results = await dbGetAll('results');
-  const pending = results.filter(r => !r.synced).length;
-  document.getElementById('q-count').textContent = qc;
-  document.getElementById('pin-count').textContent = pc;
-  document.getElementById('pending-count').textContent = pending;
-}
-
-// ── CSV parser ────────────────────────────────────────────────────
-function parseCSV(text) {
-  text = text.replace(/^\uFEFF/, '');
-  const lines = text.split('\n').filter(l => l.trim());
-  if (!lines.length) return [];
-  const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const vals = []; let cur = ''; let inQ = false;
-    for (const ch of lines[i]) {
-      if (ch === '"') { inQ = !inQ; }
-      else if (ch === ',' && !inQ) { vals.push(cur); cur = ''; }
-      else { cur += ch; }
-    }
-    vals.push(cur);
-    const row = {};
-    headers.forEach((h, idx) => { row[h] = (vals[idx] || '').replace(/"/g,'').trim(); });
-    if (row.question_id) rows.push(row);
-  }
-  return rows;
-}
-
-// ── PIN validation ────────────────────────────────────────────────
-async function validatePin(pin) {
-  // Try online first
-  if (isOnline()) {
-    try {
-      const resp = await fetch(BASE + '/portal/session/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, studentName: session.name, subject: null })
-      });
-      const data = await resp.json();
-      if (!resp.ok || data.error) return { valid: false, error: data.error };
-      return { valid: true, level: data.level, online: true, sessionId: data.sessionId };
-    } catch(e) {}
-  }
-  // Offline: check local PIN cache
-  const pinRec = await dbGet('pins', pin.toUpperCase());
-  if (!pinRec) return { valid: false, error: 'PIN not found. Download PINs when online.' };
-  if (!pinRec.is_active) return { valid: false, error: 'PIN is not active.' };
-  const expires = new Date(pinRec.expires_at);
-  if (expires < new Date()) return { valid: false, error: 'PIN has expired.' };
-  return { valid: true, level: pinRec.level, online: false };
-}
-
-// ── Get questions for subject/level ──────────────────────────────
-async function getQuestions(subject, level) {
-  if (isOnline()) {
-    try {
-      const resp = await fetch(BASE + '/portal/session/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: session.pin, studentName: session.name, subject })
-      });
-      const data = await resp.json();
-      if (data.questions) return data.questions;
-    } catch(e) {}
-  }
-  // Offline: get from IndexedDB
-  const all = await dbGetAll('questions');
-  const filtered = all.filter(q =>
-    q.subject === subject && parseInt(q.level) === parseInt(level)
-  );
-  // Shuffle and take 10
-  for (let i = filtered.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
-  }
-  return filtered.slice(0, 10).map(q => ({
-    id: q.question_id,
-    level: q.level,
-    question_text: q.question_text,
-    image_url: q.image_url || null,
-    option_a: q.option_a, option_b: q.option_b,
-    option_c: q.option_c, option_d: q.option_d,
-    correct: q.correct_option
-  }));
-}
-
-// ── Start assessment ──────────────────────────────────────────────
-async function startAssessment() {
-  const pin  = document.getElementById('pin-input').value.trim().toUpperCase();
-  const name = document.getElementById('name-input').value.trim();
-  const sid  = document.getElementById('id-input').value.trim();
-  const err  = document.getElementById('home-err');
-
-  err.style.display = 'none';
-  if (pin.length < 4) { err.textContent = 'Please enter a valid PIN.'; err.style.display='block'; return; }
-  if (name.length < 2) { err.textContent = 'Please enter your name.'; err.style.display='block'; return; }
-
-  showScreen('s-loading');
-  document.getElementById('load-msg').textContent = 'Validating PIN...';
-
-  const result = await validatePin(pin);
-  if (!result.valid) {
-    document.getElementById('home-err').textContent = result.error;
-    document.getElementById('home-err').style.display = 'block';
-    showScreen('s-home');
-    return;
-  }
-
-  session.pin = pin;
-  session.name = name;
-  session.studentId = sid;
-  session.level = result.level;
-  session.subjectIdx = 0;
-  session.subjectResults = [];
-
-  // Get GPS
-  session.gps = null;
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      pos => { session.gps = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }; },
-      () => {}
-    );
-  }
-
-  await loadSubject(session.subjects[0]);
-}
-
-async function loadSubject(subject) {
-  showScreen('s-loading');
-  document.getElementById('load-msg').textContent = 'Loading ' + subject + ' questions...';
-  document.getElementById('load-sub').textContent = 'Subject ' + (session.subjectIdx + 1) + ' of 3';
-
-  const questions = await getQuestions(subject, session.level);
-  if (!questions || questions.length === 0) {
-    showToast('No ' + subject + ' questions for Level ' + session.level + '. Skipping...');
-    session.subjectResults.push({ subject, score: 0, total: 0, pct: 0 });
-    session.subjectIdx++;
-    if (session.subjectIdx < session.subjects.length) {
-      await loadSubject(session.subjects[session.subjectIdx]);
-    } else {
-      showFinalResults();
-    }
-    return;
-  }
-
-  session.currentQuestions = questions;
-  session.answers = new Array(questions.length).fill(null);
-  session.currentQ = 0;
-  session.currentSubject = subject;
-
-  document.getElementById('q-name').textContent = session.name;
-  document.getElementById('q-subject').textContent = subject + ' • L' + session.level;
-
-  showQuestion(0);
-  showScreen('s-question');
-}
-
-function showQuestion(idx) {
-  const q    = session.currentQuestions[idx];
-  const total= session.currentQuestions.length;
-
-  document.getElementById('q-prog-label').textContent = 'Question ' + (idx+1) + ' of ' + total;
-  document.getElementById('q-level-badge').textContent = 'Level ' + session.level;
-  document.getElementById('q-prog-fill').style.width = ((idx / total) * 100) + '%';
-  document.getElementById('q-text').textContent = q.question_text || '';
-
-  // Image
-  const img = document.getElementById('q-img');
-  if (q.image_url) { img.src = q.image_url; img.style.display = 'block'; }
-  else { img.style.display = 'none'; img.src = ''; }
-
-  // Options
-  const opts = document.getElementById('q-opts');
-  opts.innerHTML = '';
-  ['a','b','c','d'].forEach(l => {
-    const text = q['option_' + l] || '';
-    if (!text) return;
-    const btn = document.createElement('button');
-    btn.className = 'opt-btn';
-    btn.innerHTML = '<span class="opt-letter">' + l.toUpperCase() + '</span>' + text;
-    btn.onclick = () => selectOption(l.toUpperCase(), btn);
-    opts.appendChild(btn);
-  });
-
-  document.getElementById('q-next').disabled = true;
-}
-
-function selectOption(letter, btn) {
-  if (session.answers[session.currentQ] !== null) return;
-  session.answers[session.currentQ] = letter;
-
-  document.querySelectorAll('.opt-btn').forEach(b => b.style.pointerEvents = 'none');
-  btn.classList.add('selected');
-
-  const q = session.currentQuestions[session.currentQ];
-  const correct = (q.correct || q.correct_option || '').toUpperCase();
-  if (letter === correct) {
-    btn.classList.add('correct');
-  } else {
-    btn.classList.add('wrong');
-    document.querySelectorAll('.opt-btn').forEach(b => {
-      const l = b.querySelector('.opt-letter');
-      if (l && l.textContent === correct) b.classList.add('correct');
-    });
-  }
-  document.getElementById('q-next').disabled = false;
-}
-
-function nextQuestion() {
-  const next = session.currentQ + 1;
-  if (next < session.currentQuestions.length) {
-    session.currentQ = next;
-    showQuestion(next);
-  } else {
-    finishSubject();
-  }
-}
-
-function finishSubject() {
-  const qs = session.currentQuestions;
-  let score = 0;
-  qs.forEach((q, i) => {
-    const correct = (q.correct || q.correct_option || '').toUpperCase();
-    if (session.answers[i] === correct) score++;
-  });
-  const pct = Math.round((score / qs.length) * 100);
-  session.subjectResults.push({ subject: session.currentSubject, score, total: qs.length, pct });
-  session.subjectIdx++;
-
-  if (session.subjectIdx < session.subjects.length) {
-    const next = session.subjects[session.subjectIdx];
-    const emojis = { Math: '🔢', English: '📖', Urdu: '✍️' };
-    document.getElementById('tr-emoji').textContent = emojis[session.currentSubject] || '✅';
-    document.getElementById('tr-done').textContent = session.currentSubject + ' Complete! (' + score + '/' + qs.length + ')';
-    document.getElementById('tr-next').textContent = 'Next: ' + next + ' Assessment (' + (session.subjectIdx + 1) + '/3)';
-    showScreen('s-transition');
-  } else {
-    showFinalResults();
-  }
-}
-
-async function loadNextSubject() {
-  await loadSubject(session.subjects[session.subjectIdx]);
-}
-
-async function showFinalResults() {
-  const results = session.subjectResults;
-  const totalScore = results.reduce((s, r) => s + r.score, 0);
-  const totalQ = results.reduce((s, r) => s + r.total, 0);
-  const overallPct = totalQ ? Math.round((totalScore / totalQ) * 100) : 0;
-  const passed = overallPct >= 80;
-
-  document.getElementById('res-name').textContent = session.name;
-  document.getElementById('res-level').textContent = 'Level ' + session.level + ' • ' + (session.studentId || '');
-  document.getElementById('res-pct').textContent = overallPct + '%';
-  document.getElementById('res-circle').style.setProperty('--pct', overallPct + '%');
-
-  const badge = document.getElementById('res-badge');
-  badge.textContent = passed ? '✅ Passed — کامیاب' : '📚 Needs Review — دوبارہ کوشش';
-  badge.className = 'result-badge ' + (passed ? 'pass' : 'fail');
-
-  const breakdown = document.getElementById('res-breakdown');
-  breakdown.innerHTML = results.map(r => `
-    <div class="subj-card">
-      <div class="subj-name">${r.subject}</div>
-      <div class="subj-score">${r.score}/${r.total}</div>
-      <div class="subj-pct">${r.pct}%</div>
-    </div>`).join('');
-
-  // Save result locally
-  const resultRecord = {
-    synced: false,
-    timestamp: new Date().toISOString(),
-    gps: session.gps,
-    pin: session.pin,
-    student_name: session.name,
-    student_id: session.studentId,
-    level: session.level,
-    overall_pct: overallPct,
-    passed,
-    subjects: results,
-  };
-
-  // Try to sync now if online
-  const syncBadge = document.getElementById('res-sync-badge');
-  const syncMsg   = document.getElementById('res-sync-msg');
-
-  if (isOnline()) {
-    syncBadge.textContent = '↑ Syncing...';
-    syncBadge.className = 'sync-badge syncing';
-    const ok = await syncResult(resultRecord);
-    if (ok) {
-      resultRecord.synced = true;
-      syncBadge.textContent = '✓ Saved';
-      syncBadge.className = 'sync-badge online';
-      syncMsg.textContent = 'Results saved to server ✓';
-    } else {
-      await dbPut('results', resultRecord);
-      syncBadge.textContent = '⚠ Saved Offline';
-      syncBadge.className = 'sync-badge offline';
-      syncMsg.textContent = 'Saved offline. Will sync when internet returns.';
-    }
-  } else {
-    await dbPut('results', resultRecord);
-    syncBadge.textContent = '● Offline';
-    syncBadge.className = 'sync-badge offline';
-    syncMsg.textContent = 'No internet — saved on tablet. Sync later.';
-  }
-
-  updateStats();
-  showScreen('s-results');
-}
-
-// ── Sync ──────────────────────────────────────────────────────────
-async function syncResult(record) {
-  try {
-    // Submit each subject as a separate session
-    for (const subj of record.subjects) {
-      if (subj.total === 0) continue;
-      await fetch(BASE + '/portal/offline/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pin:          record.pin,
-          student_name: record.student_name,
-          student_id:   record.student_id,
-          subject:      subj.subject,
-          level:        record.level,
-          score:        subj.score,
-          total:        subj.total,
-          pct:          subj.pct,
-          passed:       subj.pct >= 80,
-          timestamp:    record.timestamp,
-          gps_lat:      record.gps?.lat || null,
-          gps_lng:      record.gps?.lng || null,
-          gps_accuracy: record.gps?.acc || null,
-        })
-      });
-    }
-    return true;
-  } catch(e) { return false; }
-}
-
-async function autoSync() {
-  const results = await dbGetAll('results');
-  const pending = results.filter(r => !r.synced);
-  for (const rec of pending) {
-    const ok = await syncResult(rec);
-    if (ok) {
-      rec.synced = true;
-      await dbPut('results', rec);
-    }
-  }
-  updateStats();
-}
-
-async function showSyncScreen() {
-  showScreen('s-sync');
-  const results = await dbGetAll('results');
-  const pending = results.filter(r => !r.synced);
-  document.getElementById('sync-summary').textContent =
-    pending.length + ' result(s) pending sync • ' + (isOnline() ? 'Online ✓' : 'Offline');
-  const list = document.getElementById('sync-list');
-  list.innerHTML = results.slice(-10).reverse().map(r => `
-    <div class="sync-item">
-      <div class="sync-dot ${r.synced ? 'done' : 'pending'}"></div>
-      <div style="flex:1">
-        <strong>${r.student_name}</strong> — Level ${r.level} — ${r.overall_pct}%
-        <div style="font-size:11px;color:var(--muted)">${r.timestamp?.split('T')[0]} • ${r.synced ? 'Synced ✓' : 'Pending'}</div>
-      </div>
-    </div>`).join('') || '<div style="color:var(--muted);text-align:center;padding:20px">No results yet</div>';
-  document.getElementById('sync-btn').disabled = !isOnline() || pending.length === 0;
-}
-
-async function syncNow() {
-  if (!isOnline()) { showToast('No internet connection'); return; }
-  const btn = document.getElementById('sync-btn');
-  btn.disabled = true;
-  btn.textContent = 'Syncing...';
-  await autoSync();
-  const results = await dbGetAll('results');
-  const remaining = results.filter(r => !r.synced).length;
-  document.getElementById('sync-result').style.display = 'block';
-  document.getElementById('sync-result').textContent =
-    remaining === 0 ? '✅ All results synced!' : remaining + ' results still pending';
-  btn.textContent = 'Sync Now ↑';
-  btn.disabled = false;
-  showSyncScreen();
-}
-
-// ── Helpers ───────────────────────────────────────────────────────
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function newStudent() {
-  document.getElementById('name-input').value = '';
-  document.getElementById('id-input').value = '';
-  showScreen('s-home');
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 3000);
-}
-
-// ── Init ──────────────────────────────────────────────────────────
-async function init() {
-  await openDB();
-  updateConnBadge();
-  updateStats();
-
-  // Register service worker
+// ── Service Worker ───────────────────────────────────────
+function registerSW() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
-
-  // Auto-sync if online
-  if (isOnline()) setTimeout(autoSync, 2000);
 }
 
-init();
+// ── Install ──────────────────────────────────────────────
+async function installApp() {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  await deferredInstall.userChoice;
+  deferredInstall = null;
+  document.getElementById('installBtn').style.display = 'none';
+}
+
+// ── Online/Offline ────────────────────────────────────────
+function checkOnlineStatus() {
+  const banner = document.getElementById('offlineBanner');
+  if (navigator.onLine) banner.classList.remove('show');
+  else banner.classList.add('show');
+}
+
+async function autoSync() {
+  const pending = getPending();
+  if (pending.length > 0) await syncPending(true);
+}
+
+// ══════════════════════════════════════════════════════════
+// LOCAL STORAGE HELPERS
+// ══════════════════════════════════════════════════════════
+function saveSession(s) { localStorage.setItem(STORAGE_SESSION, JSON.stringify(s)); }
+function loadSession()  { try { return JSON.parse(localStorage.getItem(STORAGE_SESSION)); } catch { return null; } }
+function clearSession() { localStorage.removeItem(STORAGE_SESSION); }
+
+function getPending()   { try { return JSON.parse(localStorage.getItem(STORAGE_PENDING)) || []; } catch { return []; } }
+function savePending(p) { localStorage.setItem(STORAGE_PENDING, JSON.stringify(p)); }
+function addPending(result) {
+  const p = getPending();
+  p.push(result);
+  savePending(p);
+}
+
+// ══════════════════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ══════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ══════════════════════════════════════════════════════════
+// PIN SCREEN
+// ══════════════════════════════════════════════════════════
+function checkCachedSession() {
+  const s = loadSession();
+  if (!s) return;
+  // Check if session expired
+  if (s.expiresAt && new Date(s.expiresAt) < new Date()) {
+    clearSession(); return;
+  }
+  const el = document.getElementById('cachedSession');
+  el.style.display = 'block';
+  document.getElementById('cachedInfo').textContent =
+    `PIN ${s.pin} — ${s.school} — Level ${s.level} ${s.subject} — ${s.questions.length} questions loaded`;
+}
+
+function checkPending() {
+  const p = getPending();
+  if (!p.length) return;
+  document.getElementById('pendingNotice').style.display = 'block';
+  document.getElementById('pendingCount').textContent =
+    `${p.length} student result${p.length > 1 ? 's' : ''} waiting to sync`;
+}
+
+function useCachedSession() {
+  session = loadSession();
+  showInfoScreen();
+}
+
+function clearCache() {
+  clearSession();
+  document.getElementById('cachedSession').style.display = 'none';
+  document.getElementById('pinInput').focus();
+}
+
+async function validatePin() {
+  const pin = document.getElementById('pinInput').value.trim();
+  const errBox = document.getElementById('pinError');
+  const btn = document.getElementById('pinBtn');
+  errBox.style.display = 'none';
+
+  if (pin.length < 4) return showError(errBox, 'Please enter the 6-digit PIN');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Loading questions...';
+
+  try {
+    // Validate session
+    const sessResp = await fetch(`/api/assess/session/${pin}`);
+    if (!sessResp.ok) {
+      const d = await sessResp.json();
+      throw new Error(d.error || 'Invalid or expired PIN');
+    }
+    const sessData = await sessResp.json();
+
+    // Fetch questions — cached for ALL students on this tablet
+    const qResp = await fetch(`/api/assess/questions/${pin}`);
+    if (!qResp.ok) {
+      const d = await qResp.json();
+      throw new Error(d.error || 'Could not load questions');
+    }
+    const qData = await qResp.json();
+
+    session = {
+      pin,
+      school:    sessData.school_name || sessData.school_identifier,
+      level:     sessData.level,
+      subject:   sessData.subject === 'All' ? 'All Subjects' : sessData.subject,
+      questions: qData.questions,
+      expiresAt: sessData.expires_at,
+    };
+
+    saveSession(session);
+    showInfoScreen();
+
+  } catch(e) {
+    showError(errBox, e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Verify PIN →';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// INFO SCREEN
+// ══════════════════════════════════════════════════════════
+function showInfoScreen() {
+  document.getElementById('infoSchool').textContent  = session.school;
+  document.getElementById('infoLevel').textContent   = `Level ${session.level}`;
+  document.getElementById('infoSubject').textContent = session.subject;
+  document.getElementById('infoSchool2').textContent = session.school;
+  document.getElementById('infoLevel2').textContent  = `Level ${session.level}`;
+  document.getElementById('infoSubject2').textContent= session.subject;
+  document.getElementById('infoQCount').textContent  = session.questions.length;
+  document.getElementById('nameInput').value = '';
+  document.getElementById('nameError').style.display = 'none';
+  showScreen('sc-info');
+  setTimeout(() => document.getElementById('nameInput').focus(), 300);
+}
+
+// ══════════════════════════════════════════════════════════
+// ASSESSMENT
+// ══════════════════════════════════════════════════════════
+function startAssessment() {
+  const name = document.getElementById('nameInput').value.trim();
+  const errBox = document.getElementById('nameError');
+  errBox.style.display = 'none';
+
+  if (name.length < 2) return showError(errBox, 'Please enter the student\'s full name');
+
+  // Shuffle questions for this student
+  const shuffled = [...session.questions].sort(() => Math.random() - 0.5);
+
+  current = {
+    name,
+    questions: shuffled,
+    answers: [],
+    qIndex: 0,
+    startTime: Date.now(),
+  };
+
+  document.getElementById('qStudentName').textContent = name;
+  document.getElementById('qSubjectLevel').textContent = `${session.subject} · Level ${session.level}`;
+  renderQuestion();
+  showScreen('sc-question');
+}
+
+function renderQuestion() {
+  const q = current.questions[current.qIndex];
+  const total = current.questions.length;
+  const idx   = current.qIndex;
+
+  // Progress
+  document.getElementById('qCounter').textContent = `${idx + 1}/${total}`;
+  document.getElementById('progressFill').style.width = `${(idx / total) * 100}%`;
+
+  // Question text
+  document.getElementById('qText').textContent = q.question_text || q.q_text_english || '';
+
+  const urEl = document.getElementById('qUrdu');
+  if (q.q_text_urdu && q.q_text_urdu !== q.question_text) {
+    urEl.textContent = q.q_text_urdu;
+    urEl.style.display = 'block';
+  } else {
+    urEl.style.display = 'none';
+  }
+
+  // Options
+  const opts = [
+    { letter: 'A', text: q.option_a },
+    { letter: 'B', text: q.option_b },
+    { letter: 'C', text: q.option_c },
+    { letter: 'D', text: q.option_d },
+  ];
+
+  const wrap = document.getElementById('optionsWrap');
+  wrap.innerHTML = '';
+  opts.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = `<span class="option-letter">${opt.letter}</span>${opt.text}`;
+    btn.onclick = () => selectAnswer(opt.letter, q.correct_option, opts);
+    wrap.appendChild(btn);
+  });
+
+  document.getElementById('nextBtn').style.display = 'none';
+}
+
+function selectAnswer(chosen, correct, opts) {
+  // Prevent re-selecting
+  if (current.answers[current.qIndex] !== undefined) return;
+
+  current.answers[current.qIndex] = chosen;
+
+  // Visual feedback
+  const buttons = document.querySelectorAll('.option');
+  buttons.forEach((btn, i) => {
+    btn.onclick = null; // disable
+    const letter = opts[i].letter;
+    if (letter === correct) btn.classList.add('correct');
+    else if (letter === chosen && chosen !== correct) btn.classList.add('wrong');
+    else if (letter === chosen) btn.classList.add('selected');
+  });
+
+  document.getElementById('nextBtn').style.display = 'block';
+  document.getElementById('nextBtn').textContent =
+    current.qIndex < current.questions.length - 1 ? 'Next →' : 'See Results →';
+}
+
+function nextQuestion() {
+  current.qIndex++;
+  if (current.qIndex < current.questions.length) {
+    renderQuestion();
+  } else {
+    showResult();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// RESULT
+// ══════════════════════════════════════════════════════════
+function showResult() {
+  const total   = current.questions.length;
+  const correct = current.answers.filter((a, i) =>
+    a === current.questions[i].correct_option
+  ).length;
+  const pct    = Math.round((correct / total) * 100);
+  const passed = pct >= PASS_THRESHOLD;
+
+  // Save result locally
+  const result = {
+    pin:          session.pin,
+    student_name: current.name,
+    subject:      session.subject,
+    level:        session.level,
+    school:       session.school,
+    score:        correct,
+    total,
+    pct,
+    passed,
+    timestamp:    new Date().toISOString(),
+    answers:      current.answers,
+  };
+  addPending(result);
+
+  // Update UI
+  document.getElementById('resStudentName').textContent = current.name;
+
+  const circle = document.getElementById('scoreCircle');
+  circle.className = `score-circle ${passed ? 'pass' : 'fail'}`;
+  document.getElementById('scorePct').textContent = `${pct}%`;
+  document.getElementById('scoreLabel').textContent = passed ? 'PASSED' : 'FAILED';
+
+  const tag = document.getElementById('resultTag');
+  tag.className = `result-tag ${passed ? 'pass' : 'fail'}`;
+  tag.textContent = passed ? '✅ Passed!' : '❌ Needs Review';
+
+  document.getElementById('scoreDetail').textContent =
+    `${correct} out of ${total} correct`;
+
+  showScreen('sc-result');
+
+  // Auto-sync in background if online
+  if (navigator.onLine) syncPending(true);
+}
+
+function nextStudent() {
+  showInfoScreen();
+}
+
+function finishSession() {
+  showComplete();
+}
+
+// ══════════════════════════════════════════════════════════
+// SESSION COMPLETE
+// ══════════════════════════════════════════════════════════
+function showComplete() {
+  const pending = getPending().filter(r => r.pin === session.pin);
+
+  document.getElementById('completeSchool').textContent =
+    `${session.school} · Level ${session.level} · ${session.subject}`;
+  document.getElementById('statTotal').textContent  = pending.length;
+  document.getElementById('statPassed').textContent = pending.filter(r => r.passed).length;
+  const avg = pending.length
+    ? Math.round(pending.reduce((s, r) => s + r.pct, 0) / pending.length)
+    : 0;
+  document.getElementById('statAvg').textContent = `${avg}%`;
+
+  const list = document.getElementById('studentList');
+  list.innerHTML = pending.map((r, i) => `
+    <div class="student-row">
+      <div>
+        <div class="student-name">${i + 1}. ${r.student_name}</div>
+        <div style="font-size:12px;color:var(--gray)">${r.score}/${r.total} correct</div>
+      </div>
+      <div class="student-score ${r.passed ? 'pass' : 'fail'}">
+        ${r.pct}% ${r.passed ? '✅' : '❌'}
+      </div>
+    </div>`).join('');
+
+  updateSyncStatus();
+  showScreen('sc-complete');
+}
+
+function updateSyncStatus() {
+  const p = getPending();
+  const el = document.getElementById('syncStatus');
+  if (!p.length) {
+    el.className = 'sync-status synced';
+    el.textContent = '✅ All results synced to server';
+    document.getElementById('syncBtn').disabled = true;
+    document.getElementById('syncBtn').textContent = '✅ Already Synced';
+  } else {
+    el.className = 'sync-status pending';
+    el.textContent = `📤 ${p.length} result${p.length > 1 ? 's' : ''} pending sync`;
+    document.getElementById('syncBtn').disabled = false;
+    document.getElementById('syncBtn').textContent = '📤 Sync Results to Server';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// SYNC
+// ══════════════════════════════════════════════════════════
+async function syncPending(silent = false) {
+  const pending = getPending();
+  if (!pending.length) return;
+
+  if (!silent) {
+    document.getElementById('syncBtn').disabled = true;
+    document.getElementById('syncBtn').textContent = '⏳ Syncing...';
+  }
+
+  let synced = 0;
+  const failed = [];
+
+  for (const result of pending) {
+    try {
+      const resp = await fetch('/portal/offline/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pin:          result.pin,
+          student_name: result.student_name,
+          subject:      result.subject,
+          level:        result.level,
+          score:        result.score,
+          total:        result.total,
+          pct:          result.pct,
+          passed:       result.passed,
+          timestamp:    result.timestamp,
+        })
+      });
+      if (resp.ok) synced++;
+      else failed.push(result);
+    } catch {
+      failed.push(result);
+    }
+  }
+
+  savePending(failed);
+
+  if (!silent) {
+    updateSyncStatus();
+    checkPending();
+    const el = document.getElementById('syncStatus');
+    if (failed.length === 0) {
+      el.className = 'sync-status synced';
+      el.textContent = `✅ All ${synced} results synced successfully!`;
+    } else {
+      el.className = 'sync-status error';
+      el.textContent = `⚠️ ${synced} synced, ${failed.length} failed — check connection and retry`;
+    }
+  }
+}
+
+async function syncResults() {
+  await syncPending(false);
+}
+
+// ══════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════
+function startNewSession() {
+  session = null;
+  clearSession();
+  document.getElementById('pinInput').value = '';
+  document.getElementById('cachedSession').style.display = 'none';
+  checkPending();
+  showScreen('sc-pin');
+}
+
+function addMoreStudents() {
+  showInfoScreen();
+}
+
+// ══════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════
+function showError(box, msg) {
+  box.textContent = '⚠️ ' + msg;
+  box.style.display = 'block';
+}
 </script>
 </body>
 </html>
