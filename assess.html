@@ -362,14 +362,12 @@ function renderQuestion(){
     </div>
     ${urduText ? `<div class="q-text urdu">${urduText}</div>` : ''}
     ${englishText ? `<div class="q-text">${englishText}</div>` : ''}
-    <div class="options">
+    <div class="options" id="opts-wrap" data-correct="${q.correct_option}" data-qid="${q.id||''}">
       ${['A','B','C','D'].map(label => {
         const text = q['option_'+label.toLowerCase()];
         if(!text) return '';
         return `<div class="opt" id="opt-${label}" 
-          data-label="${label}" 
-          data-correct="${q.correct_option}" 
-          data-qid="${q.id||''}"
+          data-label="${label}"
           onclick="handleOptClick(this)">
           <div class="opt-label">${label}</div>
           <div class="opt-text ${isUrdu?'urdu':''}">${text}</div>
@@ -391,8 +389,9 @@ function startTimer(){
 
 function handleOptClick(el){
   const label   = el.dataset.label;
-  const correct = el.dataset.correct;
-  const qId     = el.dataset.qid;
+  const wrap    = document.getElementById('opts-wrap');
+  const correct = wrap.dataset.correct;
+  const qId     = wrap.dataset.qid;
   selectOption(label, correct, qId);
 }
 
