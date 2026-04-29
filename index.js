@@ -4051,7 +4051,7 @@ app.get('/api/questions/breakdown', async (req, res) => {
       console.log('tablet tables ready');
       // Clean bad image URLs that don't belong to TAKMIL
       await db.pool.query(`UPDATE questions SET image_url = NULL WHERE image_url IS NOT NULL AND image_url NOT LIKE '%takmil%' AND image_url NOT LIKE '%railway%' AND image_url NOT LIKE '%upload%'`);
-      console.log('bad images cleaned');
+      console.log('bad images cleaned'); // v2
 
       // ── Assessment infrastructure tables ──────────────────────
       // Track which level each school cohort is currently on
