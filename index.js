@@ -38,7 +38,7 @@ const STATE = {
   SESSION_COMPLETE:      'SESSION_COMPLETE',
 };
 
-const QUESTIONS_PER_SESSION = 10;
+const QUESTIONS_PER_SESSION = 20;
 const PASS_THRESHOLD = 80;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -1204,6 +1204,292 @@ app.get('/api/register/absent', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+
+// ═══════════════════════════════════════════════════════════════
+//  TABLET ASSESSMENT API
+// ═══════════════════════════════════════════════════════════════
+
+// Serve tablet assessment portal
+app.get('/assess', (req, res) => res.sendFile(path.join(__dirname, 'assess.html')));
+
+// Teacher generates PIN via API (also called from WhatsApp GENERATE PIN command)
+app.post('/api/assess/generate-pin', async (req, res) => {
+  try {
+    const { school_identifier, level, subject, created_by } = req.body;
+    if (!school_identifier || !level) return res.status(400).json({ error: 'school_identifier and level required' });
+
+    // Generate 6-digit PIN
+    const pin_code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Deactivate any existing PIN for this school+level
+    await db.pool.query(
+      `UPDATE tablet_sessions SET active=FALSE WHERE school_identifier=$1 AND level=$2`,
+      [school_identifier, parseInt(level)]
+    );
+
+    const r = await db.pool.query(`
+      INSERT INTO tablet_sessions (pin_code, school_identifier, level, subject, created_by, expires_at)
+      VALUES ($1,$2,$3,$4,$5,$6) RETURNING id
+    `, [pin_code, school_identifier, parseInt(level), subject||'All', created_by||'teacher', expires_at]);
+
+    res.json({ pin_code, expires_at, session_id: r.rows[0].id, level, school_identifier });
+  } catch(err) {
+    console.log('generate pin error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Validate PIN and get session info
+app.get('/api/assess/session/:pin', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT ts.*, s.name AS school_name
+      FROM tablet_sessions ts
+      LEFT JOIN schools s ON s.identifier ILIKE ts.school_identifier
+      WHERE ts.pin_code=$1 AND ts.active=TRUE AND ts.expires_at > NOW()
+    `, [req.params.pin]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Invalid or expired PIN' });
+    res.json(r.rows[0]);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Get 20 random questions for a session
+app.get('/api/assess/questions/:pin', async (req, res) => {
+  try {
+    const sess = await db.pool.query(
+      `SELECT * FROM tablet_sessions WHERE pin_code=$1 AND active=TRUE AND expires_at>NOW()`,
+      [req.params.pin]
+    );
+    if (!sess.rows.length) return res.status(404).json({ error: 'Invalid or expired PIN' });
+    const s = sess.rows[0];
+
+    // Level 12 = Grand Assessment — pull from all levels 1-11
+    let qs;
+    if (parseInt(s.level) === 12) {
+      qs = await db.pool.query(`
+        SELECT id, question_text, option_a, option_b, option_c, option_d,
+               correct_option, subject, level, image_url
+        FROM questions
+        WHERE approved=TRUE AND level BETWEEN 1 AND 11
+        ORDER BY RANDOM() LIMIT 20
+      `);
+    } else {
+      qs = await db.pool.query(`
+        SELECT id, question_text, option_a, option_b, option_c, option_d,
+               correct_option, subject, level, image_url
+        FROM questions
+        WHERE approved=TRUE AND level=$1
+        ORDER BY RANDOM() LIMIT 20
+      `, [s.level]);
+    }
+
+    if (qs.rows.length < 5) return res.status(400).json({ error: 'Not enough approved questions for this level. Please approve more questions first.' });
+
+    // Shuffle options for each question
+    const questions = qs.rows.map(q => {
+      const opts = [
+        { label:'A', text: q.option_a },
+        { label:'B', text: q.option_b },
+        { label:'C', text: q.option_c },
+        { label:'D', text: q.option_d },
+      ];
+      const shuffled = opts.sort(() => Math.random() - 0.5);
+      const correctText = opts.find(o => o.label === q.correct_option)?.text;
+      const newCorrect = shuffled.find(o => o.text === correctText)?.label || 'A';
+      return {
+        id: q.id, question_text: q.question_text, subject: q.subject,
+        level: q.level, image_url: q.image_url,
+        option_a: shuffled[0].text, option_b: shuffled[1].text,
+        option_c: shuffled[2].text, option_d: shuffled[3].text,
+        correct_option: newCorrect,
+      };
+    });
+
+    res.json({ session: s, questions });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Submit student answers
+app.post('/api/assess/submit', async (req, res) => {
+  try {
+    const { pin, student_name, answers } = req.body;
+    // answers = [{ question_id, selected_option, correct_option, time_taken_secs }]
+    if (!pin || !student_name || !answers?.length)
+      return res.status(400).json({ error: 'pin, student_name and answers required' });
+
+    const sess = await db.pool.query(
+      `SELECT * FROM tablet_sessions WHERE pin_code=$1 AND active=TRUE AND expires_at>NOW()`,
+      [pin]
+    );
+    if (!sess.rows.length) return res.status(404).json({ error: 'Invalid or expired PIN' });
+    const s = sess.rows[0];
+
+    // Save individual responses
+    let correct = 0;
+    for (const a of answers) {
+      const isCorrect = a.selected_option === a.correct_option;
+      if (isCorrect) correct++;
+      await db.pool.query(`
+        INSERT INTO tablet_responses
+          (session_id, student_name, school_identifier, level, question_id,
+           selected_option, correct_option, is_correct, time_taken_secs)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      `, [s.id, student_name, s.school_identifier, s.level,
+          a.question_id, a.selected_option, a.correct_option,
+          isCorrect, a.time_taken_secs || 0]);
+    }
+
+    const total    = answers.length;
+    const scorePct = Math.round(correct / total * 100);
+    const passed   = scorePct >= 80;
+
+    // Save result
+    await db.pool.query(`
+      INSERT INTO tablet_results
+        (session_id, student_name, school_identifier, level, total_questions, correct_answers, score_pct, passed)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      ON CONFLICT DO NOTHING
+    `, [s.id, student_name, s.school_identifier, s.level, total, correct, scorePct, passed]);
+
+    // Check if this triggers competency analysis (run async)
+    analyzeCompetency(s.id, s.school_identifier, s.level).catch(e => console.log('competency error:', e.message));
+
+    res.json({ saved: true, score_pct: scorePct, correct, total, passed });
+  } catch(err) {
+    console.log('submit error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get session results (teacher view after all students done)
+app.get('/api/assess/results/:pin', async (req, res) => {
+  try {
+    const sess = await db.pool.query(
+      `SELECT * FROM tablet_sessions WHERE pin_code=$1`, [req.params.pin]);
+    if (!sess.rows.length) return res.status(404).json({ error: 'Session not found' });
+    const s = sess.rows[0];
+
+    const results = await db.pool.query(`
+      SELECT student_name, score_pct, correct_answers, total_questions, passed, completed_at
+      FROM tablet_results WHERE session_id=$1 ORDER BY completed_at
+    `, [s.id]);
+
+    const students = results.rows;
+    const total    = students.length;
+    const passed   = students.filter(r => r.passed).length;
+    const avgScore = total ? Math.round(students.reduce((a,r) => a + parseFloat(r.score_pct), 0) / total) : 0;
+    const cohortPassed = avgScore >= 80;
+
+    // Get competency flags for this session
+    const flags = await db.pool.query(`
+      SELECT cf.topic, cf.fail_rate, cf.students_failed, cf.total_students, q.question_text
+      FROM competency_flags cf
+      LEFT JOIN questions q ON q.id = cf.question_id
+      WHERE cf.school_identifier=$1 AND cf.level=$2
+      ORDER BY cf.fail_rate DESC
+    `, [s.school_identifier, s.level]);
+
+    res.json({
+      session: s, students, total, passed, avgScore,
+      cohortPassed, competencyFlags: flags.rows
+    });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Competency analysis (runs after each submission) ──────────
+async function analyzeCompetency(sessionId, schoolIdentifier, level) {
+  // Get all responses for this session
+  const r = await db.pool.query(`
+    SELECT question_id, is_correct,
+           COUNT(*) OVER (PARTITION BY question_id) AS total_attempts,
+           SUM(CASE WHEN NOT is_correct THEN 1 ELSE 0 END)
+             OVER (PARTITION BY question_id) AS fail_count
+    FROM tablet_responses
+    WHERE session_id=$1
+  `, [sessionId]);
+
+  const qMap = {};
+  for (const row of r.rows) {
+    if (!qMap[row.question_id]) {
+      qMap[row.question_id] = {
+        total: parseInt(row.total_attempts),
+        failed: parseInt(row.fail_count)
+      };
+    }
+  }
+
+  for (const [qId, stats] of Object.entries(qMap)) {
+    const failRate = Math.round(stats.failed / stats.total * 100);
+    if (failRate >= 80) {
+      // Get question topic
+      const q = await db.pool.query(`SELECT topic, subject FROM questions WHERE id=$1`, [qId]);
+      const topic = q.rows[0]?.topic || q.rows[0]?.subject || 'Unknown';
+      await db.pool.query(`
+        INSERT INTO competency_flags
+          (school_identifier, level, question_id, topic, fail_rate, students_failed, total_students)
+        VALUES ($1,$2,$3,$4,$5,$6,$7)
+        ON CONFLICT DO NOTHING
+      `, [schoolIdentifier, parseInt(level), parseInt(qId), topic, failRate, stats.failed, stats.total]);
+    }
+  }
+}
+
+// ── Lesson Tracking API ────────────────────────────────────────
+app.post('/api/lessons/complete', async (req, res) => {
+  try {
+    const { school_identifier, level, lesson_number, marked_by } = req.body;
+    await db.pool.query(`
+      INSERT INTO lesson_completions (school_identifier, level, lesson_number, marked_by)
+      VALUES ($1,$2,$3,$4)
+      ON CONFLICT (school_identifier, level, lesson_number) DO NOTHING
+    `, [school_identifier, parseInt(level), parseInt(lesson_number), marked_by||'teacher']);
+
+    // Get total completed for this level
+    const r = await db.pool.query(`
+      SELECT COUNT(*) AS completed FROM lesson_completions
+      WHERE school_identifier=$1 AND level=$2
+    `, [school_identifier, parseInt(level)]);
+    const completed = parseInt(r.rows[0].completed);
+
+    res.json({ saved: true, lessons_completed: completed });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/lessons/progress/:school_identifier', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT level, COUNT(*) AS completed
+      FROM lesson_completions
+      WHERE school_identifier=$1
+      GROUP BY level ORDER BY level
+    `, [req.params.school_identifier]);
+    res.json({ school: req.params.school_identifier, progress: r.rows });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Cohort level management ────────────────────────────────────
+app.get('/api/cohort/:school_identifier', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT * FROM cohort_levels WHERE school_identifier=$1
+    `, [req.params.school_identifier]);
+    if (!r.rows.length) {
+      // Auto-create at level 1 if not exists
+      await db.pool.query(`
+        INSERT INTO cohort_levels (school_identifier, current_level)
+        VALUES ($1, 1) ON CONFLICT DO NOTHING
+      `, [req.params.school_identifier]);
+      return res.json({ school_identifier: req.params.school_identifier, current_level: 1, status: 'in_progress' });
+    }
+    res.json(r.rows[0]);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── WhatsApp PIN generation command ──────────────────────────
+// Teacher texts: GENERATE PIN 3  (for level 3)
+// Or:            PIN LEVEL 3
+
 // ── Feedback API ─────────────────────────────────────────────
 app.get('/feedback', (req, res) => res.sendFile(path.join(__dirname, 'feedback.html')));
 
@@ -1537,6 +1823,32 @@ app.post('/webhook', async (req, res) => {
   if (body === undefined) return res.status(400).send('Bad request');
   console.log(`📩 [${new Date().toISOString()}] From: ${from} | Msg: "${body}"`);
   try {
+    // Check if teacher is generating a PIN
+    const pinMatch = body.match(/^(?:GENERATE\s+PIN|PIN\s+LEVEL|PIN)\s+(\d+)/i);
+    if (pinMatch) {
+      const level = parseInt(pinMatch[1]);
+      // Find school by teacher phone
+      let schoolId = null;
+      try {
+        const sr = await db.pool.query(
+          `SELECT identifier, name FROM schools WHERE teacher_phone=$1 LIMIT 1`,
+          [from.replace('whatsapp:','')] 
+        );
+        schoolId = sr.rows[0]?.identifier;
+      } catch(e) {}
+
+      const pinResp = await fetch(`${process.env.BASE_URL || 'http://localhost:' + (process.env.PORT||3000)}/api/assess/generate-pin`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ school_identifier: schoolId || from, level, created_by: from })
+      });
+      const pinData = await pinResp.json();
+      const reply = pinData.pin_code
+        ? `🔑 *PIN Generated for Level ${level}*\n\nPIN: *${pinData.pin_code}*\n\nWrite this on the board. Students open:\n📱 ${process.env.APP_URL || 'https://takmil-bot-production-0f51.up.railway.app'}/assess\n\nPIN expires in 24 hours.`
+        : `❌ Error generating PIN: ${pinData.error}`;
+      res.set('Content-Type', 'text/xml');
+      return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(reply)}</Message></Response>`);
+    }
+
     // Check if this is a daily feedback report
     if (isFeedbackMessage(body)) {
       const fb = parseFeedback(body, from);
@@ -3568,6 +3880,91 @@ app.get('/api/questions/breakdown', async (req, res) => {
         UNIQUE(roll_number, attendance_date)
       )`);
       console.log('attendance tables ready');
+
+      // ── Assessment infrastructure tables ──────────────────────
+      // Track which level each school cohort is currently on
+      await db.pool.query(`CREATE TABLE IF NOT EXISTS cohort_levels (
+        id                SERIAL PRIMARY KEY,
+        school_id         INTEGER REFERENCES schools(id),
+        school_identifier TEXT NOT NULL,
+        current_level     INTEGER DEFAULT 1,
+        subject           TEXT DEFAULT 'All',
+        lessons_completed INTEGER DEFAULT 0,
+        total_lessons     INTEGER DEFAULT 0,
+        status            TEXT DEFAULT 'in_progress',
+        last_assessment   DATE,
+        updated_at        TIMESTAMP DEFAULT NOW(),
+        UNIQUE(school_identifier, subject)
+      )`);
+
+      // Track individual lesson completions
+      await db.pool.query(`CREATE TABLE IF NOT EXISTS lesson_completions (
+        id                SERIAL PRIMARY KEY,
+        school_identifier TEXT NOT NULL,
+        level             INTEGER NOT NULL,
+        lesson_number     INTEGER NOT NULL,
+        marked_by         TEXT,
+        completed_at      TIMESTAMP DEFAULT NOW(),
+        UNIQUE(school_identifier, level, lesson_number)
+      )`);
+
+      // Track competency flags — questions ≥80% students got wrong
+      await db.pool.query(`CREATE TABLE IF NOT EXISTS competency_flags (
+        id                SERIAL PRIMARY KEY,
+        school_identifier TEXT NOT NULL,
+        level             INTEGER NOT NULL,
+        question_id       INTEGER REFERENCES questions(id),
+        topic             TEXT,
+        fail_rate         NUMERIC(5,2),
+        students_failed   INTEGER,
+        total_students    INTEGER,
+        reinforced        BOOLEAN DEFAULT FALSE,
+        created_at        TIMESTAMP DEFAULT NOW()
+      )`);
+
+      // Tablet assessment sessions (browser-based, not WhatsApp)
+      await db.pool.query(`CREATE TABLE IF NOT EXISTS tablet_sessions (
+        id                SERIAL PRIMARY KEY,
+        pin_code          TEXT NOT NULL,
+        school_identifier TEXT NOT NULL,
+        level             INTEGER NOT NULL,
+        subject           TEXT DEFAULT 'All',
+        created_by        TEXT,
+        expires_at        TIMESTAMP NOT NULL,
+        active            BOOLEAN DEFAULT TRUE,
+        created_at        TIMESTAMP DEFAULT NOW(),
+        UNIQUE(pin_code)
+      )`);
+
+      // Individual tablet assessment responses
+      await db.pool.query(`CREATE TABLE IF NOT EXISTS tablet_responses (
+        id                SERIAL PRIMARY KEY,
+        session_id        INTEGER REFERENCES tablet_sessions(id),
+        student_name      TEXT NOT NULL,
+        school_identifier TEXT NOT NULL,
+        level             INTEGER NOT NULL,
+        question_id       INTEGER REFERENCES questions(id),
+        selected_option   TEXT,
+        correct_option    TEXT,
+        is_correct        BOOLEAN DEFAULT FALSE,
+        time_taken_secs   INTEGER,
+        answered_at       TIMESTAMP DEFAULT NOW()
+      )`);
+
+      // Aggregated tablet assessment results per student
+      await db.pool.query(`CREATE TABLE IF NOT EXISTS tablet_results (
+        id                SERIAL PRIMARY KEY,
+        session_id        INTEGER REFERENCES tablet_sessions(id),
+        student_name      TEXT NOT NULL,
+        school_identifier TEXT NOT NULL,
+        level             INTEGER NOT NULL,
+        total_questions   INTEGER DEFAULT 20,
+        correct_answers   INTEGER DEFAULT 0,
+        score_pct         NUMERIC(5,2) DEFAULT 0,
+        passed            BOOLEAN DEFAULT FALSE,
+        completed_at      TIMESTAMP DEFAULT NOW()
+      )`);
+      console.log('assessment infrastructure tables ready');
       // Add photo columns if not exists
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_url TEXT`);
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS photo_head_count INTEGER`);

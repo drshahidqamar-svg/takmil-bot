@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TAKMIL Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#1a2e7a;--navy2:#0f1d54;--orange:#F74F22;--orange2:#fff0ec;
+  --green:#16a34a;--green2:#dcfce7;--red:#ef4444;--red2:#fee2e2;
+  --bg:#f8f9ff;--bg2:#ffffff;--border:#e0e4f5;
+  --text:#1a1f3a;--text2:#4a5080;--text3:#8a90b8;
+  --r:16px;--r2:12px;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:16px;overflow-x:hidden}
+
+/* SCREENS */
+.scr{display:none;min-height:100vh}
+.scr.on{display:flex;flex-direction:column}
+
+/* ── PIN SCREEN ── */
+#s-pin{align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(135deg,var(--navy2),var(--navy))}
+.pin-logo{font-size:48px;font-weight:900;color:white;letter-spacing:1px;margin-bottom:4px;text-align:center}
+.pin-sub{font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:40px;text-align:center;text-transform:uppercase;letter-spacing:1px}
+.pin-card{background:white;border-radius:24px;padding:32px 28px;width:100%;max-width:400px}
+.pin-label{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:8px}
+.pin-inp{width:100%;padding:18px;background:var(--bg);border:2px solid var(--border);
+  border-radius:var(--r2);font-size:28px;font-weight:900;color:var(--navy);
+  text-align:center;letter-spacing:8px;outline:none;font-family:'DM Sans',sans-serif;
+  margin-bottom:20px}
+.pin-inp:focus{border-color:var(--navy)}
+.pin-btn{width:100%;padding:18px;background:linear-gradient(135deg,var(--navy),var(--navy2));
+  border:none;border-radius:var(--r2);font-size:17px;font-weight:800;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
+  box-shadow:0 4px 20px rgba(26,46,122,0.3);transition:all 0.2s}
+.pin-btn:active{transform:scale(0.98)}
+.pin-err{color:var(--red);font-size:13px;text-align:center;margin-top:12px;font-weight:600}
+.pin-info{background:var(--bg);border-radius:var(--r2);padding:14px;margin-top:16px;text-align:center}
+.pi-school{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:4px}
+.pi-level{font-size:13px;color:var(--text3)}
+
+/* ── NAME SCREEN ── */
+#s-name{align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(135deg,#0d4a1a,var(--green))}
+.name-card{background:white;border-radius:24px;padding:32px 28px;width:100%;max-width:400px}
+.name-hdr{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:16px}
+.name-school{font-size:18px;font-weight:900;color:var(--navy);margin-bottom:4px}
+.name-level{font-size:13px;color:var(--text3);margin-bottom:28px}
+.name-inp{width:100%;padding:18px;background:var(--bg);border:2px solid var(--border);
+  border-radius:var(--r2);font-size:20px;font-weight:700;color:var(--text);
+  outline:none;font-family:'DM Sans',sans-serif;margin-bottom:20px}
+.name-inp:focus{border-color:var(--green)}
+.name-btn{width:100%;padding:18px;background:linear-gradient(135deg,var(--green),#0d5c29);
+  border:none;border-radius:var(--r2);font-size:17px;font-weight:800;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
+  box-shadow:0 4px 20px rgba(22,163,74,0.3)}
+.name-btn:active{transform:scale(0.98)}
+.prev-students{margin-top:16px}
+.prev-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px}
+.prev-list{max-height:120px;overflow-y:auto}
+.prev-item{padding:8px 12px;background:var(--green2);border-radius:8px;
+  font-size:13px;font-weight:600;color:var(--green);margin-bottom:4px;
+  display:flex;align-items:center;gap:6px}
+
+/* ── ASSESSMENT SCREEN ── */
+#s-assess{background:var(--bg2)}
+.assess-hdr{
+  background:var(--navy);padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:10;
+}
+.ah-name{font-size:15px;font-weight:800;color:white}
+.ah-progress{font-size:12px;color:rgba(255,255,255,0.7)}
+.progress-bar{height:4px;background:rgba(255,255,255,0.2)}
+.progress-fill{height:100%;background:var(--orange);transition:width 0.3s}
+
+.question-area{padding:20px;flex:1}
+.q-meta{display:flex;gap:8px;margin-bottom:16px;align-items:center}
+.q-num{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  color:white;background:var(--navy);padding:4px 12px;border-radius:20px}
+.q-subj{font-size:12px;font-weight:700;color:var(--text3);
+  background:var(--bg);padding:4px 10px;border-radius:20px}
+.q-timer{margin-left:auto;font-size:13px;font-weight:700;color:var(--orange)}
+
+.q-image{width:100%;max-height:200px;object-fit:contain;
+  border-radius:var(--r2);margin-bottom:16px;border:1px solid var(--border)}
+.q-text{font-size:18px;font-weight:700;color:var(--text);
+  line-height:1.5;margin-bottom:24px}
+.q-text.urdu{font-family:'Noto Nastaliq Urdu',serif;direction:rtl;text-align:right;font-size:20px}
+
+.options{display:flex;flex-direction:column;gap:10px}
+.opt{
+  padding:16px 18px;background:var(--bg);border:2.5px solid var(--border);
+  border-radius:var(--r2);cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:center;gap:12px;
+}
+.opt:active{transform:scale(0.98)}
+.opt.selected{background:#ede9fe;border-color:#7c3aed}
+.opt.correct{background:var(--green2);border-color:var(--green)}
+.opt.wrong{background:var(--red2);border-color:var(--red)}
+.opt-label{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--border);display:flex;align-items:center;
+  justify-content:center;font-size:14px;font-weight:800;
+  color:var(--text2);flex-shrink:0;transition:all 0.15s;
+}
+.opt.selected .opt-label{background:#7c3aed;color:white}
+.opt.correct .opt-label{background:var(--green);color:white}
+.opt.wrong .opt-label{background:var(--red);color:white}
+.opt-text{font-size:16px;font-weight:600;color:var(--text);line-height:1.4}
+.opt-text.urdu{font-family:'Noto Nastaliq Urdu',serif;direction:rtl;text-align:right}
+
+.next-btn{
+  margin:20px;padding:18px;background:linear-gradient(135deg,var(--navy),var(--navy2));
+  border:none;border-radius:var(--r2);font-size:16px;font-weight:800;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
+  width:calc(100% - 40px);display:none;box-shadow:0 4px 16px rgba(26,46,122,0.25);
+}
+.next-btn.show{display:block}
+.next-btn:active{transform:scale(0.98)}
+
+/* ── RESULT SCREEN ── */
+#s-result{align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(135deg,var(--navy2),var(--navy))}
+.result-card{background:white;border-radius:24px;padding:32px 28px;width:100%;max-width:400px;text-align:center}
+.result-emoji{font-size:64px;margin-bottom:16px}
+.result-name{font-size:22px;font-weight:900;color:var(--navy);margin-bottom:8px}
+.result-score{font-size:56px;font-weight:900;line-height:1;margin-bottom:4px}
+.result-label{font-size:14px;color:var(--text3);margin-bottom:24px}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.rg-cell{background:var(--bg);border-radius:var(--r2);padding:14px}
+.rg-n{font-size:24px;font-weight:900;color:var(--navy)}
+.rg-l{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px}
+.result-status{padding:14px;border-radius:var(--r2);font-size:14px;font-weight:700;margin-bottom:20px}
+.status-pass{background:var(--green2);color:var(--green)}
+.status-fail{background:var(--red2);color:var(--red)}
+.next-student-btn{
+  width:100%;padding:16px;background:linear-gradient(135deg,var(--green),#0d5c29);
+  border:none;border-radius:var(--r2);font-size:16px;font-weight:800;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px;
+}
+.end-btn{
+  width:100%;padding:14px;background:var(--bg);border:2px solid var(--border);
+  border-radius:var(--r2);font-size:14px;font-weight:700;
+  color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;
+}
+
+/* ── SESSION RESULTS (Teacher View) ── */
+#s-session{background:var(--bg2);padding-bottom:40px}
+.sess-hdr{background:var(--navy);padding:16px 20px;color:white}
+.sess-title{font-size:18px;font-weight:900}
+.sess-sub{font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px}
+.sess-body{padding:20px}
+.cohort-card{border-radius:var(--r);padding:20px;margin-bottom:20px;text-align:center}
+.cc-pass{background:var(--green2);border:2px solid #86efac}
+.cc-fail{background:var(--red2);border:2px solid #fca5a5}
+.cc-n{font-size:40px;font-weight:900}
+.cc-l{font-size:13px;font-weight:700;color:var(--text2);margin-top:4px}
+.student-row{background:white;border:1.5px solid var(--border);border-radius:var(--r2);
+  padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.sr-name{flex:1;font-size:15px;font-weight:700;color:var(--text)}
+.sr-score{font-size:20px;font-weight:900}
+.sr-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px}
+.b-pass{background:var(--green2);color:var(--green)}
+.b-fail{background:var(--red2);color:var(--red)}
+.flag-section{margin-top:20px}
+.flag-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px}
+.flag-item{background:#fef9c3;border:1px solid #fde047;border-radius:var(--r2);
+  padding:12px 14px;margin-bottom:8px;font-size:13px}
+.flag-rate{font-weight:800;color:#92400e}
+.new-session-btn{
+  width:100%;padding:16px;margin-top:16px;
+  background:linear-gradient(135deg,var(--navy),var(--navy2));
+  border:none;border-radius:var(--r2);font-size:15px;font-weight:800;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
+}
+</style>
+</head>
+<body>
+
+<!-- PIN ENTRY -->
+<div class="scr on" id="s-pin">
+  <div class="pin-logo">TAKMIL</div>
+  <div class="pin-sub">Student Assessment</div>
+  <div class="pin-card">
+    <label class="pin-label">Enter PIN from board</label>
+    <input class="pin-inp" id="pin-inp" type="number" placeholder="______"
+      maxlength="6" oninput="if(this.value.length===6)validatePin()">
+    <button class="pin-btn" onclick="validatePin()">Continue →</button>
+    <div class="pin-err" id="pin-err"></div>
+    <div class="pin-info" id="pin-info" style="display:none">
+      <div class="pi-school" id="pi-school"></div>
+      <div class="pi-level" id="pi-level"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENT NAME -->
+<div class="scr" id="s-name">
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
+  <div class="name-card">
+    <div class="name-hdr">Assessment Session</div>
+    <div class="name-school" id="name-school">—</div>
+    <div class="name-level" id="name-level">—</div>
+    <label class="pin-label" style="margin-top:20px">Your Name</label>
+    <input class="name-inp" id="name-inp" type="text" placeholder="Full name..."
+      autocomplete="off" onkeypress="if(event.key==='Enter')startAssessment()">
+    <button class="name-btn" onclick="startAssessment()">Start Assessment →</button>
+    <div class="prev-students" id="prev-students" style="display:none">
+      <div class="prev-title">Already assessed today:</div>
+      <div class="prev-list" id="prev-list"></div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- ASSESSMENT -->
+<div class="scr" id="s-assess">
+  <div class="assess-hdr">
+    <div>
+      <div class="ah-name" id="ah-name">Student Name</div>
+      <div class="ah-progress" id="ah-progress">Question 1 of 20</div>
+    </div>
+    <div class="q-timer" id="q-timer">0:00</div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+  <div class="question-area" id="question-area"></div>
+  <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next →</button>
+</div>
+
+<!-- STUDENT RESULT -->
+<div class="scr" id="s-result">
+  <div class="result-card">
+    <div class="result-emoji" id="r-emoji">🎉</div>
+    <div class="result-name" id="r-name"></div>
+    <div class="result-score" id="r-score"></div>
+    <div class="result-label">Score</div>
+    <div class="result-grid">
+      <div class="rg-cell"><div class="rg-n" id="r-correct"></div><div class="rg-l">Correct</div></div>
+      <div class="rg-cell"><div class="rg-n" id="r-wrong"></div><div class="rg-l">Wrong</div></div>
+    </div>
+    <div class="result-status" id="r-status"></div>
+    <button class="next-student-btn" onclick="nextStudent()">Next Student →</button>
+    <button class="end-btn" onclick="showSessionResults()">View All Results</button>
+  </div>
+</div>
+
+<!-- SESSION RESULTS -->
+<div class="scr" id="s-session">
+  <div class="sess-hdr">
+    <div class="sess-title">Session Results</div>
+    <div class="sess-sub" id="sess-sub"></div>
+  </div>
+  <div class="sess-body" id="sess-body"></div>
+</div>
+
+<script>
+let currentPin = '';
+let sessionData = null;
+let questions = [];
+let currentQIndex = 0;
+let answers = [];
+let startTime = null;
+let qStartTime = null;
+let timerInterval = null;
+let assessedStudents = [];
+let currentStudent = '';
+
+function showScr(id){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+
+// ── PIN VALIDATION ─────────────────────────────────────────────
+async function validatePin(){
+  const pin = document.getElementById('pin-inp').value.trim();
+  if(pin.length < 4){ return; }
+  const err = document.getElementById('pin-err');
+  err.textContent = 'Checking...';
+  try{
+    const resp = await fetch(`/api/assess/session/${pin}`);
+    const data = await resp.json();
+    if(!resp.ok) throw new Error(data.error||'Invalid PIN');
+
+    currentPin = pin;
+    sessionData = data;
+
+    // Show school info
+    document.getElementById('pin-info').style.display='block';
+    document.getElementById('pi-school').textContent = data.school_name || data.school_identifier;
+    document.getElementById('pi-level').textContent = data.level === 12
+      ? '🏆 Grand Assessment — All Levels'
+      : `📚 Level ${data.level} Assessment`;
+    err.textContent = '';
+
+    setTimeout(()=>{
+      document.getElementById('name-school').textContent = data.school_name || data.school_identifier;
+      document.getElementById('name-level').textContent  = data.level === 12
+        ? 'Grand Assessment — All Levels'
+        : `Level ${data.level} · 20 Questions`;
+      showScr('s-name');
+      document.getElementById('name-inp').focus();
+    }, 800);
+  }catch(e){
+    err.textContent = e.message;
+  }
+}
+
+// ── START ASSESSMENT ───────────────────────────────────────────
+async function startAssessment(){
+  const name = document.getElementById('name-inp').value.trim();
+  if(name.length < 2){ alert('Please enter your full name'); return; }
+  currentStudent = name;
+
+  // Load questions
+  const resp = await fetch(`/api/assess/questions/${currentPin}`);
+  const data = await resp.json();
+  if(!resp.ok){ alert(data.error||'Could not load questions'); return; }
+
+  questions = data.questions;
+  answers   = [];
+  currentQIndex = 0;
+  startTime = Date.now();
+
+  document.getElementById('ah-name').textContent = name;
+  showScr('s-assess');
+  renderQuestion();
+}
+
+// ── RENDER QUESTION ────────────────────────────────────────────
+function renderQuestion(){
+  const q = questions[currentQIndex];
+  const n = currentQIndex + 1;
+  const total = questions.length;
+
+  document.getElementById('ah-progress').textContent = `Question ${n} of ${total}`;
+  document.getElementById('progress-fill').style.width = `${(n-1)/total*100}%`;
+  document.getElementById('next-btn').classList.remove('show');
+
+  qStartTime = Date.now();
+  startTimer();
+
+  const isUrdu = q.subject?.toLowerCase()==='urdu';
+
+  let html = '';
+  if(q.image_url) html += `<img class="q-image" src="${q.image_url}" alt="Question image">`;
+  html += `
+    <div class="q-meta">
+      <span class="q-num">${n}</span>
+      <span class="q-subj">${q.subject||''} · L${q.level}</span>
+    </div>
+    <div class="q-text ${isUrdu?'urdu':''}">${q.question_text}</div>
+    <div class="options">
+      ${['A','B','C','D'].map(label => {
+        const text = q['option_'+label.toLowerCase()];
+        if(!text) return '';
+        return `<div class="opt" id="opt-${label}" onclick="selectOption('${label}','${q.correct_option}',${q.id})">
+          <div class="opt-label">${label}</div>
+          <div class="opt-text ${isUrdu?'urdu':''}">${text}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  document.getElementById('question-area').innerHTML = html;
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  let secs = 0;
+  timerInterval = setInterval(()=>{
+    secs++;
+    const m = Math.floor(secs/60), s = secs%60;
+    document.getElementById('q-timer').textContent = `${m}:${s<10?'0':''}${s}`;
+  }, 1000);
+}
+
+function selectOption(selected, correct, qId){
+  clearInterval(timerInterval);
+  const timeTaken = Math.floor((Date.now() - qStartTime) / 1000);
+
+  // Disable all options
+  document.querySelectorAll('.opt').forEach(o => o.onclick = null);
+
+  // Show correct/wrong
+  document.querySelectorAll('.opt').forEach(o => {
+    const label = o.id.replace('opt-','');
+    if(label === correct) o.classList.add('correct');
+    else if(label === selected && selected !== correct) o.classList.add('wrong');
+  });
+
+  answers.push({ question_id: qId, selected_option: selected, correct_option: correct, time_taken_secs: timeTaken });
+  document.getElementById('next-btn').classList.add('show');
+
+  const btn = document.getElementById('next-btn');
+  btn.textContent = currentQIndex < questions.length-1 ? 'Next →' : 'Submit →';
+}
+
+function nextQuestion(){
+  currentQIndex++;
+  if(currentQIndex < questions.length){
+    renderQuestion();
+  } else {
+    submitAnswers();
+  }
+}
+
+// ── SUBMIT ─────────────────────────────────────────────────────
+async function submitAnswers(){
+  document.getElementById('next-btn').textContent = 'Saving...';
+  document.getElementById('next-btn').disabled = true;
+
+  try{
+    const resp = await fetch('/api/assess/submit', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ pin: currentPin, student_name: currentStudent, answers })
+    });
+    const data = await resp.json();
+
+    assessedStudents.push({ name: currentStudent, score: data.score_pct, passed: data.passed,
+                            correct: data.correct, total: data.total });
+
+    // Show result
+    const pct = data.score_pct;
+    document.getElementById('r-emoji').textContent   = pct>=80?'🎉':pct>=60?'👍':'📚';
+    document.getElementById('r-name').textContent    = currentStudent;
+    document.getElementById('r-score').textContent   = pct+'%';
+    document.getElementById('r-score').style.color   = pct>=80?'#16a34a':pct>=60?'#f59e0b':'#ef4444';
+    document.getElementById('r-correct').textContent = data.correct;
+    document.getElementById('r-wrong').textContent   = data.total - data.correct;
+
+    const statusEl = document.getElementById('r-status');
+    if(data.passed){
+      statusEl.textContent = '✅ Passed! Well done!';
+      statusEl.className   = 'result-status status-pass';
+    } else {
+      statusEl.textContent = '📚 Keep studying. You can do it!';
+      statusEl.className   = 'result-status status-fail';
+    }
+
+    showScr('s-result');
+  }catch(e){
+    alert('Error saving: '+e.message);
+    document.getElementById('next-btn').disabled = false;
+    document.getElementById('next-btn').textContent = 'Retry →';
+  }
+}
+
+function nextStudent(){
+  // Update previous students list
+  const list = document.getElementById('prev-list');
+  list.innerHTML = assessedStudents.map(s=>
+    `<div class="prev-item">✅ ${s.name} — ${s.score}%</div>`
+  ).join('');
+  document.getElementById('prev-students').style.display='block';
+  document.getElementById('name-inp').value = '';
+  showScr('s-name');
+  document.getElementById('name-inp').focus();
+}
+
+async function showSessionResults(){
+  const resp = await fetch(`/api/assess/results/${currentPin}`);
+  const data = await resp.json();
+
+  document.getElementById('sess-sub').textContent =
+    `${data.session?.school_identifier} · Level ${data.session?.level} · ${data.total} students`;
+
+  const avgScore   = data.avgScore;
+  const passClass  = data.cohortPassed ? 'cc-pass' : 'cc-fail';
+
+  let html = `
+    <div class="cohort-card ${passClass}">
+      <div class="cc-n" style="color:${data.cohortPassed?'#16a34a':'#ef4444'}">${avgScore}%</div>
+      <div class="cc-l">Class Average · ${data.passed}/${data.total} students passed</div>
+      <div style="margin-top:10px;font-size:13px;font-weight:700;color:${data.cohortPassed?'#15803d':'#991b1b'}">
+        ${data.cohortPassed?'✅ Cohort passed threshold — Advancement requested!':'📚 Below 80% threshold — Re-assessment in 7 days'}
+      </div>
+    </div>
+    <div>${(data.students||[]).map(s=>`
+      <div class="student-row">
+        <div class="sr-name">${s.student_name}</div>
+        <div class="sr-score" style="color:${parseFloat(s.score_pct)>=80?'#16a34a':parseFloat(s.score_pct)>=60?'#f59e0b':'#ef4444'}">${parseFloat(s.score_pct).toFixed(0)}%</div>
+        <span class="sr-badge ${s.passed?'b-pass':'b-fail'}">${s.passed?'✅ Pass':'📚 Retry'}</span>
+      </div>`).join('')}
+    </div>`;
+
+  if(data.competencyFlags?.length){
+    html += `<div class="flag-section">
+      <div class="flag-title">⚠️ Reinforce These Topics (≥80% students failed):</div>
+      ${data.competencyFlags.map(f=>`
+        <div class="flag-item">
+          <div class="flag-rate">${f.topic} — ${f.fail_rate}% fail rate (${f.students_failed}/${f.total_students} students)</div>
+          <div style="font-size:12px;color:#92400e;margin-top:4px">${f.question_text||''}</div>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  html += `<button class="new-session-btn" onclick="location.reload()">Start New Session</button>`;
+  document.getElementById('sess-body').innerHTML = html;
+  showScr('s-session');
+}
+
+// Enter key on PIN input
+document.getElementById('pin-inp').addEventListener('keypress', e=>{
+  if(e.key==='Enter') validatePin();
+});
+</script>
+</body>
+</html>
