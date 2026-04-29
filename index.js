@@ -3453,9 +3453,9 @@ app.post('/api/generate-questions', async (req, res) => {
     if (!transcript) return res.status(400).json({ error: 'transcript required' });
 
     const topicSafe = (topic||'TOPIC').toUpperCase().replace(/[^A-Z0-9]/g,'_');
-    const prompt = `You are an educational assessment expert for TAKMIL Foundation which educates out-of-school children in rural Pakistan.
+    const prompt = `You are an educational assessment expert for TAKMIL Foundation which educates out-of-school children in rural Pakistan. Students watch video lessons throughout the month, then take a written assessment at the end of the month.
 
-Generate exactly 12 multiple choice questions based on this video transcript.
+Generate exactly 12 multiple choice questions to assess whether students have UNDERSTOOD the concepts taught in this lesson — NOT whether they remember the video.
 
 VIDEO INFO:
 - Name: ${name}
@@ -3463,19 +3463,30 @@ VIDEO INFO:
 - Level: ${level} (primary school, ages 8-12)
 - Topic: ${topic}
 
-TRANSCRIPT:
+TRANSCRIPT (use this to understand what concepts were taught):
 ${transcript}
 
-RULES:
-1. Questions based ONLY on what is in the transcript
-2. Grade-appropriate for Level ${level} students
-3. Each question has exactly 4 options (A, B, C, D)
-4. Wrong options must be plausible not obviously wrong
-5. Mix question types: recall, understanding, application
-6. Keep language simple and clear
-7. question_id format: ${(subject||'SUB').toUpperCase()}-L${level}-${topicSafe}-001 increment last 3 digits
+CRITICAL RULES — READ CAREFULLY:
+1. NEVER ask about video content, scenes, characters, events, or anything shown IN the video
+2. NEVER ask "In the video...", "According to the lesson...", "What was shown...", "Who appeared in..."
+3. NEVER ask about colors, names, or objects from the video story
+4. ALWAYS ask about the UNDERLYING CONCEPT the video was teaching
+5. Questions must be answerable WITHOUT having watched the video — only by knowing the concept
+6. Grade-appropriate for Level ${level} students (ages 8-12, rural Pakistan)
+7. Each question has exactly 4 options (A, B, C, D)
+8. Wrong options must be plausible not obviously wrong
+9. Mix question types: factual knowledge, application, reasoning
+10. Keep language simple — students may be learning in second language
+11. Question must stand alone — no reference to the video or lesson
+12. question_id format: ${(subject||'SUB').toUpperCase()}-L${level}-${topicSafe}-001 increment last 3 digits
 
-Respond ONLY with a valid JSON array no explanation no markdown just JSON:
+GOOD EXAMPLE (Math, topic: Addition):
+"What is 7 + 5?" — tests the concept, no video reference needed
+
+BAD EXAMPLE (same topic):
+"In the video, how many apples did the boy add?" — memory-based, useless after a month
+
+Respond ONLY with a valid JSON array, no explanation, no markdown, just the JSON array:
 [{"question_id":"...","question_text":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_option":"A"}]`;
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
