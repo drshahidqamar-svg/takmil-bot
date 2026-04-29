@@ -324,6 +324,8 @@ async function startAssessment(){
   if(!resp.ok){ alert(data.error||'Could not load questions'); return; }
 
   questions = data.questions;
+  console.log('First question correct_option from server:', questions[0]?.correct_option);
+  console.log('First question options:', questions[0]?.option_a, questions[0]?.option_b, questions[0]?.option_c, questions[0]?.option_d);
   answers   = [];
   currentQIndex = 0;
   startTime = Date.now();
@@ -392,6 +394,7 @@ function handleOptClick(el){
   const wrap    = document.getElementById('opts-wrap');
   const correct = wrap.dataset.correct;
   const qId     = wrap.dataset.qid;
+  console.log('Selected:', label, '| Correct:', correct, '| Match:', label===correct);
   selectOption(label, correct, qId);
 }
 
