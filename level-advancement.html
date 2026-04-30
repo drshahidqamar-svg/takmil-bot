@@ -109,10 +109,25 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;min-height:1
     <div class="stat"><div class="stat-num" id="st-graduated" style="color:#4ade80">—</div><div class="stat-lbl">Graduated</div></div>
   </div>
 
-  <!-- Search -->
+  <!-- Filters -->
   <div class="filters">
     <span class="filter-label">Search:</span>
-    <input type="text" id="f-search" placeholder="School name..." oninput="render()" style="min-width:220px">
+    <input type="text" id="f-search" placeholder="School name..." oninput="render()" style="min-width:180px">
+
+    <span class="filter-label">Year:</span>
+    <select id="f-year" onchange="render()">
+      <option value="">All Years</option>
+    </select>
+
+    <span class="filter-label">Section:</span>
+    <select id="f-section" onchange="render()">
+      <option value="">All Sections</option>
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="C">C</option>
+      <option value="O">O (Only)</option>
+    </select>
+
     <span class="filter-label">Level:</span>
     <select id="f-level" onchange="render()">
       <option value="">All Levels</option>
@@ -124,6 +139,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;min-height:1
       <option value="11">Level 11 (Grand Assessment)</option>
       <option value="12">Graduated</option>
     </select>
+
+    <button onclick="clearFilters()" style="padding:8px 14px;border-radius:8px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-size:13px;cursor:pointer;font-family:inherit">
+      ✕ Clear
+    </button>
+
+    <span style="font-size:13px;color:#64748b;margin-left:auto" id="results-count"></span>
   </div>
 
   <!-- School cards -->
@@ -166,7 +187,20 @@ async function loadData() {
   try {
     const resp = await fetch('/api/console/schools-progress');
     const data = await resp.json();
-    allSchools = data.schools || [];
+    allSchools = (data.schools || []).map(s => {
+      // Extract year and section from identifier e.g. AliHassanHingrjo_O_W24S
+      const parts = (s.identifier || '').split('_');
+      // Find the part matching W+2digits (year)
+      const yearPart = parts.find(p => /^W\d{2}$/i.test(p)) || '';
+      // Section is typically a single letter A/B/C/O between name and year
+      const sectionPart = parts.find(p => /^[A-Z]$/i.test(p) && p !== yearPart.slice(-1)) || '';
+      return {
+        ...s,
+        year:    yearPart.toUpperCase(),    // e.g. W24
+        section: sectionPart.toUpperCase(), // e.g. O, A, B
+      };
+    });
+    populateYearFilter();
     updateStats();
     render();
   } catch(e) {
@@ -186,17 +220,32 @@ function updateStats() {
   document.getElementById('st-graduated').textContent = allSchools.filter(s=>(parseInt(s.current_level)||1)>=12).length;
 }
 
+function populateYearFilter() {
+  const years = [...new Set(allSchools.map(s => s.year).filter(Boolean))].sort().reverse();
+  const sel = document.getElementById('f-year');
+  sel.innerHTML = '<option value="">All Years</option>' +
+    years.map(y => `<option value="${y}">${y.replace('W','Winter 20')}</option>`).join('');
+}
+
 function render() {
   const search   = document.getElementById('f-search').value.toLowerCase();
   const province = document.getElementById('f-province').value;
   const levelF   = document.getElementById('f-level').value;
 
+  const yearF    = document.getElementById('f-year').value;
+  const sectionF = document.getElementById('f-section').value;
+
   let schools = allSchools.filter(s => {
     if (search && !s.name?.toLowerCase().includes(search) && !s.identifier?.toLowerCase().includes(search)) return false;
-    if (province && s.province !== province) return false;
-    if (levelF && String(s.current_level || 1) !== levelF) return false;
+    if (province  && s.province !== province) return false;
+    if (levelF    && String(s.current_level || 1) !== levelF) return false;
+    if (yearF     && s.year !== yearF) return false;
+    if (sectionF  && s.section !== sectionF) return false;
     return true;
   });
+
+  document.getElementById('results-count').textContent =
+    schools.length < allSchools.length ? `${schools.length} of ${allSchools.length} schools` : `${allSchools.length} schools`;
 
   if (!schools.length) {
     document.getElementById('grid').innerHTML = '<div class="empty">No schools match the filter</div>';
@@ -357,6 +406,15 @@ async function showHistory(identifier, name) {
 
 function closeHistModal() {
   document.getElementById('hist-modal').style.display = 'none';
+}
+
+function clearFilters() {
+  document.getElementById('f-search').value  = '';
+  document.getElementById('f-year').value    = '';
+  document.getElementById('f-section').value = '';
+  document.getElementById('f-level').value   = '';
+  document.getElementById('f-province').value= '';
+  render();
 }
 
 function showToast(msg) {
