@@ -190,10 +190,12 @@ async function loadData() {
     allSchools = (data.schools || []).map(s => {
       // Extract year and section from identifier e.g. AliHassanHingrjo_O_W24S
       const parts = (s.identifier || '').split('_');
-      // Find the part matching W+2digits (year)
-      const yearPart = parts.find(p => /^W\d{2}$/i.test(p)) || '';
-      // Section is typically a single letter A/B/C/O between name and year
-      const sectionPart = parts.find(p => /^[A-Z]$/i.test(p) && p !== yearPart.slice(-1)) || '';
+      // Find the part starting with W + 2 digits (year) e.g. W24B → W24, W24KPK → W24
+      const yearMatch = (s.identifier || '').match(/[_-](W\d{2})/i);
+      const yearPart  = yearMatch ? yearMatch[1].toUpperCase() : '';
+      // Section is a single letter A/B/C/O — appears between school name and year
+      const sectionMatch = (s.identifier || '').match(/_([A-Z])_W\d{2}/i);
+      const sectionPart  = sectionMatch ? sectionMatch[1].toUpperCase() : '';
       return {
         ...s,
         year:    yearPart.toUpperCase(),    // e.g. W24
