@@ -278,10 +278,12 @@ async function handleMessage(rawPhone, incomingText) {
   if (isOps && isOpsCmd) return handleOpsMessage(phone, text, upper);
 
   // ── Natural Language Query (coordinators & ops only) ──────────────
-  const isCoord = await isCoordinator(phone);
-  if ((isOps || isCoord) && await looksLikeQuery(text)) {
-    return await handleNaturalLanguageQuery(phone, text);
-  }
+  try {
+    const isCoord = await isCoordinator(phone);
+    if ((isOps || isCoord) && await looksLikeQuery(text)) {
+      return await handleNaturalLanguageQuery(phone, text);
+    }
+  } catch(e) { console.log('NL query check error:', e.message); }
 
   let session = await db.getSession(phone);
   if (!session) {
@@ -2168,8 +2170,10 @@ app.post('/webhook', async (req, res) => {
       return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(reply)}</Message></Response>`);
     }
 
-    const handled = await handleVideoCommands(from, body, res);
-    if (handled) return;
+    if (typeof handleVideoCommands === 'function') {
+      const handled = await handleVideoCommands(from, body, res);
+      if (handled) return;
+    }
 
     const reply = await handleMessage(from, body);
     res.set('Content-Type', 'text/xml');
