@@ -3075,9 +3075,9 @@ app.get('/api/console/schools-progress', async (req, res) => {
         s.id, s.name, s.identifier, s.province, s.current_level,
         s.level_updated_at, s.teacher_phone,
         COUNT(DISTINCT sr.id) AS student_count,
-        ROUND(AVG(CASE WHEN tr.subject='Math'    THEN tr.score_pct END)::numeric,0) AS math_avg,
-        ROUND(AVG(CASE WHEN tr.subject='English' THEN tr.score_pct END)::numeric,0) AS english_avg,
-        ROUND(AVG(CASE WHEN tr.subject='Urdu'    THEN tr.score_pct END)::numeric,0) AS urdu_avg,
+        ROUND(AVG(CASE WHEN ts.subject='Math'    THEN tr.score_pct END)::numeric,0) AS math_avg,
+        ROUND(AVG(CASE WHEN ts.subject='English' THEN tr.score_pct END)::numeric,0) AS english_avg,
+        ROUND(AVG(CASE WHEN ts.subject='Urdu'    THEN tr.score_pct END)::numeric,0) AS urdu_avg,
         ROUND(
           100.0 * COUNT(DISTINCT CASE WHEN sa.status='P' THEN sa.id END) /
           NULLIF(COUNT(DISTINCT sa.id),0)
@@ -3086,6 +3086,7 @@ app.get('/api/console/schools-progress', async (req, res) => {
       LEFT JOIN students_register sr ON sr.school_identifier = s.identifier AND sr.active = TRUE
       LEFT JOIN tablet_results tr ON tr.school_identifier = s.identifier
         AND tr.completed_at > NOW() - INTERVAL '30 days'
+      LEFT JOIN tablet_sessions ts ON ts.id = tr.session_id
       LEFT JOIN student_attendance sa ON sa.school_identifier = s.identifier
         AND sa.attendance_date >= DATE_TRUNC('month', NOW())
       WHERE s.identifier IS NOT NULL
