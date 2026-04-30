@@ -3063,6 +3063,131 @@ function getRoleHelp(role) {
 //
 // This lets the video module handle its commands first,
 // then falls through to existing PIN/assessment logic.
+
+// ── Level Advancement Console ─────────────────────────────────────
+app.get('/advance', (req, res) =>
+  res.sendFile(path.join(__dirname, 'level-advancement.html')));
+
+// Schools progress for console
+app.get('/api/console/schools-progress', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT
+        s.id, s.name, s.identifier, s.province, s.current_level,
+        s.level_updated_at, s.teacher_phone,
+        COUNT(DISTINCT sr.id) AS student_count,
+        -- Average scores by subject at current level
+        ROUND(AVG(CASE WHEN ts.subject='Math'    THEN ts.pct END)::numeric,0) AS math_avg,
+        ROUND(AVG(CASE WHEN ts.subject='English' THEN ts.pct END)::numeric,0) AS english_avg,
+        ROUND(AVG(CASE WHEN ts.subject='Urdu'    THEN ts.pct END)::numeric,0) AS urdu_avg,
+        -- Attendance rate this month
+        ROUND(
+          100.0 * COUNT(DISTINCT CASE WHEN sa.status='P' THEN sa.id END) /
+          NULLIF(COUNT(DISTINCT sa.id),0)
+        ,0) AS attendance_rate
+      FROM schools s
+      LEFT JOIN students_register sr ON sr.school_identifier = s.identifier AND sr.active = TRUE
+      LEFT JOIN tablet_sessions ts ON ts.school_identifier = s.identifier
+        AND ts.created_at > NOW() - INTERVAL '30 days'
+      LEFT JOIN student_attendance sa ON sa.school_identifier = s.identifier
+        AND sa.attendance_date >= DATE_TRUNC('month', NOW())
+      WHERE s.identifier IS NOT NULL
+      GROUP BY s.id, s.name, s.identifier, s.province, s.current_level, s.level_updated_at, s.teacher_phone
+      ORDER BY s.province, s.name
+    `);
+    res.json({ schools: r.rows });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Advance a school to next level
+app.post('/api/console/advance-level', async (req, res) => {
+  const { school_identifier, from_level, to_level, student_count, notes, advanced_by } = req.body;
+  if (!school_identifier || !to_level) return res.status(400).json({ error: 'Missing fields' });
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Update school current level
+    await client.query(
+      `UPDATE schools SET current_level=$1, level_updated_at=NOW(), level_updated_by=$2
+       WHERE identifier=$3`,
+      [to_level, advanced_by || 'Ops Team', school_identifier]
+    );
+
+    // Update all students in the school
+    await client.query(
+      `UPDATE students_register SET level=$1 WHERE school_identifier=$2 AND active=TRUE`,
+      [to_level, school_identifier]
+    );
+
+    // Record the progression
+    await client.query(
+      `INSERT INTO level_progression (school_identifier, from_level, to_level, student_count, advanced_by, notes)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [school_identifier, from_level, to_level, student_count, advanced_by || 'Ops Team', notes || null]
+    );
+
+    // If graduated (level 12), mark all students as graduated
+    if (to_level >= 12) {
+      await client.query(
+        `UPDATE students_register SET graduated=TRUE, graduated_at=NOW()
+         WHERE school_identifier=$1 AND active=TRUE`,
+        [school_identifier]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    // WhatsApp notification to regional coordinator
+    try {
+      const schoolR = await db.pool.query(
+        `SELECT s.name, rc.phone FROM schools s
+         LEFT JOIN regional_coordinators rc ON rc.region = s.region
+         WHERE s.identifier=$1 LIMIT 1`, [school_identifier]
+      );
+      if (schoolR.rows[0]?.phone) {
+        const msg = to_level >= 12
+          ? `🎓 *GRADUATION!*
+${schoolR.rows[0].name}
+All ${student_count} students have completed all 12 levels! Congratulations! 🎉`
+          : `⬆️ *Level Advanced*
+${schoolR.rows[0].name}
+Level ${from_level} → Level ${to_level}
+${student_count} students
+${notes ? 'Notes: ' + notes : ''}`;
+        await sendWhatsApp('whatsapp:' + schoolR.rows[0].phone, msg);
+      }
+    } catch(e) { console.log('WhatsApp notify error:', e.message); }
+
+    res.json({ success: true, message: `Advanced to Level ${to_level}` });
+  } catch(e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Level history for a school
+app.get('/api/console/level-history', async (req, res) => {
+  const { school } = req.query;
+  try {
+    const r = await db.pool.query(
+      `SELECT from_level, to_level, student_count, advanced_by, notes, advanced_at
+       FROM level_progression
+       WHERE school_identifier = $1
+       ORDER BY advanced_at DESC`,
+      [school]
+    );
+    res.json({ history: r.rows });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/console', (req, res) => {
   res.sendFile(path.join(__dirname, 'takmil-ops-console.html'));
 });
@@ -3812,10 +3937,6 @@ app.post('/api/sync/push', async (req, res) => {
 });
 
 // Offline PWA routes
-
-// ── Classroom video player (USB-based offline lesson tracker) ────
-app.get('/classroom', (req, res) => res.sendFile(path.join(__dirname, 'takmil-classroom.html')));
-
 app.get('/offline-portal', (req, res) => res.sendFile(path.join(__dirname, 'offline-portal.html')));
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
