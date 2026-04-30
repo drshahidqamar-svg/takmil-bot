@@ -154,174 +154,304 @@ async function notifyTeacher(phone, decision, level, subject, reason) {
 // ── Main router ──────────────────────────────────────────────────────────────
 
 
-// ── Natural Language Query System ────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// TAKMIL INTELLIGENT WHATSAPP CHATBOT
+// Role-aware · Structured queries · Anti-hallucination · Command menu
+// ════════════════════════════════════════════════════════════════════
 
-// Get user role from bot_users table
+// ── 1. Get bot user role ─────────────────────────────────────────
 async function getBotUser(phone) {
   try {
     const r = await db.pool.query(
       `SELECT name, role, region, province FROM bot_users
-       WHERE phone = $1 AND active = TRUE LIMIT 1`,
-      [phone]
+       WHERE phone=$1 AND active=TRUE LIMIT 1`, [phone]
     );
-    if (r.rows.length > 0) return r.rows[0];
-    // Fallback: check coordinator tables
+    if (r.rows.length) return r.rows[0];
     const rc = await db.pool.query(
       `SELECT name, 'coordinator' as role, region, NULL as province
        FROM regional_coordinators WHERE phone=$1 LIMIT 1`, [phone]
     );
-    if (rc.rows.length > 0) return rc.rows[0];
-    const sc = await db.pool.query(
-      `SELECT sc.name, 'school_coordinator' as role, NULL as region, NULL as province
-       FROM school_coordinators sc WHERE sc.phone=$1 LIMIT 1`, [phone]
-    );
-    if (sc.rows.length > 0) return sc.rows[0];
+    if (rc.rows.length) return rc.rows[0];
     return null;
-  } catch(e) { return null; }
+  } catch { return null; }
 }
 
 async function isCoordinator(phone) {
-  const user = await getBotUser(phone);
-  return user !== null;
+  return (await getBotUser(phone)) !== null;
 }
 
-async function looksLikeQuery(text) {
+// ── 2. Does this message look like a query? ──────────────────────
+function looksLikeQuery(text) {
   const t = text.toLowerCase();
-  const queryWords = [
+  const triggers = [
     'how many','which schools','show me','what is','what are',
-    'list','count','total','average','passed','failed','attendance',
-    'level','province','sindh','punjab','kpk','balochistan','gilgit',
-    'today','this week','this month','assessment','students','schools',
-    'score','percent','rate','top','bottom','best','worst',
-    'graduated','advanced','pending','missing','report','summary',
-    'teacher','lesson','video','completion','region','trend'
+    'list','count','total','average','attendance','level',
+    'province','sindh','punjab','kpk','balochistan','gilgit',
+    'today','this week','this month','assessment','students',
+    'score','percent','rate','top','best','worst','graduated',
+    'advanced','pending','missing','report','summary','trend',
+    'teacher','lesson','completion','ready','flagged','help me'
   ];
-  return queryWords.some(w => t.includes(w));
+  const commands = [
+    'summary','province','graduates','growth',
+    'pending','attendance','advance','flags',
+    'scores','weak','trends','coverage',
+    'teachers','compliance'
+  ];
+  return triggers.some(w => t.includes(w)) || commands.includes(t.trim());
 }
 
-// Role-specific system prompts
-function getRoleSystemPrompt(user, dataSnapshot) {
-  const base = `You are the TAKMIL WhatsApp data assistant for ${user.name}.
-TAKMIL runs 177 community schools in Pakistan (Sindh, Punjab, KPK, Balochistan, Gilgit Baltistan).
-Students go through Levels 1-11 then Grand Assessment = 5 years primary in 12 months.
-Format for WhatsApp: *bold* numbers, short bullet points with hyphens, max 350 chars.
-Current live data: ${JSON.stringify(dataSnapshot)}`;
+// ── 3. Pull LIVE data from DB (no estimates allowed) ─────────────
+async function fetchLiveData(userRole, filterProvince) {
+  const pf = filterProvince ? `AND s.province='${filterProvince}'` : '';
+  const data = {};
 
-  const roleContext = {
-    leadership: `
-Your role: Answer strategic questions for leadership/founders.
-Focus on: Total reach, graduation pipeline, province comparison, growth, impact metrics.
-Style: Executive summary. Lead with the most impressive number. End with one insight.
-Example questions: total students, graduation rate, best performing province, cost per child equivalent.`,
+  try {
+    // Schools overview
+    const schools = await db.pool.query(`
+      SELECT province,
+        COUNT(*) as total,
+        SUM(CASE WHEN current_level>1  THEN 1 ELSE 0 END) as advanced,
+        SUM(CASE WHEN current_level>=12 THEN 1 ELSE 0 END) as graduated,
+        ROUND(AVG(current_level)::numeric,1) as avg_level
+      FROM schools s WHERE identifier IS NOT NULL ${pf}
+      GROUP BY province ORDER BY province
+    `);
+    data.schools_by_province = schools.rows;
+    data.total_schools = schools.rows.reduce((s,r)=>s+parseInt(r.total),0);
+    data.total_graduated = schools.rows.reduce((s,r)=>s+parseInt(r.graduated||0),0);
+  } catch(e) { data.schools_by_province = []; data.total_schools = 0; }
 
-    ops: `
-Your role: Answer operational questions for the Ops team.
-Focus on: Which schools need attention TODAY, missing attendance, pending advancements, flagged photos, teacher compliance.
-Style: Action-oriented. Always say what needs to be done. Flag urgency.
-Example questions: who hasn't submitted attendance, which schools are ready to advance, pending issues.`,
+  try {
+    // Today attendance
+    const att = await db.pool.query(`
+      SELECT
+        COUNT(DISTINCT sa.school_identifier) as submitted,
+        (SELECT COUNT(*) FROM schools WHERE identifier IS NOT NULL ${pf ? pf.replace('AND s.','AND ') : ''}) as total,
+        ROUND(100.0*COUNT(CASE WHEN status='P' THEN 1 END)/NULLIF(COUNT(*),0),1) as avg_pct
+      FROM student_attendance sa
+      JOIN schools s ON s.identifier=sa.school_identifier
+      WHERE sa.attendance_date=CURRENT_DATE ${pf}
+    `);
+    data.attendance_today = att.rows[0] || null;
+  } catch(e) { data.attendance_today = null; }
 
-    me: `
-Your role: Answer assessment quality questions for the M&E team.
-Focus on: Score distributions, subject gaps, level progression rates, question difficulty, trends week-over-week.
-Style: Data-driven. Show trends. Highlight outliers. Compare provinces.
-Example questions: where are students struggling, which subject is weakest, score trends this month.`,
+  try {
+    // Missing attendance today
+    const missing = await db.pool.query(`
+      SELECT s.name, s.province FROM schools s
+      WHERE s.identifier IS NOT NULL ${pf}
+      AND s.identifier NOT IN (
+        SELECT DISTINCT school_identifier FROM student_attendance
+        WHERE attendance_date=CURRENT_DATE
+      )
+      ORDER BY s.province, s.name LIMIT 10
+    `);
+    data.missing_attendance = missing.rows;
+  } catch(e) { data.missing_attendance = []; }
 
-    hr: `
-Your role: Answer teacher and staff questions for HR.
-Focus on: Teacher attendance, lesson compliance, teacher performance scores, GPS verification, active vs inactive teachers.
-Style: Staff-focused. Identify top performers and those needing support.
-Example questions: which teachers are most active, lesson completion rates, teacher presence.`,
+  try {
+    // Assessment scores last 7 days
+    const scores = await db.pool.query(`
+      SELECT ts.subject, ts.level,
+        COUNT(DISTINCT tr.student_name) as students,
+        ROUND(AVG(tr.score_pct)::numeric,1) as avg_score,
+        ROUND(MIN(tr.score_pct)::numeric,1) as min_score,
+        ROUND(MAX(tr.score_pct)::numeric,1) as max_score
+      FROM tablet_results tr
+      JOIN tablet_sessions ts ON ts.id=tr.session_id
+      JOIN schools s ON s.identifier=tr.school_identifier
+      WHERE tr.completed_at>NOW()-INTERVAL '7 days' ${pf}
+      GROUP BY ts.subject, ts.level
+      ORDER BY avg_score ASC LIMIT 15
+    `);
+    data.assessment_scores = scores.rows;
+    data.total_students_tested = scores.rows.reduce((s,r)=>s+parseInt(r.students||0),0);
+  } catch(e) { data.assessment_scores = []; data.total_students_tested = 0; }
 
-    coordinator: `
-Your role: Answer questions about ${user.region || 'your region'} only.
-Focus on: Schools in your region — attendance, assessment scores, level progression, flags.
-Style: Regional focus. Compare schools within the region.
-Data is filtered to your region: ${user.region || 'all regions'}.`,
+  try {
+    // Schools ready to advance (have scores)
+    const ready = await db.pool.query(`
+      SELECT s.name, s.province, s.current_level,
+        ROUND(AVG(tr.score_pct)::numeric,1) as avg_score
+      FROM schools s
+      JOIN tablet_results tr ON tr.school_identifier=s.identifier
+      WHERE tr.completed_at>NOW()-INTERVAL '30 days' ${pf}
+      GROUP BY s.name, s.province, s.current_level
+      HAVING AVG(tr.score_pct) >= 60
+      ORDER BY avg_score DESC LIMIT 5
+    `);
+    data.ready_to_advance = ready.rows;
+  } catch(e) { data.ready_to_advance = []; }
 
-    school_coordinator: `
-Your role: Answer questions about ${user.province || 'your province'} schools.
-Focus on: Your assigned schools — daily attendance, student scores, lesson completion.
-Style: School-level detail. Practical and specific.
-Data filtered to province: ${user.province || 'all'}.`
+  try {
+    // Lessons today
+    const lessons = await db.pool.query(`
+      SELECT COUNT(*) as total,
+        SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) as completed,
+        SUM(CASE WHEN status='suspicious' THEN 1 ELSE 0 END) as flagged,
+        ROUND(AVG(coverage_pct)::numeric,1) as avg_coverage
+      FROM lessons l
+      JOIN schools s ON s.identifier=l.school_code
+      WHERE DATE(l.start_time)=CURRENT_DATE ${pf}
+    `);
+    data.lessons_today = lessons.rows[0] || null;
+  } catch(e) { data.lessons_today = null; }
+
+  try {
+    // Students enrolled
+    const students = await db.pool.query(`
+      SELECT COUNT(*) as total,
+        SUM(CASE WHEN graduated=TRUE THEN 1 ELSE 0 END) as graduated
+      FROM students_register sr
+      JOIN schools s ON s.identifier=sr.school_identifier
+      WHERE sr.active=TRUE ${pf}
+    `);
+    data.students = students.rows[0] || null;
+  } catch(e) { data.students = null; }
+
+  data.pulled_at = new Date().toISOString();
+  data.filter    = filterProvince || 'all provinces';
+  return data;
+}
+
+// ── 4. Role-specific system prompts ──────────────────────────────
+function buildSystemPrompt(user, data) {
+  const strict = `
+CRITICAL RULES — follow these without exception:
+1. ONLY use numbers that appear in the JSON data below. NEVER invent or estimate.
+2. If a value is null, 0, or the array is empty — say "no data yet" or "none recorded".
+3. Do NOT use any knowledge from your training about Pakistan, education, or schools.
+4. If you cannot answer from the data, say: "I don't have that data yet."
+5. Keep response under 320 characters for WhatsApp readability.
+6. Use *bold* for key numbers. Use hyphens for bullet points.
+7. End with one specific action if applicable.
+
+LIVE DATABASE DATA (this is the ONLY source of truth):
+${JSON.stringify(data, null, 0)}
+`;
+
+  const roles = {
+    leadership: `You are the TAKMIL executive data assistant for ${user.name} (Founder/Leadership).
+Answer strategic questions about overall reach, impact, and performance.
+Focus on: total schools, students, graduation pipeline, province comparison.
+Style: Executive. Lead with the biggest number. Be concise.${strict}`,
+
+    ops: `You are the TAKMIL operations assistant for ${user.name} (Ops Team).
+Answer operational questions about what needs attention TODAY.
+Focus on: missing attendance, flagged lessons, schools ready to advance, photo mismatches.
+Style: Action-oriented. Always say what needs to be done next.${strict}`,
+
+    me: `You are the TAKMIL M&E data assistant for ${user.name} (M&E Team).
+Answer assessment quality questions — scores, trends, gaps, subject weaknesses.
+Focus on: which subjects are weakest, level progression, score distributions.
+Style: Analytical. Show data. Flag outliers.${strict}`,
+
+    hr: `You are the TAKMIL HR data assistant for ${user.name} (HR Team).
+Answer questions about teacher presence, lesson compliance, and staff performance.
+Focus on: lessons completed today, flagged lessons, teacher compliance rates.
+Style: Staff-focused. Identify who needs support.${strict}`,
+
+    coordinator: `You are the TAKMIL regional data assistant for ${user.name}.
+Only answer about data in your region: ${user.region || 'all regions'}.
+Focus on: schools in your region, attendance, scores, level progression.
+Style: Regional. Compare schools within your region.${strict}`,
+
+    school_coordinator: `You are the TAKMIL data assistant for ${user.name}.
+Only answer about your province: ${user.province || 'all provinces'}.
+Focus on: school-level attendance, student scores, lesson completion.
+Style: School-level detail.${strict}`
   };
 
-  return base + (roleContext[user.role] || roleContext.ops);
+  return roles[user.role] || roles.ops;
 }
 
+// ── 5. Command menu per role ──────────────────────────────────────
+function getCommandMenu(role) {
+  const menus = {
+    leadership: `👑 *Leadership Commands*
+- SUMMARY — overall stats
+- PROVINCE — compare provinces
+- GRADUATES — graduation pipeline
+- GROWTH — month over month
+- Or ask any question in plain English`,
+
+    ops: `⚙️ *Ops Commands*
+- PENDING — what needs action today
+- ATTENDANCE — who hasn't submitted
+- ADVANCE — schools ready to move up
+- FLAGS — photo/lesson flags
+- Or ask any question in plain English`,
+
+    me: `📊 *M&E Commands*
+- SCORES — assessment averages
+- WEAK — lowest performing areas
+- TRENDS — week over week
+- COVERAGE — question bank status
+- Or ask any question in plain English`,
+
+    hr: `👥 *HR Commands*
+- TEACHERS — lesson compliance today
+- COMPLIANCE — weekly teacher stats
+- Or ask any question in plain English`,
+
+    coordinator: `🌍 *Coordinator Commands*
+- ATTENDANCE — today's submission status
+- SCORES — assessment scores in your region
+- ADVANCE — schools ready to advance
+- Or ask any question in plain English`,
+
+    school_coordinator: `🏫 *School Coordinator Commands*
+- ATTENDANCE — today's attendance
+- SCORES — latest assessment scores
+- Or ask any question in plain English`
+  };
+  return menus[role] || menus.coordinator;
+}
+
+// ── 6. Pre-check: does data exist for this question? ─────────────
+function preCheck(question, data) {
+  const q = question.toLowerCase();
+
+  if ((q.includes('attendance') || q.includes('submitted')) && !data.attendance_today?.submitted) {
+    return `📭 No attendance submissions found for today yet.\n\nSchools usually submit between 8am–10am PKT.\nTry again later or ask about: assessment scores, school levels.`;
+  }
+  if ((q.includes('lesson') || q.includes('video') || q.includes('complet')) && !data.lessons_today?.total) {
+    return `📭 No lessons recorded today yet.\n\nTry asking about: assessment scores, attendance, school levels.`;
+  }
+  if ((q.includes('score') || q.includes('assessment') || q.includes('test')) && data.assessment_scores.length === 0) {
+    return `📭 No assessment data found for the last 7 days.\n\nRun assessments using /assess first, then ask again.`;
+  }
+  return null; // data exists — proceed to Claude
+}
+
+// ── 7. Main NL query handler ──────────────────────────────────────
 async function handleNaturalLanguageQuery(phone, question) {
   try {
-    const user = await getBotUser(phone);
-    const userName = user?.name || 'Coordinator';
-    const userRole = user?.role || 'coordinator';
-    const filterProvince = user?.province || null;
-    const filterRegion   = user?.region   || null;
+    const user = await getBotUser(phone) || { name: 'User', role: 'ops', region: null, province: null };
+    const roleEmoji = { leadership:'👑', ops:'⚙️', me:'📊', hr:'👥', coordinator:'🌍', school_coordinator:'🏫' }[user.role] || '🤖';
 
-    // Build province filter for queries
-    const provFilter = filterProvince ? `AND s.province = '${filterProvince}'` : '';
+    // Show command menu
+    if (['help','menu','commands','?'].includes(question.toLowerCase().trim())) {
+      return getCommandMenu(user.role);
+    }
 
-    // Fetch role-appropriate data
-    const [schools, assessments, attendance, levels, lessons] = await Promise.all([
-      db.pool.query(`
-        SELECT province, COUNT(*) as total,
-               SUM(CASE WHEN current_level > 1 THEN 1 ELSE 0 END) as advanced,
-               SUM(CASE WHEN current_level >= 12 THEN 1 ELSE 0 END) as graduated,
-               ROUND(AVG(current_level),1) as avg_level
-        FROM schools s WHERE identifier IS NOT NULL ${provFilter}
-        GROUP BY province ORDER BY province
-      `),
-      db.pool.query(`
-        SELECT ts.subject, ts.level, s.province,
-               COUNT(DISTINCT tr.student_name) as students_tested,
-               ROUND(AVG(tr.score_pct)::numeric,1) as avg_score,
-               ROUND(MIN(tr.score_pct)::numeric,1) as min_score,
-               ROUND(MAX(tr.score_pct)::numeric,1) as max_score
-        FROM tablet_results tr
-        JOIN tablet_sessions ts ON ts.id = tr.session_id
-        JOIN schools s ON s.identifier = tr.school_identifier
-        WHERE tr.completed_at > NOW() - INTERVAL '7 days' ${provFilter}
-        GROUP BY ts.subject, ts.level, s.province
-        ORDER BY avg_score ASC
-        LIMIT 20
-      `),
-      db.pool.query(`
-        SELECT s.province,
-               COUNT(DISTINCT sa.school_identifier) as submitted,
-               (SELECT COUNT(*) FROM schools s2 WHERE s2.identifier IS NOT NULL ${provFilter ? `AND s2.province='${filterProvince}'` : ''}) as total_schools,
-               ROUND(100.0*COUNT(CASE WHEN sa.status='P' THEN 1 END)/NULLIF(COUNT(*),0),1) as avg_attendance
-        FROM student_attendance sa
-        JOIN schools s ON s.identifier = sa.school_identifier
-        WHERE sa.attendance_date = CURRENT_DATE ${provFilter}
-        GROUP BY s.province
-      `),
-      db.pool.query(`
-        SELECT current_level, COUNT(*) as schools
-        FROM schools s WHERE identifier IS NOT NULL ${provFilter}
-        GROUP BY current_level ORDER BY current_level
-      `),
-      db.pool.query(`
-        SELECT COUNT(*) as total_today,
-               SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) as completed,
-               SUM(CASE WHEN status='suspicious' THEN 1 ELSE 0 END) as flagged,
-               ROUND(AVG(coverage_pct)::numeric,1) as avg_coverage
-        FROM lessons l
-        JOIN schools s ON s.identifier = l.school_code
-        WHERE DATE(l.start_time) = CURRENT_DATE ${provFilter}
-      `)
-    ]);
+    // Pull live data
+    const data = await fetchLiveData(user.role, user.province);
 
-    const dataSnapshot = {
-      query_date: new Date().toISOString().split('T')[0],
-      user_role: userRole,
-      filter: filterProvince || filterRegion || 'all',
-      schools_by_province: schools.rows,
-      weakest_assessments: assessments.rows.slice(0, 5),
-      attendance_today: attendance.rows,
-      schools_by_level: levels.rows,
-      lessons_today: lessons.rows[0]
-    };
+    // Pre-check: does relevant data exist?
+    const preCheckMsg = preCheck(question, data);
+    if (preCheckMsg) return preCheckMsg;
 
-    const systemPrompt = getRoleSystemPrompt(user || { name: userName, role: userRole }, dataSnapshot);
+    // Build data header to show alongside Claude's answer
+    const dataHeader = [
+      `📅 ${new Date().toLocaleDateString('en-PK',{day:'numeric',month:'short',year:'numeric'})}`,
+      `🏫 ${data.total_schools} schools | 👥 ${data.students?.total||'—'} students`,
+      data.attendance_today?.submitted ? `✅ ${data.attendance_today.submitted}/${data.attendance_today.total} attendance submitted` : null,
+      data.total_students_tested > 0 ? `📝 ${data.total_students_tested} students tested this week` : null,
+    ].filter(Boolean).join('\n');
 
+    // Call Claude with strict grounding
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -330,28 +460,28 @@ async function handleNaturalLanguageQuery(phone, question) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
-        max_tokens: 500,
-        system: systemPrompt,
+        model: 'claude-sonnet-4-6',
+        max_tokens: 400,
+        system: buildSystemPrompt(user, data),
         messages: [{ role: 'user', content: question }]
       })
     });
 
-    const data = await response.json();
-    const answer = data.content?.[0]?.text || 'Sorry, I could not process that.';
+    const result = await response.json();
+    if (result.error) {
+      console.error('Claude API error:', result.error);
+      return `❌ AI service error. Raw data:\n\n${dataHeader}`;
+    }
 
-    const roleEmoji = {
-      leadership:'👑', ops:'⚙️', me:'📊', hr:'👥',
-      coordinator:'🌍', school_coordinator:'🏫'
-    }[userRole] || '🤖';
-
-    return `${roleEmoji} *TAKMIL ${userRole === 'me' ? 'M&E' : userRole.charAt(0).toUpperCase()+userRole.slice(1)} Assistant*\n\n${answer}\n\n_Ask another question anytime._`;
+    const answer = result.content?.[0]?.text || 'Could not generate answer.';
+    return `${roleEmoji} *TAKMIL Assistant*\n\n${dataHeader}\n\n${answer}\n\n_Type MENU for commands._`;
 
   } catch(e) {
     console.error('NL query error:', e.message);
-    return `❌ Could not process your question right now.\nTry: "How many schools submitted attendance today?"`;
+    return `❌ Could not process your question.\nTry: "How many schools submitted attendance today?" or type MENU.`;
   }
 }
+
 
 async function handleMessage(rawPhone, incomingText) {
   const phone = rawPhone.replace('whatsapp:', '');
