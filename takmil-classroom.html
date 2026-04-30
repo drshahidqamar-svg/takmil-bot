@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Classroom Player</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0f0c;--bg2:#111a14;--bg3:#172010;
+  --panel:#1a2a1e;--panel2:#1f3024;
+  --leaf:#22c55e;--leaf2:#16a34a;--leaf3:#4ade80;
+  --border:#2d4a35;--border2:#3a5c42;
+  --text:#e8f5eb;--text2:#9dbfa5;--text3:#6b8f73;
+  --amber:#f59e0b;--danger:#ef4444;--ok:#22c55e;
+  --shadow:0 8px 32px rgba(0,0,0,0.4);
+  --r:16px;--r2:12px;--r3:8px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;overflow:hidden}
+
+/* ── SCREENS ── */
+.scr{display:none;position:fixed;inset:0}
+.scr.on{display:flex}
+
+/* ══════════════════════════════════════
+   SETUP SCREEN
+══════════════════════════════════════ */
+#s-setup{
+  flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center, #0d1f12 0%, #060d08 100%);
+}
+.setup-card{
+  background:var(--panel);border:1.5px solid var(--border2);
+  border-radius:24px;padding:48px;width:460px;
+  box-shadow:0 24px 80px rgba(0,0,0,0.5);
+}
+.setup-logo{
+  font-size:42px;font-weight:900;color:var(--leaf3);
+  letter-spacing:1px;margin-bottom:4px;
+}
+.setup-sub{font-size:14px;color:var(--text2);margin-bottom:36px}
+.setup-label{font-size:11px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;display:block}
+.setup-inp{
+  width:100%;padding:16px 18px;background:var(--bg);
+  border:1.5px solid var(--border2);border-radius:var(--r2);
+  font-size:18px;font-weight:700;color:var(--text);
+  font-family:'DM Sans',sans-serif;outline:none;
+  margin-bottom:20px;text-transform:uppercase;letter-spacing:1px;
+  transition:border-color 0.2s;
+}
+.setup-inp:focus{border-color:var(--leaf)}
+.setup-inp::placeholder{text-transform:none;letter-spacing:0;font-weight:400;color:var(--text3)}
+.setup-btn{
+  width:100%;padding:18px;background:linear-gradient(135deg,var(--leaf2),#0f5f2a);
+  border:none;border-radius:var(--r2);font-size:17px;font-weight:800;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all 0.2s;box-shadow:0 4px 20px rgba(22,163,74,0.3);
+}
+.setup-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(22,163,74,0.4)}
+.setup-note{font-size:12px;color:var(--text3);text-align:center;margin-top:16px;line-height:1.6}
+
+/* ══════════════════════════════════════
+   MAIN PLAYER SCREEN
+══════════════════════════════════════ */
+#s-main{flex-direction:column}
+
+/* TOP BAR */
+.topbar{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:0 24px;height:56px;display:flex;align-items:center;
+  justify-content:space-between;flex-shrink:0;z-index:10;
+}
+.tb-logo{font-size:20px;font-weight:900;color:var(--leaf3);letter-spacing:0.5px}
+.tb-school{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:700;color:var(--text2);
+}
+.tb-school span{color:var(--leaf3)}
+.tb-right{display:flex;align-items:center;gap:12px}
+.net-pill{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;
+}
+.net-pill.online{background:rgba(34,197,94,0.15);color:var(--leaf3);border:1px solid rgba(34,197,94,0.3)}
+.net-pill.offline{background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3)}
+.net-dot{width:6px;height:6px;border-radius:50%}
+.net-pill.online .net-dot{background:var(--leaf3)}
+.net-pill.offline .net-dot{background:#ef4444;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+
+.sync-btn{
+  padding:6px 14px;background:var(--panel2);border:1px solid var(--border2);
+  border-radius:20px;font-size:11px;font-weight:700;color:var(--text2);
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;
+}
+.sync-btn:hover{border-color:var(--leaf);color:var(--leaf3)}
+.pending-badge{
+  background:var(--amber);color:#000;padding:2px 8px;
+  border-radius:10px;font-size:10px;font-weight:800;margin-left:4px;
+}
+
+/* BODY */
+.body{display:flex;flex:1;overflow:hidden}
+
+/* LEFT SIDEBAR */
+.sidebar{
+  width:320px;background:var(--panel);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;
+}
+.sidebar-hdr{
+  padding:16px 20px 12px;border-bottom:1px solid var(--border);
+}
+.sidebar-title{font-size:13px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.load-btn{
+  width:100%;padding:12px;background:var(--panel2);
+  border:1.5px dashed var(--border2);border-radius:var(--r2);
+  font-size:13px;font-weight:700;color:var(--leaf3);cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.2s;text-align:center;
+}
+.load-btn:hover{border-color:var(--leaf);background:rgba(34,197,94,0.05)}
+.filter-row{display:flex;gap:8px;margin-top:10px}
+.filter-sel{
+  flex:1;padding:8px 10px;background:var(--bg);border:1px solid var(--border2);
+  border-radius:var(--r3);font-size:12px;color:var(--text2);
+  font-family:'DM Sans',sans-serif;outline:none;
+  appearance:none;cursor:pointer;
+}
+.filter-sel:focus{border-color:var(--leaf)}
+
+.video-list{flex:1;overflow-y:auto;padding:8px}
+.video-list::-webkit-scrollbar{width:4px}
+.video-list::-webkit-scrollbar-track{background:transparent}
+.video-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.vitem{
+  padding:12px 14px;border-radius:var(--r2);cursor:pointer;
+  border:1.5px solid transparent;transition:all 0.15s;margin-bottom:4px;
+}
+.vitem:hover{background:var(--panel2);border-color:var(--border)}
+.vitem.sel{background:rgba(34,197,94,0.08);border-color:var(--leaf2)}
+.vitem.played{opacity:0.6}
+.vi-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:4px}
+.vi-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.vi-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px}
+.vi-tag-subj{background:rgba(34,197,94,0.15);color:var(--leaf3)}
+.vi-tag-lvl{background:rgba(255,255,255,0.06);color:var(--text3)}
+.vi-tag-dur{color:var(--text3);font-size:10px}
+.vi-done{font-size:10px;color:var(--leaf3);font-weight:700}
+
+.empty-state{
+  text-align:center;padding:40px 20px;color:var(--text3);
+  font-size:13px;line-height:1.8;
+}
+.empty-state .big{font-size:36px;display:block;margin-bottom:12px}
+
+/* MAIN AREA */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* VIDEO PLAYER ZONE */
+.player-zone{
+  flex:1;background:#000;display:flex;align-items:center;
+  justify-content:center;position:relative;overflow:hidden;
+}
+.player-placeholder{
+  text-align:center;color:var(--text3);
+}
+.player-placeholder .big{font-size:56px;display:block;margin-bottom:16px;opacity:0.4}
+.player-placeholder p{font-size:14px;line-height:1.8}
+
+#video-el{
+  width:100%;height:100%;object-fit:contain;display:none;
+}
+
+/* LESSON OVERLAY (top of player) */
+.lesson-overlay{
+  position:absolute;top:0;left:0;right:0;
+  padding:12px 20px;
+  background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent);
+  display:none;align-items:center;justify-content:space-between;
+}
+.lo-left{display:flex;align-items:center;gap:12px}
+.rec-dot{
+  width:10px;height:10px;border-radius:50%;background:#ef4444;
+  animation:rec 1s infinite;
+}
+@keyframes rec{0%,100%{opacity:1}50%{opacity:0.2}}
+.lo-title{font-size:14px;font-weight:800;color:white}
+.lo-timer{font-size:28px;font-weight:900;color:white;
+  font-variant-numeric:tabular-nums;letter-spacing:-0.5px}
+.lo-cov{
+  font-size:13px;font-weight:700;
+  padding:4px 12px;border-radius:12px;
+}
+.lo-cov.low{background:rgba(239,68,68,0.3);color:#fca5a5}
+.lo-cov.mid{background:rgba(245,158,11,0.3);color:#fcd34d}
+.lo-cov.ok{background:rgba(34,197,94,0.3);color:#86efac}
+
+/* CONTROLS BAR */
+.controls{
+  background:var(--bg2);border-top:1px solid var(--border);
+  padding:14px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;
+}
+.ctrl-info{flex:1}
+.ctrl-video-name{font-size:15px;font-weight:800;color:var(--text);margin-bottom:2px}
+.ctrl-video-meta{font-size:12px;color:var(--text3)}
+.ctrl-btns{display:flex;gap:10px}
+
+.btn-start{
+  padding:12px 28px;background:linear-gradient(135deg,var(--leaf2),#0f5f2a);
+  border:none;border-radius:var(--r2);font-size:14px;font-weight:800;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all 0.2s;box-shadow:0 4px 16px rgba(22,163,74,0.3);
+  white-space:nowrap;
+}
+.btn-start:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,163,74,0.4)}
+.btn-start:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+.btn-end{
+  padding:12px 24px;background:rgba(239,68,68,0.15);
+  border:1.5px solid rgba(239,68,68,0.4);border-radius:var(--r2);
+  font-size:14px;font-weight:800;color:#fca5a5;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.2s;white-space:nowrap;
+  animation:pulse-red 2s infinite;
+}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.3)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+.btn-end:hover{background:rgba(239,68,68,0.25);border-color:#ef4444}
+.btn-fullscreen{
+  padding:12px 16px;background:var(--panel);border:1px solid var(--border2);
+  border-radius:var(--r2);font-size:16px;color:var(--text2);cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.2s;
+}
+.btn-fullscreen:hover{border-color:var(--leaf);color:var(--leaf3)}
+
+/* BOTTOM PANEL — History */
+.history-panel{
+  width:320px;background:var(--panel);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;
+}
+.hist-hdr{
+  padding:16px 20px 12px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.hist-title{font-size:12px;font-weight:800;color:var(--text);
+  text-transform:uppercase;letter-spacing:0.5px}
+.hist-count{
+  font-size:11px;font-weight:700;padding:3px 8px;
+  border-radius:8px;background:rgba(34,197,94,0.1);color:var(--leaf3);
+}
+.hist-list{flex:1;overflow-y:auto;padding:8px}
+.hist-list::-webkit-scrollbar{width:4px}
+.hist-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.hitem{
+  padding:12px 14px;border-radius:var(--r2);
+  background:var(--panel2);border:1px solid var(--border);
+  margin-bottom:6px;
+}
+.hi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.hi-name{font-size:12px;font-weight:700;color:var(--text);line-height:1.3;flex:1;margin-right:8px}
+.hi-time{font-size:11px;color:var(--text3);white-space:nowrap}
+.hi-row{display:flex;gap:6px;flex-wrap:wrap}
+.hi-chip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px}
+.chip-ok{background:rgba(34,197,94,0.15);color:var(--leaf3)}
+.chip-warn{background:rgba(245,158,11,0.15);color:#fcd34d}
+.chip-bad{background:rgba(239,68,68,0.15);color:#fca5a5}
+.chip-sync{background:rgba(255,255,255,0.06);color:var(--text3)}
+.chip-synced{background:rgba(34,197,94,0.1);color:var(--leaf3)}
+
+/* RESULT MODAL */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,0.75);
+  display:none;align-items:center;justify-content:center;z-index:100;
+  backdrop-filter:blur(4px);
+}
+.modal-bg.on{display:flex}
+.modal{
+  background:var(--panel);border:1.5px solid var(--border2);
+  border-radius:24px;padding:40px;width:480px;
+  box-shadow:0 32px 80px rgba(0,0,0,0.6);
+  animation:modal-in 0.3s ease;
+}
+@keyframes modal-in{from{transform:scale(0.9);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-icon{font-size:56px;text-align:center;margin-bottom:16px}
+.modal-title{font-size:24px;font-weight:900;text-align:center;margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--text2);text-align:center;margin-bottom:28px;line-height:1.6}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.mg-cell{
+  background:var(--bg);border-radius:var(--r2);padding:14px;text-align:center;
+  border:1px solid var(--border);
+}
+.mg-val{font-size:22px;font-weight:900;color:var(--text);margin-bottom:2px}
+.mg-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px}
+.modal-sync{
+  padding:12px 16px;border-radius:var(--r2);font-size:13px;font-weight:700;
+  text-align:center;margin-bottom:20px;
+}
+.modal-sync.ok{background:rgba(34,197,94,0.1);color:var(--leaf3);border:1px solid rgba(34,197,94,0.2)}
+.modal-sync.pending{background:rgba(245,158,11,0.1);color:#fcd34d;border:1px solid rgba(245,158,11,0.2)}
+.modal-gps{
+  font-size:12px;color:var(--text3);text-align:center;margin-bottom:24px;
+}
+.modal-close{
+  width:100%;padding:16px;background:linear-gradient(135deg,var(--leaf2),#0f5f2a);
+  border:none;border-radius:var(--r2);font-size:16px;font-weight:800;
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;
+}
+.modal-close:hover{transform:translateY(-1px)}
+
+/* GPS badge */
+.gps-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;
+  background:rgba(34,197,94,0.1);color:var(--leaf3);
+  border:1px solid rgba(34,197,94,0.2);
+}
+
+/* hidden file input */
+#file-input{display:none}
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div class="scr on" id="s-setup">
+  <div class="setup-card">
+    <div class="setup-logo">TAKMIL</div>
+    <div class="setup-sub">Classroom Player — Set up this laptop once</div>
+
+    <label class="setup-label">School Code</label>
+    <input class="setup-inp" id="setup-school" type="text" placeholder="e.g. SHADBAGH" maxlength="20">
+
+    <label class="setup-label">School Name</label>
+    <input class="setup-inp" id="setup-name" type="text" placeholder="e.g. TAKMIL School Shadbagh"
+      style="text-transform:none;letter-spacing:0;font-weight:600;font-size:15px">
+
+    <label class="setup-label">Server URL</label>
+    <input class="setup-inp" id="setup-url" type="text"
+      value="https://takmil-bot-production-0f51.up.railway.app"
+      style="text-transform:none;letter-spacing:0;font-weight:500;font-size:13px">
+
+    <button class="setup-btn" onclick="saveSetup()">Save & Start ▶</button>
+    <div class="setup-note">
+      This setup only needs to be done once.<br>
+      After saving, a teacher just double-clicks this file to start class.
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN PLAYER SCREEN ══ -->
+<div class="scr" id="s-main">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="tb-logo">TAKMIL</div>
+    <div class="tb-school">School: <span id="tb-school-name">—</span></div>
+    <div class="tb-right">
+      <div class="net-pill offline" id="net-pill">
+        <div class="net-dot"></div><span id="net-txt">Offline</span>
+      </div>
+      <button class="sync-btn" onclick="manualSync()">
+        🔄 Sync <span class="pending-badge" id="pending-cnt" style="display:none">0</span>
+      </button>
+      <button class="sync-btn" onclick="resetSetup()" style="color:var(--text3)">⚙ Settings</button>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- LEFT: VIDEO LIST -->
+    <div class="sidebar">
+      <div class="sidebar-hdr">
+        <div class="sidebar-title">📁 Videos</div>
+        <button class="load-btn" onclick="document.getElementById('file-input').click()">
+          📂 Load Videos (USB or Laptop)
+        </button>
+        <div class="filter-row">
+          <select class="filter-sel" id="f-subj" onchange="renderList()">
+            <option value="">All Subjects</option>
+            <option value="Math">Math</option>
+            <option value="English">English</option>
+            <option value="Urdu">Urdu</option>
+            <option value="Science">Science</option>
+          </select>
+          <select class="filter-sel" id="f-lvl" onchange="renderList()">
+            <option value="">All Levels</option>
+            <option value="1">L1</option><option value="2">L2</option>
+            <option value="3">L3</option><option value="4">L4</option>
+            <option value="5">L5</option><option value="6">L6</option>
+          </select>
+        </div>
+      </div>
+      <div class="video-list" id="video-list">
+        <div class="empty-state">
+          <span class="big">💾</span>
+          Plug in the USB drive, then tap<br>
+          <strong>Load Videos from USB</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: PLAYER -->
+    <div class="main">
+      <div class="player-zone" id="player-zone">
+        <div class="player-placeholder" id="player-ph">
+          <span class="big">▶</span>
+          <p>Select a video from the list<br>then tap <strong>Start Lesson</strong></p>
+        </div>
+        <video id="video-el" controls></video>
+
+        <!-- Recording overlay -->
+        <div class="lesson-overlay" id="lesson-overlay">
+          <div class="lo-left">
+            <div class="rec-dot"></div>
+            <div class="lo-title" id="lo-title">Recording</div>
+          </div>
+          <div class="lo-timer" id="lo-timer">0:00</div>
+          <div class="lo-cov low" id="lo-cov">0% Coverage</div>
+        </div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="controls">
+        <div class="ctrl-info">
+          <div class="ctrl-video-name" id="ctrl-name">No video selected</div>
+          <div class="ctrl-video-meta" id="ctrl-meta">Select a video from the list to begin</div>
+        </div>
+        <div class="ctrl-btns">
+          <button class="btn-fullscreen" onclick="toggleFS()" title="Fullscreen">⛶</button>
+          <button class="btn-start" id="btn-start" onclick="startLesson()" disabled>
+            ▶ Start Lesson
+          </button>
+          <button class="btn-end" id="btn-end" onclick="endLesson()" style="display:none">
+            ⏹ End Lesson
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: HISTORY -->
+    <div class="history-panel">
+      <div class="hist-hdr">
+        <div class="hist-title">📋 Today's Lessons</div>
+        <div class="hist-count" id="hist-count">0</div>
+      </div>
+      <div class="hist-list" id="hist-list">
+        <div style="text-align:center;padding:30px 16px;font-size:12px;color:var(--text3)">
+          No lessons recorded today yet
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RESULT MODAL -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-icon" id="m-icon">✅</div>
+    <div class="modal-title" id="m-title">Lesson Complete</div>
+    <div class="modal-sub" id="m-sub"></div>
+    <div class="modal-grid" id="m-grid"></div>
+    <div class="modal-sync" id="m-sync"></div>
+    <div class="modal-gps" id="m-gps"></div>
+    <button class="modal-close" onclick="closeModal()">✔ Done — Next Lesson</button>
+  </div>
+</div>
+
+<input type="file" id="file-input" webkitdirectory mozdirectory onchange="loadFiles(event)">
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  CONFIG & STATE
+// ═══════════════════════════════════════════════════════
+let CFG = {};
+let videoFiles = [];     // {file, name, subject, level, duration}
+let selectedVideo = null;
+let lessonActive = false;
+let lessonRecord = null;
+let timerInterval = null;
+let watchedSeconds = new Set(); // actual seconds watched
+let gpsData = null;
+let idb = null;
+
+const PARSE_REGEX = /^(math|english|urdu|science)/i;
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+async function init(){
+  await openIDB();
+  const cfg = localStorage.getItem('takmil_classroom_cfg');
+  if(cfg){
+    CFG = JSON.parse(cfg);
+    document.getElementById('tb-school-name').textContent = CFG.school_name || CFG.school_code;
+    showScreen('s-main');
+    updateNet();
+    loadHistory();
+    updatePendingCount();
+    // Auto-sync on load
+    if(navigator.onLine) syncPending();
+  } else {
+    showScreen('s-setup');
+  }
+  window.addEventListener('online',  ()=>{ updateNet(); syncPending(); });
+  window.addEventListener('offline', ()=> updateNet());
+  setInterval(updateNet, 10000);
+  setInterval(()=>{ if(navigator.onLine) syncPending(); }, 60000);
+}
+
+// ═══════════════════════════════════════════════════════
+//  SETUP
+// ═══════════════════════════════════════════════════════
+function saveSetup(){
+  const school_code = document.getElementById('setup-school').value.trim().toUpperCase();
+  const school_name = document.getElementById('setup-name').value.trim();
+  const server_url  = document.getElementById('setup-url').value.trim().replace(/\/$/,'');
+  if(!school_code || !school_name){
+    alert('Please enter school code and name.'); return;
+  }
+  CFG = { school_code, school_name, server_url };
+  localStorage.setItem('takmil_classroom_cfg', JSON.stringify(CFG));
+  document.getElementById('tb-school-name').textContent = school_name;
+  showScreen('s-main');
+  updateNet();
+  loadHistory();
+}
+
+function resetSetup(){
+  if(!confirm('Change school settings?')) return;
+  showScreen('s-setup');
+  document.getElementById('setup-school').value = CFG.school_code || '';
+  document.getElementById('setup-name').value   = CFG.school_name || '';
+  document.getElementById('setup-url').value    = CFG.server_url  || '';
+}
+
+// ═══════════════════════════════════════════════════════
+//  FILE LOADING (USB)
+// ═══════════════════════════════════════════════════════
+function loadFiles(e){
+  // Filter to video files only
+  const files = Array.from(e.target.files).filter(f =>
+    f.type.startsWith('video/') || /\.(mp4|mkv|avi|mov|webm|flv|wmv|m4v)$/i.test(f.name)
+  );
+  if(!files.length){
+    alert('No video files found.\n\nMake sure your folder contains videos inside subfolders:\n  Math/  English/  Urdu/  Science/');
+    return;
+  }
+
+  videoFiles = files.map(f => {
+    const name = f.name.replace(/\.[^.]+$/, ''); // strip extension
+    // Read subject from parent folder name (webkitRelativePath = "Math/video.mp4")
+    const pathParts = (f.webkitRelativePath || '').split('/');
+    const folderName = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : '';
+    const parsed = parseVideoName(name, folderName);
+    return { file: f, name, path: f.webkitRelativePath || name, ...parsed };
+  });
+
+  // Sort by subject then name
+  videoFiles.sort((a,b) => {
+    const subjOrder = {Math:1, English:2, Urdu:3, Science:4, General:5};
+    const sd = (subjOrder[a.subject]||5) - (subjOrder[b.subject]||5);
+    if(sd !== 0) return sd;
+    return a.name.localeCompare(b.name);
+  });
+
+  renderList();
+  e.target.value = '';
+}
+
+function parseVideoName(name, folderName){
+  let subject = 'General', level = 1;
+
+  // Step 1 — subject from folder name (most reliable)
+  if(folderName){
+    const f = folderName.toLowerCase();
+    if(/math|maths|ریاضی/.test(f))          subject = 'Math';
+    else if(/english|eng/.test(f))           subject = 'English';
+    else if(/urdu|اردو/.test(f))             subject = 'Urdu';
+    else if(/science|sci/.test(f))           subject = 'Science';
+  }
+
+  // Step 2 — fallback: detect subject from filename if folder didn't match
+  if(subject === 'General'){
+    if(/math|ریاضی|counting|addition|subtract|fraction|multiply|divide|algebra|geometry|sets/i.test(name))
+      subject = 'Math';
+    else if(/english|alphabet|phonics|sentence|reading|grammar|spelling/i.test(name))
+      subject = 'English';
+    else if(/urdu|اردو|حروف|الفاظ|قاعدہ/i.test(name))
+      subject = 'Urdu';
+    else if(/science|biology|body|plant|animal|water|health|physics|chemistry/i.test(name))
+      subject = 'Science';
+  }
+
+  // Step 3 — extract level: handles L1, Level1, Level-1, Level 1, _L1_, -L1-
+  const lvlPatterns = [
+    /[Ll]evel[\s_-]?(\d+)/,   // Level1, Level-1, Level 1
+    /[_\-\s][Ll](\d+)[_\-\s\.]/,  // _L1_, -L1-, L1.
+    /[_\-\s][Ll](\d+)$/,          // ends with _L1
+    /^(\d+)\./,                    // starts with 1. (like 1.1_...)
+  ];
+  for(const pat of lvlPatterns){
+    const m = name.match(pat);
+    if(m){ level = parseInt(m[1]); break; }
+  }
+
+  return { subject, level, duration: 0 };
+}
+
+function renderList(){
+  const subj = document.getElementById('f-subj').value;
+  const lvl  = document.getElementById('f-lvl').value;
+  const el   = document.getElementById('video-list');
+
+  if(!videoFiles.length){
+    el.innerHTML = `<div class="empty-state"><span class="big">💾</span>Plug in USB or choose a laptop folder,<br>then tap <strong>Load Videos (USB or Laptop)</strong></div>`;
+    return;
+  }
+
+  let filtered = videoFiles;
+  if(subj) filtered = filtered.filter(v => v.subject === subj);
+  if(lvl)  filtered = filtered.filter(v => parseInt(v.level) === parseInt(lvl));
+
+  if(!filtered.length){
+    el.innerHTML = `<div class="empty-state"><span class="big">🔍</span>No videos match this filter</div>`;
+    return;
+  }
+
+  el.innerHTML = filtered.map((v,i) => `
+    <div class="vitem ${selectedVideo===v?'sel':''}" id="vi-${i}" onclick="selectVideo(${videoFiles.indexOf(v)})">
+      <div class="vi-name">${v.name}</div>
+      <div class="vi-meta">
+        <span class="vi-tag vi-tag-subj">${v.subject}</span>
+        <span class="vi-tag vi-tag-lvl">L${v.level}</span>
+        ${v.duration ? `<span class="vi-tag-dur">${fmtDur(v.duration)}</span>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function selectVideo(idx){
+  if(lessonActive) return;
+  selectedVideo = videoFiles[idx];
+  const vid = document.getElementById('video-el');
+
+  // Revoke old URL
+  if(vid._objUrl) URL.revokeObjectURL(vid._objUrl);
+  vid._objUrl = URL.createObjectURL(selectedVideo.file);
+  vid.src = vid._objUrl;
+  vid.style.display = 'block';
+  document.getElementById('player-ph').style.display = 'none';
+
+  // Get duration once metadata loads
+  vid.onloadedmetadata = () => {
+    selectedVideo.duration = Math.round(vid.duration);
+    renderList();
+    document.getElementById('ctrl-meta').textContent =
+      `${selectedVideo.subject} · Level ${selectedVideo.level} · ${fmtDur(selectedVideo.duration)}`;
+  };
+
+  document.getElementById('ctrl-name').textContent = selectedVideo.name;
+  document.getElementById('ctrl-meta').textContent = `${selectedVideo.subject} · Level ${selectedVideo.level}`;
+  document.getElementById('btn-start').disabled = false;
+  renderList();
+}
+
+// ═══════════════════════════════════════════════════════
+//  LESSON TRACKING
+// ═══════════════════════════════════════════════════════
+async function startLesson(){
+  if(!selectedVideo) return;
+
+  lessonActive = true;
+  watchedSeconds = new Set();
+  gpsData = null;
+
+  // Get GPS
+  getGPS().then(g => {
+    gpsData = g;
+  });
+
+  const startTime = new Date();
+  lessonRecord = {
+    video_name:        selectedVideo.name,
+    video_id:          selectedVideo.name.replace(/\s+/g,'-').toUpperCase(),
+    subject:           selectedVideo.subject,
+    level:             selectedVideo.level,
+    expected_duration: selectedVideo.duration || 480,
+    school_code:       CFG.school_code,
+    school_name:       CFG.school_name,
+    teacher_name:      'Classroom Player',
+    start_time:        startTime.toISOString(),
+    pauses:            0,
+    seeks:             0,
+    synced:            false,
+  };
+
+  // Hook video events for accurate tracking
+  const vid = document.getElementById('video-el');
+  vid.ontimeupdate = () => {
+    const sec = Math.floor(vid.currentTime);
+    watchedSeconds.add(sec);
+    updateOverlay(startTime);
+  };
+  vid.onpause = () => {
+    if(!vid.ended) lessonRecord.pauses++;
+  };
+  vid.onseeking = () => lessonRecord.seeks++;
+
+  // Play automatically
+  vid.play().catch(()=>{});
+
+  // Show UI
+  document.getElementById('lesson-overlay').style.display = 'flex';
+  document.getElementById('btn-start').style.display = 'none';
+  document.getElementById('btn-end').style.display = 'block';
+  document.getElementById('btn-fullscreen').style.display = 'none';
+
+  timerInterval = setInterval(() => updateOverlay(startTime), 1000);
+
+  // Send start to server
+  if(navigator.onLine){
+    fetch(CFG.server_url + '/api/lessons/start', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({...lessonRecord, start_gps: gpsData})
+    }).catch(()=>{});
+  }
+}
+
+function updateOverlay(startTime){
+  const elapsed = Math.floor((new Date() - startTime) / 1000);
+  const expected = lessonRecord.expected_duration;
+  const coverage = expected > 0 ? Math.min(100, Math.round((watchedSeconds.size / expected) * 100)) : 0;
+
+  document.getElementById('lo-timer').textContent = fmtDur(elapsed);
+  const covEl = document.getElementById('lo-cov');
+  covEl.textContent = coverage + '% Coverage';
+  covEl.className = 'lo-cov ' + (coverage >= 80 ? 'ok' : coverage >= 50 ? 'mid' : 'low');
+}
+
+async function endLesson(){
+  if(!lessonActive) return;
+  clearInterval(timerInterval);
+
+  const vid = document.getElementById('video-el');
+  vid.pause();
+  vid.ontimeupdate = null;
+  vid.onpause = null;
+  vid.onseeking = null;
+
+  const endTime = new Date();
+  const startTime = new Date(lessonRecord.start_time);
+  const actualDuration = Math.floor((endTime - startTime) / 1000);
+  const expected = lessonRecord.expected_duration;
+  const coverage = expected > 0 ? Math.min(100, Math.round((watchedSeconds.size / expected) * 100)) : 0;
+
+  let status = 'completed', flagged = false;
+  if(coverage >= 80)      { status = 'completed'; flagged = false; }
+  else if(coverage >= 50) { status = 'short';     flagged = true; }
+  else                    { status = 'suspicious'; flagged = true; }
+
+  // Get end GPS
+  const endGps = await getGPS();
+
+  const record = {
+    ...lessonRecord,
+    end_time:        endTime.toISOString(),
+    actual_duration: actualDuration,
+    coverage_pct:    coverage,
+    pauses:          lessonRecord.pauses,
+    seeks:           lessonRecord.seeks,
+    start_gps:       gpsData,
+    end_gps:         endGps,
+    status,
+    flagged,
+    synced:          false,
+  };
+
+  // Save to IDB first
+  await idbPut('lessons', record);
+
+  // Try sync
+  let synced = false;
+  if(navigator.onLine){
+    try{
+      const resp = await fetch(CFG.server_url + '/api/lessons/end', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(record)
+      });
+      const data = await resp.json();
+      if(data.saved){
+        record.synced = true;
+        await idbPut('lessons', record);
+        synced = true;
+      }
+    }catch(e){}
+  }
+
+  // Reset UI
+  lessonActive = false;
+  lessonRecord = null;
+  document.getElementById('lesson-overlay').style.display = 'none';
+  document.getElementById('btn-start').style.display = 'block';
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('btn-end').style.display = 'none';
+  document.getElementById('btn-fullscreen').style.display = 'block';
+
+  loadHistory();
+  updatePendingCount();
+  showModal(record, synced);
+}
+
+// ═══════════════════════════════════════════════════════
+//  RESULT MODAL
+// ═══════════════════════════════════════════════════════
+function showModal(rec, synced){
+  const icons   = {completed:'✅', short:'⚠️', suspicious:'🚨'};
+  const titles  = {completed:'Lesson Complete!', short:'Short Lesson', suspicious:'Too Short — Flagged!'};
+
+  document.getElementById('m-icon').textContent  = icons[rec.status]  || '✅';
+  document.getElementById('m-title').textContent = titles[rec.status] || 'Done';
+  document.getElementById('m-sub').textContent   =
+    `${rec.video_name} · ${rec.subject} L${rec.level}`;
+
+  document.getElementById('m-grid').innerHTML = `
+    <div class="mg-cell">
+      <div class="mg-val">${fmtDur(rec.actual_duration)}</div>
+      <div class="mg-lbl">Duration</div>
+    </div>
+    <div class="mg-cell">
+      <div class="mg-val" style="color:${rec.coverage_pct>=80?'#4ade80':rec.coverage_pct>=50?'#fcd34d':'#fca5a5'}">${rec.coverage_pct}%</div>
+      <div class="mg-lbl">Coverage</div>
+    </div>
+    <div class="mg-cell">
+      <div class="mg-val">${rec.pauses}</div>
+      <div class="mg-lbl">Pauses</div>
+    </div>
+    <div class="mg-cell">
+      <div class="mg-val">${rec.seeks}</div>
+      <div class="mg-lbl">Skips</div>
+    </div>`;
+
+  const syncEl = document.getElementById('m-sync');
+  syncEl.textContent = synced
+    ? '✅ Synced to server — coordinator notified'
+    : '📴 Saved on laptop — will sync when hotspot connected';
+  syncEl.className = 'modal-sync ' + (synced ? 'ok' : 'pending');
+
+  const gpsEl = document.getElementById('m-gps');
+  if(rec.start_gps)
+    gpsEl.innerHTML = `📍 <span class="gps-tag">${rec.start_gps.lat.toFixed(4)}, ${rec.start_gps.lng.toFixed(4)} (±${Math.round(rec.start_gps.acc||0)}m)</span>`;
+  else
+    gpsEl.textContent = '📍 Location not available';
+
+  document.getElementById('modal').classList.add('on');
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('on');
+}
+
+// ═══════════════════════════════════════════════════════
+//  HISTORY
+// ═══════════════════════════════════════════════════════
+async function loadHistory(){
+  const all = await idbGetAll('lessons');
+  const today = new Date().toDateString();
+  const todayL = all.filter(l => new Date(l.start_time).toDateString() === today);
+
+  document.getElementById('hist-count').textContent = todayL.length;
+
+  const el = document.getElementById('hist-list');
+  if(!todayL.length){
+    el.innerHTML = `<div style="text-align:center;padding:30px 16px;font-size:12px;color:var(--text3)">No lessons recorded today yet</div>`;
+    return;
+  }
+
+  el.innerHTML = todayL.reverse().map(l => `
+    <div class="hitem">
+      <div class="hi-top">
+        <div class="hi-name">${l.video_name}</div>
+        <div class="hi-time">${new Date(l.start_time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <div class="hi-row">
+        <span class="hi-chip ${l.coverage_pct>=80?'chip-ok':l.coverage_pct>=50?'chip-warn':'chip-bad'}">${l.coverage_pct}%</span>
+        <span class="hi-chip chip-sync">${l.subject} L${l.level}</span>
+        <span class="hi-chip ${l.synced?'chip-synced':'chip-sync'}">${l.synced?'✓ Synced':'⏳ Pending'}</span>
+        ${l.flagged?'<span class="hi-chip chip-bad">⚠️ Flagged</span>':''}
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  SYNC
+// ═══════════════════════════════════════════════════════
+async function syncPending(){
+  const all = await idbGetAll('lessons');
+  const pending = all.filter(l => !l.synced);
+  if(!pending.length) return;
+
+  for(const l of pending){
+    try{
+      const resp = await fetch(CFG.server_url + '/api/lessons/end', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(l)
+      });
+      const data = await resp.json();
+      if(data.saved){
+        l.synced = true;
+        await idbPut('lessons', l);
+      }
+    }catch(e){}
+  }
+  loadHistory();
+  updatePendingCount();
+}
+
+async function manualSync(){
+  const btn = event.target;
+  btn.textContent = '⏳ Syncing...';
+  await syncPending();
+  btn.textContent = '🔄 Sync';
+  updatePendingCount();
+}
+
+async function updatePendingCount(){
+  const all = await idbGetAll('lessons');
+  const n = all.filter(l => !l.synced).length;
+  const badge = document.getElementById('pending-cnt');
+  badge.textContent = n;
+  badge.style.display = n > 0 ? 'inline' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+//  GPS
+// ═══════════════════════════════════════════════════════
+function getGPS(){
+  return new Promise(res => {
+    if(!navigator.geolocation){ res(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      p => res({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }),
+      () => res(null),
+      { timeout: 8000, enableHighAccuracy: true }
+    );
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  INDEXEDDB
+// ═══════════════════════════════════════════════════════
+function openIDB(){
+  return new Promise((res,rej) => {
+    const req = indexedDB.open('takmil_classroom', 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains('lessons'))
+        db.createObjectStore('lessons', { keyPath:'local_id', autoIncrement:true });
+    };
+    req.onsuccess = e => { idb = e.target.result; res(); };
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+function idbPut(store, record){
+  return new Promise((res,rej) => {
+    const tx  = idb.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(record);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+function idbGetAll(store){
+  return new Promise((res,rej) => {
+    const tx  = idb.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════
+function fmtDur(sec){
+  const m = Math.floor(sec/60), s = sec % 60;
+  return m + 'm ' + (s<10?'0':'') + s + 's';
+}
+
+function toggleFS(){
+  const zone = document.getElementById('player-zone');
+  if(!document.fullscreenElement) zone.requestFullscreen().catch(()=>{});
+  else document.exitFullscreen();
+}
+
+function showScreen(id){
+  document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+
+function updateNet(){
+  const online = navigator.onLine;
+  const pill = document.getElementById('net-pill');
+  const txt  = document.getElementById('net-txt');
+  pill.className = 'net-pill ' + (online ? 'online' : 'offline');
+  txt.textContent = online ? 'Online' : 'Offline';
+}
+
+// Start
+init();
+</script>
+</body>
+</html>

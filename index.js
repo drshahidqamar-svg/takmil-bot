@@ -1081,34 +1081,6 @@ app.post('/api/register/import', async (req, res) => {
 });
 
 // Get students for a school
-
-// ── Look up school by teacher phone ──────────────────────────────
-app.get('/api/register/school-by-phone', async (req, res) => {
-  const { phone } = req.query;
-  if (!phone) return res.status(400).json({ error: 'Phone number required' });
-
-  try {
-    // Normalize phone — try with and without +92 prefix
-    const normalized = phone.replace(/\s+/g, '').replace(/^0/, '+92');
-    const r = await db.pool.query(
-      `SELECT name, identifier, teacher_phone FROM schools
-       WHERE teacher_phone = $1
-          OR teacher_phone = $2
-          OR teacher_phone = $3
-       LIMIT 1`,
-      [phone, normalized, phone.replace(/^\+/, '')]
-    );
-    if (!r.rows.length) {
-      return res.status(404).json({
-        error: 'Phone number not found. Contact your coordinator to register your number.'
-      });
-    }
-    res.json({ name: r.rows[0].name, identifier: r.rows[0].identifier });
-  } catch(err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 app.get('/api/register/students', async (req, res) => {
   try {
     const { school_code, date } = req.query;
@@ -3840,6 +3812,10 @@ app.post('/api/sync/push', async (req, res) => {
 });
 
 // Offline PWA routes
+
+// ── Classroom video player (USB-based offline lesson tracker) ────
+app.get('/classroom', (req, res) => res.sendFile(path.join(__dirname, 'takmil-classroom.html')));
+
 app.get('/offline-portal', (req, res) => res.sendFile(path.join(__dirname, 'offline-portal.html')));
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
