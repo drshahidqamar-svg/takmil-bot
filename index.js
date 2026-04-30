@@ -153,6 +153,111 @@ async function notifyTeacher(phone, decision, level, subject, reason) {
 
 // ── Main router ──────────────────────────────────────────────────────────────
 
+
+// ── Natural Language Query System ────────────────────────────────────────────
+
+async function isCoordinator(phone) {
+  try {
+    const r = await db.pool.query(
+      `SELECT id FROM regional_coordinators WHERE phone=$1
+       UNION SELECT id FROM school_coordinators WHERE phone=$1 LIMIT 1`,
+      [phone]
+    );
+    return r.rows.length > 0;
+  } catch { return false; }
+}
+
+async function looksLikeQuery(text) {
+  const t = text.toLowerCase();
+  const queryWords = [
+    'how many','which schools','show me','what is','what are',
+    'list','count','total','average','passed','failed','attendance',
+    'level','province','sindh','punjab','kpk','balochistan','gilgit',
+    'today','this week','this month','assessment','students','schools',
+    'score','percent','rate','top','bottom','best','worst',
+    'graduated','advanced','pending','missing'
+  ];
+  return queryWords.some(w => t.includes(w));
+}
+
+async function handleNaturalLanguageQuery(phone, question) {
+  try {
+    // Fetch live data snapshot from DB to give Claude context
+    const [schools, assessments, attendance, levels] = await Promise.all([
+      db.pool.query(`
+        SELECT province, COUNT(*) as total,
+               SUM(CASE WHEN current_level > 1 THEN 1 ELSE 0 END) as advanced,
+               SUM(CASE WHEN current_level >= 12 THEN 1 ELSE 0 END) as graduated,
+               ROUND(AVG(current_level),1) as avg_level
+        FROM schools WHERE identifier IS NOT NULL
+        GROUP BY province ORDER BY province
+      `),
+      db.pool.query(`
+        SELECT ts.subject, ts.level, s.province,
+               COUNT(DISTINCT tr.student_name) as students_tested,
+               ROUND(AVG(tr.score_pct)::numeric,1) as avg_score
+        FROM tablet_results tr
+        JOIN tablet_sessions ts ON ts.id = tr.session_id
+        JOIN schools s ON s.identifier = tr.school_identifier
+        WHERE tr.completed_at > NOW() - INTERVAL '7 days'
+        GROUP BY ts.subject, ts.level, s.province
+        ORDER BY s.province, ts.subject, ts.level
+      `),
+      db.pool.query(`
+        SELECT province,
+               COUNT(DISTINCT sa.school_identifier) as schools_submitted,
+               ROUND(100.0*COUNT(CASE WHEN sa.status='P' THEN 1 END)/NULLIF(COUNT(*),0),1) as avg_attendance
+        FROM student_attendance sa
+        JOIN schools s ON s.identifier = sa.school_identifier
+        WHERE sa.attendance_date = CURRENT_DATE
+        GROUP BY province
+      `),
+      db.pool.query(`
+        SELECT current_level, COUNT(*) as schools
+        FROM schools WHERE identifier IS NOT NULL
+        GROUP BY current_level ORDER BY current_level
+      `)
+    ]);
+
+    const dataSnapshot = {
+      schools_by_province: schools.rows,
+      assessments_last_7_days: assessments.rows,
+      attendance_today: attendance.rows,
+      schools_by_level: levels.rows,
+      query_date: new Date().toISOString().split('T')[0]
+    };
+
+    // Call Claude to answer the question using live data
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 500,
+        system: `You are the TAKMIL data assistant. Answer questions about school and student data concisely for WhatsApp.
+TAKMIL runs community schools in Pakistan with 177 schools across Sindh, Punjab, KPK, Balochistan, and Gilgit Baltistan.
+Students go through Levels 1-11 then a Grand Assessment. All students in a school move together as a cohort.
+Format answers for WhatsApp: use *bold* for numbers, keep under 300 chars, use bullet points with hyphens.
+Always end with one actionable insight if relevant.
+Current live data: ${JSON.stringify(dataSnapshot)}`,
+        messages: [{ role: 'user', content: question }]
+      })
+    });
+
+    const data = await response.json();
+    const answer = data.content?.[0]?.text || 'Sorry, I could not process your question.';
+    return `🤖 *TAKMIL Data Assistant*\n\n${answer}\n\n_Reply with another question or send your PIN to start an assessment._`;
+
+  } catch(e) {
+    console.error('NL query error:', e.message);
+    return `❌ Could not process your question right now. Try again or ask in this format:\n"How many schools in Sindh are at Level 1?"`;
+  }
+}
+
 async function handleMessage(rawPhone, incomingText) {
   const phone = rawPhone.replace('whatsapp:', '');
   const text  = (incomingText || '').trim();
@@ -171,6 +276,12 @@ async function handleMessage(rawPhone, incomingText) {
   const isOpsCmd = upper.startsWith('APPROVE') || upper.startsWith('REJECT') ||
                    upper === 'PENDING' || upper === 'STATS' || upper === 'OPS HELP';
   if (isOps && isOpsCmd) return handleOpsMessage(phone, text, upper);
+
+  // ── Natural Language Query (coordinators & ops only) ──────────────
+  const isCoord = await isCoordinator(phone);
+  if ((isOps || isCoord) && await looksLikeQuery(text)) {
+    return await handleNaturalLanguageQuery(phone, text);
+  }
 
   let session = await db.getSession(phone);
   if (!session) {
@@ -3063,108 +3174,6 @@ function getRoleHelp(role) {
 //
 // This lets the video module handle its commands first,
 // then falls through to existing PIN/assessment logic.
-
-// ── Level Advancement Console ─────────────────────────────────────
-app.get('/advance', (req, res) =>
-  res.sendFile(path.join(__dirname, 'level-advancement.html')));
-
-app.get('/api/console/schools-progress', async (req, res) => {
-  try {
-    const r = await db.pool.query(`
-      SELECT
-        s.id, s.name, s.identifier, s.province, s.current_level,
-        s.level_updated_at, s.teacher_phone,
-        sr.student_count,
-        scores.math_avg, scores.english_avg, scores.urdu_avg,
-        scores.students_tested,
-        att.attendance_rate
-      FROM schools s
-      -- Student count (clean subquery)
-      LEFT JOIN (
-        SELECT school_identifier, COUNT(*) AS student_count
-        FROM students_register WHERE active = TRUE
-        GROUP BY school_identifier
-      ) sr ON sr.school_identifier = s.identifier
-      -- Assessment scores (clean subquery)
-      LEFT JOIN (
-        SELECT tr.school_identifier,
-          ROUND(AVG(CASE WHEN ts.subject='Math'    THEN tr.score_pct END)::numeric,0) AS math_avg,
-          ROUND(AVG(CASE WHEN ts.subject='English' THEN tr.score_pct END)::numeric,0) AS english_avg,
-          ROUND(AVG(CASE WHEN ts.subject='Urdu'    THEN tr.score_pct END)::numeric,0) AS urdu_avg,
-          COUNT(DISTINCT tr.student_name) AS students_tested
-        FROM tablet_results tr
-        JOIN tablet_sessions ts ON ts.id = tr.session_id
-        WHERE tr.completed_at > NOW() - INTERVAL '30 days'
-        GROUP BY tr.school_identifier
-      ) scores ON scores.school_identifier = s.identifier
-      -- Attendance rate (clean subquery)
-      LEFT JOIN (
-        SELECT school_identifier,
-          ROUND(100.0 * COUNT(CASE WHEN status='P' THEN 1 END) / NULLIF(COUNT(*),0),0) AS attendance_rate
-        FROM student_attendance
-        WHERE attendance_date >= DATE_TRUNC('month', NOW())
-        GROUP BY school_identifier
-      ) att ON att.school_identifier = s.identifier
-      WHERE s.identifier IS NOT NULL
-      ORDER BY s.province, s.name
-    `);
-    res.json({ schools: r.rows });
-  } catch(e) {
-    console.error('schools-progress error:', e.message);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.post('/api/console/advance-level', async (req, res) => {
-  const { school_identifier, from_level, to_level, student_count, notes, advanced_by } = req.body;
-  if (!school_identifier || !to_level) return res.status(400).json({ error: 'Missing fields' });
-  const client = await db.pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query(
-      `UPDATE schools SET current_level=$1, level_updated_at=NOW(), level_updated_by=$2 WHERE identifier=$3`,
-      [to_level, advanced_by || 'Ops Team', school_identifier]
-    );
-    await client.query(
-      `UPDATE students_register SET level=$1 WHERE school_identifier=$2 AND active=TRUE`,
-      [to_level, school_identifier]
-    );
-    await client.query(
-      `INSERT INTO level_progression (school_identifier, from_level, to_level, student_count, advanced_by, notes)
-       VALUES ($1,$2,$3,$4,$5,$6)`,
-      [school_identifier, from_level, to_level, student_count, advanced_by || 'Ops Team', notes || null]
-    );
-    if (to_level >= 12) {
-      await client.query(
-        `UPDATE students_register SET graduated=TRUE, graduated_at=NOW() WHERE school_identifier=$1 AND active=TRUE`,
-        [school_identifier]
-      );
-    }
-    await client.query('COMMIT');
-    res.json({ success: true, message: `Advanced to Level ${to_level}` });
-  } catch(e) {
-    await client.query('ROLLBACK');
-    console.error('advance-level error:', e.message);
-    res.status(500).json({ error: e.message });
-  } finally {
-    client.release();
-  }
-});
-
-app.get('/api/console/level-history', async (req, res) => {
-  const { school } = req.query;
-  try {
-    const r = await db.pool.query(
-      `SELECT from_level, to_level, student_count, advanced_by, notes, advanced_at
-       FROM level_progression WHERE school_identifier=$1 ORDER BY advanced_at DESC`,
-      [school]
-    );
-    res.json({ history: r.rows });
-  } catch(e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
 app.get('/console', (req, res) => {
   res.sendFile(path.join(__dirname, 'takmil-ops-console.html'));
 });
