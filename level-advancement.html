@@ -90,11 +90,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;min-height:1
   <div style="display:flex;gap:12px;align-items:center">
     <select id="f-province" onchange="render()" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;font-family:inherit;font-size:13px">
       <option value="">All Provinces</option>
-      <option value="Sindh">Sindh</option>
-      <option value="Punjab">Punjab</option>
-      <option value="KPK">KPK</option>
-      <option value="GilgitBaltistan">Gilgit Baltistan</option>
-      <option value="Balochistan">Balochistan</option>
     </select>
     <button onclick="loadData()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px">↻ Refresh</button>
   </div>
@@ -227,6 +222,12 @@ function populateYearFilter() {
   const sel = document.getElementById('f-year');
   sel.innerHTML = '<option value="">All Years</option>' +
     years.map(y => `<option value="${y}">${y.replace('W','Winter 20')}</option>`).join('');
+
+  // Also populate province dropdown from real data
+  const provinces = [...new Set(allSchools.map(s => s.province).filter(Boolean))].sort();
+  const psel = document.getElementById('f-province');
+  psel.innerHTML = '<option value="">All Provinces</option>' +
+    provinces.map(p => `<option value="${p}">${p}</option>`).join('');
 }
 
 function render() {
