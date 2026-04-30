@@ -525,7 +525,8 @@ function filterVideos(){
 }
 
 function selectVideo(id){
-  selectedVideo = videoCatalog.find(v=>v.id===id);
+  // Convert both to string for safe comparison (DB returns int, onclick passes string)
+  selectedVideo = videoCatalog.find(v=>String(v.id)===String(id));
   document.querySelectorAll('.video-item').forEach(el=>el.classList.remove('sel'));
   document.getElementById('vi-'+id)?.classList.add('sel');
   document.getElementById('start-btn').disabled = false;
