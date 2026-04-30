@@ -257,6 +257,41 @@ function render() {
   document.getElementById('grid').innerHTML = schools.map(s => schoolCard(s)).join('');
 }
 
+// Check if school has enough assessment data to advance
+function hasAssessments(s) {
+  return s.math_avg || s.english_avg || s.urdu_avg;
+}
+
+// Readiness indicator block shown on each card
+function assessmentBlock(s) {
+  const math    = s.math_avg    ? parseInt(s.math_avg)    : null;
+  const english = s.english_avg ? parseInt(s.english_avg) : null;
+  const urdu    = s.urdu_avg    ? parseInt(s.urdu_avg)    : null;
+  const hasAny  = math || english || urdu;
+  const tested  = s.students_tested || 0;
+  const total   = Math.min(parseInt(s.student_count)||0, 200);
+
+  if (!hasAny) {
+    return `<div class="assess-block assess-none">
+      ⚠️ No assessments taken at Level ${s.current_level || 1} yet
+      <div style="font-size:11px;margin-top:4px;opacity:0.8">Generate a PIN and run assessments before advancing</div>
+    </div>`;
+  }
+
+  const allGood = [math, english, urdu].filter(Boolean).every(v => v >= 60);
+  const blockClass = allGood ? 'assess-block assess-ready' : 'assess-block assess-partial';
+  const icon = allGood ? '✅' : '⚠️';
+  const label = allGood ? 'Ready to advance' : 'Review scores before advancing';
+
+  return `<div class="${blockClass}">
+    ${icon} ${label}
+    <div style="font-size:11px;margin-top:3px;opacity:0.85">
+      ${tested > 0 ? `${tested} of ${total} students tested · ` : ''}
+      Last 30 days scores
+    </div>
+  </div>`;
+}
+
 function schoolCard(s) {
   const level    = s.current_level || 1;
   const isGrand  = level === 11;
@@ -310,10 +345,13 @@ function schoolCard(s) {
       <span class="att-rate">📅 ${s.attendance_rate ? Math.min(parseInt(s.attendance_rate),100)+'%' : '—'} attendance</span>
     </div>
 
+    <!-- Assessment readiness indicator -->
+    ${assessmentBlock(s)}
+
     <button class="${btnClass}"
-      ${isGrad?'disabled':''}
-      onclick="openAdvance('${s.identifier}','${(s.name||s.identifier).replace(/'/g,"\\'")}',${level},${s.student_count||0})">
-      ${btnText}
+      ${isGrad || !hasAssessments(s) ? 'disabled' : ''}
+      onclick="${isGrad || !hasAssessments(s) ? 'void(0)' : `openAdvance('${s.identifier}','${(s.name||s.identifier).replace(/'/g,"\\'")}',${level},${s.student_count||0})`}">
+      ${isGrad ? btnText : !hasAssessments(s) ? '🔒 Run Assessments First' : btnText}
     </button>
     <button class="history-btn" onclick="showHistory('${s.identifier}','${(s.name||s.identifier).replace(/'/g,"\\'")}')">
       📋 View Level History

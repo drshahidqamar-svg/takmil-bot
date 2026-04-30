@@ -3076,6 +3076,7 @@ app.get('/api/console/schools-progress', async (req, res) => {
         s.level_updated_at, s.teacher_phone,
         sr.student_count,
         scores.math_avg, scores.english_avg, scores.urdu_avg,
+        scores.students_tested,
         att.attendance_rate
       FROM schools s
       -- Student count (clean subquery)
@@ -3089,7 +3090,8 @@ app.get('/api/console/schools-progress', async (req, res) => {
         SELECT tr.school_identifier,
           ROUND(AVG(CASE WHEN ts.subject='Math'    THEN tr.score_pct END)::numeric,0) AS math_avg,
           ROUND(AVG(CASE WHEN ts.subject='English' THEN tr.score_pct END)::numeric,0) AS english_avg,
-          ROUND(AVG(CASE WHEN ts.subject='Urdu'    THEN tr.score_pct END)::numeric,0) AS urdu_avg
+          ROUND(AVG(CASE WHEN ts.subject='Urdu'    THEN tr.score_pct END)::numeric,0) AS urdu_avg,
+          COUNT(DISTINCT tr.student_name) AS students_tested
         FROM tablet_results tr
         JOIN tablet_sessions ts ON ts.id = tr.session_id
         WHERE tr.completed_at > NOW() - INTERVAL '30 days'
