@@ -550,14 +550,21 @@ function loadFiles(e){
 
   videoFiles = files.map(f => {
     const name = f.name.replace(/\.[^.]+$/, ''); // strip extension
-    // Read subject from parent folder name (webkitRelativePath = "Math/video.mp4")
+    // Read subject from ANY folder in the path (supports Math/Level1/video.mp4)
     const pathParts = (f.webkitRelativePath || '').split('/');
-    const folderName = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : '';
-    const parsed = parseVideoName(name, folderName);
+    // Scan all folder parts (exclude last = filename) to find subject
+    const allFolders = pathParts.slice(0, -1).join(' ');
+    // Also try to extract level from folder names like "Level 1", "L1"
+    const folderLevel = allFolders.match(/[Ll]evel\s*(\d+)|[_\s-][Ll](\d+)[_\s-]/);
+    const parsed = parseVideoName(name, allFolders, folderLevel ? parseInt(folderLevel[1]||folderLevel[2]) : null);
     return { file: f, name, path: f.webkitRelativePath || name, ...parsed };
   });
 
   // Sort by subject then name
+  // Reset filters to show ALL after loading
+  document.getElementById('f-subj').value = '';
+  document.getElementById('f-lvl').value  = '';
+
   videoFiles.sort((a,b) => {
     const subjOrder = {Math:1, English:2, Urdu:3, Science:4, General:5};
     const sd = (subjOrder[a.subject]||5) - (subjOrder[b.subject]||5);
@@ -569,7 +576,7 @@ function loadFiles(e){
   e.target.value = '';
 }
 
-function parseVideoName(name, folderName){
+function parseVideoName(name, folderName, folderLevelOverride){
   let subject = 'General', level = 1;
 
   // Step 1 — subject from folder name (most reliable)
@@ -605,6 +612,10 @@ function parseVideoName(name, folderName){
     if(m){ level = parseInt(m[1]); break; }
   }
 
+  // Use folder-level override if found (e.g. from "Level 1" subfolder)
+  if(folderLevelOverride && folderLevelOverride >= 1 && folderLevelOverride <= 12){
+    level = folderLevelOverride;
+  }
   return { subject, level, duration: 0 };
 }
 
