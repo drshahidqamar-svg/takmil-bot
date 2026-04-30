@@ -488,12 +488,14 @@ async function loadVideoCatalog(){
     try{
       const resp = await fetch(BASE+'/api/teacher/videos');
       const data = await resp.json();
+      console.log('📹 Videos from API:', data.videos?.length, data.videos?.[0]);
       if(data.videos && data.videos.length){
         videoCatalog = data.videos;
         for(const v of videoCatalog) await idbPut('catalog',v);
         filterVideos();
         return;
       }
+      console.log('📹 No videos from API, trying fallback');
     }catch(e){}
   }
   // Try cached
@@ -513,24 +515,30 @@ function filterVideos(){
     list.innerHTML='<div style="font-size:13px;color:#6b7280;text-align:center;padding:20px">No videos found for this filter</div>';
     return;
   }
-  list.innerHTML = filtered.map(v=>`
-    <div class="video-item" id="vi-${v.id}" onclick="selectVideo('${v.id}')">
+  list.innerHTML = filtered.map((v,i)=>`
+    <div class="video-item" data-idx="${i}">
       <div class="vi-dot"></div>
       <div class="vi-body">
-        <div class="vi-name">${v.name}</div>
-        <div class="vi-meta">${v.subject} · Level ${v.level} · ${v.unit||''}</div>
+        <div class="vi-name">${v.name||v.video_name||'Untitled'}</div>
+        <div class="vi-meta">${v.subject||''} · Level ${v.level||''} · ${v.unit||''}</div>
       </div>
-      <div class="vi-dur">${formatDur(v.duration||0)}</div>
+      <div class="vi-dur">${formatDur(v.duration||v.duration_seconds||480)}</div>
     </div>`).join('');
+
+  // Attach click handlers after rendering (avoids all quoting issues)
+  list.querySelectorAll('.video-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.idx);
+      selectedVideo = filtered[idx];
+      list.querySelectorAll('.video-item').forEach(e => e.classList.remove('sel'));
+      el.classList.add('sel');
+      document.getElementById('start-btn').disabled = false;
+    });
+  });
 }
 
-function selectVideo(id){
-  // Convert both to string for safe comparison (DB returns int, onclick passes string)
-  selectedVideo = videoCatalog.find(v=>String(v.id)===String(id));
-  document.querySelectorAll('.video-item').forEach(el=>el.classList.remove('sel'));
-  document.getElementById('vi-'+id)?.classList.add('sel');
-  document.getElementById('start-btn').disabled = false;
-}
+// selectVideo now handled via event listeners in filterVideos()
+function selectVideo(id){ /* deprecated — kept for safety */ }
 
 function goToLesson(){
   if(!selectedVideo) return;
