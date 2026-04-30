@@ -3074,23 +3074,27 @@ app.get('/api/console/schools-progress', async (req, res) => {
       SELECT
         s.id, s.name, s.identifier, s.province, s.current_level,
         s.level_updated_at, s.teacher_phone,
-        COUNT(DISTINCT sr.id) AS student_count,
-        ROUND(AVG(CASE WHEN ts.subject='Math'    THEN tr.score_pct END)::numeric,0) AS math_avg,
-        ROUND(AVG(CASE WHEN ts.subject='English' THEN tr.score_pct END)::numeric,0) AS english_avg,
-        ROUND(AVG(CASE WHEN ts.subject='Urdu'    THEN tr.score_pct END)::numeric,0) AS urdu_avg,
-        ROUND(
-          100.0 * COUNT(DISTINCT CASE WHEN sa.status='P' THEN sa.id END) /
-          NULLIF(COUNT(DISTINCT sa.id),0)
-        ,0) AS attendance_rate
+        -- Use subqueries to avoid cartesian product from multiple joins
+        (SELECT COUNT(*) FROM students_register sr
+         WHERE sr.school_identifier = s.identifier AND sr.active = TRUE) AS student_count,
+        (SELECT ROUND(AVG(tr.score_pct)::numeric,0) FROM tablet_results tr
+         JOIN tablet_sessions ts ON ts.id = tr.session_id
+         WHERE tr.school_identifier = s.identifier AND ts.subject = 'Math'
+         AND tr.completed_at > NOW() - INTERVAL '30 days') AS math_avg,
+        (SELECT ROUND(AVG(tr.score_pct)::numeric,0) FROM tablet_results tr
+         JOIN tablet_sessions ts ON ts.id = tr.session_id
+         WHERE tr.school_identifier = s.identifier AND ts.subject = 'English'
+         AND tr.completed_at > NOW() - INTERVAL '30 days') AS english_avg,
+        (SELECT ROUND(AVG(tr.score_pct)::numeric,0) FROM tablet_results tr
+         JOIN tablet_sessions ts ON ts.id = tr.session_id
+         WHERE tr.school_identifier = s.identifier AND ts.subject = 'Urdu'
+         AND tr.completed_at > NOW() - INTERVAL '30 days') AS urdu_avg,
+        (SELECT ROUND(100.0 * COUNT(CASE WHEN sa.status='P' THEN 1 END) /
+         NULLIF(COUNT(*),0),0) FROM student_attendance sa
+         WHERE sa.school_identifier = s.identifier
+         AND sa.attendance_date >= DATE_TRUNC('month', NOW())) AS attendance_rate
       FROM schools s
-      LEFT JOIN students_register sr ON sr.school_identifier = s.identifier AND sr.active = TRUE
-      LEFT JOIN tablet_results tr ON tr.school_identifier = s.identifier
-        AND tr.completed_at > NOW() - INTERVAL '30 days'
-      LEFT JOIN tablet_sessions ts ON ts.id = tr.session_id
-      LEFT JOIN student_attendance sa ON sa.school_identifier = s.identifier
-        AND sa.attendance_date >= DATE_TRUNC('month', NOW())
       WHERE s.identifier IS NOT NULL
-      GROUP BY s.id, s.name, s.identifier, s.province, s.current_level, s.level_updated_at, s.teacher_phone
       ORDER BY s.province, s.name
     `);
     res.json({ schools: r.rows });
