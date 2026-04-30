@@ -88,9 +88,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;min-height:1
     <div class="header-sub">Level Advancement Console — Ops Team</div>
   </div>
   <div style="display:flex;gap:12px;align-items:center">
-    <select id="f-province" onchange="render()" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;font-family:inherit;font-size:13px">
-      <option value="">All Provinces</option>
-    </select>
     <button onclick="loadData()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px">↻ Refresh</button>
   </div>
 </div>
@@ -108,6 +105,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;min-height:1
   <div class="filters">
     <span class="filter-label">Search:</span>
     <input type="text" id="f-search" placeholder="School name..." oninput="render()" style="min-width:180px">
+
+    <span class="filter-label">Province:</span>
+    <select id="f-province" onchange="render()">
+      <option value="">All Provinces</option>
+    </select>
 
     <span class="filter-label">Year:</span>
     <select id="f-year" onchange="render()">
@@ -470,4 +472,3 @@ setInterval(loadData, 120000);
 </script>
 </body>
 </html>
- 
