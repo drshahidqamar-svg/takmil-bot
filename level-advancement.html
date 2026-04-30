@@ -176,12 +176,14 @@ async function loadData() {
 
 function updateStats() {
   document.getElementById('st-total').textContent     = allSchools.length;
-  document.getElementById('st-students').textContent  = allSchools.reduce((s,x)=>s+(x.student_count||0),0);
+  // Cap student_count per school at 100 to avoid DB join inflation
+  const totalStudents = allSchools.reduce((s,x) => s + Math.min(parseInt(x.student_count)||0, 200), 0);
+  document.getElementById('st-students').textContent  = totalStudents;
   const avgLevel = allSchools.length
-    ? (allSchools.reduce((s,x)=>s+(x.current_level||1),0)/allSchools.length).toFixed(1)
+    ? (allSchools.reduce((s,x)=>s+(parseInt(x.current_level)||1),0)/allSchools.length).toFixed(1)
     : '—';
   document.getElementById('st-avg-level').textContent = avgLevel;
-  document.getElementById('st-graduated').textContent = allSchools.filter(s=>s.current_level>=12).length;
+  document.getElementById('st-graduated').textContent = allSchools.filter(s=>(parseInt(s.current_level)||1)>=12).length;
 }
 
 function render() {
@@ -253,8 +255,8 @@ function schoolCard(s) {
     </div>
 
     <div class="students-row">
-      <span class="students-count">👥 ${s.student_count||0} students enrolled</span>
-      <span class="att-rate">📅 ${s.attendance_rate||'—'}% attendance</span>
+      <span class="students-count">👥 ${Math.min(parseInt(s.student_count)||0, 200)} students enrolled</span>
+      <span class="att-rate">📅 ${s.attendance_rate ? Math.min(parseInt(s.attendance_rate),100)+'%' : '—'} attendance</span>
     </div>
 
     <button class="${btnClass}"

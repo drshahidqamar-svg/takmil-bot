@@ -3074,26 +3074,35 @@ app.get('/api/console/schools-progress', async (req, res) => {
       SELECT
         s.id, s.name, s.identifier, s.province, s.current_level,
         s.level_updated_at, s.teacher_phone,
-        -- Use subqueries to avoid cartesian product from multiple joins
-        (SELECT COUNT(*) FROM students_register sr
-         WHERE sr.school_identifier = s.identifier AND sr.active = TRUE) AS student_count,
-        (SELECT ROUND(AVG(tr.score_pct)::numeric,0) FROM tablet_results tr
-         JOIN tablet_sessions ts ON ts.id = tr.session_id
-         WHERE tr.school_identifier = s.identifier AND ts.subject = 'Math'
-         AND tr.completed_at > NOW() - INTERVAL '30 days') AS math_avg,
-        (SELECT ROUND(AVG(tr.score_pct)::numeric,0) FROM tablet_results tr
-         JOIN tablet_sessions ts ON ts.id = tr.session_id
-         WHERE tr.school_identifier = s.identifier AND ts.subject = 'English'
-         AND tr.completed_at > NOW() - INTERVAL '30 days') AS english_avg,
-        (SELECT ROUND(AVG(tr.score_pct)::numeric,0) FROM tablet_results tr
-         JOIN tablet_sessions ts ON ts.id = tr.session_id
-         WHERE tr.school_identifier = s.identifier AND ts.subject = 'Urdu'
-         AND tr.completed_at > NOW() - INTERVAL '30 days') AS urdu_avg,
-        (SELECT ROUND(100.0 * COUNT(CASE WHEN sa.status='P' THEN 1 END) /
-         NULLIF(COUNT(*),0),0) FROM student_attendance sa
-         WHERE sa.school_identifier = s.identifier
-         AND sa.attendance_date >= DATE_TRUNC('month', NOW())) AS attendance_rate
+        sr.student_count,
+        scores.math_avg, scores.english_avg, scores.urdu_avg,
+        att.attendance_rate
       FROM schools s
+      -- Student count (clean subquery)
+      LEFT JOIN (
+        SELECT school_identifier, COUNT(*) AS student_count
+        FROM students_register WHERE active = TRUE
+        GROUP BY school_identifier
+      ) sr ON sr.school_identifier = s.identifier
+      -- Assessment scores (clean subquery)
+      LEFT JOIN (
+        SELECT tr.school_identifier,
+          ROUND(AVG(CASE WHEN ts.subject='Math'    THEN tr.score_pct END)::numeric,0) AS math_avg,
+          ROUND(AVG(CASE WHEN ts.subject='English' THEN tr.score_pct END)::numeric,0) AS english_avg,
+          ROUND(AVG(CASE WHEN ts.subject='Urdu'    THEN tr.score_pct END)::numeric,0) AS urdu_avg
+        FROM tablet_results tr
+        JOIN tablet_sessions ts ON ts.id = tr.session_id
+        WHERE tr.completed_at > NOW() - INTERVAL '30 days'
+        GROUP BY tr.school_identifier
+      ) scores ON scores.school_identifier = s.identifier
+      -- Attendance rate (clean subquery)
+      LEFT JOIN (
+        SELECT school_identifier,
+          ROUND(100.0 * COUNT(CASE WHEN status='P' THEN 1 END) / NULLIF(COUNT(*),0),0) AS attendance_rate
+        FROM student_attendance
+        WHERE attendance_date >= DATE_TRUNC('month', NOW())
+        GROUP BY school_identifier
+      ) att ON att.school_identifier = s.identifier
       WHERE s.identifier IS NOT NULL
       ORDER BY s.province, s.name
     `);
