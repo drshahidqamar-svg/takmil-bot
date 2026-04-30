@@ -170,9 +170,10 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
   <div class="login-logo">TAKMIL</div>
   <div class="login-sub">Class Register</div>
   <div class="login-card">
-    <label class="inp-label">School Code</label>
-    <input class="inp normal" id="l-code" type="text" placeholder="e.g. AliHassanHingrjo_O_W24S" maxlength="60"
-      style="letter-spacing:0;font-weight:600;font-size:14px;text-transform:none">
+    <label class="inp-label">Your Phone Number</label>
+    <input class="inp normal" id="l-phone" type="tel" placeholder="+923001234567"
+      style="letter-spacing:0;font-weight:600;font-size:16px;text-transform:none"
+      inputmode="tel" autocomplete="tel">
     <label class="inp-label">Date</label>
     <input class="inp normal" id="l-date" type="date">
     <button class="login-btn" onclick="doLogin()">Load Students →</button>
@@ -228,6 +229,48 @@ let students = [];
 let attendance = {}; // roll_number → 'P'|'A'|'L'
 let schoolInfo = null;
 let currentDate = '';
+let isOffline = false;
+let pendingSubmissions = JSON.parse(localStorage.getItem('takmil_att_pending') || '[]');
+
+// ── Offline helpers ─────────────────────────────────────────────
+function saveOfflineCache(schoolCode, date, studs, school){
+  localStorage.setItem('takmil_reg_cache', JSON.stringify({ schoolCode, date, students: studs, school, cachedAt: Date.now() }));
+}
+function loadOfflineCache(){
+  try { return JSON.parse(localStorage.getItem('takmil_reg_cache')); } catch { return null; }
+}
+function showOfflineBanner(){
+  isOffline = true;
+  const existing = document.getElementById('offline-banner');
+  if(!existing){
+    const banner = document.createElement('div');
+    banner.id = 'offline-banner';
+    banner.style.cssText = 'background:#fef3c7;color:#92400e;text-align:center;padding:8px;font-size:12px;font-weight:700;position:sticky;top:0;z-index:20';
+    banner.textContent = '📵 Offline mode — attendance will sync when internet returns';
+    document.getElementById('s-register').insertBefore(banner, document.querySelector('.reg-header').nextSibling);
+  }
+}
+function savePending(payload){
+  pendingSubmissions.push({ ...payload, savedAt: Date.now() });
+  localStorage.setItem('takmil_att_pending', JSON.stringify(pendingSubmissions));
+}
+async function syncPending(){
+  if(!pendingSubmissions.length) return;
+  const remaining = [];
+  for(const p of pendingSubmissions){
+    try{
+      const r = await fetch('/api/register/submit', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(p) });
+      if(!r.ok) remaining.push(p);
+    }catch{ remaining.push(p); }
+  }
+  pendingSubmissions = remaining;
+  localStorage.setItem('takmil_att_pending', JSON.stringify(remaining));
+}
+window.addEventListener('online', syncPending);
+window.addEventListener('online', () => {
+  const b = document.getElementById('offline-banner');
+  if(b) b.textContent = '✅ Back online — syncing...';
+});
 
 function showScr(id){
   document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
@@ -238,20 +281,28 @@ function showScr(id){
 document.getElementById('l-date').value = new Date().toISOString().split('T')[0];
 
 async function doLogin(){
-  const code = document.getElementById('l-code').value.trim();
-  const date = document.getElementById('l-date').value;
-  const err  = document.getElementById('l-err');
-  if(!code){ err.textContent = 'Please enter school code'; return; }
+  const phone = document.getElementById('l-phone').value.trim();
+  const date  = document.getElementById('l-date').value;
+  const err   = document.getElementById('l-err');
+  if(!phone){ err.textContent = 'Please enter your phone number'; return; }
 
   const btn = document.querySelector('.login-btn');
   btn.textContent = 'Loading...'; btn.disabled = true;
   err.textContent = '';
 
   try{
-    const resp = await fetch(`/api/register/students?school_code=${encodeURIComponent(code)}&date=${date}`);
+    // Step 1: Look up school by teacher phone
+    const schoolResp = await fetch(`/api/register/school-by-phone?phone=${encodeURIComponent(phone)}`);
+    const schoolData = await schoolResp.json();
+    if(schoolData.error) throw new Error(schoolData.error);
+
+    const schoolCode = schoolData.identifier;
+
+    // Step 2: Load students
+    const resp = await fetch(`/api/register/students?school_code=${encodeURIComponent(schoolCode)}&date=${date}`);
     const data = await resp.json();
     if(data.error) throw new Error(data.error);
-    if(!data.students.length) throw new Error('No students found for school code: ' + code);
+    if(!data.students.length) throw new Error('No students found. Contact your coordinator to import the student list.');
 
     students   = data.students;
     schoolInfo = data.school;
@@ -261,7 +312,10 @@ async function doLogin(){
     attendance = {};
     students.forEach(s => { if(s.status) attendance[s.roll_number] = s.status; });
 
-    document.getElementById('r-school').textContent = data.school.name || code;
+    // Cache for offline use
+    saveOfflineCache(schoolCode, date, data.students, data.school);
+
+    document.getElementById('r-school').textContent = data.school.name || schoolCode;
     document.getElementById('r-date').textContent   = formatDate(date);
     document.getElementById('s-total').textContent  = data.total;
 
@@ -269,6 +323,25 @@ async function doLogin(){
     updateSummary();
     showScr('s-register');
   }catch(e){
+    // Try offline cache if network fails
+    if(!navigator.onLine || e.message.includes('fetch')){
+      const cached = loadOfflineCache();
+      if(cached){
+        students    = cached.students;
+        schoolInfo  = cached.school;
+        currentDate = date;
+        attendance  = {};
+        document.getElementById('r-school').textContent = cached.school.name;
+        document.getElementById('r-date').textContent   = formatDate(date);
+        document.getElementById('s-total').textContent  = cached.students.length;
+        renderStudents();
+        updateSummary();
+        showOfflineBanner();
+        showScr('s-register');
+        btn.textContent = 'Load Students →'; btn.disabled = false;
+        return;
+      }
+    }
     err.textContent = e.message;
   }
   btn.textContent = 'Load Students →'; btn.disabled = false;
@@ -352,42 +425,57 @@ async function submitAttendance(){
   btn.disabled = true;
   btn.textContent = '⏳ Saving...';
 
-  const payload = students.map(s => ({
+  const attPayload = students.map(s => ({
     roll_number:  s.roll_number,
     student_name: s.student_name,
     status:       attendance[s.roll_number]
   }));
 
+  const vals = Object.values(attendance);
+  const p = vals.filter(v=>v==='P').length;
+  const a = vals.filter(v=>v==='A').length;
+  const l = vals.filter(v=>v==='L').length;
+
+  const payload = {
+    school_code:  schoolInfo.identifier || schoolInfo.name,
+    date:         currentDate,
+    attendance:   attPayload,
+    submitted_by: schoolInfo.identifier
+  };
+
   try{
+    if(!navigator.onLine) throw new Error('offline');
+
     const resp = await fetch('/api/register/submit', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        school_code: schoolInfo.identifier || schoolInfo.name,
-        date:        currentDate,
-        attendance:  payload,
-        submitted_by: schoolInfo.identifier
-      })
+      body: JSON.stringify(payload)
     });
     const data = await resp.json();
     if(!data.saved) throw new Error('Save failed');
 
-    // Show result
-    document.getElementById('res-title').textContent = '✅ Attendance Saved!';
-    document.getElementById('res-sub').textContent   =
-      `${schoolInfo.name} · ${formatDate(currentDate)}`;
-    document.getElementById('res-grid').innerHTML = `
-      <div class="rg-cell"><div class="rg-n" style="color:#4ade80">${data.present}</div><div class="rg-l">Present</div></div>
-      <div class="rg-cell"><div class="rg-n" style="color:#fca5a5">${data.absent}</div><div class="rg-l">Absent</div></div>
-      <div class="rg-cell"><div class="rg-n" style="color:#fde047">${data.leave}</div><div class="rg-l">Leave</div></div>
-      <div class="rg-cell"><div class="rg-n">${data.total}</div><div class="rg-l">Total</div></div>
-    `;
-    showScr('s-result');
+    showResult('✅ Attendance Saved!', p, a, l, students.length, false);
+
   }catch(e){
-    btn.disabled = false;
-    btn.textContent = '⚠️ Error — Tap to Retry';
-    alert('Error saving: ' + e.message);
+    // Save locally if offline
+    savePending(payload);
+    showResult('📵 Saved Offline', p, a, l, students.length, true);
   }
+}
+
+function showResult(title, p, a, l, total, offline){
+  document.getElementById('res-title').textContent = title;
+  document.getElementById('res-sub').textContent   =
+    `${schoolInfo.name} · ${formatDate(currentDate)}` +
+    (offline ? '\nWill sync automatically when internet returns.' : '');
+  document.getElementById('res-grid').innerHTML = `
+    <div class="rg-cell"><div class="rg-n" style="color:#4ade80">${p}</div><div class="rg-l">Present</div></div>
+    <div class="rg-cell"><div class="rg-n" style="color:#fca5a5">${a}</div><div class="rg-l">Absent</div></div>
+    <div class="rg-cell"><div class="rg-n" style="color:#fde047">${l}</div><div class="rg-l">Leave</div></div>
+    <div class="rg-cell"><div class="rg-n">${total}</div><div class="rg-l">Total</div></div>
+    ${offline ? '<div class="rg-cell" style="grid-column:span 2"><div class="rg-n" style="font-size:14px;color:#f59e0b">📤 Pending Sync</div><div class="rg-l">Will upload automatically</div></div>' : ''}
+  `;
+  showScr('s-result');
 }
 
 function takeNewAttendance(){
@@ -395,7 +483,7 @@ function takeNewAttendance(){
   const d = new Date(currentDate);
   d.setDate(d.getDate()+1);
   document.getElementById('l-date').value = d.toISOString().split('T')[0];
-  document.getElementById('l-code').value = schoolInfo.identifier || '';
+  document.getElementById('l-phone').value = document.getElementById('l-phone')?.value || '';
   showScr('s-login');
 }
 
