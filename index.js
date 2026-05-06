@@ -159,9 +159,12 @@ async function handleRegistrationCommand(phone, text) {
   const parts  = text.split(' ');
   const action = parts[0].toUpperCase();
   const targetPhone = parts[1]?.trim();
-  if (!targetPhone) return null;
 
-  const isAdmin = phone === (process.env.ADMIN_PHONE || '+16024305897');
+  // Only handle if target looks like a phone number (starts with + or has 10+ digits)
+  if (!targetPhone) return null;
+  if (!targetPhone.match(/^\+?\d{10,15}$/)) return null;
+
+  const isAdmin = phone === (process.env.ADMIN_PHONE || '+16024305897').replace('whatsapp:','');
   if (!isAdmin) return null;
 
   try {
@@ -214,6 +217,14 @@ async function handleMessage(rawPhone, incomingText) {
       `Welcome to *TAKMIL Assessment Bot*! 🌟\n\n` +
       `Please enter your *PIN* to begin.`
     );
+  }
+
+  // ── Registration APPROVE/REJECT — runs first (phone number format) ──
+  if (upper.startsWith('APPROVE ') || upper.startsWith('REJECT ')) {
+    try {
+      const regResult = await handleRegistrationCommand(phone, upper);
+      if (regResult) return regResult;
+    } catch(e) { console.log('Reg command error:', e.message); }
   }
 
   const isOps = await db.isOpsPhone(phone);
