@@ -192,16 +192,25 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
     <div id="home-err" style="color:#dc2626;font-size:13px;font-weight:700;text-align:center;margin-top:12px;display:none"></div>
   </div>
 
-  <!-- Download PIN for offline (teacher does this once with internet) -->
-  <div class="card" id="download-card">
+  <!-- ── DOWNLOAD FOR OFFLINE ── -->
+  <div class="card" style="margin-top:16px;border:2px solid var(--green2)">
     <div class="card-title" style="font-size:15px">📥 Download for Offline Use</div>
-    <div class="card-sub" style="margin-bottom:12px">Teacher: enter PIN and download before class starts</div>
+    <div class="card-sub" style="margin-bottom:12px">
+      Teacher: enter PIN and download <strong>before</strong> class starts.<br>
+      Once downloaded, tablets work without internet.
+    </div>
+    <label class="label">Assessment PIN</label>
     <input class="input" id="dl-pin-input" type="text" maxlength="10"
-      placeholder="Enter PIN to download" autocomplete="off"
-      style="text-transform:uppercase;font-size:18px;letter-spacing:3px;font-weight:800;text-align:center;margin-bottom:8px">
-    <div id="dl-status" style="font-size:12px;color:#6b7280;margin-bottom:8px;min-height:18px"></div>
-    <div class="dl-progress"><div class="dl-fill" id="dl-fill"></div></div>
-    <button class="btn btn-dark" onclick="downloadForOffline()">⬇ Download for Offline</button>
+      placeholder="Enter PIN to download"
+      autocomplete="off"
+      style="text-transform:uppercase;font-size:20px;letter-spacing:4px;font-weight:800;text-align:center;margin-bottom:8px">
+    <div id="dl-status" style="font-size:12px;color:#6b7280;margin-bottom:8px;min-height:18px;text-align:center"></div>
+    <div class="dl-progress" style="height:6px;background:#e5e7eb;border-radius:99px;margin-bottom:12px;overflow:hidden">
+      <div class="dl-fill" id="dl-fill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--green2),var(--green3));transition:width 0.3s;border-radius:99px"></div>
+    </div>
+    <button class="btn btn-dark" onclick="downloadForOffline()" style="background:var(--green);color:white">
+      ⬇ Download for Offline
+    </button>
   </div>
 </div>
 
@@ -400,82 +409,58 @@ function updateConnBadge() {
 window.addEventListener('online', () => { updateConnBadge(); autoSync(); });
 window.addEventListener('offline', updateConnBadge);
 
-// ── Download questions for a SPECIFIC PIN only (not all questions) ──
+// ── Download for offline ──────────────────────────────────────────
 async function downloadForOffline() {
   if (!isOnline()) { showToast('Need internet to download questions'); return; }
-
-  // Get PIN from input
-  const pinVal = document.getElementById('dl-pin-input')
-    ? document.getElementById('dl-pin-input').value.trim().toUpperCase()
-    : document.getElementById('pin-input').value.trim().toUpperCase();
-
-  if (!pinVal || pinVal.length < 4) {
-    showToast('Enter the PIN first, then tap Download');
-    return;
-  }
-
   const btn = document.querySelector('[onclick="downloadForOffline()"]');
   btn.disabled = true;
   btn.textContent = '⬇ Downloading...';
-  setDlStatus('Connecting to server...', 10);
+  setDlStatus('Connecting to server...', 5);
 
   try {
-    // Step 1: Validate PIN and get session info
-    setDlStatus('Validating PIN ' + pinVal + '...', 20);
-    const sessResp = await fetch(BASE + '/api/assess/session/' + pinVal);
-    if (!sessResp.ok) {
-      const d = await sessResp.json();
-      throw new Error(d.error || 'Invalid PIN');
-    }
-    const sessData = await sessResp.json();
+    // Download all approved questions
+    setDlStatus('Downloading questions...', 20);
+    const resp = await fetch(BASE + '/api/questions/export?status=approved');
+    const text = await resp.text();
+    const rows = parseCSV(text);
+    setDlStatus('Saving ' + rows.length + ' questions...', 60);
 
-    // Step 2: Download ONLY the questions for this PIN (~20 questions, not 4000)
-    setDlStatus('Downloading questions for Level ' + sessData.level + '...', 50);
-    const qResp = await fetch(BASE + '/api/assess/questions/' + pinVal);
-    if (!qResp.ok) throw new Error('Could not load questions');
-    const qData = await qResp.json();
-
-    // Step 3: Save questions to IndexedDB
-    setDlStatus('Saving ' + qData.questions.length + ' questions...', 75);
-    for (const q of qData.questions) {
+    // Save to IndexedDB
+    let saved = 0;
+    for (const row of rows) {
       await dbPut('questions', {
-        question_id:    q.id || q.question_id,
-        pin:            pinVal,
-        subject:        sessData.subject === 'All' ? q.subject : sessData.subject,
-        level:          sessData.level,
-        question_text:  q.question_text || q.q_text_english || '',
-        q_text_urdu:    q.q_text_urdu || '',
-        image_url:      q.image_url || null,
-        option_a: q.option_a, option_b: q.option_b,
-        option_c: q.option_c, option_d: q.option_d,
-        correct_option: q.correct_option || q.correct,
+        question_id:   row.question_id,
+        subject:       row.subject,
+        level:         parseInt(row.level) || 1,
+        topic_tag:     row.topic_tag,
+        question_text: row.question_text || row.q_text_english,
+        image_url:     row.image_url || null,
+        option_a: row.option_a, option_b: row.option_b,
+        option_c: row.option_c, option_d: row.option_d,
+        correct_option: row.correct_option
       });
+      saved++;
     }
 
-    // Step 4: Save PIN info
-    await dbPut('pins', {
-      pin:        pinVal,
-      is_active:  true,
-      level:      sessData.level,
-      subject:    sessData.subject,
-      school:     sessData.school_name || sessData.school_identifier,
-      expires_at: sessData.expires_at,
-    });
+    // Download recent PINs (last 50 active)
+    setDlStatus('Downloading PINs...', 80);
+    try {
+      const presp = await fetch(BASE + '/admin/pins/list');
+      const pins  = await presp.json();
+      for (const p of pins) {
+        if (p.is_active) await dbPut('pins', p);
+      }
+    } catch(e) {}
 
-    setDlStatus(
-      '✅ Done! ' + qData.questions.length + ' questions saved for PIN ' + pinVal +
-      ' (Level ' + sessData.level + ' · ' + (sessData.subject === 'All' ? 'All Subjects' : sessData.subject) + ')',
-      100
-    );
+    setDlStatus('Done! ' + saved + ' questions ready offline.', 100);
     updateStats();
-    showToast('✅ Ready! Tablets can now work offline with PIN ' + pinVal);
+    showToast('Downloaded! App works offline now.');
 
   } catch(e) {
-    setDlStatus('❌ Error: ' + e.message, 0);
-    showToast('Error: ' + e.message);
+    setDlStatus('Error: ' + e.message, 0);
   } finally {
     btn.disabled = false;
-    btn.textContent = '⬇ Download for Offline';
+    btn.textContent = '⬇ Download';
   }
 }
 
@@ -518,25 +503,17 @@ function parseCSV(text) {
 
 // ── PIN validation ────────────────────────────────────────────────
 async function validatePin(pin) {
-  // Try online first using the correct assess API
+  // Try online first
   if (isOnline()) {
     try {
-      const resp = await fetch(BASE + '/api/assess/session/' + pin);
-      if (resp.ok) {
-        const data = await resp.json();
-        session.pinnedSubject = data.subject;
-        // Single-subject PIN: only test that subject
-        if (data.subject && data.subject !== 'All') {
-          session.subjects = [data.subject];
-        } else {
-          session.subjects = ['Math', 'English', 'Urdu'];
-        }
-        return {
-          valid: true, level: data.level, online: true,
-          school: data.school_name || data.school_identifier,
-          subject: data.subject,
-        };
-      }
+      const resp = await fetch(BASE + '/portal/session/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, studentName: session.name, subject: null })
+      });
+      const data = await resp.json();
+      if (!resp.ok || data.error) return { valid: false, error: data.error };
+      return { valid: true, level: data.level, online: true, sessionId: data.sessionId };
     } catch(e) {}
   }
   // Offline: check local PIN cache
@@ -548,34 +525,30 @@ async function validatePin(pin) {
   return { valid: true, level: pinRec.level, online: false };
 }
 
-// ── Get questions — PIN-specific cache first, then network ──────
+// ── Get questions for subject/level ──────────────────────────────
 async function getQuestions(subject, level) {
-  // Try network first (tablets connected to teacher hotspot)
   if (isOnline()) {
     try {
-      const resp = await fetch(BASE + '/api/assess/questions/' + session.pin);
+      const resp = await fetch(BASE + '/portal/session/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: session.pin, studentName: session.name, subject })
+      });
       const data = await resp.json();
-      if (data.questions && data.questions.length > 0) {
-        // Filter by subject if not 'All'
-        const qs = session.pinnedSubject && session.pinnedSubject !== 'All'
-          ? data.questions
-          : data.questions.filter(q => q.subject === subject);
-        return qs.length > 0 ? qs : data.questions;
-      }
+      if (data.questions) return data.questions;
     } catch(e) {}
   }
-  // Offline fallback: use PIN-specific cached questions
+  // Offline: get from IndexedDB
   const all = await dbGetAll('questions');
   const filtered = all.filter(q =>
-    (q.pin === session.pin) ||
-    (q.subject === subject && parseInt(q.level) === parseInt(level))
+    q.subject === subject && parseInt(q.level) === parseInt(level)
   );
-  // Shuffle and return
+  // Shuffle and take 10
   for (let i = filtered.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
   }
-  return filtered.slice(0, 20).map(q => ({
+  return filtered.slice(0, 10).map(q => ({
     id: q.question_id,
     level: q.level,
     question_text: q.question_text,
