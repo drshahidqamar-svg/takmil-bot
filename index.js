@@ -1232,6 +1232,14 @@ app.get('/api/register/students', async (req, res) => {
 app.post('/api/register/submit', async (req, res) => {
   try {
     const { school_code, date, attendance, submitted_by } = req.body;
+    // Date validation: only today and yesterday
+    if (date) {
+      const submitted = new Date(date); submitted.setHours(0,0,0,0);
+      const today     = new Date();     today.setHours(0,0,0,0);
+      const yesterday = new Date(today); yesterday.setDate(today.getDate()-1);
+      if (submitted > today)     return res.status(400).json({ error: 'Future dates are not allowed.' });
+      if (submitted < yesterday) return res.status(400).json({ error: 'Attendance can only be submitted for today or yesterday.' });
+    }
     // attendance = [{ roll_number, student_name, status }]
     if (!attendance?.length) return res.status(400).json({ error: 'No attendance data' });
     const attDate = date || new Date().toISOString().split('T')[0];
