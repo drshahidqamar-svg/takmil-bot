@@ -351,7 +351,7 @@ async function handlePinEntry(phone, text) {
   );
 }
 
-// ── Session confirmation ─────────────────────────────────────────────────────
+// ── Sessions confirmation ─────────────────────────────────────────────────────
 
 async function handleConfirmation(phone, text, session) {
   const upper = text.toUpperCase();
