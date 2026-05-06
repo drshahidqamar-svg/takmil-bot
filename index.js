@@ -351,7 +351,7 @@ async function handlePinEntry(phone, text) {
   );
 }
 
-// ── Sessions confirmation ─────────────────────────────────────────────────────
+// ── Session confirmation ─────────────────────────────────────────────────────
 
 async function handleConfirmation(phone, text, session) {
   const upper = text.toUpperCase();
@@ -2238,8 +2238,10 @@ app.post('/webhook', async (req, res) => {
       return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(reply)}</Message></Response>`);
     }
 
-    const handled = await handleVideoCommands(from, body, res);
-    if (handled) return;
+    if (typeof handleVideoCommands === 'function') {
+      const handled = await handleVideoCommands(from, body, res);
+      if (handled) return;
+    }
 
     const reply = await handleMessage(from, body);
     res.set('Content-Type', 'text/xml');
