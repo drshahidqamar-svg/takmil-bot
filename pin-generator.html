@@ -401,65 +401,7 @@
       });
     });
 
-  function switchTab(tab) {
-    const isLogin = tab === 'login';
-    document.getElementById('form-login').style.display    = isLogin ? 'block' : 'none';
-    document.getElementById('form-register').style.display = isLogin ? 'none' : 'block';
-    document.getElementById('tab-login').style.background    = isLogin ? '#01796F' : '#f8fafc';
-    document.getElementById('tab-login').style.color         = isLogin ? 'white' : '#64748b';
-    document.getElementById('tab-register').style.background = isLogin ? '#f8fafc' : '#01796F';
-    document.getElementById('tab-register').style.color      = isLogin ? '#64748b' : 'white';
-  }
-
-  async function doRegister() {
-    const name     = document.getElementById('regName').value.trim();
-    const phone    = document.getElementById('regPhone').value.trim();
-    const empId    = document.getElementById('regEmpId').value.trim();
-    const role     = document.getElementById('regRole').value;
-    const province = document.getElementById('regProvince').value;
-    const errBox   = document.getElementById('regError');
-    const btn      = document.getElementById('regBtn');
-
-    errBox.style.display = 'none';
-    document.getElementById('regSuccess').style.display = 'none';
-
-    if (!name)    return showRegError('Please enter your full name');
-    if (!phone)   return showRegError('Please enter your phone number');
-    if (!empId)   return showRegError('Please enter your Employee ID');
-    if (!role)    return showRegError('Please select your role');
-    if (!province)return showRegError('Please select your province');
-
-    btn.disabled = true; btn.textContent = '⏳ Submitting...';
-
-    try {
-      const resp = await fetch('/api/auth/register-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, employee_id: empId, role, province })
-      });
-      const data = await resp.json();
-      if (!resp.ok) {
-        showRegError(data.error || 'Submission failed. Please try again.');
-      } else {
-        document.getElementById('regSuccess').style.display = 'block';
-        document.getElementById('regName').value    = '';
-        document.getElementById('regPhone').value   = '';
-        document.getElementById('regEmpId').value   = '';
-        document.getElementById('regRole').value    = '';
-        document.getElementById('regProvince').value= '';
-      }
-    } catch(e) {
-      showRegError('Connection error. Please try again.');
-    } finally {
-      btn.disabled = false; btn.textContent = 'Submit Request →';
-    }
-  }
-
-  function showRegError(msg) {
-    const box = document.getElementById('regError');
-    box.textContent = '⚠️ ' + msg;
-    box.style.display = 'block';
-  }
+  // registration functions defined globally below
   };
 
   // ── LOGIN ───────────────────────────────────────────────────────
@@ -706,6 +648,64 @@
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2000);
   }
+
+// ── Registration & Tab functions (global scope) ─────────────────
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('form-login').style.display    = isLogin ? 'block' : 'none';
+  document.getElementById('form-register').style.display = isLogin ? 'none'  : 'block';
+  document.getElementById('tab-login').style.background    = isLogin ? '#01796F' : '#f8fafc';
+  document.getElementById('tab-login').style.color         = isLogin ? 'white'   : '#64748b';
+  document.getElementById('tab-register').style.background = isLogin ? '#f8fafc' : '#01796F';
+  document.getElementById('tab-register').style.color      = isLogin ? '#64748b' : 'white';
+}
+
+async function doRegister() {
+  const name     = document.getElementById('regName').value.trim();
+  const phone    = document.getElementById('regPhone').value.trim();
+  const empId    = document.getElementById('regEmpId').value.trim();
+  const role     = document.getElementById('regRole').value;
+  const province = document.getElementById('regProvince').value;
+  const btn      = document.getElementById('regBtn');
+
+  document.getElementById('regError').style.display   = 'none';
+  document.getElementById('regSuccess').style.display = 'none';
+
+  if (!name)     return showRegError('Please enter your full name');
+  if (!phone)    return showRegError('Please enter your phone number');
+  if (!empId)    return showRegError('Please enter your Employee ID');
+  if (!role)     return showRegError('Please select your role');
+  if (!province) return showRegError('Please select your province');
+
+  btn.disabled = true; btn.textContent = '⏳ Submitting...';
+
+  try {
+    const resp = await fetch('/api/auth/register-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone, employee_id: empId, role, province })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showRegError(data.error || 'Submission failed. Please try again.');
+    } else {
+      document.getElementById('regSuccess').style.display = 'block';
+      ['regName','regPhone','regEmpId'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('regRole').value     = '';
+      document.getElementById('regProvince').value = '';
+    }
+  } catch(e) {
+    showRegError('Connection error. Please try again.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Submit Request →';
+  }
+}
+
+function showRegError(msg) {
+  const box = document.getElementById('regError');
+  box.textContent = '⚠️ ' + msg;
+  box.style.display = 'block';
+}
 </script>
 </body>
 </html>
