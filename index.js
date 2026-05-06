@@ -160,49 +160,70 @@ async function handleRegistrationCommand(phone, text) {
   const action = parts[0].toUpperCase();
   const targetPhone = parts[1]?.trim();
 
-  // Only handle if target looks like a phone number (starts with + or has 10+ digits)
+  // Only handle if target looks like a phone number (10+ digits)
   if (!targetPhone) return null;
-  if (!targetPhone.match(/^\+?\d{10,15}$/)) return null;
+  if (!targetPhone.replace('+','').match(/^[0-9]{10,15}$/)) return null;
 
-  const isAdmin = phone === (process.env.ADMIN_PHONE || '+16024305897').replace('whatsapp:','');
-  if (!isAdmin) return null;
+  // Normalize phones for comparison (strip everything except digits)
+  const digits = p => (p||'').replace(/[^0-9]/g,'');
+  const adminDigits  = digits(process.env.ADMIN_PHONE || '16024305897');
+  const callerDigits = digits(phone);
+  if (callerDigits !== adminDigits) {
+    console.log('Non-admin APPROVE attempt:', phone, 'vs admin:', adminDigits);
+    return null;
+  }
 
   try {
+    // Try both with and without + prefix
+    const t1 = targetPhone.startsWith('+') ? targetPhone : '+' + targetPhone;
+    const t2 = targetPhone.replace('+','');
+
     const reg = await db.pool.query(
-      `SELECT * FROM pending_registrations WHERE phone=$1 AND status='pending'`, [targetPhone]
+      `SELECT * FROM pending_registrations
+       WHERE (phone=$1 OR phone=$2) AND status='pending' LIMIT 1`,
+      [t1, t2]
     );
-    if (!reg.rows.length) return `❌ No pending request for ${targetPhone}`;
+    if (!reg.rows.length) return `❌ No pending request found for ${targetPhone}. Check DBeaver: pending_registrations table.`;
     const r = reg.rows[0];
 
     if (action === 'APPROVE') {
       await db.pool.query(
         `INSERT INTO bot_users (phone,name,role,region,province,notes)
-         VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (phone) DO UPDATE SET
-         name=EXCLUDED.name,role=EXCLUDED.role,active=TRUE`,
-        [r.phone, r.name, r.role, r.region, r.province, `EmpID:${r.employee_id}`]
+         VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT (phone) DO UPDATE SET
+           name=EXCLUDED.name, role=EXCLUDED.role, active=TRUE`,
+        [r.phone, r.name, r.role, r.region||null, r.province||null, 'EmpID:'+r.employee_id]
       );
       await db.pool.query(
-        `UPDATE pending_registrations SET status='approved',reviewed_at=NOW(),reviewed_by=$1 WHERE phone=$2`,
-        [phone, targetPhone]
+        `UPDATE pending_registrations
+         SET status='approved', reviewed_at=NOW(), reviewed_by=$1
+         WHERE phone=$2`,
+        [phone, r.phone]
       );
       try {
-        await sendWhatsApp('whatsapp:'+targetPhone,
-          `✅ *Access Approved!*
-
-Welcome ${r.name}!
-Open: https://takmil-bot-production-0f51.up.railway.app/pin-generator
-Login with your phone. Password: takmil123`
+        await sendWhatsApp('whatsapp:'+r.phone,
+          '✅ *Access Approved!*\n\nWelcome ' + r.name + '!\n' +
+          'Open the PIN Generator:\nhttps://takmil-bot-production-0f51.up.railway.app/pin-generator\n\n' +
+          'Login with your phone number.\nDefault password: takmil123'
         );
-      } catch(e){}
-      return `✅ ${r.name} approved as ${r.role} and notified.`;
+      } catch(e){ console.log('Notify user error:', e.message); }
+      return '✅ ' + r.name + ' approved as ' + r.role + '. They have been notified.';
     } else {
       await db.pool.query(
-        `UPDATE pending_registrations SET status='rejected',reviewed_at=NOW() WHERE phone=$1`, [targetPhone]
+        `UPDATE pending_registrations SET status='rejected', reviewed_at=NOW() WHERE phone=$1`,
+        [r.phone]
       );
-      try { await sendWhatsApp('whatsapp:'+targetPhone, `❌ Your TAKMIL access request was not approved. Contact your supervisor.`); } catch(e){}
-      return `❌ ${r.name} rejected and notified.`;
+      try {
+        await sendWhatsApp('whatsapp:'+r.phone,
+          '❌ Your TAKMIL access request was not approved. Please contact your supervisor.'
+        );
+      } catch(e){}
+      return '❌ ' + r.name + ' rejected and notified.';
     }
-  } catch(e) { return `❌ Error: ${e.message}`; }
+  } catch(e) {
+    console.error('handleRegistrationCommand error:', e.message);
+    return '❌ Error processing request: ' + e.message;
+  }
 }
 
 async function handleMessage(rawPhone, incomingText) {
