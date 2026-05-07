@@ -409,12 +409,16 @@ async function submitAttendance(){
     `;
     showScr('s-result');
   }catch(e){
-    btn.disabled = false;
-    btn.textContent = '⚠️ Error — Tap to Retry';
-    const msg = e.message.includes('Future') || e.message.includes('yesterday')
+    const msg = (e.message||'').includes('Future') || (e.message||'').includes('yesterday') || (e.message||'').includes('future')
       ? '❌ ' + e.message
       : '❌ Error saving attendance. Please try again.';
     alert(msg);
+  } finally {
+    // Always reset button — no more stuck "Saving..."
+    if (btn && document.getElementById('s-result').classList.contains('on') === false) {
+      btn.disabled = false;
+      btn.textContent = '⬆ Submit Attendance';
+    }
   }
 }
 
@@ -435,6 +439,9 @@ function takeNewAttendance(){
   // Clear phone field so teacher can load same or different school
   const phoneEl = document.getElementById('l-phone');
   if (phoneEl) phoneEl.value = document.getElementById('l-phone')?.value || '';
+  // Reset submit button
+  const btn = document.getElementById('submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⬆ Submit Attendance'; }
   showScr('s-login');
   // Focus the date picker so teacher goes straight to picking date
   setTimeout(() => {
@@ -447,10 +454,16 @@ function logout(){
   students    = [];
   currentDate = '';
   schoolInfo  = null;
-  // Clear all fields
-  const phoneEl = document.getElementById('l-phone');
-  if (phoneEl) phoneEl.value = '';
-  document.getElementById('l-err').style.display = 'none';
+  // Reset submit button if stuck
+  const btn = document.getElementById('submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⬆ Submit Attendance'; }
+  // Clear login fields
+  ['l-phone','l-code'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const errEl = document.getElementById('l-err');
+  if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
   showScr('s-login');
 }
 
