@@ -60,16 +60,20 @@ function getRoleHelp(role) {
 
 // ── Get active role for a phone ───────────────────────────────────────────────
 async function getActiveRole(phone) {
-  const roleRow = await db.pool.query(
-    `SELECT DISTINCT active_role FROM user_roles WHERE phone=$1 LIMIT 1`, [phone]
-  );
-  if (!roleRow.rows.length) return null;
-  const activeRole = roleRow.rows[0].active_role;
-  const entityRow = await db.pool.query(
-    `SELECT entity_code, name FROM user_roles WHERE phone=$1 AND role=$2 LIMIT 1`,
-    [phone, activeRole]
-  );
-  return entityRow.rows.length ? { role: activeRole, ...entityRow.rows[0] } : null;
+  try {
+    const roleRow = await db.pool.query(
+      `SELECT DISTINCT active_role FROM user_roles WHERE phone=$1 LIMIT 1`, [phone]
+    );
+    if (!roleRow.rows.length) return null;
+    const activeRole = roleRow.rows[0].active_role;
+    const entityRow = await db.pool.query(
+      `SELECT entity_code, name FROM user_roles WHERE phone=$1 AND role=$2 LIMIT 1`,
+      [phone, activeRole]
+    );
+    return entityRow.rows.length ? { role: activeRole, ...entityRow.rows[0] } : null;
+  } catch(e) {
+    return null; // user_roles table doesn't exist yet — not a video verification user
+  }
 }
 
 // ── Main WhatsApp command handler (called from chatbot webhook) ───────────────
