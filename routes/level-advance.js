@@ -612,7 +612,69 @@ router.get('/api/results/school/:identifier', async (req, res) => {
     res.json({ students: r.rows });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
+// ── Level Advancement Console APIs ───────────────────────────────────────────
+router.get('/api/console/schools-progress', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT 
+        s.id, s.name, s.identifier, s.region,
+        cl.current_level, cl.subject, cl.status,
+        cl.lessons_completed, cl.total_lessons, cl.last_assessment,
+        rc.name AS regional_coordinator,
+        sc.name AS school_coordinator
+      FROM schools s
+      LEFT JOIN cohort_levels cl ON cl.school_identifier = s.identifier
+      LEFT JOIN regional_coordinators rc ON rc.id = s.regional_coordinator_id
+      LEFT JOIN school_coordinators   sc ON sc.id = s.school_coordinator_id
+      WHERE s.identifier IS NOT NULL
+      ORDER BY s.region, s.name
+    `);
+    res.json({ schools: r.rows });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
 
+router.post('/api/console/advance-level', async (req, res) => {
+  try {
+    const { school_identifier, subject } = req.body;
+    if (!school_identifier) return res.status(400).json({ error: 'school_identifier required' });
+
+    const current = await db.pool.query(`
+      SELECT current_level FROM cohort_levels
+      WHERE school_identifier=$1 AND subject=$2
+    `, [school_identifier, subject || 'All']);
+
+    if (!current.rows.length) return res.status(404).json({ error: 'School cohort not found' });
+
+    const newLevel = parseInt(current.rows[0].current_level) + 1;
+
+    await db.pool.query(`
+      UPDATE cohort_levels SET current_level=$1, last_assessment=NOW(), updated_at=NOW()
+      WHERE school_identifier=$2 AND subject=$3
+    `, [newLevel, school_identifier, subject || 'All']);
+
+    res.json({ success: true, new_level: newLevel, school_identifier });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/api/console/level-history', async (req, res) => {
+  try {
+    const { school } = req.query;
+    if (!school) return res.status(400).json({ error: 'school identifier required' });
+
+    const r = await db.pool.query(`
+      SELECT a.level, a.subject, a.score_pct, a.passed,
+             a.completed_at, ar.status AS advancement_status
+      FROM assessments a
+      LEFT JOIN advancement_requests ar ON ar.assessment_id = a.id
+      WHERE a.school_id = (
+        SELECT id FROM schools WHERE identifier ILIKE $1 LIMIT 1
+      )
+      ORDER BY a.completed_at DESC LIMIT 50
+    `, [school]);
+
+    res.json({ history: r.rows });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
 router.get('/api/questions/count', async (req, res) => {
   try {
     const { level, subject } = req.query;
