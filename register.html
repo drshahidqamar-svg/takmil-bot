@@ -395,7 +395,7 @@ async function submitAttendance(){
       })
     });
     const data = await resp.json();
-    if(!data.saved) throw new Error('Save failed');
+    if(!resp.ok && !data.saved) throw new Error(data.error || 'Save failed');
 
     // Show result
     document.getElementById('res-title').textContent = '✅ Attendance Saved!';
@@ -419,17 +419,38 @@ async function submitAttendance(){
 }
 
 function takeNewAttendance(){
-  // Move date forward by 1 day
-  const d = new Date(currentDate);
-  d.setDate(d.getDate()+1);
-  document.getElementById('l-date').value = d.toISOString().split('T')[0];
-  document.getElementById('l-code').value = schoolInfo.identifier || '';
+  // Reset attendance and go back to login with date picker focused
+  attendance  = {};
+  students    = [];
+  currentDate = '';
+  // Reset date to today
+  const today = new Date();
+  const dateEl = document.getElementById('l-date');
+  if (dateEl) {
+    dateEl.value = today.toISOString().split('T')[0];
+    dateEl.max   = today.toISOString().split('T')[0];
+    const yest = new Date(today); yest.setDate(today.getDate()-1);
+    dateEl.min = yest.toISOString().split('T')[0];
+  }
+  // Clear phone field so teacher can load same or different school
+  const phoneEl = document.getElementById('l-phone');
+  if (phoneEl) phoneEl.value = document.getElementById('l-phone')?.value || '';
   showScr('s-login');
+  // Focus the date picker so teacher goes straight to picking date
+  setTimeout(() => {
+    if (dateEl) dateEl.focus();
+  }, 300);
 }
 
 function logout(){
-  attendance = {};
-  students   = [];
+  attendance  = {};
+  students    = [];
+  currentDate = '';
+  schoolInfo  = null;
+  // Clear all fields
+  const phoneEl = document.getElementById('l-phone');
+  if (phoneEl) phoneEl.value = '';
+  document.getElementById('l-err').style.display = 'none';
   showScr('s-login');
 }
 
