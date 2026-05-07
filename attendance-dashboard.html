@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Attendance Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f5f1;--bg2:#fff;--panel:#e8f0ea;
+  --leaf:#16a34a;--leaf2:#22c55e;--leaf3:#dcfce7;
+  --border:#d0e4d5;--text:#1a2e1f;--text2:#4a6b52;--text3:#8aaa90;
+  --danger:#ef4444;--amber:#f59e0b;--blue:#3b82f6;
+  --r:14px;--r2:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;min-height:100vh}
+
+/* HEADER */
+.header{
+  background:linear-gradient(135deg,#0a1f0e,#0d2d14);
+  padding:20px 24px;display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+.header-left{display:flex;align-items:center;gap:16px}
+.logo{font-size:22px;font-weight:900;color:#4ade80;letter-spacing:1px}
+.header-title{font-size:16px;font-weight:700;color:white}
+.header-sub{font-size:12px;color:#4a6b52;margin-top:2px}
+
+/* DATE PICKER BAR */
+.date-bar{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.date-label{font-size:13px;font-weight:700;color:var(--text2)}
+.date-inp{
+  padding:10px 14px;border:2px solid var(--border);border-radius:var(--r2);
+  font-size:14px;font-weight:600;color:var(--text);font-family:'DM Sans',sans-serif;
+  background:var(--bg);outline:none;cursor:pointer;
+}
+.date-inp:focus{border-color:var(--leaf)}
+.date-btn{
+  padding:10px 20px;background:var(--leaf);color:white;
+  border:none;border-radius:var(--r2);font-size:14px;font-weight:700;
+  font-family:'DM Sans',sans-serif;cursor:pointer;
+}
+.date-btn:hover{background:#0d5c29}
+.nav-day{
+  padding:8px 14px;background:var(--panel);color:var(--text2);
+  border:2px solid var(--border);border-radius:var(--r2);
+  font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;
+}
+.nav-day:hover{border-color:var(--leaf);color:var(--leaf)}
+
+/* SUMMARY CARDS */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:20px 24px}
+.card{
+  background:var(--bg2);border-radius:var(--r);padding:18px 20px;
+  border:1px solid var(--border);
+}
+.card-n{font-size:32px;font-weight:900;line-height:1}
+.card-l{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:4px}
+.c-schools{color:var(--text)}
+.c-students{color:var(--blue)}
+.c-present{color:var(--leaf)}
+.c-absent{color:var(--danger)}
+.c-leave{color:var(--amber)}
+.c-pct{color:#7c3aed}
+
+/* SECTION */
+.section{padding:0 24px 24px}
+.section-title{font-size:13px;font-weight:800;color:var(--text3);text-transform:uppercase;
+  letter-spacing:0.8px;margin-bottom:12px}
+
+/* SCHOOL TABLE */
+.school-card{
+  background:var(--bg2);border-radius:var(--r);border:1px solid var(--border);
+  margin-bottom:10px;overflow:hidden;
+}
+.school-row{
+  padding:16px 20px;display:flex;align-items:center;gap:12px;
+  cursor:pointer;transition:background 0.1s;
+}
+.school-row:hover{background:var(--panel)}
+.school-name{flex:1;font-size:15px;font-weight:700}
+.school-id{font-size:11px;color:var(--text3);font-weight:600;margin-top:2px}
+.att-pills{display:flex;gap:6px;align-items:center}
+.pill{
+  padding:4px 10px;border-radius:20px;font-size:12px;font-weight:800;
+}
+.pill-p{background:var(--leaf3);color:var(--leaf)}
+.pill-a{background:#fee2e2;color:var(--danger)}
+.pill-l{background:#fef9c3;color:#92400e}
+.pill-pct{background:#ede9fe;color:#7c3aed}
+.chevron{font-size:12px;color:var(--text3);transition:transform 0.2s}
+.chevron.open{transform:rotate(90deg)}
+
+/* STUDENT LIST (expandable) */
+.student-rows{display:none;border-top:1px solid var(--border)}
+.student-rows.open{display:block}
+.student-row{
+  padding:10px 20px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--border);font-size:14px;
+}
+.student-row:last-child{border-bottom:none}
+.s-num{min-width:28px;font-size:11px;font-weight:700;color:var(--text3);text-align:center}
+.s-nm{flex:1;font-weight:600}
+.s-roll{font-size:11px;color:var(--text3)}
+.s-status{
+  padding:3px 10px;border-radius:20px;font-size:12px;font-weight:800;
+}
+.st-P{background:var(--leaf3);color:var(--leaf)}
+.st-A{background:#fee2e2;color:var(--danger)}
+.st-L{background:#fef9c3;color:#92400e}
+
+/* ABSENT LIST */
+.absent-card{
+  background:#fff5f5;border:1px solid #fca5a5;border-radius:var(--r);
+  padding:16px 20px;margin-bottom:8px;display:flex;align-items:center;gap:12px;
+}
+.absent-name{flex:1;font-size:14px;font-weight:700}
+.absent-school{font-size:12px;color:var(--text3)}
+.absent-roll{font-size:11px;color:#fca5a5;font-weight:700}
+
+/* EMPTY STATE */
+.empty{
+  text-align:center;padding:60px 24px;color:var(--text3);
+}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.empty-msg{font-size:15px;font-weight:600}
+.empty-sub{font-size:13px;margin-top:6px}
+
+/* LOADING */
+.loading{text-align:center;padding:48px;color:var(--text3)}
+.spin{
+  width:32px;height:32px;border:3px solid var(--border);
+  border-top-color:var(--leaf);border-radius:50%;
+  animation:spin 0.8s linear infinite;margin:0 auto 12px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TABS */
+.tabs{display:flex;gap:4px;padding:0 24px;margin-bottom:0}
+.tab{
+  padding:10px 18px;border-radius:var(--r2) var(--r2) 0 0;
+  font-size:13px;font-weight:700;cursor:pointer;
+  background:var(--panel);color:var(--text3);border:1px solid var(--border);border-bottom:none;
+}
+.tab.active{background:var(--bg2);color:var(--leaf);border-color:var(--border)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* NOT SUBMITTED */
+.ns-row{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);
+  padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:10px;
+}
+.ns-name{flex:1;font-size:14px;font-weight:600}
+.ns-badge{
+  padding:3px 10px;background:#fef9c3;border:1px solid #fde047;
+  border-radius:20px;font-size:11px;font-weight:800;color:#92400e;
+}
+
+@media(max-width:600px){
+  .header{padding:14px 16px}
+  .date-bar{padding:12px 16px}
+  .cards{padding:14px 16px;grid-template-columns:repeat(3,1fr)}
+  .section{padding:0 16px 20px}
+  .card{padding:14px}
+  .card-n{font-size:26px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div>
+      <div class="logo">TAKMIL</div>
+      <div class="header-sub">Attendance Dashboard</div>
+    </div>
+  </div>
+  <div style="font-size:13px;color:#4a6b52" id="last-refresh"></div>
+</div>
+
+<!-- DATE BAR -->
+<div class="date-bar">
+  <span class="date-label">📅 Date:</span>
+  <button class="nav-day" onclick="shiftDay(-1)">◀ Prev</button>
+  <input class="date-inp" type="date" id="date-inp">
+  <button class="nav-day" onclick="shiftDay(1)">Next ▶</button>
+  <button class="date-btn" onclick="loadData()">View Attendance</button>
+  <button class="nav-day" onclick="goToday()">Today</button>
+</div>
+
+<!-- SUMMARY CARDS -->
+<div class="cards" id="cards">
+  <div class="card"><div class="card-n c-schools" id="c-schools">—</div><div class="card-l">Schools Reported</div></div>
+  <div class="card"><div class="card-n c-students" id="c-students">—</div><div class="card-l">Total Students</div></div>
+  <div class="card"><div class="card-n c-present" id="c-present">—</div><div class="card-l">Present</div></div>
+  <div class="card"><div class="card-n c-absent" id="c-absent">—</div><div class="card-l">Absent</div></div>
+  <div class="card"><div class="card-n c-leave" id="c-leave">—</div><div class="card-l">On Leave</div></div>
+  <div class="card"><div class="card-n c-pct" id="c-pct">—</div><div class="card-l">Attendance %</div></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('schools')">🏫 By School</div>
+  <div class="tab" onclick="switchTab('absent')">❌ Absent Students</div>
+  <div class="tab" onclick="switchTab('missing')">⚠️ Not Submitted</div>
+</div>
+
+<div style="background:var(--bg2);border-top:1px solid var(--border);padding:16px 24px 0">
+
+  <!-- BY SCHOOL TAB -->
+  <div class="tab-content active" id="tab-schools">
+    <div class="section" style="padding-top:16px">
+      <div id="schools-list">
+        <div class="loading"><div class="spin"></div>Loading attendance data...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABSENT TAB -->
+  <div class="tab-content" id="tab-absent">
+    <div class="section" style="padding-top:16px">
+      <div id="absent-list">
+        <div class="loading"><div class="spin"></div>Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOT SUBMITTED TAB -->
+  <div class="tab-content" id="tab-missing">
+    <div class="section" style="padding-top:16px">
+      <div id="missing-list">
+        <div class="loading"><div class="spin"></div>Loading...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Date init ──────────────────────────────────────
+const dateInp = document.getElementById('date-inp');
+const today   = new Date().toISOString().split('T')[0];
+dateInp.value = today;
+dateInp.max   = today;
+dateInp.addEventListener('change', loadData);
+
+function shiftDay(d) {
+  const dt = new Date(dateInp.value + 'T12:00:00');
+  dt.setDate(dt.getDate() + d);
+  const s = dt.toISOString().split('T')[0];
+  if (s <= today) { dateInp.value = s; loadData(); }
+}
+function goToday() { dateInp.value = today; loadData(); }
+
+// ── Tabs ───────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['schools','absent','missing'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── Load data ──────────────────────────────────────
+async function loadData() {
+  const date = dateInp.value;
+  setLoading();
+  try {
+    const [histRes, absentRes] = await Promise.all([
+      fetch(`/api/register/history?date=${date}`),
+      fetch(`/api/register/absent?date=${date}`)
+    ]);
+    const hist   = await histRes.json();
+    const absent = await absentRes.json();
+
+    renderSummary(hist.records);
+    renderSchools(hist.records);
+    renderAbsent(absent.absent);
+    await renderMissing(date, hist.records);
+
+    document.getElementById('last-refresh').textContent =
+      'Updated ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  } catch(e) {
+    document.getElementById('schools-list').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-msg">Error loading data</div><div class="empty-sub">${e.message}</div></div>`;
+  }
+}
+
+function setLoading() {
+  const html = '<div class="loading"><div class="spin"></div>Loading...</div>';
+  ['schools-list','absent-list','missing-list'].forEach(id =>
+    document.getElementById(id).innerHTML = html
+  );
+  ['c-schools','c-students','c-present','c-absent','c-leave','c-pct']
+    .forEach(id => document.getElementById(id).textContent = '…');
+}
+
+// ── Summary cards ──────────────────────────────────
+function renderSummary(records) {
+  const totalSchools  = records.length;
+  const totalStudents = records.reduce((s,r) => s + parseInt(r.total), 0);
+  const totalPresent  = records.reduce((s,r) => s + parseInt(r.present), 0);
+  const totalAbsent   = records.reduce((s,r) => s + parseInt(r.absent), 0);
+  const totalLeave    = records.reduce((s,r) => s + parseInt(r.leave_count||0), 0);
+  const pct           = totalStudents > 0
+    ? Math.round(totalPresent * 100 / totalStudents) + '%' : '—';
+
+  document.getElementById('c-schools').textContent  = totalSchools;
+  document.getElementById('c-students').textContent = totalStudents;
+  document.getElementById('c-present').textContent  = totalPresent;
+  document.getElementById('c-absent').textContent   = totalAbsent;
+  document.getElementById('c-leave').textContent    = totalLeave;
+  document.getElementById('c-pct').textContent      = pct;
+}
+
+// ── Schools list ───────────────────────────────────
+function renderSchools(records) {
+  const el = document.getElementById('schools-list');
+  if (!records.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-msg">No attendance submitted yet</div>
+      <div class="empty-sub">Teachers haven't submitted for this date</div>
+    </div>`; return;
+  }
+
+  el.innerHTML = records.map((r, i) => {
+    const students = r.students || [];
+    const pct = r.attendance_pct ? r.attendance_pct + '%' : '—';
+    return `
+    <div class="school-card">
+      <div class="school-row" onclick="toggleSchool(${i})">
+        <div style="flex:1">
+          <div class="school-name">${r.school_name || r.school_identifier}</div>
+          <div class="school-id">${r.school_identifier}</div>
+        </div>
+        <div class="att-pills">
+          <span class="pill pill-p">✅ ${r.present}P</span>
+          <span class="pill pill-a">❌ ${r.absent}A</span>
+          <span class="pill pill-l">🟡 ${r.leave_count||0}L</span>
+          <span class="pill pill-pct">${pct}</span>
+        </div>
+        <span class="chevron" id="chev-${i}">▶</span>
+      </div>
+      <div class="student-rows" id="srows-${i}">
+        ${students.map((s, j) => `
+        <div class="student-row">
+          <div class="s-num">${j+1}</div>
+          <div class="s-nm">${s.name}</div>
+          <div class="s-roll">${s.roll}</div>
+          <span class="s-status st-${s.status}">${s.status==='P'?'Present':s.status==='A'?'Absent':'Leave'}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSchool(i) {
+  const rows = document.getElementById('srows-' + i);
+  const chev = document.getElementById('chev-' + i);
+  const open = rows.classList.toggle('open');
+  chev.classList.toggle('open', open);
+}
+
+// ── Absent list ────────────────────────────────────
+function renderAbsent(absent) {
+  const el = document.getElementById('absent-list');
+  if (!absent.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">🎉</div>
+      <div class="empty-msg">No absent students!</div>
+      <div class="empty-sub">All submitted students are present or on leave</div>
+    </div>`; return;
+  }
+  el.innerHTML = absent.map(s => `
+    <div class="absent-card">
+      <div>
+        <div class="absent-name">${s.student_name}</div>
+        <div class="absent-school">${s.school_name || s.school_identifier}</div>
+      </div>
+      <div class="absent-roll">${s.roll_number}</div>
+    </div>`).join('');
+}
+
+// ── Not submitted (all schools minus those who submitted) ──
+async function renderMissing(date, submitted) {
+  const el = document.getElementById('missing-list');
+  try {
+    // Fetch all active schools
+    const r = await fetch('/admin/schools/list');
+    if (!r.ok) throw new Error('Cannot load schools');
+    const allSchools = await r.json();
+    const submittedIds = new Set(submitted.map(s => s.school_identifier.toLowerCase()));
+    const missing = allSchools.filter(s =>
+      !submittedIds.has((s.identifier||'').toLowerCase())
+    );
+    if (!missing.length) {
+      el.innerHTML = `<div class="empty">
+        <div class="empty-icon">✅</div>
+        <div class="empty-msg">All schools submitted!</div>
+        <div class="empty-sub">Every school has reported attendance for this date</div>
+      </div>`; return;
+    }
+    el.innerHTML = `
+      <div style="margin-bottom:12px;font-size:13px;color:var(--text3);font-weight:700">
+        ${missing.length} school(s) have not submitted attendance for this date
+      </div>
+      ${missing.map(s => `
+      <div class="ns-row">
+        <div class="ns-name">${s.name || s.identifier}</div>
+        <div style="font-size:11px;color:var(--text3)">${s.identifier}</div>
+        <span class="ns-badge">Not Submitted</span>
+      </div>`).join('')}`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">ℹ️</div>
+      <div class="empty-msg">Schools list unavailable</div>
+      <div class="empty-sub">Cannot compare against full school list</div>
+    </div>`;
+  }
+}
+
+// ── Init ───────────────────────────────────────────
+loadData();
+
+// Auto-refresh every 2 minutes
+setInterval(loadData, 120000);
+</script>
+</body>
+</html>
