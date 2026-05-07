@@ -1,0 +1,382 @@
+// routes/admin.js — Admin APIs & Question Bank
+// Portals: /question-bank, /dashboard, /import, /bulk-assess
+// APIs: /admin/questions/*, /api/questions/*, /api/generate-questions
+
+const router = require('express').Router();
+const db     = require('../database');
+const path   = require('path');
+
+// ── HTML pages ────────────────────────────────────────────────────────────────
+router.get('/dashboard',     (req, res) => res.sendFile(path.join(__dirname, '../dashboard.html')));
+router.get('/import',        (req, res) => res.sendFile(path.join(__dirname, '../import.html')));
+router.get('/question-bank', (req, res) => res.sendFile(path.join(__dirname, '../takmil-question-bank.html')));
+
+// ── Question Bank CRUD ────────────────────────────────────────────────────────
+router.get('/admin/questions/all', async (req, res) => {
+  try {
+    const { level, subject, topic, video_id, status, source_type } = req.query;
+    let query = `SELECT *, (active=1) AS is_approved,
+      CASE WHEN active=-1 THEN 'flagged' WHEN active=1 THEN 'approved' ELSE 'pending' END AS status,
+      COALESCE(q_text_english, q_text_urdu) AS question_text
+      FROM questions WHERE 1=1`;
+    const params = [];
+    if (level)       { params.push(level);       query += ` AND level=$${params.length}`; }
+    if (subject)     { params.push(subject);     query += ` AND subject=$${params.length}`; }
+    if (topic)       { params.push(topic);       query += ` AND topic_tag=$${params.length}`; }
+    if (video_id)    { params.push(video_id);    query += ` AND video_id=$${params.length}`; }
+    if (source_type) { params.push(source_type); query += ` AND source_type=$${params.length}`; }
+    if (status === 'approved') query += ` AND active=1`;
+    if (status === 'pending')  query += ` AND (active=0 OR active IS NULL)`;
+    if (status === 'flagged')  query += ` AND active=-1`;
+    query += ` ORDER BY created_at DESC LIMIT 500`;
+    const result = await db.pool.query(query, params);
+    res.json({ questions: result.rows, count: result.rows.length });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/api/questions', async (req, res) => {
+  try {
+    const { level, subject, topic, video_id, limit = 12 } = req.query;
+    let query = `SELECT * FROM questions WHERE active=1`;
+    const params = [];
+    if (level)    { params.push(level);    query += ` AND level=$${params.length}`; }
+    if (subject)  { params.push(subject);  query += ` AND subject=$${params.length}`; }
+    if (topic)    { params.push(topic);    query += ` AND topic_tag=$${params.length}`; }
+    if (video_id) { params.push(video_id); query += ` AND video_id=$${params.length}`; }
+    params.push(parseInt(limit)); query += ` ORDER BY RANDOM() LIMIT $${params.length}`;
+    const result = await db.pool.query(query, params);
+    res.json({ questions: result.rows, count: result.rows.length });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/questions', async (req, res) => {
+  try {
+    const { question_id, level, subject, topic_tag, question_text, question_text_ur, option_a, option_b, option_c, option_d, correct_option, is_approved } = req.body;
+    if (!question_id || !level || !subject) return res.status(400).json({ error: 'question_id, level, subject required' });
+    const r = await db.pool.query(`
+      INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, q_text_urdu, option_a, option_b, option_c, option_d, correct_option, active, created_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
+      ON CONFLICT (question_id) DO UPDATE SET level=$2,subject=$3,topic_tag=$4,q_text_english=$5,q_text_urdu=$6,option_a=$7,option_b=$8,option_c=$9,option_d=$10,correct_option=$11,active=$12
+      RETURNING *, (active=1) AS is_approved, COALESCE(q_text_english, q_text_urdu) AS question_text`,
+      [question_id, level, subject, topic_tag||null, question_text||null, question_text_ur||null,
+       option_a, option_b, option_c, option_d, correct_option, is_approved ? 1 : 0]);
+    res.json({ question: r.rows[0] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/admin/questions/:id', async (req, res) => {
+  try {
+    const { question_id, level, subject, topic_tag, question_text, option_a, option_b, option_c, option_d, correct_option, is_approved } = req.body;
+    const r = await db.pool.query(`
+      UPDATE questions SET question_id=$1,level=$2,subject=$3,topic_tag=$4,q_text_english=$5,
+        option_a=$6,option_b=$7,option_c=$8,option_d=$9,correct_option=$10,active=$11
+      WHERE id=$12
+      RETURNING *, (active=1) AS is_approved, COALESCE(q_text_english, q_text_urdu) AS question_text`,
+      [question_id, level, subject, topic_tag||null, question_text,
+       option_a, option_b, option_c, option_d, correct_option, is_approved ? 1 : 0, req.params.id]);
+    res.json({ question: r.rows[0] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/questions/:id/approve', async (req, res) => {
+  try {
+    await db.pool.query(`UPDATE questions SET active=1 WHERE id=$1`, [req.params.id]);
+    res.json({ approved: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/questions/:id/flag', async (req, res) => {
+  try {
+    await db.pool.query(`UPDATE questions SET active=-1 WHERE id=$1`, [req.params.id]);
+    res.json({ flagged: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/questions/approve-all', async (req, res) => {
+  try {
+    const r = await db.pool.query(`UPDATE questions SET active=1 WHERE active=0 OR active IS NULL RETURNING question_id`);
+    res.json({ approved: r.rowCount, message: `${r.rowCount} questions approved` });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/questions/approve-by-qid', async (req, res) => {
+  try {
+    const { question_id } = req.body;
+    await db.pool.query(`UPDATE questions SET active=1 WHERE question_id=$1`, [question_id]);
+    res.json({ approved: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Question import/export ────────────────────────────────────────────────────
+router.post('/api/questions/save', async (req, res) => {
+  try {
+    const { questions, level, subject, topic } = req.body;
+    if (!questions || !Array.isArray(questions)) return res.status(400).json({ error: 'questions array required' });
+    let saved = 0;
+    for (const q of questions) {
+      await db.pool.query(`
+        INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, option_a, option_b, option_c, option_d, correct_option, active, created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,1,NOW())
+        ON CONFLICT (question_id) DO UPDATE SET active=1, q_text_english=$5`,
+        [q.question_id, level, subject, topic||null, q.question_text || q.q_text_english || null, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_option]);
+      saved++;
+    }
+    res.json({ saved, message: `${saved} questions saved to database` });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/api/questions/csv-update', async (req, res) => {
+  try {
+    const { question_id, level, subject, topic_tag, question_text, image_url, option_a, option_b, option_c, option_d, correct_option } = req.body;
+    if (!question_id) return res.status(400).json({ error: 'question_id required' });
+    const r = await db.pool.query(`
+      INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, q_text_urdu, image_url, question_type, option_a, option_b, option_c, option_d, correct_option, active, created_at)
+      VALUES ($1,$2,$3,$4,$5,'',$6, CASE WHEN $6 IS NOT NULL AND $6!='' THEN 'picture' ELSE 'text' END, $7,$8,$9,$10,$11,0,NOW())
+      ON CONFLICT (question_id) DO UPDATE SET
+        q_text_english=COALESCE(NULLIF($5,''), questions.q_text_english),
+        image_url=COALESCE(NULLIF($6,''), questions.image_url),
+        option_a=COALESCE(NULLIF($7,''), questions.option_a),
+        option_b=COALESCE(NULLIF($8,''), questions.option_b),
+        option_c=COALESCE(NULLIF($9,''), questions.option_c),
+        option_d=COALESCE(NULLIF($10,''), questions.option_d),
+        correct_option=COALESCE(NULLIF($11,''), questions.correct_option)
+      RETURNING (xmax=0) AS inserted`,
+      [question_id, parseInt(level)||1, subject, topic_tag||'curriculum',
+       question_text||null, image_url||null, option_a||null, option_b||null, option_c||null, option_d||null, correct_option||'A']);
+    res.json({ inserted: !!r.rows[0]?.inserted, updated: !r.rows[0]?.inserted });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/api/questions/export', async (req, res) => {
+  try {
+    const { subject, level, status } = req.query;
+    let query = `SELECT question_id, subject, level, topic_tag, COALESCE(q_text_english,q_text_urdu) as question_text, q_text_urdu, image_url, option_a, option_b, option_c, option_d, correct_option, active, created_at FROM questions WHERE 1=1`;
+    const params = [];
+    if (subject) { params.push(subject); query += ` AND subject=$${params.length}`; }
+    if (level)   { params.push(level);   query += ` AND level=$${params.length}`; }
+    if (status === 'approved') query += ` AND active=1`;
+    if (status === 'pending')  query += ` AND (active=0 OR active IS NULL)`;
+    query += ` ORDER BY subject,level,question_id`;
+    const r = await db.pool.query(query, params);
+
+    const escape = v => v == null ? '' : '"' + String(v).replace(/"/g, '""') + '"';
+    const headers = ['question_id','subject','level','topic_tag','question_text','question_urdu','image_url','option_a','option_b','option_c','option_d','correct_option','status','created_at'];
+    let csv = headers.join(',') + '\n';
+    r.rows.forEach(row => {
+      csv += [escape(row.question_id), escape(row.subject), escape(row.level), escape(row.topic_tag),
+        escape(row.question_text), escape(row.q_text_urdu), escape(row.image_url),
+        escape(row.option_a), escape(row.option_b), escape(row.option_c), escape(row.option_d),
+        escape(row.correct_option),
+        escape(row.active===1?'approved':row.active===-1?'flagged':'pending'),
+        escape(row.created_at?row.created_at.toISOString().split('T')[0]:'')
+      ].join(',') + '\n';
+    });
+    const filename = 'TAKMIL_Questions_' + new Date().toISOString().split('T')[0] + '.csv';
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send('\uFEFF' + csv);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/api/questions/breakdown', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT subject, level, COUNT(*) as total,
+        SUM(CASE WHEN active=1 THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN active=0 OR active IS NULL THEN 1 ELSE 0 END) as pending
+      FROM questions GROUP BY subject,level ORDER BY subject,level
+    `);
+    const bySubject = {};
+    r.rows.forEach(row => {
+      if (!bySubject[row.subject]) bySubject[row.subject] = [];
+      bySubject[row.subject].push({ level: row.level, total: parseInt(row.total), approved: parseInt(row.approved), pending: parseInt(row.pending) });
+    });
+    res.json(bySubject);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/api/questions/mislabeled', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT subject, level, question_id, COALESCE(q_text_english,q_text_urdu) as question_text,
+        COUNT(*) OVER (PARTITION BY subject) as subject_total
+      FROM questions WHERE subject IN ('Level 1','Level 2','Level 3','Unknown')
+      ORDER BY subject,level,question_id LIMIT 20`);
+    const counts = await db.pool.query(`SELECT subject, COUNT(*) as total FROM questions WHERE subject IN ('Level 1','Level 2','Level 3','Unknown') GROUP BY subject ORDER BY subject`);
+    res.json({ samples: r.rows, counts: counts.rows });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/api/questions/fix-subjects', async (req, res) => {
+  try {
+    const { old_subjects, new_subject } = req.body;
+    if (!old_subjects || !new_subject) return res.status(400).json({ error: 'old_subjects array and new_subject required' });
+    const placeholders = old_subjects.map((_, i) => `$${i + 2}`).join(',');
+    const r = await db.pool.query(`UPDATE questions SET subject=$1 WHERE subject IN (${placeholders}) RETURNING question_id`, [new_subject, ...old_subjects]);
+    res.json({ fixed: r.rowCount, new_subject, message: `${r.rowCount} questions updated to ${new_subject}` });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Picture questions ─────────────────────────────────────────────────────────
+router.post('/api/questions/save-picture', async (req, res) => {
+  try {
+    const { question_id, level, subject, topic_tag, question_text, image_url, option_a, option_b, option_c, option_d, correct_option } = req.body;
+    if (!question_id || !image_url) return res.status(400).json({ error: 'question_id and image_url required' });
+    await db.pool.query(`
+      INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, q_text_urdu, image_url, question_type, option_a, option_b, option_c, option_d, correct_option, active, created_at)
+      VALUES ($1,$2,$3,$4,$5,'',$6,'picture',$7,$8,$9,$10,$11,0,NOW())
+      ON CONFLICT (question_id) DO UPDATE SET q_text_english=$5,image_url=$6,option_a=$7,option_b=$8,option_c=$9,option_d=$10,correct_option=$11`,
+      [question_id, parseInt(level), subject, topic_tag||'picture', question_text, image_url, option_a, option_b, option_c, option_d, correct_option]);
+    res.json({ saved: true, message: 'Picture question saved as pending' });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── AI Question Generator ─────────────────────────────────────────────────────
+router.post('/api/generate-questions', async (req, res) => {
+  try {
+    const { transcript, subject, level, topic, name } = req.body;
+    if (!transcript) return res.status(400).json({ error: 'transcript required' });
+
+    const topicSafe = (topic||'TOPIC').toUpperCase().replace(/[^A-Z0-9]/g,'_');
+    const prompt = `You are an educational assessment expert for TAKMIL Foundation which educates out-of-school children in rural Pakistan.
+
+Generate exactly 12 multiple-choice questions based on this video transcript.
+
+Requirements:
+- Language: bilingual (English question + Urdu translation)
+- Level: ${level} (${level <= 3 ? 'basic' : level <= 7 ? 'intermediate' : 'advanced'})
+- Subject: ${subject}
+- Topic: ${topic || 'General'}
+- 4 options (A, B, C, D), one correct
+- Age-appropriate for out-of-school rural Pakistani children
+
+Return ONLY valid JSON array:
+[{
+  "question_id": "${subject.substring(0,3).toUpperCase()}_L${level}_${topicSafe}_001",
+  "q_text_english": "English question",
+  "q_text_urdu": "اردو سوال",
+  "option_a": "Option A", "option_b": "Option B", "option_c": "Option C", "option_d": "Option D",
+  "correct_option": "A",
+  "topic_tag": "${topic||'curriculum'}"
+}]
+
+Transcript excerpt:
+${transcript.substring(0, 3000)}`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5-20251101',
+        max_tokens: 4000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data    = await response.json();
+    const rawText = data.content?.[0]?.text || '';
+    const cleaned = rawText.replace(/```json|```/g, '').trim();
+    const match   = cleaned.match(/\[[\s\S]*\]/);
+    if (!match) return res.status(400).json({ error: 'Failed to generate questions', raw: rawText.substring(0, 500) });
+
+    const questions = JSON.parse(match[0]);
+    res.json({ questions, count: questions.length, subject, level, topic });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Admin import/schools/students ─────────────────────────────────────────────
+router.post('/admin/pins/generate', async (req, res) => {
+  const { schoolId, level, subject, cohortSize, issuedBy, teacherPhone } = req.body;
+  if (!schoolId || level === undefined || !subject) return res.status(400).json({ error: 'schoolId, level, subject required' });
+  try {
+    const pin = await db.generatePin(schoolId, level, subject, cohortSize || 0, issuedBy || 'admin');
+    if (teacherPhone) {
+      const { sendWhatsApp: sw, twilioClient: tc, FROM_NUMBER: fn } = require('../helpers/whatsapp');
+      const schoolRes = await db.pool.query('SELECT name FROM schools WHERE id=$1', [schoolId]);
+      const schoolName = schoolRes.rows[0]?.name || 'your school';
+      try {
+        const toNum = teacherPhone.startsWith('whatsapp:') ? teacherPhone : `whatsapp:${teacherPhone}`;
+        await tc.messages.create({ from: fn, to: toNum, body: `*TAKMIL Assessment PIN*\n\nSchool: ${schoolName}\nLevel: ${level}\nSubject: ${subject}\n\n*PIN: ${pin.pin}*\n\nValid for 24 hours.` });
+      } catch(e) { console.log('WhatsApp failed:', e.message); }
+    }
+    res.json({ success: true, pin: pin.pin, expiresAt: pin.expires_at, whatsappSent: !!teacherPhone });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/schools', async (req, res) => {
+  const { name, province, district, contactName, contactPhone } = req.body;
+  if (!name) return res.status(400).json({ error: 'name required' });
+  try {
+    const r = await db.pool.query(`INSERT INTO schools (name,province,district,contact_name,contact_phone) VALUES ($1,$2,$3,$4,$5) RETURNING *`, [name, province, district, contactName, contactPhone]);
+    res.json({ success: true, school: r.rows[0] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/ops', async (req, res) => {
+  const { phone, name, role } = req.body;
+  if (!phone || !name) return res.status(400).json({ error: 'phone and name required' });
+  try {
+    const r = await db.pool.query(`INSERT INTO ops_team (phone,name,role) VALUES ($1,$2,$3) ON CONFLICT (phone) DO UPDATE SET name=$2,role=$3,is_active=TRUE RETURNING *`, [phone, name, role||'ops']);
+    res.json({ success: true, ops: r.rows[0] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/admin/schools/list',       async (req, res) => { try { const r = await db.pool.query('SELECT * FROM schools ORDER BY created_at DESC'); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
+router.get('/admin/pins/list',          async (req, res) => { try { const r = await db.pool.query(`SELECT p.*, s.name AS school_name FROM pins p LEFT JOIN schools s ON s.id=p.school_id ORDER BY p.created_at DESC LIMIT 100`); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
+router.get('/admin/advancements/pending',async (req, res) => { try { const r = await db.pool.query(`SELECT ar.*, s.name AS school_name, s.province FROM advancement_requests ar JOIN schools s ON s.id=ar.school_id WHERE ar.status='PENDING' ORDER BY ar.created_at DESC`); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
+router.get('/admin/advancements/all',   async (req, res) => { try { const r = await db.pool.query(`SELECT ar.*, s.name AS school_name FROM advancement_requests ar JOIN schools s ON s.id=ar.school_id ORDER BY ar.created_at DESC`); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
+router.get('/admin/assessments/all',    async (req, res) => { try { const r = await db.pool.query(`SELECT a.*, s.name AS school_name FROM assessments a LEFT JOIN schools s ON s.id=a.school_id ORDER BY a.completed_at DESC`); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
+router.get('/admin/students/results',   async (req, res) => { try { const r = await db.pool.query(`SELECT sa.*, s.name AS school_name, s.province FROM student_assessments sa LEFT JOIN schools s ON s.id=sa.school_id ORDER BY sa.completed_at DESC`); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
+router.get('/admin/ops/list',           async (req, res) => { try { const r = await db.pool.query('SELECT * FROM ops_team ORDER BY created_at ASC'); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
+router.get('/admin/debug/question',     async (req, res) => { try { const r = await db.pool.query('SELECT * FROM questions LIMIT 1'); res.json(r.rows[0] || {}); } catch(e) { res.status(500).json({ error: e.message }); }});
+
+router.get('/admin/analytics', async (req, res) => {
+  try {
+    const summary    = await db.getAnalyticsSummary();
+    const bySubject  = await db.pool.query(`SELECT subject, COUNT(*) AS count, ROUND(AVG(score_pct),1) AS avg_score FROM assessments GROUP BY subject ORDER BY subject`);
+    const byLevel    = await db.pool.query(`SELECT level, COUNT(*) AS count, ROUND(AVG(score_pct),1) AS avg_score, SUM(CASE WHEN passed THEN 1 ELSE 0 END) AS passed FROM assessments GROUP BY level ORDER BY level`);
+    const upcoming   = await db.pool.query(`SELECT rs.*, s.name AS school_name FROM reassessment_schedule rs JOIN schools s ON s.id=rs.school_id WHERE rs.completed=FALSE AND rs.scheduled_date>=CURRENT_DATE ORDER BY rs.scheduled_date ASC LIMIT 20`);
+    const studentStats = await db.pool.query(`SELECT COUNT(*) AS total, SUM(CASE WHEN passed THEN 1 ELSE 0 END) AS passed FROM student_assessments`).catch(() => ({ rows: [{ total: 0, passed: 0 }] }));
+    res.json({ summary, bySubject: bySubject.rows, byLevel: byLevel.rows, upcomingReassessments: upcoming.rows, studentStats: studentStats.rows[0] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/admin/import/questions', async (req, res) => {
+  const { rows } = req.body;
+  if (!rows || !Array.isArray(rows)) return res.status(400).json({ error: 'rows array required' });
+  let inserted = 0, skipped = 0, errors = 0, lastError = '';
+  for (const row of rows) {
+    try {
+      const questionId = String(row.question_id || '').trim();
+      const level      = parseInt(row.level) || 1;
+      const subject    = String(row.subject || '').trim();
+      const qText      = String(row.q_text_english || '').trim();
+      const qTextUrdu  = String(row.q_text_urdu || row.q_text_english || '').trim();
+      const optA       = String(row.option_a || '').trim();
+      const optB       = String(row.option_b || '').trim();
+      const optC       = String(row.option_c || '').trim();
+      const optD       = String(row.option_d || '').trim();
+      const correctOpt = String(row.correct_option || 'A').trim().toUpperCase();
+      const topicTag   = String(row.topic_tag || '').trim();
+      if (!qText || !optA || !optB || !optC || !optD) { skipped++; continue; }
+      await db.pool.query(
+        `INSERT INTO questions (question_id,level,subject,q_text_english,q_text_urdu,option_a,option_b,option_c,option_d,correct_option,topic_tag) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [questionId, level, subject, qText, qTextUrdu, optA, optB, optC, optD, correctOpt, topicTag]);
+      inserted++;
+    } catch(err) { lastError = err.message; errors++; }
+  }
+  res.json({ inserted, skipped, errors, lastError });
+});
+
+router.post('/admin/reassessments/list', async (req, res) => {
+  try {
+    const r = await db.pool.query(`SELECT rs.*, s.name AS school_name FROM reassessment_schedule rs JOIN schools s ON s.id=rs.school_id ORDER BY rs.scheduled_date ASC`);
+    res.json(r.rows);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+module.exports = { router };
