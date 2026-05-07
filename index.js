@@ -4450,42 +4450,8 @@ app.get('/api/questions/breakdown', async (req, res) => {
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS projector_shown BOOLEAN DEFAULT NULL`);
       await db.pool.query(`ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS lesson_verified BOOLEAN DEFAULT FALSE`);
     } catch(e) { console.log('daily_feedback note:', e.message); }
-    } catch(e) { console.log('daily_feedback note:', e.message); }
 
     // ── Classroom Player ──────────────────────────────────────────────────────
-    app.get('/classroom', (req, res) => {
-      res.sendFile(path.join(__dirname, 'takmil-classroom.html'));
-    });
-
-    app.post('/api/lessons/end', async (req, res) => {
-      try {
-        const l = req.body;
-        await db.pool.query(`
-          INSERT INTO lessons
-            (school_name, school_identifier, video_name, subject, level,
-             start_time, end_time, actual_duration, coverage_pct, status,
-             flagged, pauses, seeks, start_gps, end_gps)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
-        `, [
-          l.school_name, l.school_identifier, l.video_name, l.subject, l.level,
-          l.start_time, l.end_time, l.actual_duration, l.coverage_pct, l.status,
-          l.flagged, l.pauses || 0, l.seeks || 0,
-          l.start_gps ? JSON.stringify(l.start_gps) : null,
-          l.end_gps   ? JSON.stringify(l.end_gps)   : null,
-        ]);
-        res.json({ saved: true });
-      } catch (e) {
-        console.error('lessons/end error:', e.message);
-        res.json({ saved: false, error: e.message });
-      }
-    });
-
-    
-
-    
-  } catch(e) { console.log('daily_feedback note:', e.message); }
-
-    // ── Classroom Player ──────────────────────────────────────────
     app.get('/classroom', (req, res) => {
       res.sendFile(path.join(__dirname, 'takmil-classroom.html'));
     });
