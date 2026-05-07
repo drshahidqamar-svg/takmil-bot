@@ -22,6 +22,18 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 .scr{display:none}
 .scr.on{display:block}
 
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:90px;left:16px;right:16px;z-index:9999;
+  background:#1a2e1f;color:white;border-radius:12px;
+  padding:14px 18px;font-size:14px;font-weight:700;text-align:center;
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);
+  transform:translateY(20px);opacity:0;
+  transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events:none;
+}
+#toast.show{transform:translateY(0);opacity:1}
+
 /* ── LOGIN SCREEN ── */
 #s-login{
   min-height:100vh;display:flex;flex-direction:column;
@@ -50,6 +62,14 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 .login-btn:active{transform:translateY(0)}
 .login-err{color:var(--danger);font-size:13px;text-align:center;margin-top:12px;font-weight:600}
 
+/* Pending badge */
+#pending-badge{
+  display:none;margin-top:16px;padding:10px 14px;
+  background:var(--amber2);border:1px solid var(--amber);border-radius:var(--r2);
+  font-size:13px;font-weight:700;color:#92400e;text-align:center;cursor:pointer;
+}
+#pending-badge.show{display:block}
+
 /* ── REGISTER SCREEN ── */
 #s-register{min-height:100vh;display:flex;flex-direction:column}
 
@@ -58,10 +78,30 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
   display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:10;
 }
+.reg-header-left{flex:1}
 .reg-school{font-size:15px;font-weight:800;color:#4ade80}
 .reg-date{font-size:12px;color:#4a6b52;margin-top:2px}
+.reg-header-right{display:flex;align-items:center;gap:10px}
+
+/* Online/offline dot */
+.conn-dot{
+  width:9px;height:9px;border-radius:50%;
+  background:#4ade80;box-shadow:0 0 6px #4ade80;
+  flex-shrink:0;transition:all 0.3s;
+}
+.conn-dot.offline{background:#f59e0b;box-shadow:0 0 6px #f59e0b}
+
 .reg-logout{font-size:12px;color:#4a6b52;cursor:pointer;padding:6px 10px;
   border:1px solid #2d4a35;border-radius:8px}
+
+/* Offline notice strip */
+#offline-notice{
+  display:none;
+  background:var(--amber2);border-bottom:2px solid var(--amber);
+  padding:8px 16px;font-size:12px;font-weight:700;
+  color:#92400e;text-align:center;
+}
+#offline-notice.show{display:block}
 
 .reg-summary{
   background:var(--bg2);padding:14px 20px;
@@ -100,10 +140,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 .s-item.is-a{background:#fff5f5;border-color:#fca5a5}
 .s-item.is-l{background:#fefce8;border-color:#fde047}
 
-.s-roll{
-  font-size:11px;font-weight:700;color:var(--text3);
-  min-width:28px;text-align:center;
-}
+.s-roll{font-size:11px;font-weight:700;color:var(--text3);min-width:28px;text-align:center}
 .s-name{flex:1;font-size:15px;font-weight:700;color:var(--text)}
 .s-btns{display:flex;gap:6px}
 
@@ -143,7 +180,18 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 }
 .result-icon{font-size:72px;text-align:center;margin-bottom:16px}
 .result-title{font-size:26px;font-weight:900;color:white;text-align:center;margin-bottom:8px}
-.result-sub{font-size:14px;color:#4a6b52;text-align:center;margin-bottom:32px;line-height:1.6}
+.result-sub{font-size:14px;color:#4a6b52;text-align:center;margin-bottom:24px;line-height:1.6}
+
+/* Offline result note */
+#offline-result-note{
+  display:none;width:100%;max-width:320px;
+  padding:14px 16px;margin-bottom:20px;
+  background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);
+  border-radius:var(--r2);font-size:13px;color:#fde68a;
+  text-align:center;line-height:1.6;
+}
+#offline-result-note.show{display:block}
+
 .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:320px;margin-bottom:28px}
 .rg-cell{background:rgba(255,255,255,0.08);border-radius:var(--r2);padding:16px;text-align:center}
 .rg-n{font-size:28px;font-weight:900;color:white}
@@ -165,36 +213,48 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ══ LOGIN ══ -->
 <div class="scr on" id="s-login">
   <div class="login-logo">TAKMIL</div>
   <div class="login-sub">Class Register</div>
   <div class="login-card">
     <label class="inp-label">School Code</label>
-    <input class="inp normal" id="l-code" type="text" placeholder="e.g. AliHassanHingrjo_O_W24S" maxlength="60"
+    <input class="inp normal" id="l-code" type="text"
+      placeholder="e.g. AliHassanHingrjo_O_W24S" maxlength="60"
       style="letter-spacing:0;font-weight:600;font-size:14px;text-transform:none">
     <label class="inp-label">Date</label>
     <input class="inp normal" id="l-date" type="date">
     <button class="login-btn" onclick="doLogin()">Load Students →</button>
     <div class="login-err" id="l-err"></div>
+    <div id="pending-badge" onclick="syncPending(true)">
+      📤 <span id="pending-count">0</span> record(s) saved offline — tap to sync now
+    </div>
   </div>
 </div>
 
-<!-- REGISTER -->
+<!-- ══ REGISTER ══ -->
 <div class="scr" id="s-register">
   <div class="reg-header">
-    <div>
+    <div class="reg-header-left">
       <div class="reg-school" id="r-school">—</div>
-      <div class="reg-date" id="r-date">—</div>
+      <div class="reg-date"   id="r-date">—</div>
     </div>
-    <div class="reg-logout" onclick="logout()">← Back</div>
+    <div class="reg-header-right">
+      <div class="conn-dot" id="conn-dot" title="Connection status"></div>
+      <div class="reg-logout" onclick="logout()">← Back</div>
+    </div>
   </div>
 
+  <div id="offline-notice">⚠️ Offline — using cached list. Attendance will sync when connected.</div>
+
   <div class="reg-summary">
-    <div class="sum-item"><div class="sum-n n-total" id="s-total">0</div><div class="sum-l">Total</div></div>
+    <div class="sum-item"><div class="sum-n n-total"   id="s-total">0</div><div class="sum-l">Total</div></div>
     <div class="sum-item"><div class="sum-n n-present" id="s-present">0</div><div class="sum-l">Present</div></div>
-    <div class="sum-item"><div class="sum-n n-absent" id="s-absent">0</div><div class="sum-l">Absent</div></div>
-    <div class="sum-item"><div class="sum-n n-leave" id="s-leave">0</div><div class="sum-l">Leave</div></div>
+    <div class="sum-item"><div class="sum-n n-absent"  id="s-absent">0</div><div class="sum-l">Absent</div></div>
+    <div class="sum-item"><div class="sum-n n-leave"   id="s-leave">0</div><div class="sum-l">Leave</div></div>
   </div>
 
   <div class="quick-bar">
@@ -213,33 +273,237 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
   </div>
 </div>
 
-<!-- RESULT -->
+<!-- ══ RESULT ══ -->
 <div class="scr" id="s-result">
-  <div class="result-icon">🎉</div>
+  <div class="result-icon" id="res-icon">🎉</div>
   <div class="result-title" id="res-title">Attendance Saved!</div>
-  <div class="result-sub" id="res-sub"></div>
+  <div class="result-sub"   id="res-sub"></div>
+  <div id="offline-result-note">
+    📡 No internet right now — attendance is saved on this device and will
+    automatically upload to the dashboard as soon as you're connected.
+  </div>
   <div class="result-grid" id="res-grid"></div>
   <button class="result-btn" onclick="takeNewAttendance()">📋 Take Another Day's Attendance</button>
   <button class="result-btn" onclick="logout()">← Back to Login</button>
 </div>
 
 <script>
-let students = [];
-let attendance = {}; // roll_number → 'P'|'A'|'L'
-let schoolInfo = null;
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let students    = [];
+let attendance  = {};
+let schoolInfo  = null;
 let currentDate = '';
+let isOfflineMode = false;
 
-function showScr(id){
-  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+// ═══════════════════════════════════════
+//  SERVICE WORKER
+// ═══════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/register-sw.js')
+    .then(() => {
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data && e.data.type === 'SYNC_NOW') syncPending(false);
+      });
+    }).catch(() => {});
+}
+
+// ═══════════════════════════════════════
+//  INDEXEDDB
+// ═══════════════════════════════════════
+const DB_NAME = 'takmil-register-db';
+let _db = null;
+
+function openDB() {
+  if (_db) return Promise.resolve(_db);
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('student_cache'))
+        db.createObjectStore('student_cache', { keyPath: 'school_code' });
+      if (!db.objectStoreNames.contains('pending_attendance')) {
+        const s = db.createObjectStore('pending_attendance', { keyPath: 'id', autoIncrement: true });
+        s.createIndex('status', 'status');
+      }
+    };
+    req.onsuccess = e => { _db = e.target.result; res(_db); };
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+async function dbPut(store, record) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).put(record);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+
+async function dbGet(store, key) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const req = db.transaction(store, 'readonly').objectStore(store).get(key);
+    req.onsuccess = () => res(req.result || null);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+async function dbIndexGetAll(store, idx, val) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const req = db.transaction(store, 'readonly').objectStore(store).index(idx).getAll(val);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+async function dbAdd(store, record) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const req = db.transaction(store, 'readwrite').objectStore(store).add(record);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+async function dbUpdateRecord(store, id, changes) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const s  = tx.objectStore(store);
+    const r  = s.get(id);
+    r.onsuccess = () => { s.put(Object.assign(r.result, changes)); tx.oncomplete = res; };
+    r.onerror   = () => rej(r.error);
+  });
+}
+
+// Cache student list for this school (replaces previous)
+async function cacheStudents(code, students, school) {
+  await dbPut('student_cache', { school_code: code, students, school, cached_at: Date.now() });
+}
+
+// Queue an attendance submission for later sync
+async function queueAttendance(payload) {
+  return dbAdd('pending_attendance', { ...payload, status: 'pending', queued_at: Date.now() });
+}
+
+async function getPendingRecords() {
+  return dbIndexGetAll('pending_attendance', 'status', 'pending');
+}
+
+async function markSynced(id) {
+  return dbUpdateRecord('pending_attendance', id, { status: 'synced', synced_at: Date.now() });
+}
+
+// ═══════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════
+let _toastTimer = null;
+function showToast(msg, duration = 3500, bg = '#1a2e1f') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = bg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ═══════════════════════════════════════
+//  SCREEN SWITCH
+// ═══════════════════════════════════════
+function showScr(id) {
+  document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
   document.getElementById(id).classList.add('on');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Init date
-// Set date picker: today as default/max, yesterday as min
-const _today = new Date();
-const _yest  = new Date(); _yest.setDate(_today.getDate()-1);
-const _fmt   = d => d.toISOString().split('T')[0];
+// ═══════════════════════════════════════
+//  ONLINE STATUS + PENDING BADGE
+// ═══════════════════════════════════════
+function updateOnlineStatus() {
+  const online = navigator.onLine;
+  const dot = document.getElementById('conn-dot');
+  if (dot) dot.classList.toggle('offline', !online);
+  updatePendingBadge();
+}
+
+async function updatePendingBadge() {
+  try {
+    const recs  = await getPendingRecords();
+    const badge = document.getElementById('pending-badge');
+    const count = document.getElementById('pending-count');
+    if (!badge) return;
+    count.textContent = recs.length;
+    badge.classList.toggle('show', recs.length > 0);
+  } catch(e) {}
+}
+
+window.addEventListener('online',  () => { updateOnlineStatus(); syncPending(false); });
+window.addEventListener('offline', () => { updateOnlineStatus(); });
+
+// ═══════════════════════════════════════
+//  AUTO SYNC
+// ═══════════════════════════════════════
+let _syncing = false;
+async function syncPending(manual = false) {
+  if (_syncing || !navigator.onLine) {
+    if (manual && !navigator.onLine) showToast('📡 Still offline — will sync when connected', 3000, '#f59e0b');
+    return;
+  }
+  _syncing = true;
+  try {
+    const records = await getPendingRecords();
+    if (!records.length) {
+      if (manual) showToast('✅ All synced — no pending records', 3000, '#16a34a');
+      return;
+    }
+    if (manual) showToast(`⏳ Syncing ${records.length} record(s)...`, 60000, '#3b82f6');
+
+    let synced = 0, failed = 0;
+    for (const rec of records) {
+      try {
+        const resp = await fetch('/api/register/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            school_code:  rec.school_code,
+            date:         rec.date,
+            attendance:   rec.attendance,
+            submitted_by: rec.submitted_by
+          })
+        });
+        const data = await resp.json();
+        if (resp.ok || data.saved) { await markSynced(rec.id); synced++; }
+        else { failed++; }
+      } catch(e) { failed++; break; } // still offline
+    }
+
+    if (synced > 0) {
+      showToast(`✅ ${synced} record(s) synced to dashboard!`, 5000, '#16a34a');
+      updatePendingBadge();
+    }
+    if (failed > 0 && synced === 0 && manual) {
+      showToast('❌ Sync failed — check connection', 3000, '#ef4444');
+    }
+
+    // Register background sync for next time
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      const reg = await navigator.serviceWorker.ready;
+      reg.sync.register('sync-attendance').catch(() => {});
+    }
+  } finally {
+    _syncing = false;
+  }
+}
+
+// ═══════════════════════════════════════
+//  DATE PICKER INIT
+// ═══════════════════════════════════════
+const _today  = new Date();
+const _yest   = new Date(); _yest.setDate(_today.getDate() - 1);
+const _fmt    = d => d.toISOString().split('T')[0];
 const _dateEl = document.getElementById('l-date');
 if (_dateEl) {
   _dateEl.value = _fmt(_today);
@@ -247,117 +511,135 @@ if (_dateEl) {
   _dateEl.min   = _fmt(_yest);
 }
 
-async function doLogin(){
+// ═══════════════════════════════════════
+//  LOGIN
+// ═══════════════════════════════════════
+async function doLogin() {
   const code = document.getElementById('l-code').value.trim();
   const date = document.getElementById('l-date').value;
   const err  = document.getElementById('l-err');
+  err.textContent = ''; err.style.display = '';
 
-  // Date validation — today and yesterday only, no future
-  const sel  = new Date(date); sel.setHours(0,0,0,0);
-  const tod  = new Date(); tod.setHours(0,0,0,0);
-  const yes  = new Date(tod); yes.setDate(tod.getDate()-1);
-  if (sel > tod) {
-    err.textContent = '❌ Future dates are not allowed. Please select today or yesterday.';
-    err.style.display = 'block';
-    return;
-  }
-  if (sel < yes) {
-    err.textContent = '❌ You can only submit attendance for today or yesterday.';
-    err.style.display = 'block';
-    return;
-  }
-
-  if(!code){ err.textContent = 'Please enter school code'; return; }
+  // Date validation
+  const sel = new Date(date); sel.setHours(0,0,0,0);
+  const tod = new Date(); tod.setHours(0,0,0,0);
+  const yes = new Date(tod); yes.setDate(tod.getDate()-1);
+  if (sel > tod) { err.textContent = '❌ Future dates are not allowed. Please select today or yesterday.'; return; }
+  if (sel < yes) { err.textContent = '❌ You can only submit attendance for today or yesterday.'; return; }
+  if (!code)     { err.textContent = 'Please enter school code'; return; }
 
   const btn = document.querySelector('.login-btn');
   btn.textContent = 'Loading...'; btn.disabled = true;
-  err.textContent = '';
 
-  try{
-    const resp = await fetch(`/api/register/students?school_code=${encodeURIComponent(code)}&date=${date}`);
-    const data = await resp.json();
-    if(data.error) throw new Error(data.error);
-    if(!data.students.length) throw new Error('No students found for school code: ' + code);
+  // ── Try server (online path) ──────────────────────
+  if (navigator.onLine) {
+    try {
+      const resp = await fetch(`/api/register/students?school_code=${encodeURIComponent(code)}&date=${date}`);
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error);
+      if (!data.students.length) throw new Error('No students found for school code: ' + code);
 
-    students   = data.students;
-    schoolInfo = data.school;
-    currentDate= date;
+      // Cache for offline use
+      await cacheStudents(code, data.students, data.school);
 
-    // Pre-fill any existing attendance
-    attendance = {};
-    students.forEach(s => { if(s.status) attendance[s.roll_number] = s.status; });
+      students    = data.students;
+      schoolInfo  = data.school;
+      currentDate = date;
+      isOfflineMode = false;
+      attendance  = {};
+      students.forEach(s => { if (s.status) attendance[s.roll_number] = s.status; });
 
-    document.getElementById('r-school').textContent = data.school.name || code;
-    document.getElementById('r-date').textContent   = formatDate(date);
-    document.getElementById('s-total').textContent  = data.total;
+      document.getElementById('r-school').textContent = data.school.name || code;
+      document.getElementById('r-date').textContent   = formatDate(date);
+      document.getElementById('s-total').textContent  = data.total;
+      document.getElementById('offline-notice').classList.remove('show');
 
-    renderStudents();
-    updateSummary();
-    showScr('s-register');
-  }catch(e){
-    err.textContent = e.message;
+      renderStudents(); updateSummary(); showScr('s-register');
+      btn.textContent = 'Load Students →'; btn.disabled = false;
+      return;
+
+    } catch(e) {
+      // Real server error (not network failure) → show and stop
+      const isNetErr = !e.message || /fetch|network|failed/i.test(e.message);
+      if (!isNetErr) {
+        err.textContent = e.message;
+        btn.textContent = 'Load Students →'; btn.disabled = false;
+        return;
+      }
+      // Network error — fall through to offline cache
+    }
   }
+
+  // ── Offline path: try IndexedDB cache ────────────
+  btn.textContent = 'Checking saved data...';
+  try {
+    const cached = await dbGet('student_cache', code);
+    if (!cached) {
+      err.textContent = '📡 No internet and no saved data for this school. Connect once to cache the student list.';
+      btn.textContent = 'Load Students →'; btn.disabled = false;
+      return;
+    }
+
+    students    = cached.students;
+    schoolInfo  = cached.school;
+    currentDate = date;
+    isOfflineMode = true;
+    attendance  = {};
+
+    document.getElementById('r-school').textContent = cached.school.name || code;
+    document.getElementById('r-date').textContent   = formatDate(date);
+    document.getElementById('s-total').textContent  = cached.students.length;
+    document.getElementById('offline-notice').classList.add('show');
+
+    renderStudents(); updateSummary(); showScr('s-register');
+    showToast('📡 Offline mode — using saved student list', 4000, '#92400e');
+
+  } catch(e) {
+    err.textContent = '❌ Error loading saved data. Please try again.';
+  }
+
   btn.textContent = 'Load Students →'; btn.disabled = false;
 }
 
-function renderStudents(){
+// ═══════════════════════════════════════
+//  STUDENT RENDER + MARK
+// ═══════════════════════════════════════
+function renderStudents() {
   const list = document.getElementById('student-list');
-  if(!students.length){
-    list.innerHTML = '<div class="loading">No students found</div>';
-    return;
-  }
-
+  if (!students.length) { list.innerHTML = '<div class="loading">No students found</div>'; return; }
   list.innerHTML = students.map((s, i) => {
-    const roll = s.roll_number;
-    const status = attendance[roll] || '';
-    return `
-    <div class="s-item ${status==='P'?'is-p':status==='A'?'is-a':status==='L'?'is-l':''}" id="si-${roll}">
+    const roll = s.roll_number, status = attendance[roll] || '';
+    return `<div class="s-item ${status==='P'?'is-p':status==='A'?'is-a':status==='L'?'is-l':''}" id="si-${roll}">
       <div class="s-roll">${i+1}</div>
       <div class="s-name">${s.student_name}</div>
       <div class="s-btns">
         <button class="att-btn p ${status==='P'?'sel':''}" onclick="mark('${roll}','P')">P</button>
         <button class="att-btn a ${status==='A'?'sel':''}" onclick="mark('${roll}','A')">A</button>
         <button class="att-btn l ${status==='L'?'sel':''}" onclick="mark('${roll}','L')">L</button>
-      </div>
-    </div>`;
+      </div></div>`;
   }).join('');
 }
 
-function mark(roll, status){
-  // Toggle off if already selected
-  if(attendance[roll] === status) {
-    delete attendance[roll];
-  } else {
-    attendance[roll] = status;
-  }
-  updateCard(roll);
-  updateSummary();
+function mark(roll, status) {
+  if (attendance[roll] === status) delete attendance[roll];
+  else attendance[roll] = status;
+  updateCard(roll); updateSummary();
 }
 
-function updateCard(roll){
-  const item = document.getElementById('si-' + roll);
-  if(!item) return;
+function updateCard(roll) {
+  const item = document.getElementById('si-'+roll); if (!item) return;
   const status = attendance[roll] || '';
   item.className = `s-item ${status==='P'?'is-p':status==='A'?'is-a':status==='L'?'is-l':''}`;
   item.querySelectorAll('.att-btn').forEach(btn => {
     btn.classList.remove('sel');
-    if(btn.classList.contains(status.toLowerCase())) btn.classList.add('sel');
+    if (btn.classList.contains(status.toLowerCase())) btn.classList.add('sel');
   });
 }
 
-function markAll(status){
-  students.forEach(s => { attendance[s.roll_number] = status; });
-  renderStudents();
-  updateSummary();
-}
+function markAll(status) { students.forEach(s => { attendance[s.roll_number] = status; }); renderStudents(); updateSummary(); }
+function clearAll()       { attendance = {}; renderStudents(); updateSummary(); }
 
-function clearAll(){
-  attendance = {};
-  renderStudents();
-  updateSummary();
-}
-
-function updateSummary(){
+function updateSummary() {
   const vals = Object.values(attendance);
   const p = vals.filter(v=>v==='P').length;
   const a = vals.filter(v=>v==='A').length;
@@ -365,113 +647,138 @@ function updateSummary(){
   document.getElementById('s-present').textContent = p;
   document.getElementById('s-absent').textContent  = a;
   document.getElementById('s-leave').textContent   = l;
-
   const all = students.every(s => attendance[s.roll_number]);
-  document.getElementById('submit-btn').disabled = !all;
-  document.getElementById('submit-btn').textContent = all
+  const btn = document.getElementById('submit-btn');
+  btn.disabled    = !all;
+  btn.textContent = all
     ? `Submit Attendance (${p}P / ${a}A / ${l}L)`
     : `Mark all students first (${students.length - vals.length} remaining)`;
 }
 
-async function submitAttendance(){
+// ═══════════════════════════════════════
+//  SUBMIT ATTENDANCE
+// ═══════════════════════════════════════
+async function submitAttendance() {
   const btn = document.getElementById('submit-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Saving...';
+  btn.disabled = true; btn.textContent = '⏳ Saving...';
 
   const payload = students.map(s => ({
-    roll_number:  s.roll_number,
-    student_name: s.student_name,
-    status:       attendance[s.roll_number]
+    roll_number: s.roll_number, student_name: s.student_name,
+    status: attendance[s.roll_number]
   }));
+  const body = {
+    school_code:  schoolInfo.identifier || schoolInfo.name,
+    date:         currentDate,
+    attendance:   payload,
+    submitted_by: schoolInfo.identifier
+  };
 
-  try{
-    const resp = await fetch('/api/register/submit', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        school_code: schoolInfo.identifier || schoolInfo.name,
-        date:        currentDate,
-        attendance:  payload,
-        submitted_by: schoolInfo.identifier
-      })
-    });
-    const data = await resp.json();
-    if(!resp.ok && !data.saved) throw new Error(data.error || 'Save failed');
+  // ── Try server (online) ───────────────────────────
+  if (navigator.onLine) {
+    try {
+      const resp = await fetch('/api/register/submit', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      const data = await resp.json();
+      if (data.offline) throw new Error('network'); // SW 503 response
 
-    // Show result
-    document.getElementById('res-title').textContent = '✅ Attendance Saved!';
-    document.getElementById('res-sub').textContent   =
-      `${schoolInfo.name} · ${formatDate(currentDate)}`;
-    document.getElementById('res-grid').innerHTML = `
-      <div class="rg-cell"><div class="rg-n" style="color:#4ade80">${data.present}</div><div class="rg-l">Present</div></div>
-      <div class="rg-cell"><div class="rg-n" style="color:#fca5a5">${data.absent}</div><div class="rg-l">Absent</div></div>
-      <div class="rg-cell"><div class="rg-n" style="color:#fde047">${data.leave}</div><div class="rg-l">Leave</div></div>
-      <div class="rg-cell"><div class="rg-n">${data.total}</div><div class="rg-l">Total</div></div>
-    `;
-    showScr('s-result');
-  }catch(e){
-    const msg = (e.message||'').includes('Future') || (e.message||'').includes('yesterday') || (e.message||'').includes('future')
-      ? '❌ ' + e.message
-      : '❌ Error saving attendance. Please try again.';
-    alert(msg);
-  } finally {
-    // Always reset button — no more stuck "Saving..."
-    if (btn && document.getElementById('s-result').classList.contains('on') === false) {
-      btn.disabled = false;
-      btn.textContent = '⬆ Submit Attendance';
+      if (!resp.ok && !data.saved) {
+        const msg = data.error || 'Save failed';
+        const isFutureErr = /future|yesterday/i.test(msg);
+        alert(isFutureErr ? '❌ ' + msg : '❌ Error saving attendance. Please try again.');
+        btn.disabled = false; btn.textContent = '⬆ Submit Attendance';
+        return;
+      }
+
+      showResultScreen({ present:data.present, absent:data.absent, leave:data.leave, total:data.total }, false);
+      return;
+    } catch(e) {
+      const isNetErr = !e.message || /fetch|network|failed|503/i.test(e.message);
+      if (!isNetErr) { btn.disabled = false; btn.textContent = '⬆ Submit Attendance'; return; }
+      // Fall through to offline queue
     }
+  }
+
+  // ── Queue offline ─────────────────────────────────
+  try {
+    await queueAttendance({ ...body, school_name: schoolInfo.name || body.school_code });
+
+    const vals = Object.values(attendance);
+    showResultScreen({
+      present: vals.filter(v=>v==='P').length,
+      absent:  vals.filter(v=>v==='A').length,
+      leave:   vals.filter(v=>v==='L').length,
+      total:   students.length
+    }, true);
+
+    updatePendingBadge();
+
+    // Register background sync
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      const reg = await navigator.serviceWorker.ready;
+      reg.sync.register('sync-attendance').catch(() => {});
+    }
+  } catch(e) {
+    alert('❌ Could not save attendance. Please try again.');
+    btn.disabled = false; btn.textContent = '⬆ Submit Attendance';
   }
 }
 
-function takeNewAttendance(){
-  // Reset attendance and go back to login with date picker focused
-  attendance  = {};
-  students    = [];
-  currentDate = '';
-  // Reset date to today
-  const today = new Date();
-  const dateEl = document.getElementById('l-date');
+function showResultScreen({ present, absent, leave, total }, isOffline) {
+  document.getElementById('res-icon').textContent  = isOffline ? '📤' : '🎉';
+  document.getElementById('res-title').textContent = isOffline ? 'Saved — Will Sync!' : '✅ Attendance Saved!';
+  document.getElementById('res-sub').textContent   = `${schoolInfo.name} · ${formatDate(currentDate)}`;
+  document.getElementById('res-grid').innerHTML    = `
+    <div class="rg-cell"><div class="rg-n" style="color:#4ade80">${present}</div><div class="rg-l">Present</div></div>
+    <div class="rg-cell"><div class="rg-n" style="color:#fca5a5">${absent}</div><div class="rg-l">Absent</div></div>
+    <div class="rg-cell"><div class="rg-n" style="color:#fde047">${leave}</div><div class="rg-l">Leave</div></div>
+    <div class="rg-cell"><div class="rg-n">${total}</div><div class="rg-l">Total</div></div>`;
+  document.getElementById('offline-result-note').classList.toggle('show', isOffline);
+  showScr('s-result');
+}
+
+// ═══════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════
+function takeNewAttendance() {
+  attendance = {}; students = []; currentDate = ''; isOfflineMode = false;
+  const today = new Date(), dateEl = document.getElementById('l-date');
   if (dateEl) {
     dateEl.value = today.toISOString().split('T')[0];
     dateEl.max   = today.toISOString().split('T')[0];
     const yest = new Date(today); yest.setDate(today.getDate()-1);
     dateEl.min = yest.toISOString().split('T')[0];
   }
-  // Clear phone field so teacher can load same or different school
-  const phoneEl = document.getElementById('l-phone');
-  if (phoneEl) phoneEl.value = document.getElementById('l-phone')?.value || '';
-  // Reset submit button
   const btn = document.getElementById('submit-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⬆ Submit Attendance'; }
   showScr('s-login');
-  // Focus the date picker so teacher goes straight to picking date
-  setTimeout(() => {
-    if (dateEl) dateEl.focus();
-  }, 300);
+  updatePendingBadge();
+  setTimeout(() => { if (dateEl) dateEl.focus(); }, 300);
 }
 
-function logout(){
-  attendance  = {};
-  students    = [];
-  currentDate = '';
-  schoolInfo  = null;
-  // Reset submit button if stuck
+function logout() {
+  attendance = {}; students = []; currentDate = ''; schoolInfo = null; isOfflineMode = false;
   const btn = document.getElementById('submit-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⬆ Submit Attendance'; }
-  // Clear login fields
-  ['l-phone','l-code'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
+  ['l-phone','l-code'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   const errEl = document.getElementById('l-err');
   if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+  document.getElementById('offline-notice').classList.remove('show');
   showScr('s-login');
+  updatePendingBadge();
 }
 
-function formatDate(d){
+function formatDate(d) {
   return new Date(d+'T12:00:00').toLocaleDateString([],
-    {weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    { weekday:'short', day:'numeric', month:'short', year:'numeric' });
 }
+
+// ═══════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════
+updateOnlineStatus();
+if (navigator.onLine) syncPending(false); // sync any queued records on open
 </script>
 </body>
 </html>
