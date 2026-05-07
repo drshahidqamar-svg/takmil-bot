@@ -618,7 +618,7 @@ router.get('/api/console/schools-progress', async (req, res) => {
     const r = await db.pool.query(`
       SELECT 
         s.id, s.name, s.identifier, s.region, s.province,
-        s.year, s.section,
+        NULL AS year, NULL AS section,
         cl.current_level, cl.subject, cl.status,
         cl.lessons_completed, cl.total_lessons, cl.last_assessment,
         rc.name AS regional_coordinator,
