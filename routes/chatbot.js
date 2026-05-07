@@ -6,6 +6,11 @@ const router = require('express').Router();
 const db     = require('../database');
 const { sendWhatsApp, escapeXml } = require('../helpers/whatsapp');
 const { QUESTIONS_PER_SESSION, PASS_THRESHOLD, shuffleOptions, normalizeAnswer, parseAnswers } = require('../helpers/questions');
+const router = require('express').Router();
+const db     = require('../database');
+const { sendWhatsApp, escapeXml } = require('../helpers/whatsapp');
+const { QUESTIONS_PER_SESSION, PASS_THRESHOLD, shuffleOptions, normalizeAnswer, parseAnswers } = require('../helpers/questions');
+const { getBotUser, handleBotUserMessage } = require('./chatbot-ai');
 
 // ── Lazy-load other handlers to avoid circular deps ──────────────────────────
 let handleClassPhoto      = null;
@@ -818,14 +823,13 @@ router.post('/webhook', async (req, res) => {
     }
 
     // Video commands
-    // Video commands
+    
     if (typeof handleVideoCommands === 'function') {
       const handled = await handleVideoCommands(from, body, res);
       if (handled) return;
     }
 
     // AI role-based assistant — check bot_users first
-    const { getBotUser, handleBotUserMessage } = require('./chatbot-ai');
     const botUser = await getBotUser(from);
     if (botUser) {
       const aiReply = await handleBotUserMessage(botUser, body);
@@ -834,6 +838,7 @@ router.post('/webhook', async (req, res) => {
     }
 
     const reply = await handleMessage(from, body);
+
     res.set('Content-Type', 'text/xml');
     res.send(
       `<?xml version="1.0" encoding="UTF-8"?>` +
