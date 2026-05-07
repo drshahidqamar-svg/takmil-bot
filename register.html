@@ -255,8 +255,16 @@ async function doLogin(){
   const sel  = new Date(date); sel.setHours(0,0,0,0);
   const tod  = new Date(); tod.setHours(0,0,0,0);
   const yes  = new Date(tod); yes.setDate(tod.getDate()-1);
-  if (sel > tod) { err.textContent = '❌ Future dates are not allowed.'; return; }
-  if (sel < yes) { err.textContent = '❌ You can only submit attendance for today or yesterday.'; return; }
+  if (sel > tod) {
+    err.textContent = '❌ Future dates are not allowed. Please select today or yesterday.';
+    err.style.display = 'block';
+    return;
+  }
+  if (sel < yes) {
+    err.textContent = '❌ You can only submit attendance for today or yesterday.';
+    err.style.display = 'block';
+    return;
+  }
 
   if(!code){ err.textContent = 'Please enter school code'; return; }
 
@@ -403,7 +411,10 @@ async function submitAttendance(){
   }catch(e){
     btn.disabled = false;
     btn.textContent = '⚠️ Error — Tap to Retry';
-    alert('Error saving: ' + e.message);
+    const msg = e.message.includes('Future') || e.message.includes('yesterday')
+      ? '❌ ' + e.message
+      : '❌ Error saving attendance. Please try again.';
+    alert(msg);
   }
 }
 
