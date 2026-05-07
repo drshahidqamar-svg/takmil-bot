@@ -9,6 +9,9 @@ const { PASS_THRESHOLD, QUESTIONS_PER_SESSION, shuffleOptions } = require('../he
 const { sendWhatsApp, twilioClient, FROM_NUMBER } = require('../helpers/whatsapp');
 
 // ── HTML pages ────────────────────────────────────────────────────────────────
+router.get('/advance', (req, res) => res.sendFile(path.join(__dirname, '../level-advancement.html')));
+router.get('/offline-portal', (req, res) => res.sendFile(path.join(__dirname, '../offline-portal.html')));
+router.get('/coordinator-portal', (req, res) => res.sendFile(path.join(__dirname, '../coordinator-portal.html')));
 router.get('/assess',        (req, res) => res.sendFile(path.join(__dirname, '../takmil-unified-portal.html')));
 router.get('/level2',        (req, res) => res.sendFile(path.join(__dirname, '../takmil-level2-portal.html')));
 router.get('/level3',        (req, res) => res.sendFile(path.join(__dirname, '../takmil-level3-portal.html')));
