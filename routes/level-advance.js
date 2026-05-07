@@ -63,7 +63,17 @@ router.post('/api/auth/coordinator-login', async (req, res) => {
     );
     if (botUser.rows.length && password === 'takmil123') {
       const u = botUser.rows[0];
-      return res.status(200).json({ role: u.role, id: u.id, name: u.name, region: u.region || null, schools: [] });
+      let schools = [];
+      try {
+        const sr = await client.query(
+          `SELECT id, name, identifier, district FROM schools
+           WHERE ($1::text IS NULL OR region = $1)
+           ORDER BY name LIMIT 200`,
+          [u.region || null]
+        );
+        schools = sr.rows;
+      } catch(e) { schools = []; }
+      return res.status(200).json({ role: u.role, id: u.id, name: u.name, region: u.region || null, schools });
     }
 
     return res.status(401).json({ error: 'Invalid phone number or password' });
