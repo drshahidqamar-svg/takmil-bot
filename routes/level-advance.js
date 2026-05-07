@@ -1,4 +1,4 @@
-// routes/level-advance.js — Level Advancement
+// routes/level-advance.js — Level Advancement.
 // Tablet PIN assessments, teacher portal, lessons tracking, compliance dashboard
 // Portals: /assess, /portal, /offline-portal, /teacher-portal, /lessons-admin, /compliance, /results
 
