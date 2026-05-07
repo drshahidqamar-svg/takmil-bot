@@ -818,19 +818,9 @@ router.post('/webhook', async (req, res) => {
     }
 
     // Video commands
-    // Video commands
     if (typeof handleVideoCommands === 'function') {
       const handled = await handleVideoCommands(from, body, res);
       if (handled) return;
-    }
-
-    // AI role-based assistant — check bot_users first
-    const { getBotUser, handleBotUserMessage } = require('./chatbot-ai');
-    const botUser = await getBotUser(from);
-    if (botUser) {
-      const aiReply = await handleBotUserMessage(botUser, body);
-      res.set('Content-Type', 'text/xml');
-      return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(aiReply)}</Message></Response>`);
     }
 
     const reply = await handleMessage(from, body);
