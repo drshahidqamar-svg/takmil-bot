@@ -57,6 +57,15 @@ router.post('/api/auth/coordinator-login', async (req, res) => {
       return res.status(200).json({ role:'school', id:c.id, name:c.name, region:c.region, schools:c.schools });
     }
 
+    // Check bot_users (coordinators approved via WhatsApp registration)
+    const botUser = await client.query(
+      `SELECT * FROM bot_users WHERE phone=$1 AND active=TRUE`, [phone]
+    );
+    if (botUser.rows.length && password === 'takmil123') {
+      const u = botUser.rows[0];
+      return res.status(200).json({ role: u.role, id: u.id, name: u.name, region: u.region || null, schools: [] });
+    }
+
     return res.status(401).json({ error: 'Invalid phone number or password' });
   } catch(err) {
     return res.status(500).json({ error: 'Server error. Please try again.' });
