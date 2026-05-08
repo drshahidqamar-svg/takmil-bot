@@ -325,25 +325,16 @@ router.post('/admin/ops', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/admin/schools/list',       async (req, res) => { try { const r = await db.pool.query('SELECT * FROM schools ORDER BY created_at DESC'); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
-router.get('/admin/pins/list',          async (req, res) => { try { const r = await db.pool.query(`SELECT p.*, s.name AS school_name FROM pins p LEFT JOIN schools s ON s.id=p.school_id ORDER BY p.created_at DESC LIMIT 100`); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
+// /admin/schools/list — defined below
+// /admin/pins/list — defined below
 router.get('/admin/advancements/pending',async (req, res) => { try { const r = await db.pool.query(`SELECT ar.*, s.name AS school_name, s.province FROM advancement_requests ar JOIN schools s ON s.id=ar.school_id WHERE ar.status='PENDING' ORDER BY ar.created_at DESC`); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
-router.get('/admin/advancements/all',   async (req, res) => { try { const r = await db.pool.query(`SELECT ar.*, s.name AS school_name FROM advancement_requests ar JOIN schools s ON s.id=ar.school_id ORDER BY ar.created_at DESC`); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
-router.get('/admin/assessments/all',    async (req, res) => { try { const r = await db.pool.query(`SELECT a.*, s.name AS school_name FROM assessments a LEFT JOIN schools s ON s.id=a.school_id ORDER BY a.completed_at DESC`); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
-router.get('/admin/students/results',   async (req, res) => { try { const r = await db.pool.query(`SELECT sa.*, s.name AS school_name, s.province FROM student_assessments sa LEFT JOIN schools s ON s.id=sa.school_id ORDER BY sa.completed_at DESC`); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
-router.get('/admin/ops/list',           async (req, res) => { try { const r = await db.pool.query('SELECT * FROM ops_team ORDER BY created_at ASC'); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
+// /admin/advancements/all — defined below
+// /admin/assessments/all — defined below
+// /admin/students/results — moved below to correct version
+// /admin/ops/list (one-liner) — defined below
 router.get('/admin/debug/question',     async (req, res) => { try { const r = await db.pool.query('SELECT * FROM questions LIMIT 1'); res.json(r.rows[0] || {}); } catch(e) { res.status(500).json({ error: e.message }); }});
 
-router.get('/admin/analytics', async (req, res) => {
-  try {
-    const summary    = await db.getAnalyticsSummary();
-    const bySubject  = await db.pool.query(`SELECT subject, COUNT(*) AS count, ROUND(AVG(score_pct),1) AS avg_score FROM assessments GROUP BY subject ORDER BY subject`);
-    const byLevel    = await db.pool.query(`SELECT level, COUNT(*) AS count, ROUND(AVG(score_pct),1) AS avg_score, SUM(CASE WHEN passed THEN 1 ELSE 0 END) AS passed FROM assessments GROUP BY level ORDER BY level`);
-    const upcoming   = await db.pool.query(`SELECT rs.*, s.name AS school_name FROM reassessment_schedule rs JOIN schools s ON s.id=rs.school_id WHERE rs.completed=FALSE AND rs.scheduled_date>=CURRENT_DATE ORDER BY rs.scheduled_date ASC LIMIT 20`);
-    const studentStats = await db.pool.query(`SELECT COUNT(*) AS total, SUM(CASE WHEN passed THEN 1 ELSE 0 END) AS passed FROM student_assessments`).catch(() => ({ rows: [{ total: 0, passed: 0 }] }));
-    res.json({ summary, bySubject: bySubject.rows, byLevel: byLevel.rows, upcomingReassessments: upcoming.rows, studentStats: studentStats.rows[0] });
-  } catch(err) { res.status(500).json({ error: err.message }); }
-});
+// /admin/analytics — moved below to correct version
 
 router.post('/admin/import/questions', async (req, res) => {
   const { rows } = req.body;
