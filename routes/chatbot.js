@@ -1,11 +1,6 @@
 // routes/chatbot.js — WhatsApp Assessment Bot
 // Handles: PIN entry → session confirmation → student names → answers → results
 // Also orchestrates: photo verification, attendance parsing, video commands
-
-const router = require('express').Router();
-const db     = require('../database');
-const { sendWhatsApp, escapeXml } = require('../helpers/whatsapp');
-const { QUESTIONS_PER_SESSION, PASS_THRESHOLD, shuffleOptions, normalizeAnswer, parseAnswers } = require('../helpers/questions');
 const router = require('express').Router();
 const db     = require('../database');
 const { sendWhatsApp, escapeXml } = require('../helpers/whatsapp');
