@@ -1,842 +1,204 @@
-// routes/chatbot.js — WhatsApp Assessment Bot
-// Handles: PIN entry → session confirmation → student names → answers → results
-// Also orchestrates: photo verification, attendance parsing, video commands
+// routes/chatbot-ai.js — AI-Powered Role-Based WhatsApp Assistant
+// Checks bot_users table → fetches role-specific data → calls Claude API
+// Roles: leadership, ops, me, hr, coordinator, school_coordinator
 
 const router = require('express').Router();
 const db     = require('../database');
-const { sendWhatsApp, escapeXml } = require('../helpers/whatsapp');
-const { QUESTIONS_PER_SESSION, PASS_THRESHOLD, shuffleOptions, normalizeAnswer, parseAnswers } = require('../helpers/questions');
+const { sendWhatsApp } = require('../helpers/whatsapp');
 
-// ── Lazy-load other handlers to avoid circular deps ──────────────────────────
-let handleClassPhoto      = null;
-let handleVideoCommands   = null;
-let isFeedbackMessage     = null;
-let parseFeedback         = null;
-let saveFeedback          = null;
-
-function registerHandlers(photoHandler, videoHandler, fbChecker, fbParser, fbSaver) {
-  handleClassPhoto    = photoHandler;
-  handleVideoCommands = videoHandler;
-  isFeedbackMessage   = fbChecker;
-  parseFeedback       = fbParser;
-  saveFeedback        = fbSaver;
-}
-
-// ── States ───────────────────────────────────────────────────────────────────
-const STATE = {
-  AWAITING_PIN:          'AWAITING_PIN',
-  CONFIRMING_SESSION:    'CONFIRMING_SESSION',
-  AWAITING_STUDENT_NAME: 'AWAITING_STUDENT_NAME',
-  IN_ASSESSMENT:         'IN_ASSESSMENT',
-  IN_FINAL_ASSESSMENT:   'IN_FINAL_ASSESSMENT',
-  STUDENT_COMPLETE:      'STUDENT_COMPLETE',
-  SESSION_COMPLETE:      'SESSION_COMPLETE',
-};
-
-// ── Final Assessment questions loader ────────────────────────────────────────
-async function loadFinalAssessmentQuestions(subject) {
-  const levels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-  let all = [];
-  for (const lvl of levels) {
-    const res = await db.pool.query(
-      `SELECT * FROM questions
-       WHERE subject = $1 AND topic_tag = 'final_assessment' AND level = $2
-       ORDER BY RANDOM() LIMIT 2`,
-      [subject, lvl]
+// ── Check if phone is a registered bot user ───────────────────────────────────
+async function getBotUser(phone) {
+  try {
+    const clean = phone.replace('whatsapp:', '').replace(/[^0-9+]/g, '');
+    const r = await db.pool.query(
+      `SELECT * FROM bot_users WHERE phone=$1 AND active=TRUE LIMIT 1`,
+      [clean]
     );
-    all = all.concat(res.rows);
-  }
-  return all;
+    return r.rows[0] || null;
+  } catch(e) { return null; }
 }
 
-// ── Ops notifications ─────────────────────────────────────────────────────────
-async function notifyOpsTeam(req, schoolName, session) {
-  const ops = await db.getOpsTeam();
-  if (!ops.length) { console.warn('⚠️ No ops team members found'); return; }
-  const msg =
-    `🎓 *TAKMIL Advancement Request*\n\n` +
-    `🏫 School: ${schoolName}\n` +
-    `📚 Subject: ${session.subject}\n` +
-    `🎯 Level: ${session.level} → ${session.level + 1}\n` +
-    `📊 Cohort Score: ${req.score_pct}%\n` +
-    `👥 Students Assessed: ${req.students_count || 0}\n` +
-    `✅ Passed: ${req.students_passed || 0}\n` +
-    `✅ Threshold: ${PASS_THRESHOLD}%\n\n` +
-    `To *approve*, reply:\n*APPROVE ${req.id}*\n\n` +
-    `To *reject*, reply:\n*REJECT ${req.id} <reason>*`;
-  for (const o of ops) await sendWhatsApp(o.phone, msg);
+// ── Fetch live data header (shown on every response) ─────────────────────────
+async function getDataHeader() {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const schools    = await db.pool.query(`SELECT COUNT(*) AS c FROM schools`);
+    const students   = await db.pool.query(`SELECT COUNT(*) AS c FROM students_register`);
+    const attendance = await db.pool.query(`SELECT COUNT(DISTINCT school_identifier) AS c FROM daily_feedback WHERE report_date=$1`, [today]);
+    const tested     = await db.pool.query(`SELECT COUNT(*) AS c FROM student_assessments WHERE completed_at >= NOW() - INTERVAL '7 days'`);
+    return {
+      date:       today,
+      schools:    parseInt(schools.rows[0]?.c    || 0),
+      students:   parseInt(students.rows[0]?.c   || 0),
+      attendance: parseInt(attendance.rows[0]?.c || 0),
+      tested:     parseInt(tested.rows[0]?.c     || 0),
+    };
+  } catch(e) { return { date: new Date().toISOString().split('T')[0], schools: 0, students: 0, attendance: 0, tested: 0 }; }
 }
 
-async function notifyTeacher(phone, decision, level, subject, reason) {
-  if (decision === 'APPROVED') {
-    await sendWhatsApp(phone,
-      `✅ *Advancement Approved!*\n\n` +
-      `Cohort approved: *Level ${level}* → *Level ${level + 1}* in *${subject}*.\n\n` +
-      `A 7-day check-in has been scheduled. Keep up the great work! 🌟`
-    );
-  } else {
-    await sendWhatsApp(phone,
-      `ℹ️ *Advancement Not Approved*\n\n` +
-      `Level ${level} ${subject} request was not approved.\n` +
-      `${reason ? `Reason: ${reason}\n` : ''}` +
-      `Continue practice and request a re-assessment. 💪`
-    );
-  }
+function formatDataHeader(h) {
+  return `📅 ${h.date} | 🏫 ${h.schools} schools | 👥 ${h.students} students | ✅ ${h.attendance} submissions today | 📝 ${h.tested} tested this week`;
 }
 
-// ── Registration APPROVE/REJECT ───────────────────────────────────────────────
-async function handleRegistrationCommand(phone, text) {
-  const parts  = text.split(' ');
-  const action = parts[0].toUpperCase();
-  const targetPhone = parts[1]?.trim();
-
-  if (!targetPhone) return null;
-  if (!targetPhone.replace('+','').match(/^[0-9]{10,15}$/)) return null;
-
-  const digits       = p => (p||'').replace(/[^0-9]/g,'');
-  const adminDigits  = digits(process.env.ADMIN_PHONE || '16024305897');
-  const callerDigits = digits(phone);
-  if (callerDigits !== adminDigits) {
-    console.log('Non-admin APPROVE attempt:', phone, 'vs admin:', adminDigits);
-    return null;
-  }
+// ── Fetch role-specific data for Claude context ───────────────────────────────
+async function fetchRoleData(user, command) {
+  const today = new Date().toISOString().split('T')[0];
+  const data  = {};
 
   try {
-    const t1 = targetPhone.startsWith('+') ? targetPhone : '+' + targetPhone;
-    const t2 = targetPhone.replace('+','');
-
-    const reg = await db.pool.query(
-      `SELECT * FROM pending_registrations
-       WHERE (phone=$1 OR phone=$2) AND status='pending' LIMIT 1`,
-      [t1, t2]
-    );
-    if (!reg.rows.length) return `❌ No pending request found for ${targetPhone}. Check DBeaver: pending_registrations table.`;
-    const r = reg.rows[0];
-
-    if (action === 'APPROVE') {
-      await db.pool.query(
-        `INSERT INTO bot_users (phone,name,role,region,province,notes)
-         VALUES ($1,$2,$3,$4,$5,$6)
-         ON CONFLICT (phone) DO UPDATE SET
-           name=EXCLUDED.name, role=EXCLUDED.role, active=TRUE`,
-        [r.phone, r.name, r.role, r.region||null, r.province||null, 'EmpID:'+r.employee_id]
-      );
-      await db.pool.query(
-        `UPDATE pending_registrations
-         SET status='approved', reviewed_at=NOW(), reviewed_by=$1
-         WHERE phone=$2`,
-        [phone, r.phone]
-      );
-      try {
-        await sendWhatsApp('whatsapp:'+r.phone,
-          '✅ *Access Approved!*\n\nWelcome ' + r.name + '!\n' +
-          'Open the PIN Generator:\nhttps://takmil-bot-production-0f51.up.railway.app/pin-generator\n\n' +
-          'Login with your phone number.\nDefault password: takmil123'
-        );
-      } catch(e){ console.log('Notify user error:', e.message); }
-      return '✅ ' + r.name + ' approved as ' + r.role + '. They have been notified.';
-    } else {
-      await db.pool.query(
-        `UPDATE pending_registrations SET status='rejected', reviewed_at=NOW() WHERE phone=$1`,
-        [r.phone]
-      );
-      try {
-        await sendWhatsApp('whatsapp:'+r.phone,
-          '❌ Your TAKMIL access request was not approved. Please contact your supervisor.'
-        );
-      } catch(e){}
-      return '❌ ' + r.name + ' rejected and notified.';
+    if (user.role === 'leadership') {
+      const byProvince = await db.pool.query(`SELECT province, COUNT(*) AS schools FROM schools GROUP BY province ORDER BY schools DESC`);
+      const assessments= await db.pool.query(`SELECT subject, ROUND(AVG(score_pct),1) AS avg_score, COUNT(*) AS total FROM assessments GROUP BY subject ORDER BY subject`);
+      const advanced   = await db.pool.query(`SELECT COUNT(*) AS c FROM advancement_requests WHERE status='APPROVED'`);
+      data.byProvince  = byProvince.rows;
+      data.assessments = assessments.rows;
+      data.advanced    = parseInt(advanced.rows[0]?.c || 0);
     }
+
+    if (user.role === 'ops') {
+      const missing = await db.pool.query(`
+        SELECT s.name, s.identifier, s.region FROM schools s
+        WHERE s.identifier IS NOT NULL
+          AND s.identifier NOT IN (
+            SELECT school_identifier FROM daily_feedback WHERE report_date=$1
+          ) LIMIT 20`, [today]);
+      const readyToAdvance = await db.pool.query(`
+        SELECT cl.school_identifier, cl.current_level, cl.subject
+        FROM cohort_levels cl
+        JOIN (
+          SELECT school_id, level, subject, AVG(score_pct) AS avg_score
+          FROM assessments WHERE passed=TRUE
+          GROUP BY school_id, level, subject
+        ) a ON a.school_id=(SELECT id FROM schools WHERE identifier=cl.school_identifier LIMIT 1)
+          AND a.level=cl.current_level AND a.subject=cl.subject
+        WHERE a.avg_score >= 80 LIMIT 10`).catch(() => ({ rows: [] }));
+      const flagged = await db.pool.query(`SELECT COUNT(*) AS c FROM daily_feedback WHERE report_date=$1 AND photo_flag IS NOT NULL`, [today]);
+      const flaggedLessons = await db.pool.query(`SELECT COUNT(*) AS c FROM lessons WHERE flagged=TRUE AND DATE(start_time)=$1`, [today]);
+      data.missingSchools  = missing.rows;
+      data.readyToAdvance  = readyToAdvance.rows;
+      data.flaggedPhotos   = parseInt(flagged.rows[0]?.c || 0);
+      data.flaggedLessons  = parseInt(flaggedLessons.rows[0]?.c || 0);
+    }
+
+    if (user.role === 'me') {
+      const scores = await db.pool.query(`SELECT subject, level, ROUND(AVG(score_pct),1) AS avg, COUNT(*) AS total, SUM(CASE WHEN passed THEN 1 ELSE 0 END) AS passed FROM assessments GROUP BY subject,level ORDER BY subject,level`);
+      const weakest= await db.pool.query(`SELECT subject, level, ROUND(AVG(score_pct),1) AS avg FROM assessments GROUP BY subject,level ORDER BY avg ASC LIMIT 5`);
+      const weekly = await db.pool.query(`SELECT COUNT(*) AS c FROM student_assessments WHERE completed_at >= NOW() - INTERVAL '7 days'`);
+      data.scores  = scores.rows;
+      data.weakest = weakest.rows;
+      data.weeklyAssessed = parseInt(weekly.rows[0]?.c || 0);
+    }
+
+    if (user.role === 'hr') {
+      const lessons = await db.pool.query(`SELECT COUNT(*) AS c, AVG(actual_duration) AS avg_dur, SUM(CASE WHEN flagged THEN 1 ELSE 0 END) AS flagged FROM lessons WHERE DATE(start_time)=$1`, [today]);
+      const shortest= await db.pool.query(`SELECT teacher_name, school_name, actual_duration, coverage_pct FROM lessons WHERE DATE(start_time)=$1 ORDER BY actual_duration ASC LIMIT 5`, [today]);
+      data.lessonsToday = lessons.rows[0];
+      data.shortestLessons = shortest.rows;
+    }
+
+    if (user.role === 'coordinator' || user.role === 'school_coordinator') {
+      const regionFilter = user.region ? `AND s.region=$1` : '';
+      const params = user.region ? [user.region, today] : [today];
+      const mySchools = await db.pool.query(`
+        SELECT s.name, s.identifier,
+          CASE WHEN df.id IS NOT NULL THEN 'submitted' ELSE 'missing' END AS status
+        FROM schools s
+        LEFT JOIN daily_feedback df ON df.school_identifier=s.identifier AND df.report_date=$${params.length}
+        WHERE s.identifier IS NOT NULL ${user.region ? `AND s.region=$1` : ''}
+        LIMIT 30`, params);
+      const myScores = await db.pool.query(`
+        SELECT a.subject, ROUND(AVG(a.score_pct),1) AS avg_score, COUNT(*) AS total
+        FROM assessments a
+        JOIN schools s ON s.id=a.school_id
+        WHERE 1=1 ${user.region ? `AND s.region='${user.region}'` : ''}
+        GROUP BY a.subject ORDER BY a.subject`);
+      data.mySchools = mySchools.rows;
+      data.myScores  = myScores.rows;
+    }
+
+  } catch(e) { console.log('fetchRoleData error:', e.message); }
+
+  return data;
+}
+
+// ── Role menu messages ────────────────────────────────────────────────────────
+function getRoleMenu(role) {
+  const menus = {
+    leadership:
+      `👑 *Leadership Commands*\n\nSUMMARY — overall stats\nPROVINCE — compare provinces\nGRADUATES — graduation pipeline\nGROWTH — month over month\n\nOr ask any question in plain English`,
+    ops:
+      `⚙️ *Ops Commands*\n\nPENDING — what needs action today\nATTENDANCE — who hasn't submitted\nADVANCE — schools ready to move up\nFLAGS — photo/lesson flags\n\nOr ask any question in plain English`,
+    me:
+      `📊 *M&E Commands*\n\nSCORES — assessment scores\nWEAK — lowest performing areas\nTRENDS — score trends\n\nOr ask any question in plain English`,
+    hr:
+      `👩‍💼 *HR Commands*\n\nTEACHERS — teacher activity\nCOMPLIANCE — lesson compliance\n\nOr ask any question in plain English`,
+    coordinator:
+      `🗺️ *Coordinator Commands*\n\nATTENDANCE — your region status\nSCORES — your region scores\n\nOr ask any question in plain English`,
+    school_coordinator:
+      `🏫 *School Coordinator Commands*\n\nATTENDANCE — your schools today\nSCORES — assessment results\n\nOr ask any question in plain English`,
+  };
+  return menus[role] || `Send MENU to see your commands.`;
+}
+
+// ── Main AI handler ───────────────────────────────────────────────────────────
+async function handleBotUserMessage(user, text) {
+  const upper = text.trim().toUpperCase();
+
+  // MENU command
+  if (upper === 'MENU' || upper === 'HELP' || upper === 'START') {
+    return getRoleMenu(user.role);
+  }
+
+  // Fetch live data
+  const header = await getDataHeader();
+  const headerText = formatDataHeader(header);
+  const roleData = await fetchRoleData(user, upper);
+
+  // Build Claude prompt
+  const prompt = `You are the TAKMIL WhatsApp assistant. Answer the user's question using ONLY the real data provided below.
+
+STRICT RULES:
+1. NEVER invent numbers — if data is missing, say "no data yet"
+2. Keep response under 300 characters (WhatsApp friendly)
+3. Use *bold* for key numbers
+4. End with one action item or suggestion
+5. Always reference actual numbers from the data
+
+USER ROLE: ${user.role}
+USER NAME: ${user.name || 'Team Member'}
+${user.region ? `USER REGION: ${user.region}` : ''}
+
+LIVE DATA:
+${JSON.stringify({ header, roleData }, null, 2)}
+
+USER QUESTION: ${text}
+
+Respond in plain English. Start directly with the answer — no greeting needed.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data   = await resp.json();
+    const answer = data.content?.[0]?.text || 'Unable to generate response. Please try again.';
+
+    return `${headerText}\n\n${answer}`;
   } catch(e) {
-    console.error('handleRegistrationCommand error:', e.message);
-    return '❌ Error processing request: ' + e.message;
+    console.log('AI chatbot error:', e.message);
+    return `${headerText}\n\n❌ Could not process your question. Please try again.`;
   }
 }
 
-// ── Main message router ───────────────────────────────────────────────────────
-async function handleMessage(rawPhone, incomingText) {
-  const phone = rawPhone.replace('whatsapp:', '');
-  const text  = (incomingText || '').trim();
-  const upper = text.toUpperCase();
-
-  if (upper === 'RESET' || upper === 'START OVER') {
-    await db.clearSession(phone);
-    return (
-      `🔄 Session cleared.\n\n` +
-      `Welcome to *TAKMIL Assessment Bot*! 🌟\n\n` +
-      `Please enter your *PIN* to begin.`
-    );
-  }
-
-  if (upper.startsWith('APPROVE ') || upper.startsWith('REJECT ')) {
-    try {
-      const regResult = await handleRegistrationCommand(phone, upper);
-      if (regResult) return regResult;
-    } catch(e) { console.log('Reg command error:', e.message); }
-  }
-
-  const isOps    = await db.isOpsPhone(phone);
-  const isOpsCmd = upper.startsWith('APPROVE') || upper.startsWith('REJECT') ||
-                   upper === 'PENDING' || upper === 'STATS' || upper === 'OPS HELP';
-  if (isOps && isOpsCmd) return handleOpsMessage(phone, text, upper);
-
-  let session = await db.getSession(phone);
-  if (!session) {
-    await db.upsertSession(phone, { state: STATE.AWAITING_PIN });
-    session = await db.getSession(phone);
-  }
-
-  if (upper === 'HELP') {
-    return (
-      `*TAKMIL Bot — Help*\n\n` +
-      `📌 Enter your *PIN* to start\n` +
-      `📌 *RESET* — Clear session\n` +
-      `📌 *STATUS* — View progress\n` +
-      `📌 *DONE* — Finish session after last student\n\n` +
-      `During assessment reply *A*, *B*, *C*, or *D*`
-    );
-  }
-
-  if (upper === 'STATUS') {
-    if (!session || session.state === STATE.AWAITING_PIN) {
-      return `📋 No active session. Please enter your PIN.`;
-    }
-    const meta = parseAnswers(session.answers);
-    return (
-      `📋 *Current Session*\n` +
-      `Subject: ${session.subject} | Level: ${session.level}\n` +
-      `Progress: Q${session.current_index}/${meta.length}\n` +
-      `State: ${session.state}`
-    );
-  }
-
-  switch (session.state) {
-    case STATE.AWAITING_PIN:          return handlePinEntry(phone, text);
-    case STATE.CONFIRMING_SESSION:    return handleConfirmation(phone, text, session);
-    case STATE.AWAITING_STUDENT_NAME: return handleStudentName(phone, text, session);
-    case STATE.IN_ASSESSMENT:         return handleAnswer(phone, text, session);
-    case STATE.IN_FINAL_ASSESSMENT:   return handleFinalAnswer(phone, text, session);
-    case STATE.STUDENT_COMPLETE:      return handleStudentComplete(phone, text, session);
-    case STATE.SESSION_COMPLETE:
-      return `✅ Session complete.\n\nSend *RESET* to start a new session.`;
-    default:
-      await db.clearSession(phone);
-      return `Something went wrong. Please enter your PIN to start fresh.`;
-  }
-}
-
-// ── PIN entry ─────────────────────────────────────────────────────────────────
-async function handlePinEntry(phone, text) {
-  if (!text || text.length < 4) {
-    return `👋 Welcome to *TAKMIL Assessment Bot*!\n\nPlease enter your *6-character PIN* to begin.`;
-  }
-
-  const pin = await db.validatePin(text);
-  if (!pin) {
-    return `❌ *Invalid or expired PIN.*\n\nPlease check your PIN and try again. PINs are valid for 24 hours.`;
-  }
-
-  if (parseInt(pin.level) === 0) {
-    await db.upsertSession(phone, {
-      state:               STATE.CONFIRMING_SESSION,
-      pin_id:              pin.id,
-      school_id:           pin.school_id,
-      level:               0,
-      subject:             pin.subject,
-      is_final_assessment: true,
-    });
-    return (
-      `✅ *PIN Accepted!*\n\n` +
-      `📋 *FINAL ASSESSMENT*\n` +
-      `🏫 School: ${pin.school_name}\n` +
-      `📚 Subject: ${pin.subject}\n` +
-      `🎯 Covers: All Levels (L1–L11)\n` +
-      `📝 Questions: 22 (2 per level)\n\n` +
-      `Reply *YES* to begin or *NO* to cancel.`
-    );
-  }
-
-  await db.upsertSession(phone, {
-    state:     STATE.CONFIRMING_SESSION,
-    pin_id:    pin.id,
-    school_id: pin.school_id,
-    level:     pin.level,
-    subject:   pin.subject,
-  });
-
-  return (
-    `✅ *PIN Accepted!*\n\n` +
-    `📋 *Session Details:*\n` +
-    `🏫 School: ${pin.school_name}\n` +
-    `📚 Subject: ${pin.subject}\n` +
-    `🎯 Level: ${pin.level}\n` +
-    `👥 Cohort Size: ${pin.cohort_size || 'Not specified'}\n\n` +
-    `Each student will answer *${QUESTIONS_PER_SESSION} questions* individually.\n\n` +
-    `Reply *YES* to begin or *NO* to cancel.`
-  );
-}
-
-// ── Session confirmation ──────────────────────────────────────────────────────
-async function handleConfirmation(phone, text, session) {
-  const upper = text.toUpperCase();
-  if (upper === 'NO' || upper === 'CANCEL') {
-    await db.clearSession(phone);
-    return `Session cancelled. Send your PIN when ready.`;
-  }
-  if (!['YES', 'START', 'BEGIN'].includes(upper)) {
-    return `Please reply *YES* to start or *NO* to cancel.`;
-  }
-
-  await db.activatePin(session.pin_id);
-
-  await db.pool.query(`
-    CREATE TABLE IF NOT EXISTS student_assessments (
-      id SERIAL PRIMARY KEY,
-      pin_id INTEGER REFERENCES pins(id),
-      school_id INTEGER REFERENCES schools(id),
-      teacher_phone VARCHAR(20),
-      student_name VARCHAR(100) NOT NULL,
-      level INTEGER NOT NULL,
-      subject VARCHAR(20) NOT NULL,
-      total_questions INTEGER DEFAULT 10,
-      correct_answers INTEGER DEFAULT 0,
-      score_pct NUMERIC(5,2) DEFAULT 0,
-      passed BOOLEAN DEFAULT FALSE,
-      answers_detail JSONB,
-      recommendation TEXT,
-      completed_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
-
-  await db.pool.query(`
-    UPDATE sessions SET
-      state = $1,
-      answers = '[]'::jsonb,
-      score = 0,
-      current_index = 0,
-      updated_at = NOW()
-    WHERE phone = $2
-  `, [STATE.AWAITING_STUDENT_NAME, phone]);
-
-  return (
-    `🚀 *Session Started!*\n` +
-    `${session.subject} | ${parseInt(session.level) === 0 ? 'Final Assessment' : 'Level ' + session.level}\n\n` +
-    `👤 *Enter the name of Student 1:*\n\n` +
-    `_Type the student's full name and send_`
-  );
-}
-
-// ── Student name entry ────────────────────────────────────────────────────────
-async function handleStudentName(phone, text, session) {
-  const upper = text.toUpperCase();
-  if (upper === 'DONE' || upper === 'FINISH' || upper === 'END') {
-    return await finishSession(phone, session);
-  }
-
-  const studentName = text.trim();
-  if (studentName.length < 2) {
-    return `Please enter the student's full name (at least 2 characters).`;
-  }
-
-  if (session.is_final_assessment || parseInt(session.level) === 0) {
-    const finalQs = await loadFinalAssessmentQuestions(session.subject);
-    if (!finalQs || finalQs.length < 22) {
-      return `⚠️ Final Assessment questions not found. Please import the Final Assessment xlsx first.`;
-    }
-    const shuffled = finalQs.map(shuffleOptions);
-    const answersPayload = shuffled.map(q => ({
-      id:            q.question_id || q.id,
-      level:         q.level,
-      question_text: q.q_text_english || q.question_text || 'Question not available',
-      option_a: q.option_a, option_b: q.option_b,
-      option_c: q.option_c, option_d: q.option_d,
-      correct: q.shuffled_correct || q.correct_option || 'A',
-      chosen: null,
-    }));
-
-    await db.pool.query(`
-      UPDATE sessions SET
-        state         = $1,
-        current_index = 0,
-        answers       = $2::jsonb,
-        score         = 0,
-        updated_at    = NOW()
-      WHERE phone = $3
-    `, [STATE.IN_FINAL_ASSESSMENT, JSON.stringify(answersPayload), phone]);
-
-    await db.pool.query(`
-      INSERT INTO student_assessments
-        (pin_id, school_id, teacher_phone, student_name, level, subject, answers_detail)
-      VALUES ($1,$2,$3,$4,0,$5,'[]'::jsonb)
-    `, [session.pin_id, session.school_id, phone, studentName, session.subject]);
-
-    const q1 = answersPayload[0];
-    return (
-      `👤 *Student: ${studentName}*\n` +
-      `📋 *FINAL ASSESSMENT — ${session.subject}*\n` +
-      `22 questions across all levels\n\n` +
-      `📝 *Question 1 of 22* _(Level ${q1.level})_\n\n` +
-      `${q1.question_text}\n\n` +
-      `A) ${q1.option_a}\nB) ${q1.option_b}\nC) ${q1.option_c}\nD) ${q1.option_d}\n\n` +
-      `_Reply with A, B, C, or D_`
-    );
-  }
-
-  const questions = await db.getRandomQuestions(session.level, session.subject, QUESTIONS_PER_SESSION);
-  if (!questions || questions.length < QUESTIONS_PER_SESSION) {
-    return `⚠️ Not enough questions for Level ${session.level} ${session.subject}. Contact your Ops coordinator.`;
-  }
-
-  const shuffledQuestions = questions.map(shuffleOptions);
-  const answersPayload = shuffledQuestions.map(q => ({
-    id:            q.question_id || q.id,
-    question_text: q.q_text_english || q.q_text_urdu || q.question_text || 'Question not available',
-    option_a: q.option_a, option_b: q.option_b,
-    option_c: q.option_c, option_d: q.option_d,
-    correct: q.shuffled_correct || q.correct_option || q.correct_answer || 'A',
-    chosen:  null,
-  }));
-
-  await db.pool.query(`
-    UPDATE sessions SET
-      state         = $1,
-      current_index = 0,
-      answers       = $2::jsonb,
-      score         = 0,
-      updated_at    = NOW()
-    WHERE phone = $3
-  `, [STATE.IN_ASSESSMENT, JSON.stringify(answersPayload), phone]);
-
-  await db.pool.query(`UPDATE sessions SET started_at = NOW() WHERE phone = $1`, [phone]);
-  await db.pool.query(`UPDATE sessions SET subject = $1 WHERE phone = $2`, [session.subject, phone]);
-  await db.pool.query(`UPDATE sessions SET question_ids = $1::integer[] WHERE phone = $2`, [[studentName.charCodeAt(0)], phone]);
-
-  await db.pool.query(`
-    INSERT INTO student_assessments
-      (pin_id, school_id, teacher_phone, student_name, level, subject, answers_detail)
-    VALUES ($1, $2, $3, $4, $5, $6, '[]'::jsonb)
-  `, [session.pin_id, session.school_id, phone, studentName, session.level, session.subject]);
-
-  return (
-    `👤 *Student: ${studentName}*\n\n` +
-    `📝 *Question 1 of ${QUESTIONS_PER_SESSION}*\n\n` +
-    `${answersPayload[0].question_text}\n\n` +
-    `A) ${answersPayload[0].option_a}\n` +
-    `B) ${answersPayload[0].option_b}\n` +
-    `C) ${answersPayload[0].option_c}\n` +
-    `D) ${answersPayload[0].option_d}\n\n` +
-    `_Reply with A, B, C, or D_`
-  );
-}
-
-// ── Answer handler ────────────────────────────────────────────────────────────
-async function handleAnswer(phone, text, session) {
-  const answers = parseAnswers(session.answers);
-  const total   = answers.length;
-  const idx     = session.current_index;
-
-  const answer = normalizeAnswer(text);
-  if (!answer) {
-    return `Please reply *A*, *B*, *C*, or *D*.\n\n_Question ${idx + 1} of ${total} is still waiting._`;
-  }
-
-  answers[idx].chosen = answer;
-  const isCorrect = answer === answers[idx].correct;
-  const newScore   = (session.score || 0) + (isCorrect ? 1 : 0);
-  const newIndex   = idx + 1;
-
-  if (newIndex < total) {
-    await db.pool.query(`
-      UPDATE sessions SET current_index=$1, answers=$2::jsonb, score=$3, updated_at=NOW()
-      WHERE phone=$4
-    `, [newIndex, JSON.stringify(answers), newScore, phone]);
-
-    const next = answers[newIndex];
-    return (
-      `✅ *Answer recorded.*\n\n` +
-      `📝 *Question ${newIndex + 1} of ${total}*\n\n` +
-      `${next.question_text}\n\n` +
-      `A) ${next.option_a}\nB) ${next.option_b}\nC) ${next.option_c}\nD) ${next.option_d}\n\n` +
-      `_Reply with A, B, C, or D_`
-    );
-  }
-
-  const scorePct = Math.round((newScore / total) * 100);
-  const passed   = scorePct >= PASS_THRESHOLD;
-  const recommendation = passed
-    ? `✅ Ready for Level ${session.level + 1}`
-    : `📚 Needs re-assessment at Level ${session.level}`;
-
-  await db.pool.query(`
-    UPDATE sessions SET state=$1, current_index=$2, answers=$3::jsonb, score=$4, updated_at=NOW()
-    WHERE phone=$5
-  `, [STATE.STUDENT_COMPLETE, newIndex, JSON.stringify(answers), newScore, phone]);
-
-  const finalSession = await db.getSession(phone);
-  await db.pool.query(`
-    UPDATE student_assessments SET
-      correct_answers=$1, score_pct=$2, passed=$3,
-      answers_detail=$4::jsonb, recommendation=$5, completed_at=NOW()
-    WHERE id=(SELECT id FROM student_assessments WHERE teacher_phone=$6 ORDER BY id DESC LIMIT 1)
-  `, [newScore, scorePct, passed, JSON.stringify(finalSession.answers || answers), recommendation, phone]);
-
-  const studentRec = await db.pool.query(`
-    SELECT student_name FROM student_assessments WHERE teacher_phone=$1 ORDER BY id DESC LIMIT 1
-  `, [phone]);
-  const studentName = studentRec.rows[0]?.student_name || 'Student';
-
-  const countRec = await db.pool.query(`
-    SELECT COUNT(*) AS cnt FROM student_assessments WHERE teacher_phone=$1 AND pin_id=$2
-  `, [phone, session.pin_id]);
-  const studentsCount = parseInt(countRec.rows[0]?.cnt || 0);
-
-  return (
-    `🎉 *${studentName} — Complete!*\n\n` +
-    `Score: *${newScore}/${total}* (${scorePct}%)\n` +
-    `Result: ${recommendation}\n\n` +
-    `─────────────────\n` +
-    `👥 Students assessed: *${studentsCount}*\n\n` +
-    `Type the *next student's name* to continue\n` +
-    `or send *DONE* to finish the session.`
-  );
-}
-
-// ── Final Assessment answer handler ──────────────────────────────────────────
-async function handleFinalAnswer(phone, text, session) {
-  const answers = parseAnswers(session.answers);
-  const total   = answers.length;
-  const idx     = session.current_index;
-
-  const answer = normalizeAnswer(text);
-  if (!answer) {
-    return `Please reply *A*, *B*, *C*, or *D*.\n\n_Question ${idx + 1} of ${total} is still waiting._`;
-  }
-
-  answers[idx].chosen  = answer;
-  const isCorrect      = answer === answers[idx].correct;
-  const newScore       = (session.score || 0) + (isCorrect ? 1 : 0);
-  const newIndex       = idx + 1;
-
-  if (newIndex < total) {
-    await db.pool.query(`
-      UPDATE sessions SET current_index=$1, answers=$2::jsonb, score=$3, updated_at=NOW()
-      WHERE phone=$4
-    `, [newIndex, JSON.stringify(answers), newScore, phone]);
-
-    const next = answers[newIndex];
-    return (
-      `${isCorrect ? '✅' : '❌'} *Answer recorded.*\n\n` +
-      `📝 *Question ${newIndex + 1} of ${total}* _(Level ${next.level})_\n\n` +
-      `${next.question_text}\n\n` +
-      `A) ${next.option_a}\nB) ${next.option_b}\nC) ${next.option_c}\nD) ${next.option_d}\n\n` +
-      `_Reply with A, B, C, or D_`
-    );
-  }
-
-  const scorePct = Math.round((newScore / total) * 100);
-  const passed   = scorePct >= PASS_THRESHOLD;
-
-  const levelScores = {};
-  for (const a of answers) {
-    if (!levelScores[a.level]) levelScores[a.level] = { score: 0, total: 0 };
-    levelScores[a.level].total++;
-    if (a.chosen === a.correct) levelScores[a.level].score++;
-  }
-  let breakdown = '';
-  for (let lvl = 1; lvl <= 11; lvl++) {
-    const ls  = levelScores[lvl] || { score: 0, total: 2 };
-    const bar = ls.score === 2 ? '🟢' : ls.score === 1 ? '🟡' : '🔴';
-    breakdown += `${bar} L${lvl}: ${ls.score}/${ls.total}\n`;
-  }
-
-  await db.pool.query(`
-    UPDATE sessions SET state=$1, current_index=$2, answers=$3::jsonb, score=$4, updated_at=NOW()
-    WHERE phone=$5
-  `, [STATE.STUDENT_COMPLETE, newIndex, JSON.stringify(answers), newScore, phone]);
-
-  const recommendation = passed ? `✅ Completed Final Assessment` : `📚 Needs review`;
-  await db.pool.query(`
-    UPDATE student_assessments SET
-      correct_answers=$1, score_pct=$2, passed=$3,
-      answers_detail=$4::jsonb, recommendation=$5, completed_at=NOW()
-    WHERE id=(SELECT id FROM student_assessments WHERE teacher_phone=$6 ORDER BY id DESC LIMIT 1)
-  `, [newScore, scorePct, passed, JSON.stringify(answers), recommendation, phone]);
-
-  await db.pool.query(`
-    INSERT INTO assessments (pin_id, school_id, teacher_phone, level, subject,
-      total_questions, correct_answers, score_pct, passed, answers_detail, completed_at)
-    VALUES ($1,$2,$3,0,$4,$5,$6,$7,$8,$9::jsonb,NOW())
-  `, [session.pin_id, session.school_id, phone, session.subject,
-      total, newScore, scorePct, passed, JSON.stringify(levelScores)]);
-
-  const studentRec = await db.pool.query(
-    `SELECT student_name FROM student_assessments WHERE teacher_phone=$1 ORDER BY id DESC LIMIT 1`,
-    [phone]
-  );
-  const studentName = studentRec.rows[0]?.student_name || 'Student';
-
-  const countRec = await db.pool.query(
-    `SELECT COUNT(*) AS cnt FROM student_assessments WHERE teacher_phone=$1 AND pin_id=$2`,
-    [phone, session.pin_id]
-  );
-  const studentsCount = parseInt(countRec.rows[0]?.cnt || 0);
-
-  return (
-    `🎓 *${studentName} — FINAL ASSESSMENT COMPLETE!*\n\n` +
-    `Score: *${newScore}/${total} (${scorePct}%)*\n` +
-    `Result: *${passed ? '✅ PASSED' : '❌ NEEDS REVIEW'}*\n\n` +
-    `📊 *Level Breakdown:*\n${breakdown}\n` +
-    `🟢 Strong  🟡 Partial  🔴 Needs Work\n\n` +
-    `─────────────────\n` +
-    `👥 Students assessed: *${studentsCount}*\n\n` +
-    `Type the *next student's name* to continue\n` +
-    `or send *DONE* to finish.`
-  );
-}
-
-// ── Student complete state ────────────────────────────────────────────────────
-async function handleStudentComplete(phone, text, session) {
-  const upper = text.toUpperCase();
-  if (upper === 'DONE' || upper === 'FINISH' || upper === 'END') {
-    return await finishSession(phone, session);
-  }
-  await db.pool.query(`UPDATE sessions SET state=$1, updated_at=NOW() WHERE phone=$2`,
-    [STATE.AWAITING_STUDENT_NAME, phone]);
-  const updatedSession = await db.getSession(phone);
-  return handleStudentName(phone, text, updatedSession);
-}
-
-// ── Finish session ────────────────────────────────────────────────────────────
-async function finishSession(phone, session) {
-  const studentsRec = await db.pool.query(`
-    SELECT sa.*, a.answers as session_answers
-    FROM student_assessments sa
-    LEFT JOIN sessions a ON a.phone = $1
-    WHERE sa.teacher_phone = $1 AND sa.pin_id = $2
-    ORDER BY sa.id ASC
-  `, [phone, session.pin_id]);
-
-  const students = studentsRec.rows;
-  if (!students.length) {
-    await db.clearSession(phone);
-    return `No students were assessed. Session ended.\n\nSend your PIN to start a new session.`;
-  }
-
-  const totalStudents  = students.length;
-  const passedStudents = students.filter(s => s.passed).length;
-  const avgScore       = Math.round(students.reduce((sum, s) => sum + parseFloat(s.score_pct), 0) / totalStudents);
-  const cohortPassed   = avgScore >= PASS_THRESHOLD;
-
-  const assessment = await db.saveAssessment({
-    pinId:          session.pin_id,
-    schoolId:       session.school_id,
-    teacherPhone:   phone,
-    level:          session.level,
-    subject:        session.subject,
-    totalQuestions: totalStudents * QUESTIONS_PER_SESSION,
-    correctAnswers: Math.round(avgScore * totalStudents * QUESTIONS_PER_SESSION / 100),
-    scorePct:       avgScore,
-    passed:         cohortPassed,
-    answersDetail:  students,
-  });
-
-  const studentLines = students.map((s, i) =>
-    `${i + 1}. ${s.student_name}: ${s.score_pct}% — ${s.passed ? '✅ Pass' : '📚 Reassess'}`
-  ).join('\n');
-
-  let resultMsg =
-    `📊 *Session Complete!*\n\n` +
-    `🏫 ${session.subject} | Level ${session.level}\n` +
-    `👥 Students: ${totalStudents}\n` +
-    `✅ Passed: ${passedStudents}/${totalStudents}\n` +
-    `📈 Avg Score: ${avgScore}%\n\n` +
-    `*Individual Results:*\n${studentLines}\n\n`;
-
-  if (cohortPassed) {
-    resultMsg += `✅ *Cohort meets the ${PASS_THRESHOLD}% threshold!*\nAdvancement request submitted to Ops.`;
-
-    const req = await db.createAdvancementRequest({
-      assessmentId:   assessment.id,
-      pinId:          session.pin_id,
-      schoolId:       session.school_id,
-      level:          session.level,
-      subject:        session.subject,
-      scorePct:       avgScore,
-      studentsCount:  totalStudents,
-      studentsPassed: passedStudents,
-    });
-
-    const schoolRes  = await db.pool.query('SELECT name FROM schools WHERE id = $1', [session.school_id]);
-    const schoolName = schoolRes.rows[0]?.name || 'Unknown School';
-    await notifyOpsTeam({ ...req, students_count: totalStudents, students_passed: passedStudents }, schoolName, session);
-
-  } else {
-    resultMsg += `📈 Avg score ${PASS_THRESHOLD - avgScore}% below threshold. Re-assessment scheduled in 7 days.`;
-
-    const schedDate = new Date();
-    schedDate.setDate(schedDate.getDate() + 7);
-    await db.pool.query(`
-      INSERT INTO reassessment_schedule (school_id, level, subject, scheduled_date, reason, triggered_by_assessment)
-      VALUES ($1,$2,$3,$4,$5,$6)
-    `, [session.school_id, session.level, session.subject,
-        schedDate.toISOString().split('T')[0],
-        `Avg score ${avgScore}% below ${PASS_THRESHOLD}% threshold`,
-        assessment.id]);
-  }
-
-  await db.pool.query(`
-    UPDATE sessions SET state=$1, completed_at=NOW(), updated_at=NOW() WHERE phone=$2
-  `, [STATE.SESSION_COMPLETE, phone]);
-
-  return resultMsg;
-}
-
-// ── Ops handler ───────────────────────────────────────────────────────────────
-async function handleOpsMessage(phone, text, upper) {
-  const approveMatch = upper.match(/^APPROVE\s+(\d+)$/);
-  if (approveMatch) {
-    const id  = parseInt(approveMatch[1]);
-    const req = await db.getAdvancementRequest(id);
-    if (!req)                     return `❌ Request #${id} not found.`;
-    if (req.status !== 'PENDING') return `ℹ️ Request #${id} is already ${req.status}.`;
-    await db.approveAdvancement(id, phone);
-    const res = await db.pool.query('SELECT teacher_phone FROM assessments WHERE id = $1', [req.assessment_id]);
-    const tp  = res.rows[0]?.teacher_phone;
-    if (tp) await notifyTeacher(tp, 'APPROVED', req.level, req.subject, null);
-    return (
-      `✅ *Approved!*\n\n` +
-      `Request #${id} — ${req.school_name} | ${req.subject} Level ${req.level}→${req.level + 1}\n` +
-      `Teacher notified. 7-day follow-up scheduled.`
-    );
-  }
-
-  const rejectMatch = text.match(/^REJECT\s+(\d+)\s*(.*)/i);
-  if (rejectMatch) {
-    const id     = parseInt(rejectMatch[1]);
-    const reason = rejectMatch[2]?.trim() || 'No reason provided';
-    const req    = await db.getAdvancementRequest(id);
-    if (!req)                     return `❌ Request #${id} not found.`;
-    if (req.status !== 'PENDING') return `ℹ️ Request #${id} is already ${req.status}.`;
-    await db.rejectAdvancement(id, phone, reason);
-    const res = await db.pool.query('SELECT teacher_phone FROM assessments WHERE id = $1', [req.assessment_id]);
-    const tp  = res.rows[0]?.teacher_phone;
-    if (tp) await notifyTeacher(tp, 'REJECTED', req.level, req.subject, reason);
-    return `✅ Request #${id} rejected. Teacher notified.`;
-  }
-
-  if (upper === 'STATS') {
-    const s = await db.getAnalyticsSummary();
-    const studentCount = await db.pool.query('SELECT COUNT(*) AS cnt FROM student_assessments');
-    return (
-      `📊 *TAKMIL Stats*\n\n` +
-      `Assessments: ${s.total_assessments}\n` +
-      `Students Assessed: ${studentCount.rows[0]?.cnt || 0}\n` +
-      `Schools: ${s.schools_assessed}\n` +
-      `Avg Score: ${s.avg_score}%\n` +
-      `Passed: ${s.passed_count} | Below: ${s.failed_count}\n` +
-      `Advancements Approved: ${s.advancements_approved}`
-    );
-  }
-
-  if (upper === 'PENDING') {
-    const res = await db.pool.query(`
-      SELECT ar.id, s.name AS school, ar.subject, ar.level, ar.score_pct
-      FROM advancement_requests ar
-      JOIN schools s ON s.id = ar.school_id
-      WHERE ar.status = 'PENDING'
-      ORDER BY ar.created_at DESC LIMIT 10
-    `);
-    if (!res.rows.length) return `📋 No pending requests.`;
-    return `📋 *Pending:*\n\n` + res.rows.map(r =>
-      `#${r.id} | ${r.school} | ${r.subject} Lvl${r.level} | ${r.score_pct}%`
-    ).join('\n');
-  }
-
-  return `👋 *Ops Commands:*\n\nAPPROVE <id>\nREJECT <id> <reason>\nSTATS\nPENDING`;
-}
-
-// ── Webhook ───────────────────────────────────────────────────────────────────
-router.post('/webhook', async (req, res) => {
-  const { From: from, Body: body, NumMedia, MediaUrl0, MediaContentType0 } = req.body;
-  if (!from) return res.status(400).send('Bad request');
-
-  // Photo messages
-  if (parseInt(NumMedia) > 0 && MediaUrl0 && MediaContentType0?.startsWith('image/')) {
-    console.log(`📸 [${new Date().toISOString()}] Photo from: ${from}`);
-    try {
-      if (body && body.trim().length > 50 && isFeedbackMessage && isFeedbackMessage(body)) {
-        const fb = parseFeedback(body, from);
-        await saveFeedback(fb);
-      }
-      const result = await handleClassPhoto(from, MediaUrl0, MediaContentType0);
-      res.set('Content-Type', 'text/xml');
-      return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(result.message)}</Message></Response>`);
-    } catch(e) {
-      console.log('photo error:', e.message);
-      res.set('Content-Type', 'text/xml');
-      return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>Photo received but could not process. Please try again.</Message></Response>`);
-    }
-  }
-
-  if (body === undefined) return res.status(400).send('Bad request');
-  console.log(`📩 [${new Date().toISOString()}] From: ${from} | Msg: "${body}"`);
-
-  try {
-    // PIN generation via WhatsApp
-    const pinMatch = body.match(/^(?:GENERATE\s+PIN|PIN\s+LEVEL|PIN)\s+(\d+)/i);
-    if (pinMatch) {
-      const level = parseInt(pinMatch[1]);
-      let schoolId = null;
-      try {
-        const sr = await db.pool.query(
-          `SELECT identifier, name FROM schools WHERE teacher_phone=$1 LIMIT 1`,
-          [from.replace('whatsapp:','')]
-        );
-        schoolId = sr.rows[0]?.identifier;
-      } catch(e) {}
-
-      const pinResp = await fetch(`${process.env.BASE_URL || 'http://localhost:' + (process.env.PORT||3000)}/api/assess/generate-pin`, {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ school_identifier: schoolId || from, level, created_by: from })
-      });
-      const pinData = await pinResp.json();
-      const reply = pinData.pin_code
-        ? `🔑 *PIN Generated for Level ${level}*\n\nPIN: *${pinData.pin_code}*\n\nWrite this on the board. Students open:\n📱 ${process.env.APP_URL || 'https://takmil-bot-production-0f51.up.railway.app'}/assess\n\nPIN expires in 24 hours.`
-        : `❌ Error generating PIN: ${pinData.error}`;
-      res.set('Content-Type', 'text/xml');
-      return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(reply)}</Message></Response>`);
-    }
-
-    // Daily feedback report
-    if (isFeedbackMessage && isFeedbackMessage(body)) {
-      const fb = parseFeedback(body, from);
-      await saveFeedback(fb);
-      const subjectList = fb.subjects.map(s => s.subject).filter(Boolean).join(', ');
-      const reply = `✅ Daily report received!\n\nDate: ${fb.report_date}\nPresent: ${fb.present||'—'} / ${fb.total_strength||'—'}\nSubjects: ${subjectList||'—'}\n\nThank you! 📊`;
-      res.set('Content-Type', 'text/xml');
-      return res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(reply)}</Message></Response>`);
-    }
-
-    // Video commands
-    if (typeof handleVideoCommands === 'function') {
-      const handled = await handleVideoCommands(from, body, res);
-      if (handled) return;
-    }
-
-    const reply = await handleMessage(from, body);
-    res.set('Content-Type', 'text/xml');
-    res.send(
-      `<?xml version="1.0" encoding="UTF-8"?>` +
-      `<Response><Message>${escapeXml(reply)}</Message></Response>`
-    );
-  } catch (err) {
-    console.error('❌ Webhook error:', err);
-    res.set('Content-Type', 'text/xml');
-    res.send(
-      `<?xml version="1.0" encoding="UTF-8"?>` +
-      `<Response><Message>Sorry, something went wrong. Please try again.</Message></Response>`
-    );
-  }
-});
-
-module.exports = { router, registerHandlers };
+// ── Export handler to be used in chatbot.js webhook ───────────────────────────
+module.exports = { getBotUser, handleBotUserMessage };
