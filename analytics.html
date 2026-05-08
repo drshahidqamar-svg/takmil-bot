@@ -4,116 +4,149 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TAKMIL — Analytics</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f5f7f5;--bg2:#ffffff;--panel:#f0f4f1;
-  --leaf:#16a34a;--leaf2:#22c55e;--leaf3:#dcfce7;--leaf4:#bbf7d0;
-  --border:#e2ebe5;--border2:#c8dfd0;
-  --text:#1a2e1f;--text2:#4a6b52;--text3:#8aaa90;
-  --amber:#f59e0b;--amber2:#fef9c3;
-  --danger:#ef4444;--danger2:#fee2e2;
-  --blue:#3b82f6;--blue2:#dbeafe;
-  --purple:#8b5cf6;--purple2:#ede9fe;
-  --r:14px;--r2:10px;
-  --shadow:0 2px 12px rgba(0,0,0,0.06);
+  --bg:#f8f7f4;
+  --bg2:#ffffff;
+  --panel:#f5f0e8;
+  --gold:#c9a84c;
+  --gold2:#e8c96c;
+  --gold-dim:#faf5e4;
+  --gold-bdr:#e8d8a0;
+  --border:#e8e0d0;
+  --border2:#d4c4a8;
+  --text:#1e1a14;
+  --text2:#5a4a30;
+  --text3:#a89070;
+  --slate:#1e1a14;
+  --slate2:#2d2618;
+  --green:#059669;
+  --green-dim:#f0fdf4;
+  --blue:#2563eb;
+  --blue-dim:#eff6ff;
+  --purple:#7c3aed;
+  --purple-dim:#f5f3ff;
+  --amber:#d97706;
+  --amber-dim:#fffbeb;
+  --red:#dc2626;
+  --red-dim:#fef2f2;
+  --r:12px;--r2:8px;
 }
 html,body{min-height:100%;background:var(--bg);color:var(--text);
-  font-family:'DM Sans',sans-serif;font-size:14px}
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:14px}
 
-/* HEADER */
-.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;height:56px;box-shadow:0 1px 8px rgba(0,0,0,0.06);
+/* ── HEADER ── */
+.hdr{
+  background:var(--slate);
+  border-bottom:1px solid var(--slate2);
+  padding:0 28px;height:58px;
   display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:20}
-.logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--leaf);letter-spacing:0.3px}
-.logo-sub{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:1px}
-.nav-links{display:flex;gap:8px}
-.nav-link{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;
-  text-decoration:none;color:#9dbfa5;transition:all 0.2s}
-.nav-link:hover,.nav-link.active{background:rgba(34,197,94,0.15);color:#4ade80}
+  position:sticky;top:0;z-index:20
+}
+.logo-wrap{display:flex;align-items:center;gap:12px}
+.logo-icon{
+  width:32px;height:32px;background:var(--gold);
+  border-radius:7px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:900;color:var(--slate);flex-shrink:0
+}
+.logo{font-size:16px;font-weight:800;color:#fff;letter-spacing:-0.3px}
+.logo-sub{font-size:9px;color:#7a6540;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-top:1px}
+.nav-links{display:flex;gap:4px}
+.nav-link{
+  padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;
+  text-decoration:none;color:#7a6540;transition:all 0.15s
+}
+.nav-link:hover{color:#c9a84c;background:rgba(201,168,76,0.1)}
+.nav-link.active{background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3)}
 
-/* DATE CONTROLS */
+/* ── DATE BAR ── */
 .date-bar{
   background:var(--bg2);border-bottom:1px solid var(--border);
-  padding:12px 28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:11px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
 }
-.preset-btns{display:flex;gap:6px}
+.preset-btns{display:flex;gap:5px}
 .preset-btn{
   padding:6px 14px;border:1.5px solid var(--border2);border-radius:20px;
   font-size:12px;font-weight:700;color:var(--text2);background:var(--panel);
-  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;
+  cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all 0.15s;
 }
-.preset-btn:hover{border-color:var(--leaf);color:var(--leaf)}
-.preset-btn.active{background:var(--leaf);color:white;border-color:var(--leaf)}
+.preset-btn:hover{border-color:var(--gold);color:var(--gold)}
+.preset-btn.active{background:var(--gold);color:var(--slate);border-color:var(--gold)}
 .date-sep{color:var(--text3);font-size:12px;font-weight:600}
 .date-inp{
   padding:6px 12px;background:var(--panel);border:1.5px solid var(--border2);
-  border-radius:var(--r2);font-size:12px;color:var(--text);
-  font-family:'DM Sans',sans-serif;outline:none;
+  border-radius:20px;font-size:12px;color:var(--text);
+  font-family:'Plus Jakarta Sans',sans-serif;outline:none;
 }
-.date-inp:focus{border-color:var(--leaf)}
+.date-inp:focus{border-color:var(--gold)}
 .apply-btn{
-  padding:7px 16px;background:var(--leaf);border:none;border-radius:var(--r2);
-  font-size:12px;font-weight:700;color:white;cursor:pointer;
-  font-family:'DM Sans',sans-serif;transition:all 0.2s;
+  padding:7px 18px;background:var(--gold);border:none;border-radius:20px;
+  font-size:12px;font-weight:800;color:var(--slate);cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;transition:all 0.15s;letter-spacing:.2px;
 }
-.apply-btn:hover{background:#15803d}
-.date-range-lbl{font-size:11px;color:var(--text3);margin-left:auto}
+.apply-btn:hover{background:var(--gold2)}
+.date-range-lbl{font-size:11px;color:var(--text3);margin-left:auto;font-family:'DM Mono',monospace}
 
-/* VIEW TABS */
+/* ── VIEW TABS ── */
 .view-tabs{
   background:var(--bg2);border-bottom:1px solid var(--border);
   padding:0 28px;display:flex;gap:0;
 }
 .tab{
-  padding:12px 20px;font-size:13px;font-weight:700;color:var(--text3);
-  cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s;
+  padding:13px 20px;font-size:13px;font-weight:700;color:var(--text3);
+  cursor:pointer;border-bottom:3px solid transparent;transition:all 0.15s;
 }
-.tab:hover{color:var(--text)}
-.tab.active{color:var(--leaf);border-bottom-color:var(--leaf)}
+.tab:hover{color:var(--text2)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
 
-/* BODY */
-.body{padding:20px 28px;max-width:1400px;margin:0 auto}
+/* ── BODY ── */
+.body{padding:24px 28px;max-width:1400px;margin:0 auto}
 
-/* SECTION */
+/* ── SECTION ── */
 .section{margin-bottom:28px}
 .section-title{
-  font-family:'Syne',sans-serif;font-size:15px;font-weight:800;
-  color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;
+  font-size:14px;font-weight:800;color:var(--text);
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;
 }
 .section-sub{font-size:12px;color:var(--text3);font-weight:500;margin-left:4px}
 
-/* SUMMARY CARDS */
-.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+/* ── SUMMARY CARDS ── */
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
 @media(max-width:900px){.summary-grid{grid-template-columns:repeat(3,1fr)}}
-.sum-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--r);
-  padding:16px 20px;box-shadow:var(--shadow)}
-.sum-n{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
-.sum-l{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;
-  letter-spacing:0.6px;margin-top:4px}
-.sum-trend{font-size:11px;font-weight:700;margin-top:6px}
-.trend-up{color:var(--leaf)}
-.trend-dn{color:var(--danger)}
+.sum-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px 20px;border-top:3px solid;
+}
+.sum-n{font-size:28px;font-weight:800;line-height:1;letter-spacing:-0.5px}
+.sum-l{font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.8px;margin-top:6px}
+.sum-sub{font-size:11px;color:var(--text3);margin-top:4px}
 
-/* CHART CARDS */
+/* ── CHART CARDS ── */
 .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
 .chart-row.full{grid-template-columns:1fr}
 @media(max-width:900px){.chart-row{grid-template-columns:1fr}}
-.chart-card{background:var(--bg2);border:1.5px solid var(--border);
-  border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.chart-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);padding:20px;
+}
 .chart-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px}
 .chart-sub{font-size:11px;color:var(--text3);margin-bottom:16px}
 .chart-wrap{position:relative;height:240px}
 
-/* TABLE */
+/* ── TABLE ── */
 .perf-table{width:100%;border-collapse:collapse;font-size:13px}
-.perf-table th{text-align:left;padding:8px 12px;color:var(--text3);
-  font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;
-  background:var(--panel);border-bottom:2px solid var(--border)}
-.perf-table td{padding:10px 12px;border-bottom:1px solid var(--border)}
-.perf-table tr:hover td{background:var(--panel)}
+.perf-table th{
+  text-align:left;padding:10px 14px;color:var(--gold);
+  font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.8px;
+  background:var(--gold-dim);border-bottom:1px solid var(--gold-bdr);
+  font-family:'DM Mono',monospace;
+}
+.perf-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text2)}
+.perf-table tr:hover td{background:var(--gold-dim)}
 .perf-table tr:last-child td{border-bottom:none}
 .rank{
   display:inline-flex;align-items:center;justify-content:center;
@@ -129,49 +162,36 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 .mini-fill{height:100%;border-radius:3px;transition:width 0.5s}
 .pct{font-weight:700;font-size:12px;min-width:36px}
 
-.badge-sm{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px}
-.b-ok{background:var(--leaf3);color:var(--leaf)}
-.b-warn{background:var(--amber2);color:#92400e}
-.b-bad{background:var(--danger2);color:var(--danger)}
+.badge-sm{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.b-ok{background:var(--green-dim);color:var(--green);border:1px solid #bbf7d0}
+.b-warn{background:var(--amber-dim);color:var(--amber);border:1px solid #fde68a}
+.b-bad{background:var(--red-dim);color:var(--red);border:1px solid #fecaca}
 
-/* LOADING */
-.loading-state{text-align:center;padding:60px;color:var(--text3)}
-.spin{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--leaf);
+/* ── LOADING ── */
+.loading-state{text-align:center;padding:80px;color:var(--text3)}
+.spin{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--gold);
   border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* SCHOOL TABLE EXTRAS */
 .school-name-cell{max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.last-seen{font-size:11px;color:var(--text3)}
+.last-seen{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 </style>
 </head>
 <body>
 
-  <!-- Home Button (auto-added) -->
-  <a href="/" style="
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    z-index: 9999;
-    background: #15803D;
-    color: #ffffff;
-    text-decoration: none;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 30px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    opacity: 0.92;
-  ">&#8962; Home</a>
+<a href="/" style="position:fixed;bottom:20px;left:20px;z-index:9999;background:var(--slate);color:var(--gold);text-decoration:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;padding:8px 16px;border-radius:30px;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,.25);border:1px solid rgba(201,168,76,.3)">⌂ Home</a>
 
+<!-- HEADER -->
 <div class="hdr">
-  <div>
-    <div class="logo">TAKMIL Analytics</div>
-    <div class="logo-sub">Performance Dashboard</div>
+  <div class="logo-wrap">
+    <div class="logo-icon">T</div>
+    <div>
+      <div class="logo">TAKMIL Analytics</div>
+      <div class="logo-sub">Performance Dashboard</div>
+    </div>
   </div>
   <div class="nav-links">
     <a class="nav-link" href="/feedback">📋 Feedback</a>
@@ -214,7 +234,7 @@ let currentData = null;
 let currentTab  = 'overview';
 let charts      = {};
 
-// ── Date presets ────────────────────────────────────────────────
+// ── Date presets ─────────────────────────────────────────────────
 function setPreset(p){
   document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
   event.target.classList.add('active');
@@ -243,7 +263,7 @@ function switchTab(tab){
   if(currentData) render(currentData);
 }
 
-// ── Load data ───────────────────────────────────────────────────
+// ── Load data ────────────────────────────────────────────────────
 async function load(){
   const from = document.getElementById('d-from').value;
   const to   = document.getElementById('d-to').value;
@@ -260,7 +280,7 @@ async function load(){
     render(currentData);
   }catch(e){
     document.getElementById('body').innerHTML =
-      `<div class="loading-state"><p style="color:var(--danger)">Error: ${e.message}</p></div>`;
+      `<div class="loading-state"><p style="color:var(--red)">Error: ${e.message}</p></div>`;
   }
 }
 
@@ -269,10 +289,10 @@ function destroyCharts(){
   charts={};
 }
 
-// ── Main render ─────────────────────────────────────────────────
+// ── Main render ──────────────────────────────────────────────────
 function render(d){
   destroyCharts();
-  if(currentTab==='overview') renderOverview(d);
+  if(currentTab==='overview')  renderOverview(d);
   else if(currentTab==='rc')   renderRC(d);
   else if(currentTab==='coord')renderCoord(d);
   else if(currentTab==='schools') renderSchools(d);
@@ -283,35 +303,40 @@ function render(d){
 // ══════════════════════════════════════════════════════
 function renderOverview(d){
   const trend = d.dailyTrend || [];
-  const totalSubs   = trend.reduce((a,r)=>a+parseInt(r.submissions||0),0);
-  const totalSchools= parseInt(trend[0]?.total_schools||0);
-  const avgAttend   = trend.length ? Math.round(trend.reduce((a,r)=>a+parseFloat(r.avg_attendance||0),0)/trend.length) : 0;
-  const avgTech     = trend.length ? Math.round(trend.reduce((a,r)=>a+parseInt(r.tech_count||0),0)/trend.length) : 0;
-  const avgAssembly = trend.length ? Math.round(trend.reduce((a,r)=>a+parseInt(r.assembly_count||0),0)/trend.length) : 0;
-  const subRate     = totalSchools && trend.length ? Math.round(totalSubs/(totalSchools*trend.length)*100) : 0;
+  const totalSubs    = trend.reduce((a,r)=>a+parseInt(r.submissions||0),0);
+  const totalSchools = parseInt(trend[0]?.total_schools||0);
+  const avgAttend    = trend.length ? Math.round(trend.reduce((a,r)=>a+parseFloat(r.avg_attendance||0),0)/trend.length) : 0;
+  const avgTech      = trend.length ? Math.round(trend.reduce((a,r)=>a+parseInt(r.tech_count||0),0)/trend.length) : 0;
+  const avgAssembly  = trend.length ? Math.round(trend.reduce((a,r)=>a+parseInt(r.assembly_count||0),0)/trend.length) : 0;
+  const subRate      = totalSchools && trend.length ? Math.round(totalSubs/(totalSchools*trend.length)*100) : 0;
 
   document.getElementById('body').innerHTML = `
   <div class="section">
     <div class="summary-grid">
-      <div class="sum-card">
-        <div class="sum-n" style="color:var(--leaf)">${subRate}%</div>
+      <div class="sum-card" style="border-top-color:var(--gold)">
+        <div class="sum-n" style="color:var(--gold)">${subRate}%</div>
         <div class="sum-l">Avg Submission Rate</div>
+        <div class="sum-sub">This period</div>
       </div>
-      <div class="sum-card">
-        <div class="sum-n" style="color:var(--blue)">${avgAttend}%</div>
+      <div class="sum-card" style="border-top-color:var(--green)">
+        <div class="sum-n" style="color:var(--green)">${avgAttend}%</div>
         <div class="sum-l">Avg Attendance</div>
+        <div class="sum-sub">All schools</div>
       </div>
-      <div class="sum-card">
-        <div class="sum-n" style="color:var(--purple)">${totalSubs}</div>
+      <div class="sum-card" style="border-top-color:var(--blue)">
+        <div class="sum-n" style="color:var(--blue)">${totalSubs}</div>
         <div class="sum-l">Total Reports</div>
+        <div class="sum-sub">Submitted</div>
       </div>
-      <div class="sum-card">
-        <div class="sum-n" style="color:var(--amber)">${avgTech}</div>
+      <div class="sum-card" style="border-top-color:var(--purple)">
+        <div class="sum-n" style="color:var(--purple)">${avgTech}</div>
         <div class="sum-l">Avg Tech/Day</div>
+        <div class="sum-sub">Schools</div>
       </div>
-      <div class="sum-card">
+      <div class="sum-card" style="border-top-color:var(--border2)">
         <div class="sum-n" style="color:var(--text)">${avgAssembly}</div>
         <div class="sum-l">Avg Assembly/Day</div>
+        <div class="sum-sub">Per day</div>
       </div>
     </div>
   </div>
@@ -350,28 +375,27 @@ function renderOverview(d){
     </div>
   </div>`;
 
-  // Charts
-  const labels = trend.map(r => fmtDate(r.day));
+  const labels   = trend.map(r => fmtDate(r.day));
   const subRates = trend.map(r =>
     r.total_schools > 0 ? Math.round(parseInt(r.submissions)*100/parseInt(r.total_schools)) : 0);
 
   mkLine('c-submissions', labels, [{
     label:'Submission Rate %', data: subRates,
-    borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,0.1)',
+    borderColor:'#c9a84c', backgroundColor:'rgba(201,168,76,0.1)',
     fill:true, tension:0.4
   }], {yMax:100, yLabel:'%'});
 
   mkLine('c-attendance', labels, [{
     label:'Attendance %', data: trend.map(r=>parseFloat(r.avg_attendance||0).toFixed(1)),
-    borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.1)',
+    borderColor:'#059669', backgroundColor:'rgba(5,150,105,0.1)',
     fill:true, tension:0.4
   }], {yMax:100, yLabel:'%'});
 
   mkLine('c-tech', labels, [
-    {label:'Tech Used', data:trend.map(r=>parseInt(r.tech_count||0)),
-     borderColor:'#8b5cf6', backgroundColor:'rgba(139,92,246,0.1)', fill:false, tension:0.4},
-    {label:'Assembly', data:trend.map(r=>parseInt(r.assembly_count||0)),
-     borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.1)', fill:false, tension:0.4}
+    {label:'Tech Used',  data:trend.map(r=>parseInt(r.tech_count||0)),
+     borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,0.1)', fill:false, tension:0.4},
+    {label:'Assembly',   data:trend.map(r=>parseInt(r.assembly_count||0)),
+     borderColor:'#d97706', backgroundColor:'rgba(217,119,6,0.1)',  fill:false, tension:0.4}
   ], {yLabel:'Schools'});
 
   const rcRows = (d.rcPerf||[]).filter(r=>r.rc_name);
@@ -384,7 +408,7 @@ function renderOverview(d){
   mkBar('c-rc-attend',
     rcRows.map(r=>r.rc_name+' ('+r.region+')'),
     [{label:'Avg Attendance %', data:rcRows.map(r=>parseFloat(r.avg_attendance||0)),
-      backgroundColor:'rgba(59,130,246,0.7)'}],
+      backgroundColor:'rgba(37,99,235,0.7)'}],
     {yMax:100, yLabel:'%'});
 }
 
@@ -431,7 +455,7 @@ function renderRC(d){
         </tr>
         ${rows.map((r,i)=>`<tr>
           <td><span class="rank rank-${i<3?i+1:''}">${i+1}</span></td>
-          <td><strong>${r.rc_name}</strong></td>
+          <td style="font-weight:700;color:var(--text)">${r.rc_name}</td>
           <td>${r.region||'—'}</td>
           <td>${r.total_schools}</td>
           <td>${r.submissions} / ${r.total_schools}</td>
@@ -456,15 +480,15 @@ function renderRC(d){
     {yMax:100, yLabel:'%'});
   mkBar('c-rc-att', labels,
     [{label:'Attendance %', data:rows.map(r=>parseFloat(r.avg_attendance||0)),
-      backgroundColor:'rgba(59,130,246,0.7)'}],
+      backgroundColor:'rgba(37,99,235,0.7)'}],
     {yMax:100, yLabel:'%'});
   mkBar('c-rc-tech', labels,
     [{label:'Tech Reports', data:rows.map(r=>parseInt(r.tech_count||0)),
-      backgroundColor:'rgba(139,92,246,0.7)'}],
+      backgroundColor:'rgba(124,58,237,0.7)'}],
     {yLabel:'Count'});
   mkBar('c-rc-asm', labels,
     [{label:'Assembly Count', data:rows.map(r=>parseInt(r.assembly_count||0)),
-      backgroundColor:'rgba(245,158,11,0.7)'}],
+      backgroundColor:'rgba(217,119,6,0.7)'}],
     {yLabel:'Count'});
 }
 
@@ -499,7 +523,7 @@ function renderCoord(d){
         </tr>
         ${rows.map((r,i)=>`<tr>
           <td><span class="rank rank-${i<3?i+1:''}">${i+1}</span></td>
-          <td><strong>${r.coord_name}</strong></td>
+          <td style="font-weight:700;color:var(--text)">${r.coord_name}</td>
           <td>${r.rc_name||'—'}</td>
           <td>${r.region||'—'}</td>
           <td>${r.total_schools}</td>
@@ -517,15 +541,15 @@ function renderCoord(d){
     </div>
   </div>`;
 
-  const top10sub  = rows.slice(0,10);
-  const top10att  = [...rows].sort((a,b)=>parseFloat(b.avg_attendance||0)-parseFloat(a.avg_attendance||0)).slice(0,10);
+  const top10sub = rows.slice(0,10);
+  const top10att = [...rows].sort((a,b)=>parseFloat(b.avg_attendance||0)-parseFloat(a.avg_attendance||0)).slice(0,10);
   mkBar('c-co-sub', top10sub.map(r=>r.coord_name),
     [{label:'Submission %', data:top10sub.map(r=>parseFloat(r.submission_rate||0)),
       backgroundColor:top10sub.map(r=>colorForPct(parseFloat(r.submission_rate||0)))}],
     {yMax:100, yLabel:'%', horizontal:true});
   mkBar('c-co-att', top10att.map(r=>r.coord_name),
     [{label:'Attendance %', data:top10att.map(r=>parseFloat(r.avg_attendance||0)),
-      backgroundColor:'rgba(59,130,246,0.7)'}],
+      backgroundColor:'rgba(37,99,235,0.7)'}],
     {yMax:100, yLabel:'%', horizontal:true});
 }
 
@@ -533,29 +557,29 @@ function renderCoord(d){
 //  SCHOOLS TAB
 // ══════════════════════════════════════════════════════
 function renderSchools(d){
-  const rows  = (d.schoolPerf||[]);
-  const active= rows.filter(r=>parseInt(r.submissions)>0);
-  const zero  = rows.filter(r=>parseInt(r.submissions)===0);
+  const rows   = (d.schoolPerf||[]);
+  const active = rows.filter(r=>parseInt(r.submissions)>0);
+  const zero   = rows.filter(r=>parseInt(r.submissions)===0);
 
   document.getElementById('body').innerHTML = `
   <div class="section">
     <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
-      <div class="sum-card">
-        <div class="sum-n" style="color:var(--leaf)">${active.length}</div>
+      <div class="sum-card" style="border-top-color:var(--green)">
+        <div class="sum-n" style="color:var(--green)">${active.length}</div>
         <div class="sum-l">Active Schools</div>
       </div>
-      <div class="sum-card">
-        <div class="sum-n" style="color:var(--danger)">${zero.length}</div>
+      <div class="sum-card" style="border-top-color:var(--red)">
+        <div class="sum-n" style="color:var(--red)">${zero.length}</div>
         <div class="sum-l">Zero Submissions</div>
       </div>
-      <div class="sum-card">
+      <div class="sum-card" style="border-top-color:var(--blue)">
         <div class="sum-n" style="color:var(--blue)">
           ${active.length ? Math.round(active.reduce((a,r)=>a+parseFloat(r.avg_attendance||0),0)/active.length) : 0}%
         </div>
         <div class="sum-l">Avg Attendance (active)</div>
       </div>
-      <div class="sum-card">
-        <div class="sum-n" style="color:var(--amber)">
+      <div class="sum-card" style="border-top-color:var(--gold)">
+        <div class="sum-n" style="color:var(--gold)">
           ${active.length ? Math.round(active.reduce((a,r)=>a+parseInt(r.tech_count||0),0)/active.length*10)/10 : 0}
         </div>
         <div class="sum-l">Avg Tech Reports</div>
@@ -572,8 +596,8 @@ function renderSchools(d){
           <th>Submissions</th><th>Sub. Rate</th><th>Avg Attend.</th><th>Tech</th><th>Last Report</th>
         </tr>
         ${rows.map((r,i)=>`<tr>
-          <td style="color:var(--text3)">${i+1}</td>
-          <td class="school-name-cell" title="${r.school_name}"><strong>${fmtSchoolName(r.school_name)}</strong></td>
+          <td style="color:var(--text3);font-family:'DM Mono',monospace;font-size:11px">${i+1}</td>
+          <td class="school-name-cell" title="${r.school_name}" style="font-weight:700;color:var(--text)">${fmtSchoolName(r.school_name)}</td>
           <td>${r.region||'—'}</td>
           <td>${r.coord_name||'—'}</td>
           <td>${r.submissions}</td>
@@ -592,13 +616,17 @@ function renderSchools(d){
   </div>`;
 }
 
-// ── Chart helpers ───────────────────────────────────────────────
+// ── Chart helpers ────────────────────────────────────────────────
 const CHART_DEFAULTS = {
   responsive:true, maintainAspectRatio:false,
-  plugins:{legend:{labels:{font:{family:'DM Sans',size:11},color:'#4a6b52'}}},
+  plugins:{
+    legend:{labels:{font:{family:'Plus Jakarta Sans',size:11},color:'#a89070'}},
+  },
   scales:{
-    x:{ticks:{font:{family:'DM Sans',size:10},color:'#8aaa90'},grid:{color:'#e2ebe5'}},
-    y:{ticks:{font:{family:'DM Sans',size:10},color:'#8aaa90'},grid:{color:'#e2ebe5'}}
+    x:{ticks:{font:{family:'Plus Jakarta Sans',size:10},color:'#a89070'},
+       grid:{color:'rgba(232,224,208,0.6)'}},
+    y:{ticks:{font:{family:'Plus Jakarta Sans',size:10},color:'#a89070'},
+       grid:{color:'rgba(232,224,208,0.6)'}}
   }
 };
 
@@ -607,7 +635,7 @@ function mkLine(id, labels, datasets, opts={}){
   if(!ctx) return;
   const cfg = JSON.parse(JSON.stringify(CHART_DEFAULTS));
   if(opts.yMax) cfg.scales.y.max = opts.yMax;
-  if(opts.yLabel) cfg.scales.y.title = {display:true,text:opts.yLabel,font:{size:10},color:'#8aaa90'};
+  if(opts.yLabel) cfg.scales.y.title = {display:true,text:opts.yLabel,font:{size:10,family:'Plus Jakarta Sans'},color:'#a89070'};
   charts[id] = new Chart(ctx, {type:'line', data:{labels, datasets}, options:cfg});
 }
 
@@ -616,18 +644,17 @@ function mkBar(id, labels, datasets, opts={}){
   if(!ctx) return;
   const cfg = JSON.parse(JSON.stringify(CHART_DEFAULTS));
   if(opts.yMax) cfg.scales.y.max = opts.yMax;
-  if(opts.yLabel) cfg.scales.y.title = {display:true,text:opts.yLabel,font:{size:10},color:'#8aaa90'};
+  if(opts.yLabel) cfg.scales.y.title = {display:true,text:opts.yLabel,font:{size:10,family:'Plus Jakarta Sans'},color:'#a89070'};
   if(opts.horizontal){
     cfg.indexAxis = 'y';
-    // swap x/y scale labels
     cfg.scales.x = cfg.scales.y;
-    cfg.scales.y = {ticks:{font:{family:'DM Sans',size:10},color:'#8aaa90'},grid:{display:false}};
+    cfg.scales.y = {ticks:{font:{family:'Plus Jakarta Sans',size:10},color:'#a89070'},grid:{display:false}};
   }
   charts[id] = new Chart(ctx, {type:'bar', data:{labels, datasets},
     options:{...cfg, plugins:{...cfg.plugins, legend:{display:false}}}});
 }
 
-// ── Helpers ─────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────
 function fmtDate(d){
   if(!d) return '—';
   return new Date(d).toLocaleDateString([],{month:'short',day:'numeric'});
@@ -636,9 +663,9 @@ function fmtSchoolName(n){
   return (n||'').replace(/_O_|_A_|_B_|_C_/,' ').replace(/_W\d+[A-Z]+$/,'').replace(/_/g,' ');
 }
 function colorForPct(p){
-  if(p>=75) return '#16a34a';
-  if(p>=50) return '#f59e0b';
-  return '#ef4444';
+  if(p>=75) return '#059669';
+  if(p>=50) return '#d97706';
+  return '#dc2626';
 }
 function badgeClass(v){
   const n = parseFloat(v||0);
@@ -647,7 +674,7 @@ function badgeClass(v){
   return 'b-bad';
 }
 
-// ── Init ────────────────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────────
 (function init(){
   const today = new Date();
   const fmt   = d => d.toISOString().split('T')[0];
