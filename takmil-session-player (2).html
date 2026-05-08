@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL Daily Session Player</title>
+<style>
+:root{--blue:#1A5276;--green:#1E8449;--orange:#D35400;--red:#C0392B;--purple:#6C3483;
+--bg:#0D1117;--card:#161B22;--border:#30363D;--text:#E6EDF3;--muted:#8B949E;--dim:#21262D}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;min-height:100vh}
+
+/* SETUP */
+#setup{max-width:460px;margin:50px auto;padding:20px}
+.s-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px}
+.s-title{font-size:24px;font-weight:800;color:white;text-align:center;letter-spacing:2px;margin-bottom:4px}
+.s-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:24px}
+.s-label{font-size:12px;color:var(--muted);margin-bottom:5px;display:block}
+.s-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;
+  padding:11px 14px;font-size:15px;color:var(--text);margin-bottom:14px;outline:none}
+.s-input:focus{border-color:var(--blue)}
+.s-btn{width:100%;background:var(--blue);color:white;border:none;border-radius:8px;
+  padding:13px;font-size:15px;font-weight:700;cursor:pointer}
+
+/* LAYOUT */
+#main{display:none}
+.top-bar{background:var(--blue);padding:10px 20px;display:flex;align-items:center;justify-content:space-between}
+.top-logo{font-size:18px;font-weight:800;letter-spacing:2px;color:white}
+.top-info{font-size:13px;color:rgba(255,255,255,.8)}
+.top-badge{background:rgba(255,255,255,.15);border-radius:20px;padding:5px 14px;font-size:12px;color:white;font-weight:600}
+
+.body-wrap{display:grid;grid-template-columns:1fr 360px;min-height:calc(100vh - 44px)}
+
+/* VIDEO PANEL */
+.vpanel{background:#000;display:flex;flex-direction:column;position:relative}
+video{width:100%;flex:1;object-fit:contain;background:#000;max-height:calc(100vh - 180px)}
+.pick-overlay{position:absolute;inset:0;background:rgba(0,0,0,.88);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:5}
+.pick-overlay.gone{display:none}
+.pick-hint{font-size:14px;color:var(--muted);text-align:center}
+.pick-btn{background:var(--orange);color:white;border:none;border-radius:8px;
+  padding:12px 28px;font-size:15px;font-weight:700;cursor:pointer}
+.pick-now{font-size:18px;font-weight:700;color:white;text-align:center}
+.vcontrols{background:#0D1117;padding:10px 14px;border-top:1px solid var(--border)}
+.prog-track{width:100%;height:5px;background:var(--dim);border-radius:3px;
+  margin-bottom:9px;cursor:pointer;overflow:hidden}
+.prog-fill{height:100%;background:var(--blue);border-radius:3px;transition:width .4s linear}
+.ctrl-row{display:flex;align-items:center;gap:10px;direction:ltr}
+.cbtn{background:none;border:1px solid var(--border);border-radius:5px;color:var(--text);
+  padding:6px 12px;font-size:13px;cursor:pointer}
+.cbtn:hover{background:var(--dim)}
+.cbtn.play{background:var(--blue);border-color:var(--blue);min-width:64px}
+.tdisplay{font-size:12px;color:var(--muted);margin-left:auto;font-family:monospace}
+.vol{flex:0 0 70px;accent-color:var(--blue)}
+
+/* SIDEBAR */
+.sidebar{background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+
+/* TOPIC HEADER */
+.topic-hdr{padding:14px 16px;border-bottom:1px solid var(--border);background:var(--dim)}
+.topic-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.topic-name{font-size:16px;font-weight:700;color:white}
+.topic-meta{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* VIDEO SLOTS */
+.slots{padding:14px 16px;border-bottom:1px solid var(--border)}
+.slots-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.slot{border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.slot:hover{border-color:var(--blue);background:var(--dim)}
+.slot.active{border-color:var(--orange);background:#1a1106}
+.slot.done{border-color:var(--green);background:#0d1a0d}
+.slot-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.slot-num{width:22px;height:22px;border-radius:50%;background:var(--dim);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0}
+.slot.active .slot-num{background:var(--orange);color:white}
+.slot.done  .slot-num{background:var(--green);color:white}
+.slot-title{font-size:13px;font-weight:600;color:var(--text);flex:1}
+.slot-status{font-size:11px;color:var(--muted)}
+.slot.active .slot-status{color:#F0A500}
+.slot.done   .slot-status{color:#3fb950}
+.slot-bar-wrap{background:var(--dim);border-radius:3px;height:4px;overflow:hidden}
+.slot-bar{height:100%;border-radius:3px;background:var(--orange);transition:width .4s}
+.slot.done .slot-bar{background:var(--green)}
+.slot-code{font-family:monospace;font-size:13px;color:#3fb950;font-weight:700;margin-top:6px;letter-spacing:2px;display:none}
+.slot.done .slot-code{display:block}
+
+/* LOG */
+.log-wrap{flex:1;padding:12px 16px;overflow-y:auto;min-height:120px}
+.log-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.log-row{display:flex;gap:8px;margin-bottom:7px;font-size:11px;align-items:flex-start}
+.log-dot{width:7px;height:7px;border-radius:50%;margin-top:2px;flex-shrink:0}
+.log-t{color:var(--muted);font-family:monospace;white-space:nowrap;min-width:56px}
+.log-m{color:var(--text);flex:1}
+
+/* REPORT BOX */
+.report-box{padding:14px 16px;border-top:1px solid var(--border);display:none}
+.report-box.show{display:block}
+.rep-hdr{font-size:11px;color:#3fb950;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:700}
+.rep-msg{background:#0d1a0d;border:1.5px solid #3fb950;border-radius:8px;padding:12px;
+  font-family:monospace;font-size:12px;color:#3fb950;line-height:1.6;word-break:break-all;margin-bottom:10px;direction:ltr}
+.rep-btn{width:100%;background:#238636;color:white;border:none;border-radius:7px;
+  padding:11px;font-size:14px;font-weight:700;cursor:pointer}
+.rep-note{font-size:11px;color:var(--muted);text-align:center;margin-top:6px}
+
+/* INCOMPLETE NOTICE */
+.incomplete{padding:14px 16px;border-top:1px solid var(--border)}
+.inc-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.inc-label{font-size:12px;color:var(--muted)}
+.inc-val{font-size:13px;font-weight:700;color:var(--orange)}
+.inc-progress{display:flex;gap:6px}
+.inc-dot{width:28px;height:8px;border-radius:4px;background:var(--dim)}
+.inc-dot.done{background:var(--green)}
+.inc-dot.active{background:var(--orange)}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.blink{animation:pulse 1.2s ease-in-out infinite}
+</style>
+</head>
+<body>
+
+  <!-- Home Button (auto-added) -->
+  <a href="/" style="
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 9999;
+    background: #15803D;
+    color: #ffffff;
+    text-decoration: none;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  ">&#8962; Home</a>
+
+<!-- ══════════ SETUP ══════════ -->
+<div id="setup">
+  <div class="s-card">
+    <div class="s-title">TAKMIL</div>
+    <div class="s-sub">Daily Session Player — Enter your details to begin</div>
+    <label class="s-label">School Code</label>
+    <input class="s-input" id="sch" placeholder="e.g. SCH-047" style="text-transform:uppercase;letter-spacing:2px;text-align:center">
+    <label class="s-label">Facilitator Name</label>
+    <input class="s-input" id="fname" placeholder="Your full name" style="text-align:center">
+    <label class="s-label">Today's Topic</label>
+    <input class="s-input" id="topic" placeholder="e.g. ضرب — Multiplication" style="text-align:center">
+    <label class="s-label">Level &amp; Subject</label>
+    <input class="s-input" id="lvlsub" placeholder="e.g. Level 5 — Math" style="text-align:center">
+    <button class="s-btn" onclick="startSession()">Start Session →</button>
+  </div>
+</div>
+
+<!-- ══════════ MAIN ══════════ -->
+<div id="main">
+  <div class="top-bar">
+    <div>
+      <div class="top-logo">TAKMIL</div>
+    </div>
+    <div class="top-info" id="top-info">—</div>
+    <div class="top-badge" id="top-badge">SCH-000</div>
+  </div>
+
+  <div class="body-wrap">
+    <!-- VIDEO -->
+    <div class="vpanel">
+      <div class="pick-overlay" id="pick-overlay">
+        <div class="pick-now" id="pick-now">Select Video 1</div>
+        <div class="pick-hint">Choose how to load this video</div>
+
+        <!-- TWO SOURCE BUTTONS -->
+        <div style="display:flex;gap:12px;margin:4px 0">
+          <button class="pick-btn" style="background:var(--orange)" onclick="document.getElementById('fInput').click()">
+            📁 USB / Local File
+          </button>
+          <button class="pick-btn" style="background:var(--blue)" onclick="showYTInput()">
+            ▶ YouTube Link
+          </button>
+        </div>
+        <input type="file" id="fInput" accept="video/*" style="display:none" onchange="loadFile(this)">
+        <div style="font-size:11px;color:var(--muted)">USB: MP4, MKV, AVI, MOV &nbsp;|&nbsp; YouTube: paste any YouTube URL</div>
+
+        <!-- YOUTUBE INPUT (hidden until button clicked) -->
+        <div id="yt-input-area" style="display:none;flex-direction:column;align-items:center;gap:8px;width:90%">
+          <input id="yt-url" type="text" placeholder="https://www.youtube.com/watch?v=..."
+            style="width:100%;background:#0D1117;border:1.5px solid var(--blue);border-radius:7px;
+            padding:10px 12px;font-size:13px;color:var(--text);outline:none;font-family:monospace">
+          <div style="display:flex;gap:8px">
+            <button class="pick-btn" style="background:var(--green);padding:9px 20px" onclick="loadYouTube()">
+              Load Video →
+            </button>
+            <button class="pick-btn" style="background:#333;padding:9px 14px;font-size:13px" onclick="hideYTInput()">
+              ✕ Cancel
+            </button>
+          </div>
+          <div id="yt-err" style="font-size:12px;color:var(--red);display:none">Invalid YouTube URL. Try again.</div>
+        </div>
+      </div>
+
+      <!-- YOUTUBE IFRAME (hidden when using local file) -->
+      <div id="yt-frame-wrap" style="display:none;width:100%;height:calc(100vh - 130px);background:#000;position:relative">
+        <div id="yt-frame" style="width:100%;height:100%"></div>
+      </div>
+      <!-- LOCAL VIDEO -->
+      <div id="local-vid-wrap" style="flex:1;display:flex;flex-direction:column;background:#000;min-height:0">
+        <video id="vid" style="width:100%;flex:1;object-fit:contain;background:#000;min-height:0"
+          onplay="onPlay()" onpause="onPause()" onended="onEnd()"
+          ontimeupdate="onTick()" onloadedmetadata="onLoaded()"></video>
+      </div>
+      <div class="vcontrols">
+        <div class="prog-track" id="ptrack" onclick="seek(event)">
+          <div class="prog-fill" id="pfill" style="width:0%"></div>
+        </div>
+        <div class="ctrl-row">
+          <button class="cbtn play" id="pbtn" onclick="togglePlay()">▶</button>
+          <button class="cbtn" id="btn-back" onclick="skip(-10)">⟪ 10s</button>
+          <button class="cbtn" id="btn-fwd" onclick="skip(10)">10s ⟫</button>
+          <span id="yt-mode-label" style="font-size:11px;color:var(--blue);display:none;padding:0 6px">▶ YouTube</span>
+          <input type="range" class="vol" min="0" max="1" step=".05" value="1"
+            id="vol-slider" oninput="setVolume(this.value)">
+          <span style="font-size:11px;color:var(--muted)">Vol</span>
+          <span class="tdisplay" id="tdisp">0:00 / 0:00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+      <!-- TOPIC -->
+      <div class="topic-hdr">
+        <div class="topic-label">Today's Topic</div>
+        <div class="topic-name" id="s-topic">—</div>
+        <div class="topic-meta" id="s-lvl">—</div>
+      </div>
+
+      <!-- VIDEO SLOTS -->
+      <div class="slots">
+        <div class="slots-label">3 Videos — All must be completed</div>
+
+        <div class="slot" id="slot-0" onclick="selectSlot(0)">
+          <div class="slot-top">
+            <div class="slot-num">1</div>
+            <div class="slot-title" id="st-0">Video 1 — not loaded</div>
+            <div class="slot-status" id="ss-0">Tap to load</div>
+          </div>
+          <div class="slot-bar-wrap"><div class="slot-bar" id="sb-0" style="width:0%"></div></div>
+          <div class="slot-code" id="sc-0"></div>
+        </div>
+
+        <div class="slot" id="slot-1" onclick="selectSlot(1)">
+          <div class="slot-top">
+            <div class="slot-num">2</div>
+            <div class="slot-title" id="st-1">Video 2 — not loaded</div>
+            <div class="slot-status" id="ss-1">Complete Video 1 first</div>
+          </div>
+          <div class="slot-bar-wrap"><div class="slot-bar" id="sb-1" style="width:0%"></div></div>
+          <div class="slot-code" id="sc-1"></div>
+        </div>
+
+        <div class="slot" id="slot-2" onclick="selectSlot(2)">
+          <div class="slot-top">
+            <div class="slot-num">3</div>
+            <div class="slot-title" id="st-2">Video 3 — not loaded</div>
+            <div class="slot-status" id="ss-2">Complete Video 2 first</div>
+          </div>
+          <div class="slot-bar-wrap"><div class="slot-bar" id="sb-2" style="width:0%"></div></div>
+          <div class="slot-code" id="sc-2"></div>
+        </div>
+      </div>
+
+      <!-- INCOMPLETE TRACKER -->
+      <div class="incomplete" id="inc-section">
+        <div class="inc-bar">
+          <span class="inc-label">Session progress</span>
+          <span class="inc-val" id="inc-val">0 / 3 videos done</span>
+        </div>
+        <div class="inc-progress">
+          <div class="inc-dot" id="idot-0"></div>
+          <div class="inc-dot" id="idot-1"></div>
+          <div class="inc-dot" id="idot-2"></div>
+        </div>
+      </div>
+
+      <!-- LOG -->
+      <div class="log-wrap">
+        <div class="log-label">Activity Log</div>
+        <div id="logc"></div>
+      </div>
+
+      <!-- REPORT (shown when all 3 done) -->
+      <div class="report-box" id="report-box">
+        <div class="rep-hdr">✓ All 3 videos complete — send this to WhatsApp</div>
+        <div class="rep-msg" id="rep-msg"></div>
+        <button class="rep-btn" onclick="copyReport()">Copy Message</button>
+        <div class="rep-note" id="rep-note">Paste into WhatsApp and send to your coordinator</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────
+let schoolCode='', facName='', topicName='', lvlSub='';
+let currentSlot = 0;
+let slots = [
+  {file:null, name:'', maxWatched:0, started:null, completed:false, code:'', duration:0, pauses:0},
+  {file:null, name:'', maxWatched:0, started:null, completed:false, code:'', duration:0, pauses:0},
+  {file:null, name:'', maxWatched:0, started:null, completed:false, code:'', duration:0, pauses:0},
+];
+const THRESHOLD = 0.85;
+
+// ─── SETUP ───────────────────────────────────────────
+function startSession() {
+  const sc = document.getElementById('sch').value.trim().toUpperCase();
+  const fn = document.getElementById('fname').value.trim();
+  const tp = document.getElementById('topic').value.trim();
+  const ls = document.getElementById('lvlsub').value.trim();
+  if (!sc||sc.length<3) return alert('Enter school code');
+  if (!fn) return alert('Enter your name');
+  if (!tp) return alert('Enter today\'s topic');
+  schoolCode=sc; facName=fn; topicName=tp; lvlSub=ls;
+  document.getElementById('setup').style.display='none';
+  document.getElementById('main').style.display='block';
+  document.getElementById('top-badge').textContent=sc;
+  document.getElementById('top-info').textContent=fn + ' — ' + todayStr();
+  document.getElementById('s-topic').textContent=tp;
+  document.getElementById('s-lvl').textContent=ls;
+  log('blue','Session started: '+tp+' | '+ls);
+  activateSlot(0);
+}
+
+// ─── SLOT SELECTION ───────────────────────────────────
+function selectSlot(i) {
+  if (i > 0 && !slots[i-1].completed) {
+    log('red','Complete Video '+(i)+' before loading Video '+(i+1));
+    return;
+  }
+  if (slots[i].completed) return;
+  activateSlot(i);
+}
+
+function activateSlot(i) {
+  currentSlot = i;
+  document.querySelectorAll('.slot').forEach((s,idx)=>{
+    s.classList.toggle('active', idx===i && !slots[idx].completed);
+  });
+  document.getElementById('pick-now').textContent = 'Select Video ' + (i+1);
+  document.getElementById('pick-overlay').classList.remove('gone');
+  document.getElementById('yt-input-area').style.display = 'none';
+  document.getElementById('yt-err').style.display = 'none';
+  document.getElementById('yt-url').value = '';
+  if (!slots[i].isYT) document.getElementById('vid').pause();
+  document.getElementById('pbtn').textContent='▶';
+}
+
+// ─── YOUTUBE INPUT TOGGLE ─────────────────────────────
+function showYTInput() {
+  document.getElementById('yt-input-area').style.display='flex';
+  setTimeout(()=>document.getElementById('yt-url').focus(),50);
+}
+function hideYTInput() {
+  document.getElementById('yt-input-area').style.display='none';
+  document.getElementById('yt-err').style.display='none';
+}
+
+// ─── EXTRACT YOUTUBE VIDEO ID ─────────────────────────
+function extractYTId(url) {
+  try {
+    const u = new URL(url.trim());
+    if (u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('?')[0];
+    if (u.hostname.includes('youtube.com')) {
+      if (u.pathname.includes('/embed/')) return u.pathname.split('/embed/')[1].split('?')[0];
+      return u.searchParams.get('v');
+    }
+  } catch {}
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+// ─── LOAD YOUTUBE ─────────────────────────────────────
+let ytPlayer=null, ytPollInterval=null, ytVideoId='';
+
+function loadYouTube() {
+  const url = document.getElementById('yt-url').value.trim();
+  const vid = extractYTId(url);
+  if (!vid) { document.getElementById('yt-err').style.display='block'; return; }
+  const i = currentSlot;
+  ytVideoId = vid;
+  slots[i].name = 'youtube_'+vid;
+  slots[i].isYT = true;
+  slots[i].maxWatched = 0;
+  slots[i].started = null;
+  slots[i].completed = false;
+
+  // Switch to YT mode FIRST (so offsetWidth/Height are measurable)
+  document.getElementById('local-vid-wrap').style.display='none';
+  document.getElementById('yt-frame-wrap').style.display='block';
+  document.getElementById('pick-overlay').classList.add('gone');
+  document.getElementById('btn-back').style.display='none';
+  document.getElementById('btn-fwd').style.display='none';
+  document.getElementById('yt-mode-label').style.display='inline';
+
+  document.getElementById('st-'+i).textContent='Video '+(i+1)+' — YouTube: '+vid;
+  document.getElementById('ss-'+i).textContent='Loaded — press play on video';
+  log('blue','Video '+(i+1)+' loaded from YouTube: '+vid);
+
+  if (!window.YT || !window.YT.Player) {
+    const tag=document.createElement('script');
+    tag.src='https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+    window.onYouTubeIframeAPIReady=()=>createYTPlayer(vid,i);
+  } else {
+    createYTPlayer(vid,i);
+  }
+}
+
+function createYTPlayer(vid,slotIdx) {
+  if (ytPlayer){try{ytPlayer.destroy()}catch{} ytPlayer=null;}
+  clearInterval(ytPollInterval);
+
+  // Calculate height in pixels
+  const wrap = document.getElementById('yt-frame-wrap');
+  const h = wrap.offsetHeight || (window.innerHeight - 130);
+  const w = wrap.offsetWidth  || window.innerWidth - 360;
+
+  ytPlayer = new YT.Player('yt-frame',{
+    videoId: vid,
+    width:   String(w),
+    height:  String(h),
+    playerVars:{rel:0, modestbranding:1, controls:1, enablejsapi:1, origin:window.location.origin||''},
+    events:{
+      onReady: (e) => {
+        log('blue','YouTube ready — press play on the video');
+        document.getElementById('pbtn').textContent='▶';
+      },
+      onStateChange:(e)=>{
+        if(e.data===1){
+          document.getElementById('pbtn').textContent='⏸';
+          if(!slots[slotIdx].started){
+            slots[slotIdx].started=nowTime();
+            document.getElementById('ss-'+slotIdx).textContent='▶ Playing...';
+            log('green','Video '+(slotIdx+1)+' STARTED — '+nowTime());
+          }
+          clearInterval(ytPollInterval);
+          ytPollInterval=setInterval(()=>pollYT(slotIdx),1000);
+        }
+        if(e.data===2){
+          document.getElementById('pbtn').textContent='▶';
+          clearInterval(ytPollInterval);
+          log('orange','Video '+(slotIdx+1)+' paused at '+Math.round(slots[slotIdx].maxWatched*100)+'%');
+        }
+        if(e.data===0){
+          clearInterval(ytPollInterval);
+          checkCompletion(slotIdx,1.0);
+        }
+      }
+    }
+  });
+}
+
+function pollYT(slotIdx) {
+  if(!ytPlayer||typeof ytPlayer.getCurrentTime!=='function') return;
+  try{
+    const cur=ytPlayer.getCurrentTime(), dur=ytPlayer.getDuration();
+    if(!dur) return;
+    const pct=cur/dur;
+    if(pct>slots[slotIdx].maxWatched) slots[slotIdx].maxWatched=pct;
+    document.getElementById('pfill').style.width=Math.round(pct*100)+'%';
+    document.getElementById('sb-'+slotIdx).style.width=Math.round(slots[slotIdx].maxWatched*100)+'%';
+    document.getElementById('tdisp').textContent=fmt(cur)+' / '+fmt(dur);
+    if(!slots[slotIdx].completed){
+      document.getElementById('ss-'+slotIdx).textContent='Playing — '+Math.round(slots[slotIdx].maxWatched*100)+'% watched';
+    }
+    checkCompletion(slotIdx,slots[slotIdx].maxWatched);
+  }catch{}
+}
+
+function togglePlay() {
+  const i=currentSlot;
+  if(slots[i]&&slots[i].isYT){
+    if(!ytPlayer) return;
+    const st=ytPlayer.getPlayerState();
+    if(st===1){ytPlayer.pauseVideo();document.getElementById('pbtn').textContent='▶';}
+    else{ytPlayer.playVideo();document.getElementById('pbtn').textContent='⏸';}
+  } else {
+    const v=document.getElementById('vid');
+    if(!v.src) return;
+    v.paused?v.play():v.pause();
+  }
+}
+
+function setVolume(val) {
+  document.getElementById('vid').volume=parseFloat(val);
+  if(ytPlayer&&typeof ytPlayer.setVolume==='function') ytPlayer.setVolume(Math.round(val*100));
+}
+
+// ─── LOAD LOCAL FILE ──────────────────────────────────
+function loadFile(inp) {
+  const f = inp.files[0];
+  if (!f) return;
+  const i = currentSlot;
+  slots[i].file = f;
+  slots[i].name = f.name;
+  slots[i].isYT = false;
+  slots[i].maxWatched = 0;
+  slots[i].started = null;
+  slots[i].completed = false;
+
+  // Switch to local video mode
+  clearInterval(ytPollInterval);
+  if(ytPlayer){try{ytPlayer.destroy()}catch{} ytPlayer=null;}
+  document.getElementById('yt-frame-wrap').style.display='none';
+  document.getElementById('local-vid-wrap').style.display='flex';
+  document.getElementById('btn-back').style.display='';
+  document.getElementById('btn-fwd').style.display='';
+  document.getElementById('yt-mode-label').style.display='none';
+
+  const url = URL.createObjectURL(f);
+  const vid = document.getElementById('vid');
+  vid.src = url;
+
+  document.getElementById('pick-overlay').classList.add('gone');
+  document.getElementById('st-'+i).textContent = 'Video '+(i+1)+' — '+f.name.replace(/\.[^.]+$/,'').substring(0,30);
+  document.getElementById('ss-'+i).textContent = 'Loaded — press play';
+  log('blue','Video '+(i+1)+' loaded: '+f.name);
+  inp.value='';
+}
+
+// ─── VIDEO EVENTS ─────────────────────────────────────
+function onLoaded() {
+  const v=document.getElementById('vid');
+  slots[currentSlot].duration = v.duration;
+  updateTimeDisplay();
+}
+
+function onPlay() {
+  document.getElementById('pbtn').textContent='⏸';
+  const i=currentSlot;
+  if (!slots[i].started) {
+    slots[i].started = nowTime();
+    document.getElementById('ss-'+i).textContent='▶ Playing...';
+    log('green','Video '+(i+1)+' STARTED — '+nowTime());
+  }
+}
+
+function onPause() {
+  document.getElementById('pbtn').textContent='▶';
+  const i=currentSlot;
+  slots[i].pauses++;
+  const pct=Math.round(slots[i].maxWatched*100);
+  log('orange','Video '+(i+1)+' paused at '+pct+'% watched');
+}
+
+function onEnd() {
+  document.getElementById('pbtn').textContent='▶';
+  checkCompletion(currentSlot, 1.0);
+}
+
+function onTick() {
+  const v=document.getElementById('vid');
+  if (!v.duration) return;
+  const pct = v.currentTime / v.duration;
+  const i = currentSlot;
+
+  // Track max watched (anti-seek-cheat)
+  if (pct > slots[i].maxWatched) slots[i].maxWatched = pct;
+
+  // Update slot bar
+  document.getElementById('sb-'+i).style.width = Math.round(slots[i].maxWatched*100)+'%';
+
+  // Update main progress bar
+  document.getElementById('pfill').style.width = Math.round(pct*100)+'%';
+
+  // Update status
+  if (!slots[i].completed) {
+    const wp = Math.round(slots[i].maxWatched*100);
+    document.getElementById('ss-'+i).textContent = (v.paused?'Paused':'Playing') + ' — '+wp+'% watched';
+  }
+
+  updateTimeDisplay();
+  checkCompletion(i, slots[i].maxWatched);
+}
+
+function checkCompletion(i, fraction) {
+  if (slots[i].completed) return;
+  if (fraction < THRESHOLD) return;
+
+  slots[i].completed = true;
+  slots[i].code = genCode(i);
+
+  // Update slot UI
+  const sl = document.getElementById('slot-'+i);
+  sl.classList.remove('active');
+  sl.classList.add('done');
+  document.getElementById('ss-'+i).textContent = '✓ Complete';
+  document.getElementById('sb-'+i).style.width='100%';
+  document.getElementById('sc-'+i).textContent = 'Code: '+slots[i].code;
+
+  // Update progress dots
+  document.getElementById('idot-'+i).classList.add('done');
+  const done = slots.filter(s=>s.completed).length;
+  document.getElementById('inc-val').textContent = done+' / 3 videos done';
+
+  log('green','Video '+(i+1)+' COMPLETE — Code: '+slots[i].code);
+
+  // Unlock next slot
+  if (i < 2) {
+    document.getElementById('ss-'+(i+1)).textContent = 'Ready — tap to load Video '+(i+2);
+    document.getElementById('idot-'+(i+1)).classList.add('active');
+    log('blue','Video '+(i+2)+' unlocked');
+  }
+
+  // Check if all 3 done
+  if (slots.every(s=>s.completed)) {
+    showReport();
+  }
+}
+
+// ─── REPORT ───────────────────────────────────────────
+function showReport() {
+  const msg = buildReportMsg();
+  document.getElementById('rep-msg').textContent = msg;
+  document.getElementById('report-box').classList.add('show');
+  document.getElementById('inc-section').style.display='none';
+  log('green','ALL 3 VIDEOS COMPLETE — Report ready to send');
+}
+
+function buildReportMsg() {
+  const d = todayStr();
+  const codes = slots.map(s=>s.code).join(' ');
+  return [
+    'DAILY REPORT',
+    'School: '+schoolCode,
+    'Facilitator: '+facName,
+    'Date: '+d,
+    'Topic: '+topicName,
+    'Level: '+lvlSub,
+    '---',
+    'Video 1: '+slots[0].name.replace(/\.[^.]+$/,'').substring(0,30),
+    '  Started: '+slots[0].started+' | Code: '+slots[0].code,
+    'Video 2: '+slots[1].name.replace(/\.[^.]+$/,'').substring(0,30),
+    '  Started: '+slots[1].started+' | Code: '+slots[1].code,
+    'Video 3: '+slots[2].name.replace(/\.[^.]+$/,'').substring(0,30),
+    '  Started: '+slots[2].started+' | Code: '+slots[2].code,
+    '---',
+    'VERIFY: '+codes,
+  ].join('\n');
+}
+
+function copyReport() {
+  const txt = document.getElementById('rep-msg').textContent;
+  navigator.clipboard.writeText(txt).then(()=>{
+    document.getElementById('rep-note').textContent='✓ Copied! Now open WhatsApp and paste.';
+    document.getElementById('rep-note').style.color='#3fb950';
+  }).catch(()=>{
+    document.getElementById('rep-note').textContent='Select all text above and copy manually.';
+  });
+}
+
+// ─── CODE GEN ─────────────────────────────────────────
+function genCode(slotIndex) {
+  const raw = schoolCode+'|'+slots[slotIndex].name+'|'+todayStr()+'|V'+(slotIndex+1);
+  let h=0;
+  for (let i=0;i<raw.length;i++){h=((h<<5)-h)+raw.charCodeAt(i);h|=0;}
+  return (Math.abs(h)%900000+100000).toString();
+}
+
+// ─── CONTROLS ─────────────────────────────────────────
+function skip(s){
+  const v=document.getElementById('vid');
+  if(!slots[currentSlot].isYT) v.currentTime=Math.max(0,Math.min(v.duration||0,v.currentTime+s));
+}
+function seek(e){
+  if(slots[currentSlot].isYT) return; // can't seek YouTube this way
+  const v=document.getElementById('vid');if(!v.duration)return;
+  const r=document.getElementById('ptrack').getBoundingClientRect();
+  v.currentTime=((e.clientX-r.left)/r.width)*v.duration;
+}
+function updateTimeDisplay(){
+  const v=document.getElementById('vid');
+  document.getElementById('tdisp').textContent=fmt(v.currentTime)+' / '+fmt(v.duration||0);
+}
+
+// ─── LOG ──────────────────────────────────────────────
+function log(color,msg){
+  const colors={green:'#3fb950',orange:'#F0A500',blue:'#58a6ff',red:'#f85149'};
+  const c=document.getElementById('logc');
+  const row=document.createElement('div');
+  row.className='log-row';
+  row.innerHTML=`<div class="log-dot" style="background:${colors[color]||'#8B949E'}"></div>
+    <span class="log-t">${nowTime()}</span><span class="log-m">${msg}</span>`;
+  c.appendChild(row);
+  c.scrollTop=c.scrollHeight;
+}
+
+// ─── HELPERS ──────────────────────────────────────────
+function nowTime(){const n=new Date();return [n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>x.toString().padStart(2,'0')).join(':');}
+function todayStr(){const n=new Date();return n.getFullYear()+'-'+(n.getMonth()+1).toString().padStart(2,'0')+'-'+n.getDate().toString().padStart(2,'0');}
+function fmt(s){if(!s||isNaN(s))return'0:00';return Math.floor(s/60)+':'+Math.floor(s%60).toString().padStart(2,'0');}
+</script>
+</body>
+</html>
