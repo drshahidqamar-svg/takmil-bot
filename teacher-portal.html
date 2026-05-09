@@ -186,6 +186,58 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
   border-radius:var(--r2);padding:14px;text-align:center;
   font-size:13px;color:var(--ink3);margin-top:12px;display:none;
 }
+
+/* ── ATTENDANCE STYLES ── */
+.wa-bubble{
+  background:#e9fde7;border-radius:18px 18px 18px 4px;
+  padding:14px 16px;margin-bottom:12px;font-size:14px;
+  color:var(--ink);line-height:1.6;border:1px solid #c3f0c0;
+  position:relative;
+}
+.wa-bubble::before{
+  content:'TAKMIL 🌿';display:block;
+  font-size:10px;font-weight:800;color:var(--leaf);
+  margin-bottom:6px;letter-spacing:0.4px;
+}
+.wa-bubble.sent{
+  background:#fff;border-radius:18px 18px 4px 18px;
+  border-color:var(--border);margin-left:24px;
+}
+.wa-bubble.sent::before{display:none}
+
+.att-student-row{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 0;border-bottom:1px solid var(--border);
+}
+.att-student-row:last-child{border-bottom:none}
+.att-snum{font-size:12px;color:#6b7280;font-weight:700;min-width:22px}
+.att-sname{flex:1;font-size:15px;font-weight:700;color:var(--ink)}
+.att-btns{display:flex;gap:6px}
+.att-btn{
+  width:36px;height:36px;border-radius:50%;border:2px solid var(--border);
+  font-size:13px;font-weight:800;cursor:pointer;background:var(--fog);
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;color:#6b7280;font-family:'DM Sans',sans-serif;
+}
+.att-btn:active{transform:scale(0.9)}
+.att-btn.sel-p{background:#dcfce7;border-color:#16a34a;color:#15803d}
+.att-btn.sel-a{background:#fee2e2;border-color:#dc2626;color:#dc2626}
+.att-btn.sel-l{background:#fef9c3;border-color:#f59e0b;color:#92400e}
+
+.att-summary-bar{
+  display:flex;gap:0;background:var(--fog);
+  border-radius:var(--r2);overflow:hidden;
+  border:1.5px solid var(--border);margin:14px 0;
+}
+.att-sum-cell{flex:1;text-align:center;padding:10px 4px}
+.att-sum-n{font-size:20px;font-weight:900}
+.att-sum-l{font-size:9px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.5px;color:#6b7280;margin-top:2px}
+.att-prog{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:10px 0 4px}
+.att-prog-fill{height:100%;border-radius:3px;background:var(--leaf);transition:width 0.4s}
+.att-pct-lbl{font-size:12px;font-weight:700;text-align:right}
+
+.wa-tick{font-size:11px;color:#16a34a;text-align:right;margin-top:4px}
 </style>
 </head>
 <body>
@@ -283,6 +335,14 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
       </button>
     </div>
 
+    <div class="card" style="padding:16px 20px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border-color:#86efac">
+      <div style="font-size:17px;font-weight:800;color:var(--ink2);margin-bottom:4px">👥 Student Attendance</div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:14px">حاضری لگائیں — Mark today's register</div>
+      <button class="btn btn-green" onclick="goToAttendance()">
+        📋 Take Attendance — حاضری لگائیں
+      </button>
+    </div>
+
     <div class="card" style="padding:16px 20px">
       <div style="font-size:14px;font-weight:700;color:var(--ink2);margin-bottom:10px">📋 Today's Lessons</div>
       <div id="today-lessons"><div style="font-size:13px;color:#6b7280;text-align:center;padding:12px">No lessons recorded today yet</div></div>
@@ -373,6 +433,128 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
   </div>
 </div>
 
+<!-- ══ SCREEN: ATTENDANCE ══ -->
+<div class="scr" id="s-attendance">
+  <div class="hdr">
+    <div class="hdr-logo">TAKMIL</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="net-pill" id="net-badge-att"><div class="net-dot"></div><span id="net-txt-att">—</span></div>
+      <button onclick="showScreen('s-select')" style="background:rgba(255,255,255,0.1);border:none;color:white;padding:6px 12px;border-radius:10px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">← Back</button>
+    </div>
+  </div>
+  <div class="wrap">
+
+    <!-- WhatsApp-style instruction bubble -->
+    <div class="wa-bubble">
+      <strong>📋 Daily Attendance Register</strong><br>
+      روزانہ حاضری رجسٹر — <span id="att-date-display"></span><br><br>
+      Mark each student as:<br>
+      <strong style="color:#15803d">P</strong> = Present &nbsp;
+      <strong style="color:#dc2626">A</strong> = Absent &nbsp;
+      <strong style="color:#92400e">L</strong> = Leave
+    </div>
+
+    <!-- School info card -->
+    <div class="card" style="padding:14px 18px;margin-bottom:12px">
+      <div style="font-size:12px;color:#6b7280">School</div>
+      <div style="font-size:16px;font-weight:800;color:var(--ink2)" id="att-school-name">—</div>
+      <div style="font-size:12px;color:var(--leaf);font-weight:600;margin-top:2px" id="att-school-code">—</div>
+    </div>
+
+    <!-- Summary bar (live) -->
+    <div class="card" style="padding:14px 18px;margin-bottom:12px">
+      <div class="att-summary-bar">
+        <div class="att-sum-cell" style="border-right:1px solid var(--border)">
+          <div class="att-sum-n" style="color:#15803d" id="att-n-p">0</div>
+          <div class="att-sum-l">Present</div>
+        </div>
+        <div class="att-sum-cell" style="border-right:1px solid var(--border)">
+          <div class="att-sum-n" style="color:#dc2626" id="att-n-a">0</div>
+          <div class="att-sum-l">Absent</div>
+        </div>
+        <div class="att-sum-cell" style="border-right:1px solid var(--border)">
+          <div class="att-sum-n" style="color:#92400e" id="att-n-l">0</div>
+          <div class="att-sum-l">Leave</div>
+        </div>
+        <div class="att-sum-cell">
+          <div class="att-sum-n" id="att-n-tot">0</div>
+          <div class="att-sum-l">Total</div>
+        </div>
+      </div>
+      <div class="att-prog"><div class="att-prog-fill" id="att-prog-fill" style="width:0%"></div></div>
+      <div class="att-pct-lbl" id="att-pct-lbl">0% present</div>
+    </div>
+
+    <!-- Add student row -->
+    <div class="card" style="padding:14px 18px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:10px">➕ Add Student — طالب علم شامل کریں</div>
+      <div style="display:flex;gap:8px">
+        <input class="inp" id="att-new-name" type="text" placeholder="Student name — نام"
+          style="margin-bottom:0;flex:1;padding:11px 14px;font-size:14px"
+          onkeydown="if(event.key==='Enter')addAttStudent()">
+        <button onclick="addAttStudent()" style="padding:11px 18px;background:var(--leaf);color:white;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Add</button>
+      </div>
+    </div>
+
+    <!-- Student list -->
+    <div class="card" style="padding:14px 18px;margin-bottom:12px" id="att-student-card">
+      <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:12px">
+        👥 Class Register — <span id="att-student-count">0</span> students
+      </div>
+      <div id="att-student-list">
+        <div style="font-size:13px;color:#6b7280;text-align:center;padding:16px">
+          Add students above to start the register
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="wa-bubble sent" id="att-submit-bubble" style="display:none">
+      ✅ Ready to submit — all students marked!<br>
+      <span class="wa-tick">✓✓</span>
+    </div>
+
+    <button class="btn btn-green" id="att-submit-btn" onclick="submitAttendance()" style="margin-bottom:10px" disabled>
+      📤 Submit Attendance — حاضری جمع کریں
+    </button>
+    <button class="btn btn-outline" onclick="showScreen('s-select')">
+      ← Back to Lessons — واپس جائیں
+    </button>
+    <div class="sync-notice" id="att-sync-notice">
+      📴 Saved offline — will sync when internet returns<br>
+      آف لائن محفوظ — انٹرنیٹ پر خود بخود بھیجا جائے گا
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: ATTENDANCE RESULT ══ -->
+<div class="scr" id="s-att-result">
+  <div class="hdr">
+    <div class="hdr-logo">TAKMIL</div>
+  </div>
+  <div class="wrap">
+    <div class="status-card done" style="text-align:center">
+      <div class="result-big">✅</div>
+      <div class="result-title">Attendance Submitted!</div>
+      <div class="result-meta" id="att-result-meta" style="margin-top:8px"></div>
+    </div>
+
+    <!-- WhatsApp-style confirmation bubble -->
+    <div class="wa-bubble" id="att-result-bubble" style="margin-top:4px">
+      Loading summary...
+    </div>
+
+    <div style="height:10px"></div>
+    <button class="btn btn-green" onclick="showScreen('s-select')">
+      ▶ Back to Lessons — واپس جائیں
+    </button>
+    <div style="height:10px"></div>
+    <button class="btn btn-outline" onclick="goToAttendance()">
+      📋 New Attendance — نئی حاضری
+    </button>
+  </div>
+</div>
+
 <script>
 const BASE = '';
 const DB_KEY = 'takmil_lessons';
@@ -406,13 +588,15 @@ const SAMPLE_VIDEOS = [
 let idb;
 function openIDB(){
   return new Promise((res,rej)=>{
-    const req = indexedDB.open('takmil_teacher',1);
+    const req = indexedDB.open('takmil_teacher',2);
     req.onupgradeneeded = e => {
       const d = e.target.result;
       if(!d.objectStoreNames.contains('lessons'))
         d.createObjectStore('lessons',{keyPath:'local_id',autoIncrement:true});
       if(!d.objectStoreNames.contains('catalog'))
         d.createObjectStore('catalog',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('attendance'))
+        d.createObjectStore('attendance',{keyPath:'local_id',autoIncrement:true});
     };
     req.onsuccess = e => { idb=e.target.result; res(idb); };
     req.onerror = ()=>rej(req.error);
@@ -425,7 +609,7 @@ function idbGetAll(store){return new Promise((res,rej)=>{const tx=idb.transactio
 function isOnline(){ return navigator.onLine; }
 function updateNetBadges(){
   const on = isOnline();
-  ['login','sel','lesson','res'].forEach(id=>{
+  ['login','sel','lesson','res','att'].forEach(id=>{
     const b=document.getElementById('net-badge-'+id);
     const t=document.getElementById('net-txt-'+id);
     if(!b||!t) return;
@@ -440,7 +624,7 @@ function updateNetBadges(){
   }
   if(on) autoSync();
 }
-window.addEventListener('online',()=>{ updateNetBadges(); autoSync(); });
+window.addEventListener('online',()=>{ updateNetBadges(); autoSync(); autoSyncAttendance(); });
 window.addEventListener('offline', updateNetBadges);
 
 // ── GPS ──────────────────────────────────────────────────────────
@@ -837,6 +1021,205 @@ function showScreen(id){
   window.scrollTo(0,0);
 }
 
+// ── ATTENDANCE ────────────────────────────────────────────────────
+let attStudents = []; // [{name, status: 'P'|'A'|'L'|null}]
+
+function goToAttendance(){
+  attStudents = [];
+  // Pre-load students from last saved register if any
+  const saved = localStorage.getItem('takmil_att_students_' + (currentTeacher?.school_code||''));
+  if(saved){
+    try{
+      const prev = JSON.parse(saved);
+      attStudents = prev.map(s => ({name: s.name, status: null}));
+    }catch(e){}
+  }
+  renderAttendanceScreen();
+  showScreen('s-attendance');
+  updateNetBadges();
+}
+
+function renderAttendanceScreen(){
+  const today = new Date();
+  document.getElementById('att-date-display').textContent =
+    today.toLocaleDateString('en-PK', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  document.getElementById('att-school-name').textContent =
+    currentTeacher?.school_name || currentTeacher?.school_code || '—';
+  document.getElementById('att-school-code').textContent =
+    currentTeacher?.school_code || '';
+  renderStudentList();
+  updateAttSummary();
+}
+
+function renderStudentList(){
+  const list = document.getElementById('att-student-list');
+  const countEl = document.getElementById('att-student-count');
+  countEl.textContent = attStudents.length;
+
+  if(!attStudents.length){
+    list.innerHTML = '<div style="font-size:13px;color:#6b7280;text-align:center;padding:16px">Add students above to start the register</div>';
+    return;
+  }
+
+  list.innerHTML = attStudents.map((s, i) => `
+    <div class="att-student-row" id="srow-${i}">
+      <div class="att-snum">${i+1}</div>
+      <div class="att-sname">${s.name}</div>
+      <div class="att-btns">
+        <button class="att-btn ${s.status==='P'?'sel-p':''}" onclick="markStudent(${i},'P')" title="Present">P</button>
+        <button class="att-btn ${s.status==='A'?'sel-a':''}" onclick="markStudent(${i},'A')" title="Absent">A</button>
+        <button class="att-btn ${s.status==='L'?'sel-l':''}" onclick="markStudent(${i},'L')" title="Leave">L</button>
+        <button class="att-btn" onclick="removeStudent(${i})" title="Remove"
+          style="font-size:15px;color:#dc2626;border-color:transparent;background:transparent">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function markStudent(idx, status){
+  attStudents[idx].status = status;
+  // Re-render just that row for speed
+  const row = document.getElementById('srow-'+idx);
+  if(row){
+    const s = attStudents[idx];
+    row.querySelectorAll('.att-btn').forEach((btn,bi) => {
+      if(bi===0){ btn.className = 'att-btn'+(status==='P'?' sel-p':''); }
+      else if(bi===1){ btn.className = 'att-btn'+(status==='A'?' sel-a':''); }
+      else if(bi===2){ btn.className = 'att-btn'+(status==='L'?' sel-l':''); }
+    });
+  }
+  updateAttSummary();
+}
+
+function removeStudent(idx){
+  attStudents.splice(idx, 1);
+  renderStudentList();
+  updateAttSummary();
+}
+
+function addAttStudent(){
+  const inp = document.getElementById('att-new-name');
+  const name = inp.value.trim();
+  if(!name) return;
+  attStudents.push({name, status: null});
+  inp.value = '';
+  // Save names for next time
+  localStorage.setItem('takmil_att_students_' + (currentTeacher?.school_code||''),
+    JSON.stringify(attStudents));
+  renderStudentList();
+  updateAttSummary();
+  inp.focus();
+}
+
+function updateAttSummary(){
+  const p   = attStudents.filter(s=>s.status==='P').length;
+  const a   = attStudents.filter(s=>s.status==='A').length;
+  const l   = attStudents.filter(s=>s.status==='L').length;
+  const tot = attStudents.length;
+  const marked = p+a+l;
+  const pct = tot > 0 ? Math.round(p/tot*100) : 0;
+  const allMarked = tot > 0 && marked === tot;
+
+  document.getElementById('att-n-p').textContent   = p;
+  document.getElementById('att-n-a').textContent   = a;
+  document.getElementById('att-n-l').textContent   = l;
+  document.getElementById('att-n-tot').textContent  = tot;
+  document.getElementById('att-prog-fill').style.width = pct+'%';
+  document.getElementById('att-pct-lbl').textContent  = pct+'% present';
+  document.getElementById('att-pct-lbl').style.color  = pct>=80?'#15803d':pct>=60?'#92400e':'#dc2626';
+
+  const submitBtn = document.getElementById('att-submit-btn');
+  submitBtn.disabled = !allMarked;
+
+  const bubble = document.getElementById('att-submit-bubble');
+  bubble.style.display = allMarked ? 'block' : 'none';
+}
+
+async function submitAttendance(){
+  const p = attStudents.filter(s=>s.status==='P').length;
+  const a = attStudents.filter(s=>s.status==='A').length;
+  const l = attStudents.filter(s=>s.status==='L').length;
+  const tot = attStudents.length;
+  const pct = tot > 0 ? Math.round(p/tot*100) : 0;
+  const today = new Date().toISOString().split('T')[0];
+
+  const payload = {
+    school_code:       currentTeacher?.school_code,
+    school_identifier: currentTeacher?.school_code,
+    school_name:       currentTeacher?.school_name || currentTeacher?.school_code,
+    teacher_name:      currentTeacher?.name,
+    date:              today,
+    total:             tot,
+    present:           p,
+    absent:            a,
+    leave_count:       l,
+    attendance_pct:    pct,
+    submitted_at:      new Date().toISOString(),
+    students:          attStudents,
+    source:            'teacher_portal',
+  };
+
+  let synced = false;
+  if(isOnline()){
+    try{
+      const resp = await fetch(BASE+'/api/register/submit', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      synced = !!(data.saved || data.ok || data.id);
+    }catch(e){}
+  }
+
+  if(!synced){
+    // Save to IndexedDB for later sync
+    try{ await idbPut('attendance', {...payload, synced:false}); }catch(e){}
+    document.getElementById('att-sync-notice').style.display = 'block';
+  }
+
+  // Show result
+  const today2 = new Date().toLocaleDateString('en-PK',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('att-result-meta').innerHTML =
+    `${currentTeacher?.school_name || currentTeacher?.school_code}<br>
+     ${today2}<br>
+     <span style="color:${synced?'#15803d':'#92400e'}">${synced?'✅ Synced to server':'📴 Saved offline — will sync soon'}</span>`;
+
+  // WhatsApp-style summary bubble
+  const absentNames = attStudents.filter(s=>s.status==='A').map(s=>s.name);
+  const leaveNames  = attStudents.filter(s=>s.status==='L').map(s=>s.name);
+  document.getElementById('att-result-bubble').innerHTML =
+    `<strong>📋 Attendance Submitted</strong><br>
+     School: ${currentTeacher?.school_name || currentTeacher?.school_code}<br>
+     Date: ${today}<br><br>
+     ✅ Present: <strong>${p}</strong> &nbsp; ❌ Absent: <strong>${a}</strong> &nbsp; 🔵 Leave: <strong>${l}</strong><br>
+     Total: <strong>${tot}</strong> &nbsp; Rate: <strong>${pct}%</strong>
+     ${absentNames.length ? '<br><br>❌ Absent: '+absentNames.join(', ') : ''}
+     ${leaveNames.length  ? '<br>🔵 Leave: '+leaveNames.join(', ')   : ''}
+     <div class="wa-tick">✓✓ Delivered</div>`;
+
+  showScreen('s-att-result');
+}
+
+// Auto-sync offline attendance
+async function autoSyncAttendance(){
+  try{
+    const records = await idbGetAll('attendance');
+    const pending = records.filter(r=>!r.synced);
+    for(const rec of pending){
+      try{
+        const resp = await fetch(BASE+'/api/register/submit',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(rec)
+        });
+        const data = await resp.json();
+        if(data.saved||data.ok||data.id){
+          rec.synced = true;
+          await idbPut('attendance', rec);
+        }
+      }catch(e){}
+    }
+  }catch(e){}
+}
+
 // ── Init ─────────────────────────────────────────────────────────
 async function init(){
   await openIDB();
@@ -854,6 +1237,7 @@ async function init(){
       showScreen('s-select');
       loadTodayLessons();
       if(isOnline()) autoSync();
+      if(isOnline()) autoSyncAttendance();
       return;
     }catch(e){ localStorage.removeItem('takmil_teacher'); }
   }
