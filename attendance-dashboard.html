@@ -448,7 +448,19 @@ async function renderMissing(date, submitted) {
 }
 
 // ── Init ───────────────────────────────────────────
-loadData();
+async function init() {
+  // Try today first — if no records, fall back to yesterday
+  const todayData = await fetch(`/api/register/history?date=${today}`)
+    .then(r => r.json()).catch(() => ({ records: [] }));
+
+  if (!todayData.records || todayData.records.length === 0) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    dateInp.value = yesterday.toISOString().split('T')[0];
+  }
+  loadData();
+}
+init();
 
 // Auto-refresh every 2 minutes
 setInterval(loadData, 120000);
