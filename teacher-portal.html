@@ -485,9 +485,10 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
       <div class="att-pct-lbl" id="att-pct-lbl">0% present</div>
     </div>
 
-    <!-- Add student row -->
-    <div class="card" style="padding:14px 18px;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:10px">➕ Add Student — طالب علم شامل کریں</div>
+    <!-- Add student row — shown only if no server students loaded -->
+    <div class="card" id="att-add-card" style="padding:14px 18px;margin-bottom:12px;display:none">
+      <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:6px">➕ Add Student Manually — خود شامل کریں</div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:10px">No students loaded from server — add manually</div>
       <div style="display:flex;gap:8px">
         <input class="inp" id="att-new-name" type="text" placeholder="Student name — نام"
           style="margin-bottom:0;flex:1;padding:11px 14px;font-size:14px"
@@ -1022,21 +1023,55 @@ function showScreen(id){
 }
 
 // ── ATTENDANCE ────────────────────────────────────────────────────
-let attStudents = []; // [{name, status: 'P'|'A'|'L'|null}]
+let attStudents = []; // [{roll_number, name, status: 'P'|'A'|'L'|null}]
 
-function goToAttendance(){
+async function goToAttendance(){
   attStudents = [];
-  // Pre-load students from last saved register if any
-  const saved = localStorage.getItem('takmil_att_students_' + (currentTeacher?.school_code||''));
-  if(saved){
-    try{
-      const prev = JSON.parse(saved);
-      attStudents = prev.map(s => ({name: s.name, status: null}));
-    }catch(e){}
-  }
   renderAttendanceScreen();
   showScreen('s-attendance');
   updateNetBadges();
+
+  // Show loading state
+  const list = document.getElementById('att-student-list');
+  list.innerHTML = '<div style="font-size:13px;color:#6b7280;text-align:center;padding:20px">⏳ Loading students...</div>';
+  document.getElementById('att-student-count').textContent = '...';
+
+  // Fetch students from server using school_code
+  const schoolCode = currentTeacher?.school_code;
+  let loaded = false;
+
+  if(isOnline() && schoolCode){
+    try{
+      const resp = await fetch(`${BASE}/api/register/students?school_code=${encodeURIComponent(schoolCode)}`);
+      const data = await resp.json();
+      const students = data.students || data || [];
+      if(Array.isArray(students) && students.length){
+        attStudents = students.map(s => ({
+          roll_number: s.roll_number || s.roll || s.id || '',
+          name: s.student_name || s.name || '',
+          status: null,
+        }));
+        // Cache for offline use
+        localStorage.setItem('takmil_att_students_' + schoolCode, JSON.stringify(attStudents));
+        loaded = true;
+      }
+    }catch(e){}
+  }
+
+  // Offline fallback — use cached list
+  if(!loaded){
+    const saved = localStorage.getItem('takmil_att_students_' + (schoolCode||''));
+    if(saved){
+      try{
+        const prev = JSON.parse(saved);
+        attStudents = prev.map(s => ({roll_number: s.roll_number||'', name: s.name||'', status: null}));
+        loaded = true;
+      }catch(e){}
+    }
+  }
+
+  renderStudentList();
+  updateAttSummary();
 }
 
 function renderAttendanceScreen(){
@@ -1056,8 +1091,16 @@ function renderStudentList(){
   const countEl = document.getElementById('att-student-count');
   countEl.textContent = attStudents.length;
 
+  // Show manual-add card only when no server students
+  const addCard = document.getElementById('att-add-card');
+  if(addCard) addCard.style.display = attStudents.length === 0 ? 'block' : 'none';
+
   if(!attStudents.length){
-    list.innerHTML = '<div style="font-size:13px;color:#6b7280;text-align:center;padding:16px">Add students above to start the register</div>';
+    list.innerHTML = `<div style="font-size:13px;color:#6b7280;text-align:center;padding:20px">
+      ⚠️ No students found for this school.<br>
+      <span style="font-size:12px">Ask admin to register students first.<br>
+      یا نیچے خود طالب علم شامل کریں۔</span>
+    </div>`;
     return;
   }
 
@@ -1069,8 +1112,6 @@ function renderStudentList(){
         <button class="att-btn ${s.status==='P'?'sel-p':''}" onclick="markStudent(${i},'P')" title="Present">P</button>
         <button class="att-btn ${s.status==='A'?'sel-a':''}" onclick="markStudent(${i},'A')" title="Absent">A</button>
         <button class="att-btn ${s.status==='L'?'sel-l':''}" onclick="markStudent(${i},'L')" title="Leave">L</button>
-        <button class="att-btn" onclick="removeStudent(${i})" title="Remove"
-          style="font-size:15px;color:#dc2626;border-color:transparent;background:transparent">✕</button>
       </div>
     </div>`).join('');
 }
@@ -1150,7 +1191,7 @@ async function submitAttendance(){
     submitted_by: currentTeacher?.name || currentTeacher?.school_code,
     // Backend expects: attendance: [{roll_number, student_name, status}]
     attendance: attStudents.map((s, i) => ({
-      roll_number:  String(i + 1).padStart(3, '0'),
+      roll_number:  s.roll_number || String(i + 1).padStart(3, '0'),
       student_name: s.name,
       status:       s.status,
     })),
