@@ -1143,19 +1143,17 @@ async function submitAttendance(){
   const today = new Date().toISOString().split('T')[0];
 
   const payload = {
-    school_code:       currentTeacher?.school_code,
-    school_identifier: currentTeacher?.school_code,
-    school_name:       currentTeacher?.school_name || currentTeacher?.school_code,
-    teacher_name:      currentTeacher?.name,
-    date:              today,
-    total:             tot,
-    present:           p,
-    absent:            a,
-    leave_count:       l,
-    attendance_pct:    pct,
-    submitted_at:      new Date().toISOString(),
-    students:          attStudents,
-    source:            'teacher_portal',
+    school_code:  currentTeacher?.school_code,
+    school_name:  currentTeacher?.school_name || currentTeacher?.school_code,
+    teacher_name: currentTeacher?.name,
+    date:         today,
+    submitted_by: currentTeacher?.name || currentTeacher?.school_code,
+    // Backend expects: attendance: [{roll_number, student_name, status}]
+    attendance: attStudents.map((s, i) => ({
+      roll_number:  String(i + 1).padStart(3, '0'),
+      student_name: s.name,
+      status:       s.status,
+    })),
   };
 
   let synced = false;
@@ -1208,7 +1206,12 @@ async function autoSyncAttendance(){
       try{
         const resp = await fetch(BASE+'/api/register/submit',{
           method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify(rec)
+          body:JSON.stringify({
+            school_code:  rec.school_code,
+            date:         rec.date,
+            submitted_by: rec.submitted_by,
+            attendance:   rec.attendance,
+          })
         });
         const data = await resp.json();
         if(data.saved||data.ok||data.id){
