@@ -7,14 +7,14 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0A0C10;--surface:#111318;--surface2:#1A1D24;
-  --border:#252830;--border2:#2E3240;
-  --blue:#3B82F6;--blue-dim:#1D3461;
-  --green:#22C55E;--green-dim:#14432A;
+  --bg:#f1f5f9;--surface:#ffffff;--surface2:#f8fafc;
+  --border:#e2e8f0;--border2:#cbd5e1;
+  --blue:#2563eb;--blue-dim:#dbeafe;
+  --green:#16a34a;--green-dim:#dcfce7;
   --orange:#F97316;--orange-dim:#3D2006;
-  --purple:#A855F7;--purple-dim:#2D1554;
+  --purple:#7c3aed;--purple-dim:#ede9fe;
   --red:#EF4444;--red-dim:#3B0D0D;
-  --text:#E2E8F0;--muted:#64748B;--dim:#94A3B8;
+  --text:#0f172a;--muted:#64748b;--dim:#475569;
   --mono:'JetBrains Mono',monospace;--sans:'DM Sans',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -61,12 +61,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .mbdy{flex:1;min-width:0}
 .mwho{font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:2px}
 .mtxt{font-size:12px;line-height:1.65;white-space:pre-wrap;font-family:var(--mono);padding:9px 12px;border-radius:7px;word-break:break-word}
-.msg.out .mtxt{background:var(--blue-dim);border:1px solid var(--blue);color:#93C5FD}
+.msg.out .mtxt{background:var(--blue-dim);border:1px solid var(--blue);color:#1d4ed8}
 .msg.in   .mtxt{background:var(--surface2);border:1px solid var(--border2);color:var(--text)}
-.msg.ok   .mtxt{background:var(--green-dim);border-color:var(--green);color:#86EFAC}
-.msg.warn .mtxt{background:var(--orange-dim);border-color:var(--orange);color:#FED7AA}
-.msg.err  .mtxt{background:var(--red-dim);border-color:var(--red);color:#FCA5A5}
-.msg.info .mtxt{background:var(--purple-dim);border-color:var(--purple);color:#D8B4FE}
+.msg.ok   .mtxt{background:var(--green-dim);border-color:var(--green);color:#15803d}
+.msg.warn .mtxt{background:var(--orange-dim);border-color:var(--orange);color:#9a3412}
+.msg.err  .mtxt{background:var(--red-dim);border-color:var(--red);color:#991b1b}
+.msg.info .mtxt{background:var(--purple-dim);border-color:var(--purple);color:#6d28d9}
 .msg.sys  .mtxt{background:none;border:none;color:var(--muted);font-size:10px;padding:1px 0;font-style:italic}
 .mtm{font-size:9px;color:var(--muted);margin-top:2px;font-family:var(--mono)}
 .iarea{border-top:1px solid var(--border);padding:10px 18px;background:var(--surface)}
