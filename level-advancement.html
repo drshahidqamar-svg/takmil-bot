@@ -3,197 +3,368 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TAKMIL — Level Advancement Console</title>
+<title>TAKMIL — Level Advancement</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;min-height:100vh}
-.header{background:linear-gradient(135deg,#1a2e44,#2d4a6e);color:white;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
-.logo{font-size:20px;font-weight:800;color:#4ade80}
-.header-sub{font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px}
-.container{max-width:1200px;margin:0 auto;padding:24px 16px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-@media(max-width:640px){.stats{grid-template-columns:1fr 1fr}}
-.stat{background:white;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.06);text-align:center}
-.stat-num{font-size:32px;font-weight:800;color:#1a2e44}
-.stat-lbl{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-top:4px}
-.filters{background:white;border-radius:12px;padding:16px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-.filters select,.filters input{padding:8px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;outline:none}
-.filters select:focus,.filters input:focus{border-color:#01796F}
-.filter-label{font-size:13px;font-weight:600;color:#64748b}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
-.school-card{background:white;border-radius:14px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.08);border-left:4px solid #e2e8f0;transition:all 0.2s}
-.school-card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.12);transform:translateY(-1px)}
-.school-card.graduated{border-left-color:#4ade80}
-.school-card.advanced{border-left-color:#01796F}
-.school-name{font-size:15px;font-weight:700;color:#1a2e44;margin-bottom:2px}
-.school-meta{font-size:12px;color:#64748b;margin-bottom:14px}
-.level-display{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.level-badge{background:#1a2e44;color:white;border-radius:8px;padding:6px 14px;font-size:18px;font-weight:800}
-.level-badge.grand{background:linear-gradient(135deg,#f59e0b,#d97706)}
-.level-progress{flex:1;height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden}
-.level-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#01796F,#4ade80);transition:width 0.5s}
-.level-pct{font-size:12px;color:#64748b;font-weight:600}
-.scores{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.score-box{background:#f8fafc;border-radius:8px;padding:8px;text-align:center}
-.score-subj{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:2px}
-.score-val{font-size:18px;font-weight:800}
-.score-val.good{color:#16a34a}
-.score-val.ok{color:#d97706}
-.score-val.low{color:#dc2626}
-.score-val.none{color:#94a3b8}
-.students-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:13px}
-.students-count{font-weight:600;color:#1a2e44}
-.att-rate{color:#64748b}
-.btn-advance{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#01796F,#019587);color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;box-shadow:0 3px 10px rgba(1,121,111,0.3)}
-.btn-advance:hover{opacity:0.9;transform:translateY(-1px)}
+:root{
+  --bg:#f1f5f9;--card:#fff;--border:#e2e8f0;--border2:#cbd5e1;
+  --text:#0f172a;--dim:#334155;--muted:#64748b;--light:#94a3b8;
+  --green:#059669;--gdim:#f0fdf4;--gbdr:#bbf7d0;
+  --blue:#2563eb;--bdim:#eff6ff;
+  --amber:#d97706;--adim:#fffbeb;
+  --red:#dc2626;--rdim:#fef2f2;
+  --purple:#7c3aed;--pdim:#f5f3ff;
+  --teal:#0d9488;
+  --sans:'Plus Jakarta Sans',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+}
+body{font-family:var(--sans);background:var(--bg);min-height:100vh;color:var(--text)}
+
+/* HOME BAR */
+.home-bar{
+  background:var(--green);padding:8px 20px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+.home-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(255,255,255,.18);color:#fff;text-decoration:none;
+  font-size:13px;font-weight:700;padding:5px 16px;border-radius:20px;
+  border:1.5px solid rgba(255,255,255,.35);transition:background .15s;
+}
+.home-btn:hover{background:rgba(255,255,255,.28)}
+.home-bar-label{color:rgba(255,255,255,.6);font-size:12px}
+
+/* HEADER */
+.hdr{
+  background:linear-gradient(135deg,#1a2e44,#2d4a6e);
+  padding:20px 28px;display:flex;align-items:center;justify-content:space-between;
+}
+.hdr-left .title{font-size:20px;font-weight:800;color:#4ade80;letter-spacing:-.3px}
+.hdr-left .sub{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px}
+.refresh-btn{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+  color:#fff;padding:8px 18px;border-radius:8px;cursor:pointer;
+  font-family:var(--sans);font-size:13px;font-weight:600;
+  transition:background .15s;
+}
+.refresh-btn:hover{background:rgba(255,255,255,.2)}
+
+/* MAIN */
+.wrap{max-width:860px;margin:0 auto;padding:32px 20px}
+
+/* STATS ROW */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:32px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:16px;text-align:center;border-top:3px solid}
+.stat.g{border-top-color:var(--green)} .stat.b{border-top-color:var(--blue)}
+.stat.a{border-top-color:var(--amber)} .stat.p{border-top-color:var(--purple)}
+.stat-n{font-size:28px;font-weight:800;margin-bottom:4px}
+.stat.g .stat-n{color:var(--green)} .stat.b .stat-n{color:var(--blue)}
+.stat.a .stat-n{color:var(--amber)} .stat.p .stat-n{color:var(--purple)}
+.stat-l{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono)}
+
+/* STEP CARD */
+.step-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;margin-bottom:20px;
+}
+.step-hdr{
+  padding:14px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+}
+.step-num{
+  width:28px;height:28px;border-radius:50%;background:var(--text);
+  color:#fff;font-size:12px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.step-title{font-size:14px;font-weight:700;color:var(--text)}
+.step-body{padding:20px 22px}
+
+/* DROPDOWNS */
+.field{margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+.field label{
+  display:block;font-size:11px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);margin-bottom:8px;
+}
+.field select,.field input{
+  width:100%;padding:12px 16px;border:1.5px solid var(--border2);
+  border-radius:10px;font-size:14px;font-family:var(--sans);
+  color:var(--text);background:var(--bg);outline:none;
+  transition:border-color .15s,box-shadow .15s;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;
+  padding-right:36px;
+}
+.field select:focus,.field input:focus{
+  border-color:var(--green);box-shadow:0 0 0 3px var(--gdim);
+}
+.field select:disabled{opacity:.5;cursor:not-allowed}
+
+/* SCHOOL INFO PANEL */
+.school-info{
+  background:var(--gdim);border:1px solid var(--gbdr);
+  border-radius:12px;padding:16px 20px;margin-top:16px;
+  display:none;
+}
+.school-info.show{display:block}
+.si-name{font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px}
+.si-meta{font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:12px}
+.si-scores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.si-score{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+.si-score-lbl{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;font-family:var(--mono)}
+.si-score-val{font-size:20px;font-weight:800}
+.si-score-val.good{color:var(--green)} .si-score-val.ok{color:var(--amber)}
+.si-score-val.low{color:var(--red)}    .si-score-val.none{color:var(--light)}
+
+/* LEVEL ARROW */
+.level-arrow{
+  display:flex;align-items:center;gap:12px;justify-content:center;
+  padding:20px;margin:20px 0;
+}
+.lvl-box{
+  min-width:80px;padding:14px 20px;border-radius:12px;text-align:center;
+  font-family:var(--mono);
+}
+.lvl-box .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.lvl-box .num{font-size:28px;font-weight:800;line-height:1}
+.lvl-from{background:#1a2e44;color:#fff}
+.lvl-to{background:var(--green);color:#fff}
+.lvl-to.grand{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.arrow-icon{font-size:28px;color:var(--muted)}
+
+/* READINESS */
+.readiness{
+  border-radius:10px;padding:14px 16px;margin-bottom:20px;
+  font-size:13px;font-weight:600;display:flex;align-items:flex-start;gap:10px;
+}
+.readiness.ready{background:var(--gdim);color:#065f46;border:1px solid var(--gbdr)}
+.readiness.partial{background:var(--adim);color:#92400e;border:1px solid #fde68a}
+.readiness.none{background:var(--rdim);color:var(--red);border:1px solid #fecaca}
+.readiness-icon{font-size:18px;flex-shrink:0}
+.readiness-text .main{font-size:13px;font-weight:700;margin-bottom:3px}
+.readiness-text .sub{font-size:11px;opacity:.8;font-weight:400}
+
+/* ADVANCE BTN */
+.btn-advance{
+  width:100%;padding:14px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,#059669,#047857);
+  color:#fff;font-size:15px;font-weight:700;cursor:pointer;
+  font-family:var(--sans);transition:all .2s;
+  box-shadow:0 4px 14px rgba(5,150,105,.3);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-advance:hover{opacity:.9;transform:translateY(-1px)}
 .btn-advance:disabled{background:#9ca3af;box-shadow:none;cursor:not-allowed;transform:none}
-.btn-grand{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 3px 10px rgba(245,158,11,0.3)}
-.btn-graduated{background:linear-gradient(135deg,#4ade80,#16a34a);cursor:default}
-.history-btn{width:100%;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:white;color:#64748b;font-size:12px;cursor:pointer;font-family:inherit;margin-top:8px}
-.history-btn:hover{background:#f8fafc}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100;display:none}
-.modal{background:white;border-radius:16px;padding:28px;width:90%;max-width:480px;max-height:80vh;overflow-y:auto}
-.modal-title{font-size:18px;font-weight:700;color:#1a2e44;margin-bottom:16px}
-.modal-close{float:right;cursor:pointer;font-size:20px;color:#64748b;background:none;border:none}
-.confirm-box{background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:16px;margin-bottom:16px}
-.confirm-title{font-weight:700;color:#92400e;margin-bottom:8px}
-.confirm-detail{font-size:13px;color:#78350f;line-height:1.6}
-.notes-input{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:14px;resize:vertical;min-height:70px;outline:none}
-.notes-input:focus{border-color:#01796F}
-.modal-btns{display:flex;gap:10px}
-.btn-confirm{flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#01796F,#019587);color:white;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
-.btn-cancel{padding:12px 20px;border-radius:10px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-size:15px;cursor:pointer;font-family:inherit}
-.history-list{margin-top:12px}
-.hist-item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
-.hist-level{font-weight:700;color:#01796F}
-.hist-date{color:#64748b}
-.hist-by{color:#94a3b8;font-size:11px}
-.loading{text-align:center;padding:60px;color:#94a3b8;font-size:15px}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a2e44;color:white;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none}
-.toast.show{opacity:1}
-.empty{text-align:center;padding:60px;color:#94a3b8}
-.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:6px}
-.tag-sindh{background:#dbeafe;color:#1d4ed8}
-.tag-punjab{background:#fce7f3;color:#9d174d}
-.tag-kpk{background:#d1fae5;color:#065f46}
-.tag-gb{background:#e0e7ff;color:#3730a3}
-.tag-baloch{background:#fef3c7;color:#92400e}
+.btn-advance.grand{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 4px 14px rgba(245,158,11,.3)}
+
+/* NOTES */
+.notes-area{
+  width:100%;padding:12px 16px;border:1.5px solid var(--border2);
+  border-radius:10px;font-size:13px;font-family:var(--sans);
+  color:var(--text);resize:vertical;min-height:80px;outline:none;
+  transition:border-color .15s;background:var(--bg);
+}
+.notes-area:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--gdim)}
+
+/* HISTORY */
+.hist-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.hist-hdr{padding:14px 22px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700}
+.hist-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 22px;border-bottom:1px solid var(--border);
+}
+.hist-item:last-child{border-bottom:none}
+.hist-levels{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--green)}
+.hist-by{font-size:12px;color:var(--muted);margin-top:2px}
+.hist-date{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.hist-empty{padding:32px;text-align:center;color:var(--muted);font-size:13px}
+
+/* MODAL */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  display:none;align-items:center;justify-content:center;z-index:200;
+  backdrop-filter:blur(3px);
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--card);border-radius:16px;padding:28px;
+  width:90%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.2);
+}
+.modal-title{font-size:17px;font-weight:800;color:var(--text);margin-bottom:16px}
+.confirm-box{
+  background:#fef3c7;border:2px solid #f59e0b;
+  border-radius:10px;padding:16px;margin-bottom:16px;
+}
+.confirm-box .ct{font-weight:700;color:#92400e;margin-bottom:8px}
+.confirm-box .cd{font-size:13px;color:#78350f;line-height:1.7}
+.modal-btns{display:flex;gap:10px;margin-top:16px}
+.btn-confirm{
+  flex:1;padding:12px;border-radius:10px;border:none;
+  background:var(--green);color:#fff;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:var(--sans);
+}
+.btn-cancel{
+  padding:12px 20px;border-radius:10px;border:1.5px solid var(--border2);
+  background:var(--card);color:var(--muted);font-size:14px;
+  cursor:pointer;font-family:var(--sans);
+}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--text);color:#fff;padding:12px 24px;border-radius:10px;
+  font-size:14px;font-weight:600;z-index:999;opacity:0;
+  transition:all .3s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.badge{
+  display:inline-block;padding:2px 8px;border-radius:20px;
+  font-size:10px;font-weight:700;margin-left:6px;
+}
+.badge-sindh{background:#dbeafe;color:#1d4ed8}
+.badge-punjab{background:#fce7f3;color:#9d174d}
+.badge-kpk{background:#dcfce7;color:#15803d}
+.badge-bal{background:#fef3c7;color:#92400e}
+.badge-gb{background:#e0e7ff;color:#3730a3}
 </style>
 </head>
 <body>
 
-  <!-- Home Button Top Bar -->
-  <div style="
-    width:100%;
-    background:#15803D;
-    padding:8px 20px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    position:sticky;
-    top:0;
-    z-index:9999;
-    box-shadow:0 2px 8px rgba(0,0,0,0.15);
-  ">
-    <a href="/" style="
-      display:inline-flex;
-      align-items:center;
-      gap:7px;
-      background:rgba(255,255,255,0.18);
-      color:#ffffff;
-      text-decoration:none;
-      font-family:'Segoe UI',sans-serif;
-      font-size:13px;
-      font-weight:700;
-      padding:5px 16px;
-      border-radius:20px;
-      border:1.5px solid rgba(255,255,255,0.35);
-      transition:background 0.15s;
-    " onmouseover="this.style.background='rgba(255,255,255,0.28)'"
-       onmouseout="this.style.background='rgba(255,255,255,0.18)'">
-      ⌂ Home
-    </a>
-    <span style="color:rgba(255,255,255,0.6);font-size:12px;font-family:'Segoe UI',sans-serif;">
-      TAKMIL Monitoring Hub
-    </span>
-  </div>
-
-<div class="header">
-  <div>
-    <div class="logo">TAKMIL</div>
-    <div class="header-sub">Level Advancement Console — Ops Team</div>
-  </div>
-  <div style="display:flex;gap:12px;align-items:center">
-    <button onclick="loadData()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px">↻ Refresh</button>
-  </div>
+<div class="home-bar">
+  <a href="/" class="home-btn">⌂ Home</a>
+  <span class="home-bar-label">TAKMIL Monitoring Hub</span>
 </div>
 
-<div class="container">
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="title">TAKMIL</div>
+    <div class="sub">Level Advancement Console — Ops Team</div>
+  </div>
+  <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+</div>
+
+<div class="wrap">
+
   <!-- Stats -->
   <div class="stats">
-    <div class="stat"><div class="stat-num" id="st-total">—</div><div class="stat-lbl">Total Schools</div></div>
-    <div class="stat"><div class="stat-num" id="st-students" style="color:#01796F">—</div><div class="stat-lbl">Total Students</div></div>
-    <div class="stat"><div class="stat-num" id="st-avg-level" style="color:#d97706">—</div><div class="stat-lbl">Avg Level</div></div>
-    <div class="stat"><div class="stat-num" id="st-graduated" style="color:#4ade80">—</div><div class="stat-lbl">Graduated</div></div>
+    <div class="stat g"><div class="stat-n" id="st-total">—</div><div class="stat-l">Total Schools</div></div>
+    <div class="stat b"><div class="stat-n" id="st-students">—</div><div class="stat-l">Total Students</div></div>
+    <div class="stat a"><div class="stat-n" id="st-avg">—</div><div class="stat-l">Avg Level</div></div>
+    <div class="stat p"><div class="stat-n" id="st-grad">—</div><div class="stat-l">Graduated</div></div>
   </div>
 
-  <!-- Filters -->
-  <div class="filters">
-    <span class="filter-label">Search:</span>
-    <input type="text" id="f-search" placeholder="School name..." oninput="render()" style="min-width:180px">
+  <!-- Step 1: Select School -->
+  <div class="step-card">
+    <div class="step-hdr">
+      <div class="step-num">1</div>
+      <div class="step-title">Select School</div>
+    </div>
+    <div class="step-body">
+      <div class="field">
+        <label>Search &amp; Select School</label>
+        <select id="school-select" onchange="onSchoolChange()">
+          <option value="">— Choose a school —</option>
+        </select>
+      </div>
 
-    <span class="filter-label">Province:</span>
-    <select id="f-province" onchange="render()">
-      <option value="">All Provinces</option>
-    </select>
-
-    <span class="filter-label">Year:</span>
-    <select id="f-year" onchange="render()">
-      <option value="">All Years</option>
-    </select>
-
-    <span class="filter-label">Section:</span>
-    <select id="f-section" onchange="render()">
-      <option value="">All Sections</option>
-      <option value="A">A</option>
-      <option value="B">B</option>
-      <option value="C">C</option>
-      <option value="O">O (Only)</option>
-    </select>
-
-    <span class="filter-label">Level:</span>
-    <select id="f-level" onchange="render()">
-      <option value="">All Levels</option>
-      <option value="1">Level 1</option><option value="2">Level 2</option>
-      <option value="3">Level 3</option><option value="4">Level 4</option>
-      <option value="5">Level 5</option><option value="6">Level 6</option>
-      <option value="7">Level 7</option><option value="8">Level 8</option>
-      <option value="9">Level 9</option><option value="10">Level 10</option>
-      <option value="11">Level 11 (Grand Assessment)</option>
-      <option value="12">Graduated</option>
-    </select>
-
-    <button onclick="clearFilters()" style="padding:8px 14px;border-radius:8px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-size:13px;cursor:pointer;font-family:inherit">
-      ✕ Clear
-    </button>
-
-    <span style="font-size:13px;color:#64748b;margin-left:auto" id="results-count"></span>
+      <!-- School info panel -->
+      <div class="school-info" id="school-info">
+        <div class="si-name" id="si-name"></div>
+        <div class="si-meta" id="si-meta"></div>
+        <div class="si-scores">
+          <div class="si-score">
+            <div class="si-score-lbl">Math</div>
+            <div class="si-score-val" id="si-math">—</div>
+          </div>
+          <div class="si-score">
+            <div class="si-score-lbl">English</div>
+            <div class="si-score-val" id="si-english">—</div>
+          </div>
+          <div class="si-score">
+            <div class="si-score-lbl">Urdu</div>
+            <div class="si-score-val" id="si-urdu">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- School cards -->
-  <div class="grid" id="grid"><div class="loading">Loading schools...</div></div>
+  <!-- Step 2: Select Current Level -->
+  <div class="step-card">
+    <div class="step-hdr">
+      <div class="step-num">2</div>
+      <div class="step-title">Current Level</div>
+    </div>
+    <div class="step-body">
+      <div class="field">
+        <label>School's Current Level</label>
+        <select id="level-select" disabled onchange="onLevelChange()">
+          <option value="">— Select school first —</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Advance -->
+  <div class="step-card" id="advance-card" style="display:none">
+    <div class="step-hdr">
+      <div class="step-num">3</div>
+      <div class="step-title">Advance to Next Level</div>
+    </div>
+    <div class="step-body">
+
+      <div class="level-arrow">
+        <div class="lvl-box lvl-from">
+          <div class="lbl">From</div>
+          <div class="num" id="lvl-from">—</div>
+        </div>
+        <div class="arrow-icon">→</div>
+        <div class="lvl-box lvl-to" id="lvl-to-box">
+          <div class="lbl">To</div>
+          <div class="num" id="lvl-to">—</div>
+        </div>
+      </div>
+
+      <div class="readiness" id="readiness-block">
+        <div class="readiness-icon">⏳</div>
+        <div class="readiness-text">
+          <div class="main">Checking assessment data...</div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:16px">
+        <label>Notes (optional)</label>
+        <textarea class="notes-area" id="adv-notes" placeholder="e.g. All students showed strong SLO mastery in Math and English..."></textarea>
+      </div>
+
+      <button class="btn-advance" id="adv-btn" onclick="openConfirm()">
+        ⬆️ Advance to Next Level
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Level History -->
+  <div class="hist-card" id="hist-card" style="display:none">
+    <div class="hist-hdr">📋 Level History</div>
+    <div id="hist-list"><div class="hist-empty">Select a school to see history</div></div>
+  </div>
+
 </div>
 
 <!-- Confirm Modal -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-title" id="modal-title">Advance School Level</div>
+    <div class="modal-title" id="modal-title">Confirm Level Advancement</div>
     <div class="confirm-box">
-      <div class="confirm-title" id="modal-school">—</div>
-      <div class="confirm-detail" id="modal-detail">—</div>
+      <div class="ct" id="modal-school"></div>
+      <div class="cd" id="modal-detail"></div>
     </div>
-    <textarea class="notes-input" id="modal-notes" placeholder="Notes (optional) — e.g. All students showed strong SLO mastery in Math and English..."></textarea>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
       <button class="btn-confirm" id="modal-confirm" onclick="confirmAdvance()">✅ Confirm Advance</button>
@@ -201,263 +372,245 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;min-height:1
   </div>
 </div>
 
-<!-- History Modal -->
-<div class="modal-overlay" id="hist-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeHistModal()">✕</button>
-    <div class="modal-title" id="hist-title">Level History</div>
-    <div class="history-list" id="hist-list"></div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-let allSchools = [];
-let pendingAdvance = null;
+let allSchools  = [];
+let selected    = null;
+let pendingAdv  = null;
 
 async function loadData() {
   try {
     const resp = await fetch('/api/console/schools-progress');
     const data = await resp.json();
     allSchools = (data.schools || []).map(s => {
-      // Extract year and section from identifier e.g. AliHassanHingrjo_O_W24S
-      const parts = (s.identifier || '').split('_');
-      // Find the part starting with W + 2 digits (year) e.g. W24B → W24, W24KPK → W24
-      const yearMatch = (s.identifier || '').match(/[_-](W\d{2})/i);
-      const yearPart  = yearMatch ? yearMatch[1].toUpperCase() : '';
-      // Section is a single letter A/B/C/O — appears between school name and year
-      const sectionMatch = (s.identifier || '').match(/_([A-Z])_W\d{2}/i);
-      const sectionPart  = sectionMatch ? sectionMatch[1].toUpperCase() : '';
+      const yearMatch    = (s.identifier||'').match(/[_-](W\d{2})/i);
+      const sectionMatch = (s.identifier||'').match(/_([A-Z])_W\d{2}/i);
       return {
         ...s,
-        year:    yearPart.toUpperCase(),    // e.g. W24
-        section: sectionPart.toUpperCase(), // e.g. O, A, B
+        year:    yearMatch    ? yearMatch[1].toUpperCase()    : '',
+        section: sectionMatch ? sectionMatch[1].toUpperCase() : '',
       };
     });
-    populateYearFilter();
     updateStats();
-    render();
+    populateSchoolDropdown();
   } catch(e) {
-    document.getElementById('grid').innerHTML = `<div class="empty">❌ Error loading data: ${e.message}</div>`;
+    showToast('❌ Error: ' + e.message);
   }
 }
 
 function updateStats() {
-  document.getElementById('st-total').textContent     = allSchools.length;
-  // Cap student_count per school at 100 to avoid DB join inflation
-  const totalStudents = allSchools.reduce((s,x) => s + Math.min(parseInt(x.student_count)||0, 200), 0);
-  document.getElementById('st-students').textContent  = totalStudents;
-  const avgLevel = allSchools.length
-    ? (allSchools.reduce((s,x)=>s+(parseInt(x.current_level)||1),0)/allSchools.length).toFixed(1)
-    : '—';
-  document.getElementById('st-avg-level').textContent = avgLevel;
-  document.getElementById('st-graduated').textContent = allSchools.filter(s=>(parseInt(s.current_level)||1)>=12).length;
+  document.getElementById('st-total').textContent    = allSchools.length;
+  const totalSt = allSchools.reduce((s,x)=>s+Math.min(parseInt(x.student_count)||0,200),0);
+  document.getElementById('st-students').textContent = totalSt;
+  const avg = allSchools.length
+    ? (allSchools.reduce((s,x)=>s+(parseInt(x.current_level)||1),0)/allSchools.length).toFixed(1) : '—';
+  document.getElementById('st-avg').textContent = avg;
+  document.getElementById('st-grad').textContent = allSchools.filter(s=>(parseInt(s.current_level)||1)>=12).length;
 }
 
-function populateYearFilter() {
-  const years = [...new Set(allSchools.map(s => s.year).filter(Boolean))].sort().reverse();
-  const sel = document.getElementById('f-year');
-  sel.innerHTML = '<option value="">All Years</option>' +
-    years.map(y => `<option value="${y}">${y.replace('W','Winter 20')}</option>`).join('');
-
-  // Also populate province dropdown from real data
-  const provinces = [...new Set(allSchools.map(s => s.province).filter(Boolean))].sort();
-  const psel = document.getElementById('f-province');
-  psel.innerHTML = '<option value="">All Provinces</option>' +
-    provinces.map(p => `<option value="${p}">${p}</option>`).join('');
-}
-
-function render() {
-  const search   = document.getElementById('f-search').value.toLowerCase();
-  const province = document.getElementById('f-province').value;
-  const levelF   = document.getElementById('f-level').value;
-
-  const yearF    = document.getElementById('f-year').value;
-  const sectionF = document.getElementById('f-section').value;
-
-  let schools = allSchools.filter(s => {
-    if (search && !s.name?.toLowerCase().includes(search) && !s.identifier?.toLowerCase().includes(search)) return false;
-    if (province  && s.province !== province) return false;
-    if (levelF    && String(s.current_level || 1) !== levelF) return false;
-    if (yearF     && s.year !== yearF) return false;
-    if (sectionF  && s.section !== sectionF) return false;
-    return true;
+function populateSchoolDropdown() {
+  const sel  = document.getElementById('school-select');
+  const prev = sel.value;
+  // Group by province
+  const byProv = {};
+  allSchools.forEach(s => {
+    const p = s.province || 'Other';
+    if (!byProv[p]) byProv[p] = [];
+    byProv[p].push(s);
   });
+  sel.innerHTML = '<option value="">— Choose a school —</option>';
+  Object.keys(byProv).sort().forEach(prov => {
+    const og = document.createElement('optgroup');
+    og.label = prov;
+    byProv[prov].sort((a,b)=>(a.name||a.identifier).localeCompare(b.name||b.identifier))
+      .forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.identifier;
+        o.textContent = (s.name || s.identifier) + ' — L' + (s.current_level || 1);
+        og.appendChild(o);
+      });
+    sel.appendChild(og);
+  });
+  if (prev) sel.value = prev;
+}
 
-  document.getElementById('results-count').textContent =
-    schools.length < allSchools.length ? `${schools.length} of ${allSchools.length} schools` : `${allSchools.length} schools`;
-
-  if (!schools.length) {
-    document.getElementById('grid').innerHTML = '<div class="empty">No schools match the filter</div>';
+function onSchoolChange() {
+  const id = document.getElementById('school-select').value;
+  if (!id) {
+    selected = null;
+    document.getElementById('school-info').classList.remove('show');
+    document.getElementById('advance-card').style.display = 'none';
+    document.getElementById('hist-card').style.display    = 'none';
+    const lsel = document.getElementById('level-select');
+    lsel.innerHTML = '<option value="">— Select school first —</option>';
+    lsel.disabled  = true;
     return;
   }
 
-  document.getElementById('grid').innerHTML = schools.map(s => schoolCard(s)).join('');
-}
+  selected = allSchools.find(s => s.identifier === id);
+  if (!selected) return;
 
-// Check if school has enough assessment data to advance
-function hasAssessments(s) {
-  return s.math_avg || s.english_avg || s.urdu_avg;
-}
+  // Show school info
+  const lvl  = parseInt(selected.current_level) || 1;
+  const prov = selected.province || '';
+  const provBadge = {'Sindh':'sindh','Punjab':'punjab','KPK':'kpk','Balochistan':'bal','GilgitBaltistan':'gb'}[prov]||'';
 
-// Readiness indicator block shown on each card
-function assessmentBlock(s) {
-  const math    = s.math_avg    ? parseInt(s.math_avg)    : null;
-  const english = s.english_avg ? parseInt(s.english_avg) : null;
-  const urdu    = s.urdu_avg    ? parseInt(s.urdu_avg)    : null;
-  const hasAny  = math || english || urdu;
-  const tested  = s.students_tested || 0;
-  const total   = Math.min(parseInt(s.student_count)||0, 200);
+  document.getElementById('si-name').innerHTML =
+    (selected.name || selected.identifier) +
+    (provBadge ? `<span class="badge badge-${provBadge}">${prov}</span>` : '');
+  document.getElementById('si-meta').textContent =
+    `${selected.identifier} · ${Math.min(parseInt(selected.student_count)||0,200)} students · Level ${lvl}`;
 
-  if (!hasAny) {
-    return `<div class="assess-block assess-none">
-      ⚠️ No assessments taken at Level ${s.current_level || 1} yet
-      <div style="font-size:11px;margin-top:4px;opacity:0.8">Generate a PIN and run assessments before advancing</div>
-    </div>`;
+  const scoreColor = v => !v?'none':v>=80?'good':v>=60?'ok':'low';
+  const scoreVal   = v => !v?'—':Math.round(v)+'%';
+
+  const siMath    = document.getElementById('si-math');
+  const siEnglish = document.getElementById('si-english');
+  const siUrdu    = document.getElementById('si-urdu');
+  siMath.textContent    = scoreVal(selected.math_avg);
+  siMath.className      = 'si-score-val ' + scoreColor(selected.math_avg);
+  siEnglish.textContent = scoreVal(selected.english_avg);
+  siEnglish.className   = 'si-score-val ' + scoreColor(selected.english_avg);
+  siUrdu.textContent    = scoreVal(selected.urdu_avg);
+  siUrdu.className      = 'si-score-val ' + scoreColor(selected.urdu_avg);
+
+  document.getElementById('school-info').classList.add('show');
+
+  // Populate level dropdown — set to current level
+  const lsel = document.getElementById('level-select');
+  lsel.disabled = false;
+  lsel.innerHTML = '';
+  for (let i = 1; i <= 12; i++) {
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = i >= 12 ? 'Level 12 — Graduated' : i === 11 ? 'Level 11 — Grand Assessment' : `Level ${i}`;
+    lsel.appendChild(o);
   }
+  lsel.value = lvl;
+  onLevelChange();
 
-  const allGood = [math, english, urdu].filter(Boolean).every(v => v >= 60);
-  const blockClass = allGood ? 'assess-block assess-ready' : 'assess-block assess-partial';
-  const icon = allGood ? '✅' : '⚠️';
-  const label = allGood ? 'Ready to advance' : 'Review scores before advancing';
-
-  return `<div class="${blockClass}">
-    ${icon} ${label}
-    <div style="font-size:11px;margin-top:3px;opacity:0.85">
-      ${tested > 0 ? `${tested} of ${total} students tested · ` : ''}
-      Last 30 days scores
-    </div>
-  </div>`;
+  // Load history
+  loadHistory(selected.identifier, selected.name || selected.identifier);
 }
 
-function schoolCard(s) {
-  const level    = s.current_level || 1;
-  const isGrand  = level === 11;
-  const isGrad   = level >= 12;
-  const pct      = Math.round((level / 12) * 100);
-  const prov     = s.province || '';
-  const provTag  = { Sindh:'sindh', Punjab:'punjab', KPK:'kpk', GilgitBaltistan:'gb', Balochistan:'baloch' }[prov] || '';
+function onLevelChange() {
+  if (!selected) return;
+  const lvl  = parseInt(document.getElementById('level-select').value) || 1;
+  const next = lvl + 1;
+  const isGrad  = lvl >= 12;
+  const isGrand = lvl === 11;
 
-  const scoreColor = v => !v ? 'none' : v>=80?'good':v>=60?'ok':'low';
-  const scoreVal   = v => !v ? '—' : Math.round(v)+'%';
+  document.getElementById('advance-card').style.display = 'block';
 
-  const btnText = isGrad
-    ? '🎓 Graduated'
-    : isGrand
-    ? '🏆 Mark Grand Assessment Complete'
-    : `⬆️ Advance to Level ${level + 1}`;
+  document.getElementById('lvl-from').textContent = isGrad ? '🎓' : 'L' + lvl;
+  document.getElementById('lvl-to').textContent   = next > 12 ? '🎓' : isGrand ? '🏆' : 'L' + next;
 
-  const btnClass = isGrad ? 'btn-advance btn-graduated'
-    : isGrand ? 'btn-advance btn-grand'
-    : 'btn-advance';
+  const toBox = document.getElementById('lvl-to-box');
+  toBox.className = 'lvl-box lvl-to' + (isGrand ? ' grand' : '');
 
-  return `<div class="school-card ${isGrad?'graduated':level>1?'advanced':''}">
-    <div class="school-name">${s.name || s.identifier}
-      <span class="tag tag-${provTag}">${prov}</span>
-    </div>
-    <div class="school-meta">${s.identifier} · ${s.student_count||0} students · Teacher: ${s.teacher_name||'—'}</div>
+  // Readiness check
+  const hasData   = selected.math_avg || selected.english_avg || selected.urdu_avg;
+  const scores    = [selected.math_avg, selected.english_avg, selected.urdu_avg].filter(Boolean);
+  const allGood   = scores.length > 0 && scores.every(v => parseInt(v) >= 60);
+  const rb        = document.getElementById('readiness-block');
+  const btn       = document.getElementById('adv-btn');
 
-    <div class="level-display">
-      <div class="level-badge ${isGrand?'grand':''}">${isGrad?'🎓':('L'+level)}</div>
-      <div class="level-progress"><div class="level-fill" style="width:${pct}%"></div></div>
-      <div class="level-pct">${pct}%</div>
-    </div>
-
-    <div class="scores">
-      <div class="score-box">
-        <div class="score-subj">Math</div>
-        <div class="score-val ${scoreColor(s.math_avg)}">${scoreVal(s.math_avg)}</div>
-      </div>
-      <div class="score-box">
-        <div class="score-subj">English</div>
-        <div class="score-val ${scoreColor(s.english_avg)}">${scoreVal(s.english_avg)}</div>
-      </div>
-      <div class="score-box">
-        <div class="score-subj">Urdu</div>
-        <div class="score-val ${scoreColor(s.urdu_avg)}">${scoreVal(s.urdu_avg)}</div>
-      </div>
-    </div>
-
-    <div class="students-row">
-      <span class="students-count">👥 ${Math.min(parseInt(s.student_count)||0, 200)} students enrolled</span>
-      <span class="att-rate">📅 ${s.attendance_rate ? Math.min(parseInt(s.attendance_rate),100)+'%' : '—'} attendance</span>
-    </div>
-
-    <!-- Assessment readiness indicator -->
-    ${assessmentBlock(s)}
-
-    <button class="${btnClass}"
-      ${isGrad || !hasAssessments(s) ? 'disabled' : ''}
-      onclick="${isGrad || !hasAssessments(s) ? 'void(0)' : `openAdvance('${s.identifier}','${(s.name||s.identifier).replace(/'/g,"\\'")}',${level},${s.student_count||0})`}">
-      ${isGrad ? btnText : !hasAssessments(s) ? '🔒 Run Assessments First' : btnText}
-    </button>
-    <button class="history-btn" onclick="showHistory('${s.identifier}','${(s.name||s.identifier).replace(/'/g,"\\'")}')">
-      📋 View Level History
-    </button>
-  </div>`;
+  if (isGrad) {
+    rb.className = 'readiness ready';
+    rb.innerHTML = `<div class="readiness-icon">🎓</div><div class="readiness-text"><div class="main">School has graduated</div><div class="sub">No further advancement needed</div></div>`;
+    btn.disabled = true;
+    btn.textContent = '🎓 Already Graduated';
+  } else if (!hasData) {
+    rb.className = 'readiness none';
+    rb.innerHTML = `<div class="readiness-icon">⚠️</div><div class="readiness-text"><div class="main">No assessments taken at Level ${lvl} yet</div><div class="sub">Generate a PIN and run assessments before advancing</div></div>`;
+    btn.disabled = true;
+    btn.textContent = '🔒 Run Assessments First';
+    btn.className = 'btn-advance';
+  } else if (allGood) {
+    rb.className = 'readiness ready';
+    rb.innerHTML = `<div class="readiness-icon">✅</div><div class="readiness-text"><div class="main">Ready to advance to Level ${next}</div><div class="sub">All subjects scoring ≥ 60% — good to go!</div></div>`;
+    btn.disabled = false;
+    btn.className = isGrand ? 'btn-advance grand' : 'btn-advance';
+    btn.innerHTML = isGrand ? '🏆 Mark Grand Assessment Complete' : `⬆️ Advance to Level ${next}`;
+  } else {
+    rb.className = 'readiness partial';
+    rb.innerHTML = `<div class="readiness-icon">⚠️</div><div class="readiness-text"><div class="main">Review scores before advancing</div><div class="sub">Some subjects below 60% — you may still advance manually</div></div>`;
+    btn.disabled = false;
+    btn.className = 'btn-advance';
+    btn.innerHTML = `⬆️ Advance to Level ${next}`;
+  }
 }
 
-function openAdvance(identifier, name, currentLevel, studentCount) {
-  const nextLevel = currentLevel + 1;
-  pendingAdvance  = { identifier, name, currentLevel, nextLevel, studentCount };
+function openConfirm() {
+  if (!selected) return;
+  const lvl  = parseInt(document.getElementById('level-select').value) || 1;
+  const next = lvl + 1;
+  const name = selected.name || selected.identifier;
+
+  pendingAdv = {
+    identifier:   selected.identifier,
+    name,
+    currentLevel: lvl,
+    nextLevel:    next,
+    studentCount: Math.min(parseInt(selected.student_count)||0, 200),
+  };
 
   document.getElementById('modal-title').textContent =
-    nextLevel > 11 ? '🏆 Grand Assessment Complete' : `⬆️ Advance to Level ${nextLevel}`;
+    next > 11 ? '🏆 Grand Assessment Complete' : `⬆️ Advance to Level ${next}`;
   document.getElementById('modal-school').textContent = name;
   document.getElementById('modal-detail').innerHTML =
-    `Current Level: <strong>Level ${currentLevel}</strong><br>` +
-    `Moving to: <strong>${nextLevel > 11 ? '🏆 Grand Assessment / Graduated' : 'Level ' + nextLevel}</strong><br>` +
-    `Students affected: <strong>${studentCount}</strong><br><br>` +
-    `⚠️ This will advance ALL ${studentCount} students in this school simultaneously.`;
-  document.getElementById('modal-notes').value = '';
-  document.getElementById('modal').style.display = 'flex';
+    `Current Level: <strong>Level ${lvl}</strong><br>
+     Moving to: <strong>${next > 11 ? '🏆 Graduated' : 'Level ' + next}</strong><br>
+     Students affected: <strong>${pendingAdv.studentCount}</strong><br><br>
+     ⚠️ This will advance ALL ${pendingAdv.studentCount} students in this school.`;
+
+  document.getElementById('modal').classList.add('open');
 }
 
 function closeModal() {
-  document.getElementById('modal').style.display = 'none';
-  pendingAdvance = null;
+  document.getElementById('modal').classList.remove('open');
+  pendingAdv = null;
 }
 
 async function confirmAdvance() {
-  if (!pendingAdvance) return;
+  if (!pendingAdv) return;
   const btn   = document.getElementById('modal-confirm');
-  const notes = document.getElementById('modal-notes').value.trim();
-
-  btn.disabled    = true;
-  btn.textContent = '⏳ Saving...';
+  const notes = document.getElementById('adv-notes').value.trim();
+  btn.disabled = true; btn.textContent = '⏳ Saving...';
 
   try {
     const resp = await fetch('/api/console/advance-level', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        school_identifier: pendingAdvance.identifier,
-        from_level:        pendingAdvance.currentLevel,
-        to_level:          pendingAdvance.nextLevel,
-        student_count:     pendingAdvance.studentCount,
+        school_identifier: pendingAdv.identifier,
+        from_level:        pendingAdv.currentLevel,
+        to_level:          pendingAdv.nextLevel,
+        student_count:     pendingAdv.studentCount,
         notes,
-        advanced_by:       'Ops Team',
+        advanced_by: 'Ops Team',
       })
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || 'Failed');
 
     closeModal();
-    showToast(`✅ ${pendingAdvance.name} advanced to Level ${pendingAdvance.nextLevel}`);
+    showToast(`✅ ${pendingAdv.name} advanced to Level ${pendingAdv.nextLevel}`);
     await loadData();
+    // Refresh selected school display
+    document.getElementById('school-select').value = pendingAdv.identifier;
+    onSchoolChange();
   } catch(e) {
     showToast('❌ Error: ' + e.message);
   } finally {
-    btn.disabled    = false;
-    btn.textContent = '✅ Confirm Advance';
+    btn.disabled = false; btn.textContent = '✅ Confirm Advance';
   }
 }
 
-async function showHistory(identifier, name) {
-  document.getElementById('hist-title').textContent  = `Level History — ${name}`;
-  document.getElementById('hist-list').innerHTML      = '<div style="color:#94a3b8;padding:20px 0">Loading...</div>';
-  document.getElementById('hist-modal').style.display = 'flex';
+async function loadHistory(identifier, name) {
+  document.getElementById('hist-card').style.display = 'block';
+  document.getElementById('hist-list').innerHTML = '<div class="hist-empty">Loading...</div>';
 
   try {
     const resp = await fetch(`/api/console/level-history?school=${encodeURIComponent(identifier)}`);
@@ -466,42 +619,32 @@ async function showHistory(identifier, name) {
 
     if (!history.length) {
       document.getElementById('hist-list').innerHTML =
-        '<div style="color:#94a3b8;padding:20px 0;text-align:center">No level advances recorded yet</div>';
+        '<div class="hist-empty">No level advances recorded yet</div>';
       return;
     }
 
     document.getElementById('hist-list').innerHTML = history.map(h => `
       <div class="hist-item">
         <div>
-          <div class="hist-level">L${h.from_level} → L${h.to_level}</div>
-          <div class="hist-by">By: ${h.advanced_by || 'Ops Team'} ${h.notes ? '· ' + h.notes : ''}</div>
+          <div class="hist-levels">L${h.from_level} → L${h.to_level}</div>
+          <div class="hist-by">By: ${h.advanced_by || 'Ops Team'}${h.notes ? ' · ' + h.notes : ''}</div>
         </div>
         <div class="hist-date">${new Date(h.advanced_at).toLocaleDateString('en-PK',{month:'short',day:'numeric',year:'numeric'})}</div>
       </div>`).join('');
   } catch(e) {
-    document.getElementById('hist-list').innerHTML = '<div style="color:#dc2626">Error loading history</div>';
+    document.getElementById('hist-list').innerHTML = '<div class="hist-empty" style="color:var(--red)">Error loading history</div>';
   }
-}
-
-function closeHistModal() {
-  document.getElementById('hist-modal').style.display = 'none';
-}
-
-function clearFilters() {
-  document.getElementById('f-search').value  = '';
-  document.getElementById('f-year').value    = '';
-  document.getElementById('f-section').value = '';
-  document.getElementById('f-level').value   = '';
-  document.getElementById('f-province').value= '';
-  render();
 }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
 
 loadData();
 setInterval(loadData, 120000);
