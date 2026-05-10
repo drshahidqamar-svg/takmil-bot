@@ -247,7 +247,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
   <span class="f-lbl">Status</span>
   <select class="f-inp f-sel" id="f-status" onchange="filterCards()">
     <option value="">All Schools</option>
-    <option value="submitted">Submitted ✅</option>
+    <option value="submitted" selected>Submitted ✅</option>
     <option value="missing">Not Submitted ❌</option>
   </select>
   <input type="text" class="f-inp" id="f-search" placeholder="Search school..."
@@ -543,6 +543,24 @@ function filterCards(){
     const matchCoord  = !coord || (c.dataset.coord||'') === coord;
     c.classList.toggle('hidden', !(matchStatus && matchSearch && matchRC && matchCoord));
   });
+
+  // Hide entire region blocks if all their cards are hidden
+  document.querySelectorAll('.region-block').forEach(block => {
+    const visible = block.querySelectorAll('.school-card:not(.hidden)').length;
+    block.style.display = visible > 0 ? '' : 'none';
+  });
+
+  // Show empty message if nothing visible
+  const totalVisible = document.querySelectorAll('.school-card:not(.hidden)').length;
+  const existing = document.getElementById('no-results-msg');
+  if (existing) existing.remove();
+  if (totalVisible === 0) {
+    const msg = document.createElement('div');
+    msg.id = 'no-results-msg';
+    msg.className = 'loading-state';
+    msg.innerHTML = '<p style="color:var(--text3)">No schools submitted feedback on this date.</p>';
+    document.getElementById('body').appendChild(msg);
+  }
 }
 
 document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
