@@ -100,7 +100,7 @@ body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
 </div>
 
 <div id="login-screen">
-  <h2>Coordinator Login</h2>
+  <h2>Regional Coordinator Login</h2>
   <p>Regional Coordinator access only</p>
   <div class="field">
     <label>Your Name</label>
@@ -130,7 +130,7 @@ body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('pin',this)">📌 Generate PIN</button>
+    <button class="tab active" onclick="switchTab('pin',this)">📌 Create a PIN</button>
     <button class="tab" onclick="switchTab('download',this)">⬇ Download</button>
     <button class="tab" onclick="switchTab('sync',this)">↑ Sync Results</button>
     <button class="tab" onclick="switchTab('results',this)">📊 Results</button>
@@ -140,7 +140,7 @@ body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
   <div class="tab-content active" id="tab-pin">
     <div class="grid2">
       <div class="card">
-        <h3>Generate Assessment PIN — پن بنائیں</h3>
+        <h3>Create a PIN — پن بنائیں</h3>
         <div class="field"><label>Area Coordinator</label>
           <select id="sc-select" onchange="loadSchools()"><option value="">-- Select Coordinator --</option></select></div>
         <div class="field"><label>School</label>
@@ -165,7 +165,7 @@ body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
         </div>
       </div>
       <div class="card">
-        <h3>Recent PINs — حالیہ پن</h3>
+        <h3>My Recent PINs — حالیہ پن</h3>
         <div id="pins-list"><div class="loading">Loading...</div></div>
       </div>
     </div>
@@ -391,8 +391,9 @@ async function loadRecentPins(){
   const div=document.getElementById('pins-list');
   try{
     const resp=await fetch(BASE+'/admin/pins/list');
-    const pins=await resp.json();
-    if(!pins.length){div.innerHTML='<div class="loading">No PINs yet</div>';return;}
+    const allPins=await resp.json();
+    const pins=allPins.filter(p=>(p.issued_by||'')===currentRC.name);
+    if(!pins.length){div.innerHTML='<div class="loading">No PINs created yet</div>';return;}
     div.innerHTML=`<table class="tbl"><tr><th>PIN</th><th>Level</th><th>By</th><th>Status</th><th>Date</th></tr>
       ${pins.slice(0,15).map(p=>{
         const expired=new Date(p.expires_at)<new Date();
