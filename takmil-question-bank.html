@@ -242,7 +242,41 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 </head>
 <body>
 
-<a href="/" style="position:fixed;bottom:20px;left:20px;z-index:9999;background:#c2410c;color:#fff;text-decoration:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;padding:8px 16px;border-radius:30px;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,.2);opacity:.92;">⌂ Home</a>
+  <!-- Home Button Top Bar -->
+  <div style="
+    width:100%;
+    background:#15803D;
+    padding:8px 20px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    position:sticky;
+    top:0;
+    z-index:9999;
+    box-shadow:0 2px 8px rgba(0,0,0,0.15);
+  ">
+    <a href="/" style="
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      background:rgba(255,255,255,0.18);
+      color:#ffffff;
+      text-decoration:none;
+      font-family:'Segoe UI',sans-serif;
+      font-size:13px;
+      font-weight:700;
+      padding:5px 16px;
+      border-radius:20px;
+      border:1.5px solid rgba(255,255,255,0.35);
+      transition:background 0.15s;
+    " onmouseover="this.style.background='rgba(255,255,255,0.28)'"
+       onmouseout="this.style.background='rgba(255,255,255,0.18)'">
+      ⌂ Home
+    </a>
+    <span style="color:rgba(255,255,255,0.6);font-size:12px;font-family:'Segoe UI',sans-serif;">
+      TAKMIL Monitoring Hub
+    </span>
+  </div>
 
 <!-- TOP BAR -->
 <div class="top">
