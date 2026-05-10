@@ -129,11 +129,11 @@ body{
 /* ══ MAIN 3-COL GRID ══ */
 .main-grid{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  grid-template-rows:repeat(2,1fr);
+  grid-template-columns:repeat(4,1fr);
   gap:16px;
   margin-bottom:16px;
 }
+.main-grid .pc { min-height: 160px; }
 
 /* COLORED METRIC CARDS */
 .mc{
@@ -200,6 +200,7 @@ body{
 .pc-blue   {background:#2563eb;color:#fff}
 .pc-amber  {background:#d97706;color:#fff}
 .pc-purple {background:#7c3aed;color:#fff}
+.pc-teal   {background:#0d9488;color:#fff}
 .pc-stripe{display:none}
 .pc-name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.7);margin-bottom:6px}
 .pc-num{font-size:34px;font-weight:800;color:#fff;line-height:1;letter-spacing:-1px;margin-bottom:3px;font-family:'DM Mono',monospace}
@@ -309,69 +310,55 @@ body{
     <!-- 2 rows × 3 columns -->
     <div class="main-grid">
 
-      <div class="mc mc-green">
-        <div class="mc-top">
-          <div class="mc-icon"><i class="ti ti-school"></i></div>
-          <span class="mc-badge">Schools</span>
-        </div>
+      <div class="pc pc-green">
+        <div class="pc-stripe"></div>
         <div>
-          <div class="mc-num">177</div>
-          <div class="mc-sub">Across 4 Provinces</div>
+          <div class="pc-name">Total Schools</div>
+          <div class="pc-num">177</div>
+          <div class="pc-lbl">Across 4 Provinces</div>
+        </div>
+        <div class="pc-foot">
+          <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
+          <span class="pc-ac">4 RC · 18 Area Coordinators</span>
         </div>
       </div>
 
-      <div class="mc mc-blue">
-        <div class="mc-top">
-          <div class="mc-icon"><i class="ti ti-users-group"></i></div>
-          <span class="mc-badge">Coordinators</span>
-        </div>
+      <div class="pc" style="background:#be185d;color:#fff">
+        <div class="pc-stripe"></div>
         <div>
-          <div class="mc-num">22</div>
-          <div class="mc-sub">4 RC · 18 Area Coordinators</div>
+          <div class="pc-name">Schools in Primary</div>
+          <div class="pc-num">89</div>
+          <div class="pc-lbl">Primary Level Schools</div>
+        </div>
+        <div class="pc-foot">
+          <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
+          <span class="pc-ac">Grades 1 – 5</span>
         </div>
       </div>
 
-      <div class="mc mc-amber">
-        <div class="mc-top">
-          <div class="mc-icon"><i class="ti ti-clipboard-check"></i></div>
-          <span class="mc-badge">Today</span>
-        </div>
+      <div class="pc" style="background:#b45309;color:#fff">
+        <div class="pc-stripe"></div>
         <div>
-          <div class="mc-num" id="stat-today2">—</div>
-          <div class="mc-sub">Assessments via WhatsApp</div>
+          <div class="pc-name">Schools in Elementary</div>
+          <div class="pc-num">88</div>
+          <div class="pc-lbl">Elementary Level Schools</div>
+        </div>
+        <div class="pc-foot">
+          <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
+          <span class="pc-ac">Grades 6 – 8</span>
         </div>
       </div>
 
-      <div class="mc mc-purple">
-        <div class="mc-top">
-          <div class="mc-icon"><i class="ti ti-list-check"></i></div>
-          <span class="mc-badge">Questions</span>
-        </div>
+      <div class="pc pc-blue">
+        <div class="pc-stripe"></div>
         <div>
-          <div class="mc-num">9,041</div>
-          <div class="mc-sub">Approved in Bank</div>
+          <div class="pc-name">Total Students</div>
+          <div class="pc-num" id="stat-students">—</div>
+          <div class="pc-lbl">Registered in System</div>
         </div>
-      </div>
-
-      <div class="mc mc-teal">
-        <div class="mc-top">
-          <div class="mc-icon"><i class="ti ti-video"></i></div>
-          <span class="mc-badge">Videos</span>
-        </div>
-        <div>
-          <div class="mc-num">2,088</div>
-          <div class="mc-sub">Transcribed &amp; Indexed</div>
-        </div>
-      </div>
-
-      <div class="mc mc-slate">
-        <div class="mc-top">
-          <div class="mc-icon"><i class="ti ti-map-pin"></i></div>
-          <span class="mc-badge">Coverage</span>
-        </div>
-        <div>
-          <div class="mc-num">4</div>
-          <div class="mc-sub">Provinces · Sindh · Punjab · KPK · Baluchistan-GB</div>
+        <div class="pc-foot">
+          <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
+          <span class="pc-ac">Via WhatsApp Assessment</span>
         </div>
       </div>
 
@@ -381,19 +368,6 @@ body{
 
     <!-- 4 province cards -->
     <div class="prov-row">
-
-      <div class="pc pc-green">
-        <div class="pc-stripe" style="background:#059669"></div>
-        <div>
-          <div class="pc-name">Sindh</div>
-          <div class="pc-num">48</div>
-          <div class="pc-lbl">Community Schools</div>
-        </div>
-        <div class="pc-foot">
-          <div class="pc-dot" style="background:#059669"></div>
-          <span class="pc-ac">3 Area Coordinators · 1 RC</span>
-        </div>
-      </div>
 
       <div class="pc pc-blue">
         <div class="pc-stripe" style="background:#2563eb"></div>
@@ -408,16 +382,16 @@ body{
         </div>
       </div>
 
-      <div class="pc pc-amber">
-        <div class="pc-stripe" style="background:#d97706"></div>
+      <div class="pc pc-green">
+        <div class="pc-stripe" style="background:#059669"></div>
         <div>
-          <div class="pc-name">KPK</div>
-          <div class="pc-num">42</div>
+          <div class="pc-name">Sindh</div>
+          <div class="pc-num">48</div>
           <div class="pc-lbl">Community Schools</div>
         </div>
         <div class="pc-foot">
-          <div class="pc-dot" style="background:#d97706"></div>
-          <span class="pc-ac">5 Area Coordinators · 1 RC</span>
+          <div class="pc-dot" style="background:#059669"></div>
+          <span class="pc-ac">3 Area Coordinators · 1 RC</span>
         </div>
       </div>
 
@@ -431,6 +405,78 @@ body{
         <div class="pc-foot">
           <div class="pc-dot" style="background:#7c3aed"></div>
           <span class="pc-ac">5 Area Coordinators · 1 RC</span>
+        </div>
+      </div>
+
+      <div class="pc pc-amber">
+        <div class="pc-stripe"></div>
+        <div>
+          <div class="pc-name">KPK</div>
+          <div class="pc-num">42</div>
+          <div class="pc-lbl">Community Schools</div>
+        </div>
+        <div class="pc-foot">
+          <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
+          <span class="pc-ac">5 Area Coordinators · 1 RC</span>
+        </div>
+      </div>
+
+    </div>
+
+
+    <div class="sec-lbl" style="margin-top:4px">Coordinators</div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:4px">
+
+      <div class="pc" style="background:#4f46e5;color:#fff;min-height:160px">
+        <div class="pc-stripe"></div>
+        <div>
+          <div class="pc-name">Total Coordinators</div>
+          <div class="pc-num">22</div>
+          <div class="pc-lbl">All Active Coordinators</div>
+        </div>
+        <div class="pc-foot">
+          <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
+          <span class="pc-ac">4 Regional · 18 Area Coordinators</span>
+        </div>
+      </div>
+
+      <div class="pc" style="background:#0284c7;color:#fff;min-height:160px">
+        <div class="pc-stripe"></div>
+        <div>
+          <div class="pc-name">Regional Coordinators</div>
+          <div class="pc-num">4</div>
+          <div class="pc-lbl">One per Province</div>
+        </div>
+        <div class="pc-foot">
+          <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
+          <span class="pc-ac">Sindh · Punjab · KPK · Baluchistan–GB</span>
+        </div>
+      </div>
+
+      <div class="pc pc-purple" style="min-height:160px">
+        <div class="pc-stripe"></div>
+        <div>
+          <div class="pc-name">Total Questions</div>
+          <div class="pc-num">9,041</div>
+          <div class="pc-lbl">Approved in Bank</div>
+        </div>
+        <div class="pc-foot">
+          <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
+          <span class="pc-ac">Math · English · Urdu</span>
+        </div>
+      </div>
+
+      <div class="pc pc-teal" style="min-height:160px">
+        <div class="pc-stripe"></div>
+        <div>
+          <div class="pc-name">Total Videos</div>
+          <div class="pc-num">2,088</div>
+          <div class="pc-lbl">Transcribed &amp; Indexed</div>
+        </div>
+        <div class="pc-foot">
+          <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
+          <span class="pc-ac">Curriculum Coverage</span>
         </div>
       </div>
 
@@ -461,6 +507,21 @@ body{
     }catch(e){}
   }
   loadStats(); setInterval(loadStats,5*60*1000);
+
+  async function loadStudentCount(){
+    try{
+      const r = await fetch('/admin/analytics');
+      const d = await r.json();
+      const total = d.summary?.total_assessments;
+      if(total!==undefined) document.getElementById('stat-students').textContent = total;
+    }catch(e){}
+    try{
+      const r2 = await fetch('/admin/students/results');
+      const d2 = await r2.json();
+      if(Array.isArray(d2)) document.getElementById('stat-students').textContent = d2.length;
+    }catch(e){}
+  }
+  loadStudentCount();
 
   const path = window.location.pathname;
   document.querySelectorAll('.sidebar-item').forEach(a=>{
