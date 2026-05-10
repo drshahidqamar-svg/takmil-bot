@@ -68,6 +68,7 @@ app.get('/portal',               (req, res) => res.sendFile(path.join(__dirname,
 app.get('/offline-portal',       (req, res) => res.sendFile(path.join(__dirname, 'offline-portal.html')));
 app.get('/teacher-portal',       (req, res) => res.sendFile(path.join(__dirname, 'teacher-portal.html')));
 app.get('/lessons-admin',        (req, res) => res.sendFile(path.join(__dirname, 'lessons-admin.html')));
+app.get('/admin-portal', (req, res) => res.sendFile(path.join(__dirname, 'takmil-ops-console.html')));
 app.get('/dashboard',            (req, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
 app.get('/question-bank',        (req, res) => res.sendFile(path.join(__dirname, 'takmil-question-bank.html')));
 app.get('/register',             (req, res) => res.sendFile(path.join(__dirname, 'register.html')));
