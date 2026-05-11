@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Assessment Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563eb;--blue2:#3b82f6;--blue3:#1d4ed8;
+  --green:#059669;--red:#dc2626;--amber:#d97706;--purple:#7c3aed;
+  --bg:#eff6ff;--white:#fff;
+  --border:#bfdbfe;--text:#1e3a5f;--text2:#334155;--text3:#64748b;
+  --r:14px;--r2:8px;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px}
+
+/* ── TOPBAR ── */
+.hdr{background:var(--blue3);padding:0 24px;height:56px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:30;
+  border-bottom:1px solid var(--blue)}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.home-btn{display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.35);
+  color:#fff;text-decoration:none;font-size:11px;font-weight:700;
+  padding:5px 14px;border-radius:20px;transition:background 0.15s}
+.home-btn:hover{background:rgba(255,255,255,0.28)}
+.hdr-div{color:rgba(255,255,255,0.35);font-size:18px;margin:0 4px}
+.hdr-logo{font-size:15px;font-weight:800;color:#fff}
+.hdr-slash{color:rgba(255,255,255,0.4);margin:0 6px}
+.hdr-title{font-size:11px;font-weight:700;color:rgba(255,255,255,0.85);
+  text-transform:uppercase;letter-spacing:1.5px}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.hdr-pill{font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px;
+  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#34d399;
+  display:inline-block;margin-right:4px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* ── FILTER BAR ── */
+.filter-bar{background:var(--blue2);padding:12px 24px;
+  border-bottom:1px solid var(--blue);position:sticky;top:56px;z-index:20}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-sel,.filter-inp{
+  padding:6px 12px;background:rgba(255,255,255,0.15);
+  border:1.5px solid rgba(255,255,255,0.3);border-radius:20px;
+  font-size:12px;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;
+  outline:none;min-width:120px;cursor:pointer;
+}
+.filter-sel option{background:#1d4ed8;color:#fff}
+.filter-inp::placeholder{color:rgba(255,255,255,0.6)}
+.filter-inp:focus,.filter-sel:focus{border-color:#fff;background:rgba(255,255,255,0.25)}
+.filter-date{min-width:110px}
+.filter-btn{padding:7px 18px;background:#fff;border:none;border-radius:20px;
+  font-size:12px;font-weight:800;color:var(--blue);cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;transition:all 0.15s}
+.filter-btn:hover{background:#eff6ff}
+.filter-clear{padding:7px 14px;background:rgba(255,255,255,0.12);
+  border:1.5px solid rgba(255,255,255,0.3);border-radius:20px;
+  font-size:11px;font-weight:700;color:rgba(255,255,255,0.8);cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;transition:all 0.15s}
+.filter-clear:hover{background:rgba(255,255,255,0.2);color:#fff}
+.filter-count{font-size:11px;color:rgba(255,255,255,0.7);margin-left:auto;
+  font-family:'DM Mono',monospace}
+
+/* ── BODY ── */
+.body{padding:22px 24px;max-width:1500px;margin:0 auto}
+
+/* ── STAT CARDS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+@media(max-width:900px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
+.stat-card{border-radius:var(--r);padding:18px 16px;position:relative;overflow:hidden;border:1.5px solid transparent}
+.stat-card-inner{position:relative;z-index:1}
+.stat-n{font-size:30px;font-weight:800;line-height:1;letter-spacing:-1px;margin-bottom:5px}
+.stat-l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:0.75}
+.stat-sub{font-size:11px;margin-top:3px;opacity:0.6}
+.stat-icon{position:absolute;right:12px;top:12px;font-size:28px;opacity:0.18}
+
+/* ── TABLE SECTION ── */
+.section{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-bottom:2px solid var(--border);background:#f8fbff}
+.section-title{font-size:14px;font-weight:800;color:var(--text)}
+.section-meta{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace}
+.export-btn{padding:6px 16px;background:var(--blue);color:#fff;border:none;
+  border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;transition:all 0.15s}
+.export-btn:hover{background:var(--blue3)}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;max-height:620px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1100px}
+thead th{
+  text-align:left;padding:10px 14px;
+  background:#eff6ff;border-bottom:2px solid var(--border);
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:var(--blue);white-space:nowrap;
+  font-family:'DM Mono',monospace;position:sticky;top:0;z-index:5;
+}
+tbody td{padding:10px 14px;border-bottom:1px solid #e0f0ff;color:var(--text2);vertical-align:middle}
+tbody tr:nth-child(even) td{background:#f8fbff}
+tbody tr:hover td{background:#eff6ff;transition:background 0.1s}
+tbody tr:last-child td{border-bottom:none}
+
+/* ── CELL STYLES ── */
+.cell-student{font-weight:700;color:var(--text);white-space:nowrap}
+.cell-school{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text2)}
+.cell-dim{color:var(--text3);font-size:11px}
+.cell-mono{font-family:'DM Mono',monospace;font-size:11px}
+.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.badge-pass{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.badge-fail{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+.badge-primary{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd}
+.badge-elem{background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd}
+.badge-subj{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;font-size:9px}
+.badge-source{background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;font-size:9px}
+
+.score-bar{display:flex;align-items:center;gap:7px}
+.score-track{flex:1;height:6px;background:#dbeafe;border-radius:3px;overflow:hidden;min-width:50px}
+.score-fill{height:100%;border-radius:3px}
+.score-num{font-weight:700;font-size:12px;min-width:34px}
+
+/* ── LOADING / EMPTY ── */
+.state-wrap{text-align:center;padding:60px 20px;color:var(--text3)}
+.spin{width:30px;height:30px;border:3px solid var(--border);border-top-color:var(--blue);
+  border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.state-icon{font-size:40px;margin-bottom:12px}
+.state-msg{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:6px}
+.state-sub{font-size:12px;color:var(--text3)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:#93c5fd;border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="hdr">
+  <div class="hdr-left">
+    <a href="/" class="home-btn">⌂ Home</a>
+    <span class="hdr-div">|</span>
+    <span class="hdr-logo">TAKMIL</span>
+    <span class="hdr-slash">/</span>
+    <span class="hdr-title">Assessment Dashboard</span>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-pill"><span class="live-dot"></span>Live Data</span>
+    <span class="hdr-pill" id="date-pill">Loading...</span>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <div class="filter-row">
+    <!-- Date presets -->
+    <select class="filter-sel" id="f-preset" onchange="applyPreset(this.value)" style="min-width:110px">
+      <option value="">📅 Quick Range</option>
+      <option value="today">Today</option>
+      <option value="week">This Week</option>
+      <option value="month">This Month</option>
+      <option value="quarter">This Quarter</option>
+      <option value="year">This Year</option>
+    </select>
+    <input type="date" class="filter-inp filter-date" id="f-from" placeholder="From">
+    <input type="date" class="filter-inp filter-date" id="f-to" placeholder="To">
+
+    <!-- Category filters -->
+    <select class="filter-sel" id="f-rc"><option value="">All RCs</option></select>
+    <select class="filter-sel" id="f-coord"><option value="">All Coordinators</option></select>
+    <select class="filter-sel" id="f-grade">
+      <option value="">All Grades</option>
+      <option value="Primary">Primary (L1–5)</option>
+      <option value="Elementary">Elementary (L6–11)</option>
+    </select>
+    <select class="filter-sel" id="f-level"><option value="">All Levels</option></select>
+    <select class="filter-sel" id="f-subject"><option value="">All Subjects</option></select>
+    <input type="text" class="filter-inp" id="f-student" placeholder="🔍 Student name..." style="min-width:150px">
+
+    <button class="filter-btn" onclick="load()">Apply ▶</button>
+    <button class="filter-clear" onclick="clearFilters()">✕ Clear</button>
+    <span class="filter-count" id="filter-count"></span>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- STAT CARDS -->
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card" style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff">
+      <div class="stat-icon">📋</div>
+      <div class="stat-card-inner">
+        <div class="stat-n" id="s-total">—</div>
+        <div class="stat-l">Total Assessments</div>
+        <div class="stat-sub">In selected range</div>
+      </div>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#047857,#059669);color:#fff">
+      <div class="stat-icon">✅</div>
+      <div class="stat-card-inner">
+        <div class="stat-n" id="s-passed">—</div>
+        <div class="stat-l">Passed</div>
+        <div class="stat-sub" id="s-passrate">—% pass rate</div>
+      </div>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff">
+      <div class="stat-icon">❌</div>
+      <div class="stat-card-inner">
+        <div class="stat-n" id="s-failed">—</div>
+        <div class="stat-l">Failed</div>
+        <div class="stat-sub">Need support</div>
+      </div>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff">
+      <div class="stat-icon">📊</div>
+      <div class="stat-card-inner">
+        <div class="stat-n" id="s-avg">—</div>
+        <div class="stat-l">Avg Score</div>
+        <div class="stat-sub">All students</div>
+      </div>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#b45309,#d97706);color:#fff">
+      <div class="stat-icon">🏫</div>
+      <div class="stat-card-inner">
+        <div class="stat-n" id="s-schools">—</div>
+        <div class="stat-l">Schools</div>
+        <div class="stat-sub">Participated</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS TABLE -->
+  <div class="section">
+    <div class="section-hdr">
+      <div>
+        <div class="section-title">📋 Assessment Results</div>
+        <div class="section-meta" id="tbl-meta">Loading...</div>
+      </div>
+      <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+    <div class="tbl-wrap" id="tbl-wrap">
+      <div class="state-wrap"><div class="spin"></div><div class="state-msg">Loading assessments...</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let allData   = null;
+let filterOpts = {};
+
+// ── Date presets ─────────────────────────────────────────────────
+function applyPreset(p) {
+  if (!p) return;
+  const today = new Date();
+  const fmt = d => d.toISOString().split('T')[0];
+  let from, to = fmt(today);
+  if (p === 'today') {
+    from = to;
+  } else if (p === 'week') {
+    const d = new Date(today); d.setDate(d.getDate() - 6); from = fmt(d);
+  } else if (p === 'month') {
+    from = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
+  } else if (p === 'quarter') {
+    const q = Math.floor(today.getMonth() / 3);
+    from = fmt(new Date(today.getFullYear(), q * 3, 1));
+  } else if (p === 'year') {
+    from = `${today.getFullYear()}-01-01`;
+  }
+  document.getElementById('f-from').value = from;
+  document.getElementById('f-to').value = to;
+  load();
+}
+
+function clearFilters() {
+  ['f-preset','f-rc','f-coord','f-grade','f-level','f-subject'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-student').value = '';
+  const today = new Date();
+  const fmt = d => d.toISOString().split('T')[0];
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  document.getElementById('f-from').value = fmt(monthStart);
+  document.getElementById('f-to').value = fmt(today);
+  load();
+}
+
+// ── Build query params ────────────────────────────────────────────
+function buildParams() {
+  const p = new URLSearchParams();
+  const from    = document.getElementById('f-from').value;
+  const to      = document.getElementById('f-to').value;
+  const rc      = document.getElementById('f-rc').value;
+  const coord   = document.getElementById('f-coord').value;
+  const grade   = document.getElementById('f-grade').value;
+  const level   = document.getElementById('f-level').value;
+  const subject = document.getElementById('f-subject').value;
+  const student = document.getElementById('f-student').value.trim();
+
+  if (from)    p.set('from', from);
+  if (to)      p.set('to', to);
+  if (rc)      p.set('rc', rc);
+  if (coord)   p.set('coordinator', coord);
+  if (grade)   p.set('grade', grade);
+  if (level)   p.set('level', level);
+  if (subject) p.set('subject', subject);
+  if (student) p.set('student', student);
+  return p;
+}
+
+// ── Load data ─────────────────────────────────────────────────────
+async function load() {
+  document.getElementById('tbl-wrap').innerHTML =
+    '<div class="state-wrap"><div class="spin"></div><div class="state-msg">Loading assessments...</div></div>';
+  document.getElementById('filter-count').textContent = '';
+
+  try {
+    const params = buildParams();
+    const resp = await fetch('/api/assessment-dashboard?' + params.toString());
+    if (!resp.ok) throw new Error('Server error ' + resp.status);
+    const d = await resp.json();
+    if (d.error) throw new Error(d.error);
+
+    allData = d;
+    populateFilterDropdowns(d.filterOptions);
+    renderStats(d);
+    renderTable(d.results);
+
+    const from = document.getElementById('f-from').value;
+    const to   = document.getElementById('f-to').value;
+    document.getElementById('date-pill').textContent = `📅 ${from} → ${to}`;
+    document.getElementById('filter-count').textContent = `${d.total} result${d.total !== 1 ? 's' : ''}`;
+  } catch(e) {
+    document.getElementById('tbl-wrap').innerHTML = `
+      <div class="state-wrap">
+        <div class="state-icon">⚠️</div>
+        <div class="state-msg">${e.message}</div>
+        <div class="state-sub">Check Railway logs for details.</div>
+      </div>`;
+  }
+}
+
+// ── Populate filter dropdowns ─────────────────────────────────────
+function populateFilterDropdowns(opts) {
+  if (!opts) return;
+  filterOpts = opts;
+
+  const rcSel = document.getElementById('f-rc');
+  const curRC = rcSel.value;
+  rcSel.innerHTML = '<option value="">All RCs</option>' +
+    (opts.rcs||[]).map(v => `<option value="${v}" ${v===curRC?'selected':''}>${v}</option>`).join('');
+
+  const coSel = document.getElementById('f-coord');
+  const curCo = coSel.value;
+  coSel.innerHTML = '<option value="">All Coordinators</option>' +
+    (opts.coordinators||[]).map(v => `<option value="${v}" ${v===curCo?'selected':''}>${v}</option>`).join('');
+
+  const lvSel = document.getElementById('f-level');
+  const curLv = lvSel.value;
+  lvSel.innerHTML = '<option value="">All Levels</option>' +
+    (opts.levels||[]).map(v => `<option value="${v}" ${String(v)===curLv?'selected':''}>Level ${v}</option>`).join('');
+
+  const subjSel = document.getElementById('f-subject');
+  const curSub = subjSel.value;
+  subjSel.innerHTML = '<option value="">All Subjects</option>' +
+    (opts.subjects||[]).map(v => `<option value="${v}" ${v===curSub?'selected':''}>${v}</option>`).join('');
+}
+
+// ── Render stats ──────────────────────────────────────────────────
+function renderStats(d) {
+  document.getElementById('s-total').textContent   = d.total || 0;
+  document.getElementById('s-passed').textContent  = d.passed || 0;
+  document.getElementById('s-failed').textContent  = d.failed || 0;
+  document.getElementById('s-avg').textContent     = (d.avgScore || 0) + '%';
+  document.getElementById('s-passrate').textContent = (d.passRate || 0) + '% pass rate';
+
+  const schools = new Set((d.results||[]).map(r => r.school_name)).size;
+  document.getElementById('s-schools').textContent = schools;
+}
+
+// ── Render table ──────────────────────────────────────────────────
+function renderTable(rows) {
+  const meta = document.getElementById('tbl-meta');
+  if (!rows || rows.length === 0) {
+    meta.textContent = 'No results found';
+    document.getElementById('tbl-wrap').innerHTML = `
+      <div class="state-wrap">
+        <div class="state-icon">🔍</div>
+        <div class="state-msg">No assessments found</div>
+        <div class="state-sub">Try adjusting the date range or clearing filters</div>
+      </div>`;
+    return;
+  }
+
+  meta.textContent = `${rows.length} assessment${rows.length !== 1 ? 's' : ''} · sorted by date`;
+
+  const tbody = rows.map((r, i) => {
+    const pct   = Math.round(parseFloat(r.score_pct || 0));
+    const color = pct >= 80 ? '#059669' : pct >= 60 ? '#d97706' : '#dc2626';
+    const grade = r.grade === 'Primary'
+      ? '<span class="badge badge-primary">Primary</span>'
+      : '<span class="badge badge-elem">Elementary</span>';
+    const result = r.passed
+      ? '<span class="badge badge-pass">✓ Pass</span>'
+      : '<span class="badge badge-fail">✗ Fail</span>';
+    const subj = `<span class="badge badge-subj">${r.subject || '—'}</span>`;
+    const src  = `<span class="badge badge-source">${r.source || '—'}</span>`;
+    const dt   = r.completed_at
+      ? new Date(r.completed_at).toLocaleDateString([], {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      : '—';
+
+    return `<tr>
+      <td class="cell-mono" style="color:var(--text3)">${i + 1}</td>
+      <td class="cell-student">${r.student_name || '—'}</td>
+      <td class="cell-school" title="${r.school_name || ''}">${r.school_name || '—'}</td>
+      <td class="cell-dim">${r.teacher_name || '—'}</td>
+      <td class="cell-dim">${r.coordinator_name || '—'}</td>
+      <td class="cell-dim">${r.rc_name || '—'}</td>
+      <td>${subj}</td>
+      <td class="cell-mono">L${r.level || '—'}</td>
+      <td>${grade}</td>
+      <td class="cell-dim">${r.semester || '—'}</td>
+      <td>
+        <div class="score-bar">
+          <div class="score-track"><div class="score-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
+          <span class="score-num" style="color:${color}">${pct}%</span>
+        </div>
+      </td>
+      <td>${result}</td>
+      <td class="cell-mono" style="font-size:11px">${dt}</td>
+      <td>${src}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tbl-wrap').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Student Name</th>
+          <th>School</th>
+          <th>Teacher</th>
+          <th>Coordinator</th>
+          <th>Regional Coordinator</th>
+          <th>Subject</th>
+          <th>Level</th>
+          <th>Grade</th>
+          <th>Semester</th>
+          <th style="min-width:140px">Score</th>
+          <th>Result</th>
+          <th>Date & Time</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>${tbody}</tbody>
+    </table>`;
+}
+
+// ── Export CSV ────────────────────────────────────────────────────
+function exportCSV() {
+  if (!allData?.results?.length) return alert('No data to export');
+  const headers = ['#','Student Name','School','Teacher','Coordinator','RC','Subject','Level','Grade','Semester','Score %','Passed','Date','Source'];
+  const rows = allData.results.map((r, i) => [
+    i+1, r.student_name, r.school_name, r.teacher_name, r.coordinator_name,
+    r.rc_name, r.subject, r.level, r.grade, r.semester||'',
+    Math.round(parseFloat(r.score_pct||0)),
+    r.passed ? 'Pass' : 'Fail',
+    r.completed_at ? new Date(r.completed_at).toLocaleString() : '',
+    r.source
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `takmil-assessments-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+(function init() {
+  const today = new Date();
+  const fmt = d => d.toISOString().split('T')[0];
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  document.getElementById('f-from').value = fmt(monthStart);
+  document.getElementById('f-to').value   = fmt(today);
+  load();
+})();
+</script>
+</body>
+</html>

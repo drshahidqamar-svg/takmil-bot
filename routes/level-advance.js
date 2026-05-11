@@ -688,4 +688,158 @@ router.get('/api/questions/count', async (req, res) => {
   } catch(err) { res.status(500).json({ count: 0, error: err.message }); }
 });
 
+// ── Assessment Dashboard API ──────────────────────────────────────────────────
+router.get('/api/assessment-dashboard', async (req, res) => {
+  try {
+    const { from, to, year, month, week, rc, coordinator, grade, level, subject, student, school } = req.query;
+
+    // ── Date range resolution ──
+    const today = new Date();
+    const fmt   = d => d.toISOString().split('T')[0];
+    let dateFrom, dateTo = fmt(today);
+
+    if (year && month) {
+      const y = parseInt(year), m = parseInt(month);
+      dateFrom = fmt(new Date(y, m - 1, 1));
+      dateTo   = fmt(new Date(y, m, 0));
+    } else if (year) {
+      dateFrom = `${year}-01-01`;
+      dateTo   = `${year}-12-31`;
+    } else if (week) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 6);
+      dateFrom = fmt(d);
+    } else if (from) {
+      dateFrom = from;
+      dateTo   = to || fmt(today);
+    } else {
+      const d = new Date(today); d.setDate(d.getDate() - 29);
+      dateFrom = fmt(d);
+    }
+
+    // ── Grade → level range ──
+    let gradeWhere = '';
+    if (grade === 'Primary')     gradeWhere = ' AND level BETWEEN 1 AND 5';
+    if (grade === 'Elementary')  gradeWhere = ' AND level BETWEEN 6 AND 11';
+
+    // ── Portal assessments (student_assessments table) ──
+    let portalParams = [dateFrom, dateTo];
+    let portalWhere  = gradeWhere;
+    if (level)   { portalParams.push(parseInt(level));  portalWhere += ` AND level=$${portalParams.length}`; }
+    if (subject) { portalParams.push(subject);           portalWhere += ` AND subject ILIKE $${portalParams.length}`; }
+    if (student) { portalParams.push('%'+student+'%');   portalWhere += ` AND student_name ILIKE $${portalParams.length}`; }
+    if (school)  { portalParams.push('%'+school+'%');    portalWhere += ` AND s.name ILIKE $${portalParams.length}`; }
+
+    let portalRows = [];
+    try {
+      const portalQ = await db.pool.query(`
+        SELECT
+          sa.id,
+          sa.student_name,
+          COALESCE(s.name, 'Unknown School')            AS school_name,
+          COALESCE(s.identifier,'—')                    AS school_identifier,
+          COALESCE(s.region,'—')                        AS region,
+          COALESCE(s.province,'—')                      AS province,
+          COALESCE(sa.teacher_phone,'—')                AS teacher_name,
+          COALESCE(rc.name,'—')                         AS rc_name,
+          COALESCE(sc.name,'—')                         AS coordinator_name,
+          COALESCE(sa.subject,'—')                      AS subject,
+          sa.level,
+          CASE WHEN sa.level BETWEEN 1 AND 5 THEN 'Primary' ELSE 'Elementary' END AS grade,
+          NULL::text                                    AS semester,
+          sa.score_pct,
+          sa.passed,
+          sa.total_questions,
+          sa.correct_answers,
+          sa.completed_at,
+          'portal'                                      AS source
+        FROM student_assessments sa
+        LEFT JOIN schools s ON s.id = sa.school_id
+        LEFT JOIN regional_coordinators rc ON rc.id = s.regional_coordinator_id
+        LEFT JOIN school_coordinators   sc ON sc.id = s.school_coordinator_id
+        WHERE sa.completed_at::date BETWEEN $1::date AND $2::date
+          AND (sa.score_pct IS NOT NULL AND sa.score_pct > 0)
+          ${portalWhere}
+        ORDER BY sa.completed_at DESC
+        LIMIT 2000
+      `, portalParams);
+      portalRows = portalQ.rows;
+    } catch(e) { console.log('portal query skip:', e.message); }
+
+    // ── Tablet assessments (tablet_results table) ──
+    let tabletParams = [dateFrom, dateTo];
+    let tabletWhere  = gradeWhere;
+    if (level)   { tabletParams.push(parseInt(level));  tabletWhere += ` AND tr.level=$${tabletParams.length}`; }
+    if (subject) { tabletParams.push(subject);           tabletWhere += ` AND ts.subject ILIKE $${tabletParams.length}`; }
+    if (student) { tabletParams.push('%'+student+'%');   tabletWhere += ` AND tr.student_name ILIKE $${tabletParams.length}`; }
+    if (school)  { tabletParams.push('%'+school+'%');    tabletWhere += ` AND s.name ILIKE $${tabletParams.length}`; }
+
+    let tabletRows = [];
+    try {
+      const tabletQ = await db.pool.query(`
+        SELECT
+          tr.id,
+          tr.student_name,
+          COALESCE(s.name, tr.school_identifier)        AS school_name,
+          tr.school_identifier,
+          COALESCE(s.region,'—')                        AS region,
+          COALESCE(s.province,'—')                      AS province,
+          COALESCE(ts.created_by,'—')                   AS teacher_name,
+          COALESCE(rc.name,'—')                         AS rc_name,
+          COALESCE(sc.name,'—')                         AS coordinator_name,
+          COALESCE(ts.subject,'—')                      AS subject,
+          tr.level,
+          CASE WHEN tr.level BETWEEN 1 AND 5 THEN 'Primary' ELSE 'Elementary' END AS grade,
+          NULL::text                                    AS semester,
+          tr.score_pct,
+          tr.passed,
+          tr.total_questions,
+          tr.correct_answers,
+          tr.completed_at,
+          'tablet'                                      AS source
+        FROM tablet_results tr
+        LEFT JOIN tablet_sessions    ts ON ts.id = tr.session_id
+        LEFT JOIN schools             s ON s.identifier ILIKE tr.school_identifier
+        LEFT JOIN regional_coordinators rc ON rc.id = s.regional_coordinator_id
+        LEFT JOIN school_coordinators   sc ON sc.id = s.school_coordinator_id
+        WHERE tr.completed_at::date BETWEEN $1::date AND $2::date
+          ${tabletWhere}
+        ORDER BY tr.completed_at DESC
+        LIMIT 2000
+      `, tabletParams);
+      tabletRows = tabletQ.rows;
+    } catch(e) { console.log('tablet query skip:', e.message); }
+
+    // ── Merge & sort ──
+    let results = [...portalRows, ...tabletRows]
+      .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
+
+    // ── Post-query filters (RC, coordinator) ──
+    if (rc)          results = results.filter(r => r.rc_name === rc);
+    if (coordinator) results = results.filter(r => r.coordinator_name === coordinator);
+
+    // ── Build filter option lists from full unfiltered set ──
+    const all = [...portalRows, ...tabletRows];
+    const uniq = arr => [...new Set(arr.filter(Boolean))].sort();
+    const filterOptions = {
+      rcs:          uniq(all.map(r => r.rc_name).filter(v => v !== '—')),
+      coordinators: uniq(all.map(r => r.coordinator_name).filter(v => v !== '—')),
+      schools:      uniq(all.map(r => r.school_name).filter(v => v !== '—')),
+      subjects:     uniq(all.map(r => r.subject).filter(v => v !== '—')),
+      levels:       [...new Set(all.map(r => r.level).filter(Boolean))].sort((a,b)=>a-b),
+    };
+
+    // ── Stats ──
+    const total    = results.length;
+    const passed   = results.filter(r => r.passed).length;
+    const avgScore = total ? Math.round(results.reduce((a,r) => a + parseFloat(r.score_pct||0), 0) / total) : 0;
+    const passRate = total ? Math.round(passed / total * 100) : 0;
+
+    res.json({ results, total, passed, failed: total - passed, avgScore, passRate, filterOptions, dateFrom, dateTo });
+  } catch(err) {
+    console.log('assessment-dashboard error:', err.message);
+    res.status(500).json({ error: err.message, results: [], total:0, passed:0, failed:0, avgScore:0, passRate:0, filterOptions:{} });
+  }
+});
+
 module.exports = { router };
