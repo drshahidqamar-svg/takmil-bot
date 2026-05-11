@@ -3,26 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TAKMIL — Analytics</title>
+<title>TAKMIL — Assessment Analytics</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f8f7f4;
+  --bg:#eff6ff;
   --bg2:#ffffff;
-  --panel:#f5f0e8;
-  --gold:#c9a84c;
-  --gold2:#e8c96c;
-  --gold-dim:#faf5e4;
-  --gold-bdr:#e8d8a0;
-  --border:#e8e0d0;
-  --border2:#d4c4a8;
-  --text:#1e1a14;
-  --text2:#5a4a30;
-  --text3:#a89070;
-  --slate:#1e1a14;
-  --slate2:#2d2618;
+  --panel:#dbeafe;
+  --gold:#2563eb;
+  --gold2:#3b82f6;
+  --gold-dim:#eff6ff;
+  --gold-bdr:#bfdbfe;
+  --border:#bfdbfe;
+  --border2:#93c5fd;
+  --text:#1e3a5f;
+  --text2:#334155;
+  --text3:#64748b;
+  --slate:#2563eb;
+  --slate2:#1d4ed8;
   --green:#059669;
   --green-dim:#f0fdf4;
   --blue:#2563eb;
@@ -40,67 +40,67 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 
 /* ── HEADER ── */
 .hdr{
-  background:var(--slate);
-  border-bottom:1px solid var(--slate2);
+  background:#2563eb;
+  border-bottom:1px solid #1d4ed8;
   padding:0 28px;height:58px;
   display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:20
 }
 .logo-wrap{display:flex;align-items:center;gap:12px}
 .logo-icon{
-  width:32px;height:32px;background:var(--gold);
+  width:32px;height:32px;background:rgba(255,255,255,0.2);
   border-radius:7px;display:flex;align-items:center;justify-content:center;
-  font-size:14px;font-weight:900;color:var(--slate);flex-shrink:0
+  font-size:14px;font-weight:900;color:#fff;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.35)
 }
 .logo{font-size:16px;font-weight:800;color:#fff;letter-spacing:-0.3px}
-.logo-sub{font-size:9px;color:#7a6540;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-top:1px}
+.logo-sub{font-size:9px;color:rgba(255,255,255,0.7);font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-top:1px}
 .nav-links{display:flex;gap:4px}
 .nav-link{
   padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;
-  text-decoration:none;color:#7a6540;transition:all 0.15s
+  text-decoration:none;color:rgba(255,255,255,0.7);transition:all 0.15s
 }
-.nav-link:hover{color:#c9a84c;background:rgba(201,168,76,0.1)}
-.nav-link.active{background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3)}
+.nav-link:hover{color:#fff;background:rgba(255,255,255,0.15)}
+.nav-link.active{background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.35)}
 
 /* ── DATE BAR ── */
 .date-bar{
-  background:var(--bg2);border-bottom:1px solid var(--border);
+  background:#3b82f6;border-bottom:1px solid #2563eb;
   padding:11px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
 }
 .preset-btns{display:flex;gap:5px}
 .preset-btn{
-  padding:6px 14px;border:1.5px solid var(--border2);border-radius:20px;
-  font-size:12px;font-weight:700;color:var(--text2);background:var(--panel);
+  padding:6px 14px;border:1.5px solid rgba(255,255,255,0.35);border-radius:20px;
+  font-size:12px;font-weight:700;color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.12);
   cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all 0.15s;
 }
-.preset-btn:hover{border-color:var(--gold);color:var(--gold)}
-.preset-btn.active{background:var(--gold);color:var(--slate);border-color:var(--gold)}
-.date-sep{color:var(--text3);font-size:12px;font-weight:600}
+.preset-btn:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,0.2)}
+.preset-btn.active{background:#fff;color:#2563eb;border-color:#fff}
+.date-sep{color:rgba(255,255,255,0.6);font-size:12px;font-weight:600}
 .date-inp{
-  padding:6px 12px;background:var(--panel);border:1.5px solid var(--border2);
-  border-radius:20px;font-size:12px;color:var(--text);
+  padding:6px 12px;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.35);
+  border-radius:20px;font-size:12px;color:#fff;
   font-family:'Plus Jakarta Sans',sans-serif;outline:none;
 }
-.date-inp:focus{border-color:var(--gold)}
+.date-inp:focus{border-color:#fff;background:rgba(255,255,255,0.25)}
 .apply-btn{
-  padding:7px 18px;background:var(--gold);border:none;border-radius:20px;
-  font-size:12px;font-weight:800;color:var(--slate);cursor:pointer;
+  padding:7px 18px;background:#fff;border:none;border-radius:20px;
+  font-size:12px;font-weight:800;color:#2563eb;cursor:pointer;
   font-family:'Plus Jakarta Sans',sans-serif;transition:all 0.15s;letter-spacing:.2px;
 }
-.apply-btn:hover{background:var(--gold2)}
-.date-range-lbl{font-size:11px;color:var(--text3);margin-left:auto;font-family:'DM Mono',monospace}
+.apply-btn:hover{background:#eff6ff}
+.date-range-lbl{font-size:11px;color:rgba(255,255,255,0.7);margin-left:auto;font-family:'DM Mono',monospace}
 
 /* ── VIEW TABS ── */
 .view-tabs{
-  background:var(--bg2);border-bottom:1px solid var(--border);
+  background:#3b82f6;border-bottom:1px solid #2563eb;
   padding:0 28px;display:flex;gap:0;
 }
 .tab{
-  padding:13px 20px;font-size:13px;font-weight:700;color:var(--text3);
+  padding:13px 20px;font-size:13px;font-weight:700;color:rgba(255,255,255,0.65);
   cursor:pointer;border-bottom:3px solid transparent;transition:all 0.15s;
 }
-.tab:hover{color:var(--text2)}
-.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab:hover{color:rgba(255,255,255,0.9)}
+.tab.active{color:#fff;border-bottom-color:#fff}
 
 /* ── BODY ── */
 .body{padding:24px 28px;max-width:1400px;margin:0 auto}
@@ -140,9 +140,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 /* ── TABLE ── */
 .perf-table{width:100%;border-collapse:collapse;font-size:13px}
 .perf-table th{
-  text-align:left;padding:10px 14px;color:var(--gold);
+  text-align:left;padding:10px 14px;color:#2563eb;
   font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.8px;
-  background:var(--gold-dim);border-bottom:1px solid var(--gold-bdr);
+  background:#eff6ff;border-bottom:1px solid #bfdbfe;
   font-family:'DM Mono',monospace;
 }
 .perf-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text2)}
@@ -169,7 +169,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 
 /* ── LOADING ── */
 .loading-state{text-align:center;padding:80px;color:var(--text3)}
-.spin{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--gold);
+.spin{width:28px;height:28px;border:2px solid var(--border2);border-top-color:#2563eb;
   border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -182,48 +182,21 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 </head>
 <body>
 
-  <!-- Home Button Top Bar -->
-  <div style="
-    width:100%;
-    background:#15803D;
-    padding:8px 20px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    position:sticky;
-    top:0;
-    z-index:9999;
-    box-shadow:0 2px 8px rgba(0,0,0,0.15);
-  ">
-    <a href="/" style="
-      display:inline-flex;
-      align-items:center;
-      gap:7px;
-      background:rgba(255,255,255,0.18);
-      color:#ffffff;
-      text-decoration:none;
-      font-family:'Segoe UI',sans-serif;
-      font-size:13px;
-      font-weight:700;
-      padding:5px 16px;
-      border-radius:20px;
-      border:1.5px solid rgba(255,255,255,0.35);
-      transition:background 0.15s;
-    " onmouseover="this.style.background='rgba(255,255,255,0.28)'"
-       onmouseout="this.style.background='rgba(255,255,255,0.18)'">
-      ⌂ Home
-    </a>
-    <span style="color:rgba(255,255,255,0.6);font-size:12px;font-family:'Segoe UI',sans-serif;">
-      TAKMIL Monitoring Hub
-    </span>
-  </div>
-
 <!-- HEADER -->
 <div class="hdr">
   <div class="logo-wrap">
+    <a href="/" style="
+      display:inline-flex;align-items:center;gap:6px;
+      background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.35);
+      color:#fff;text-decoration:none;font-family:'Plus Jakarta Sans',sans-serif;
+      font-size:11px;font-weight:700;padding:5px 14px;border-radius:20px;
+      letter-spacing:0.3px;transition:background 0.15s;margin-right:6px;
+    " onmouseover="this.style.background='rgba(255,255,255,0.28)'"
+       onmouseout="this.style.background='rgba(255,255,255,0.18)'">⌂ Home</a>
+    <span style="color:rgba(255,255,255,0.4);font-size:16px">|</span>
     <div class="logo-icon">T</div>
     <div>
-      <div class="logo">TAKMIL Analytics</div>
+      <div class="logo">TAKMIL / Assessment Analytics</div>
       <div class="logo-sub">Performance Dashboard</div>
     </div>
   </div>
