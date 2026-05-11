@@ -54,7 +54,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .tb-pills{margin-left:auto;display:flex;gap:8px}
 .tb-pill{
   font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:0.3px;
-  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;
 }
 .tb-pill.green{background:rgba(167,243,208,0.15);color:#6ee7b7;border-color:rgba(167,243,208,0.2)}
 .tb-pill.amber{background:rgba(252,211,77,0.12);color:#fde68a;border-color:rgba(252,211,77,0.2)}
@@ -272,6 +272,14 @@ tbody tr{animation:fade-in 0.25s ease both}
     <span class="tb-pill amber">⏳ Pending: <strong id="hdr-pending">500</strong></span>
   </div>
   <div class="tb-conn"><div class="tb-conn-dot"></div>Connected</div>
+  <a href="/" style="
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.25);
+    color:#fff;text-decoration:none;font-family:var(--sans);
+    font-size:10px;font-weight:700;padding:4px 13px;border-radius:20px;
+    letter-spacing:0.3px;transition:background 0.15s;margin-left:6px;
+  " onmouseover="this.style.background='rgba(255,255,255,0.22)'"
+     onmouseout="this.style.background='rgba(255,255,255,0.13)'">⌂ Home</a>
 </div>
 
 <!-- SIDEBAR -->
