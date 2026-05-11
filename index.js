@@ -62,7 +62,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'hub.html')));
 app.get('/hub', (req, res) => res.sendFile(path.join(__dirname, 'hub.html')));
 app.get('/classroom', (req, res) => res.sendFile(path.join(__dirname, 'takmil-classroom.html')));
 
-// ── Portal Routes (auto-added) ──
+/// ── Portal Routes (auto-added) ──
 app.get('/coordinator',          (req, res) => res.sendFile(path.join(__dirname, 'coordinator-portal.html')));
 app.get('/portal',               (req, res) => res.sendFile(path.join(__dirname, 'portal.html')));
 app.get('/offline-portal',       (req, res) => res.sendFile(path.join(__dirname, 'offline-portal.html')));
