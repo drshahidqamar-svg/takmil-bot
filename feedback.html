@@ -82,10 +82,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236ee7b7' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 8px center;
 }
-.f-inp.f-status-active{
-  background:var(--leaf);border-color:var(--leaf);color:#fff;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='white' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
-}
+
 .f-search-wrap{
   display:flex;align-items:center;gap:6px;
   background:var(--panel);border:1.5px solid var(--border2);border-radius:20px;
@@ -260,7 +257,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
     <option value="">All Coordinators</option>
   </select>
   <span class="f-lbl">Status</span>
-  <select class="f-inp f-sel f-status-active" id="f-status" onchange="onStatusChange()">
+  <select class="f-inp f-sel" id="f-status" onchange="filterCards()">
     <option value="">All Schools</option>
     <option value="submitted" selected>Submitted ✅</option>
     <option value="missing">Not Submitted ❌</option>
@@ -298,16 +295,6 @@ function fmt(v){ return v ?? '—'; }
 function fmtBool(v){ return v ? '✅ Yes' : '❌ No'; }
 function fmtShort(name){
   return (name||'').replace(/_O_|_A_|_B_|_C_/,' ').replace(/_W\d+[A-Z]+$/,'').replace(/_/g,' ');
-}
-
-function onStatusChange(){
-  const sel = document.getElementById('f-status');
-  if(sel.value==='submitted'){
-    sel.className='f-inp f-sel f-status-active';
-  } else {
-    sel.className='f-inp f-sel';
-  }
-  filterCards();
 }
 
 async function load(){
