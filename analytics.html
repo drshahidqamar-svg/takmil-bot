@@ -108,76 +108,85 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 /* ── SECTION ── */
 .section{margin-bottom:28px}
 .section-title{
-  font-size:14px;font-weight:800;color:var(--text);
+  font-size:15px;font-weight:800;color:#1e3a5f;
   margin-bottom:14px;display:flex;align-items:center;gap:8px;
+  padding-bottom:10px;border-bottom:2px solid #bfdbfe;
 }
-.section-sub{font-size:12px;color:var(--text3);font-weight:500;margin-left:4px}
+.section-sub{font-size:12px;color:#64748b;font-weight:500;margin-left:4px}
 
 /* ── SUMMARY CARDS ── */
 .summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
 @media(max-width:900px){.summary-grid{grid-template-columns:repeat(3,1fr)}}
 .sum-card{
-  background:var(--bg2);border:1px solid var(--border);
-  border-radius:var(--r);padding:18px 20px;border-top:3px solid;
+  border-radius:14px;padding:20px 18px;position:relative;overflow:hidden;
+  border:1.5px solid transparent;
 }
-.sum-n{font-size:28px;font-weight:800;line-height:1;letter-spacing:-0.5px}
-.sum-l{font-size:10px;font-weight:700;color:var(--text3);
-  text-transform:uppercase;letter-spacing:.8px;margin-top:6px}
-.sum-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.sum-card-inner{position:relative;z-index:1}
+.sum-n{font-size:32px;font-weight:800;line-height:1;letter-spacing:-1px;margin-bottom:6px}
+.sum-l{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:0.75}
+.sum-sub{font-size:11px;margin-top:3px;opacity:0.6}
+.sum-icon{position:absolute;right:14px;top:14px;font-size:26px;opacity:0.2}
 
 /* ── CHART CARDS ── */
 .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
 .chart-row.full{grid-template-columns:1fr}
 @media(max-width:900px){.chart-row{grid-template-columns:1fr}}
 .chart-card{
-  background:var(--bg2);border:1px solid var(--border);
-  border-radius:var(--r);padding:20px;
+  background:#fff;border:1.5px solid #bfdbfe;
+  border-radius:14px;padding:20px;
+  border-left:4px solid #2563eb;
 }
-.chart-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px}
-.chart-sub{font-size:11px;color:var(--text3);margin-bottom:16px}
-.chart-wrap{position:relative;height:240px}
+.chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.chart-title{font-size:13px;font-weight:800;color:#1e3a5f}
+.chart-sub{font-size:11px;color:#64748b;margin-top:3px}
+.chart-wrap{position:relative;height:220px}
 
 /* ── TABLE ── */
-.perf-table{width:100%;border-collapse:collapse;font-size:13px}
+.table-wrap{background:#fff;border:1.5px solid #bfdbfe;border-radius:14px;overflow:hidden}
+.perf-table{width:100%;border-collapse:collapse;font-size:12.5px}
 .perf-table th{
-  text-align:left;padding:10px 14px;color:#2563eb;
-  font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.8px;
-  background:#eff6ff;border-bottom:1px solid #bfdbfe;
-  font-family:'DM Mono',monospace;
+  text-align:left;padding:11px 14px;color:#2563eb;
+  font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:1px;
+  background:#eff6ff;border-bottom:2px solid #bfdbfe;
+  font-family:'DM Mono',monospace;white-space:nowrap;
 }
-.perf-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text2)}
-.perf-table tr:hover td{background:var(--gold-dim)}
+.perf-table td{
+  padding:11px 14px;border-bottom:1px solid #e0f0ff;
+  color:#334155;vertical-align:middle;
+}
+.perf-table tbody tr:nth-child(even) td{background:#f8fbff}
+.perf-table tbody tr:hover td{background:#eff6ff}
 .perf-table tr:last-child td{border-bottom:none}
 .rank{
   display:inline-flex;align-items:center;justify-content:center;
-  width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:800;
-  background:var(--panel);color:var(--text2);
+  width:24px;height:24px;border-radius:50%;font-size:11px;font-weight:800;
+  background:#dbeafe;color:#1d4ed8;
 }
 .rank-1{background:#fef9c3;color:#92400e}
 .rank-2{background:#f1f5f9;color:#475569}
-.rank-3{background:#fef3f2;color:#b91c1c}
+.rank-3{background:#fee2e2;color:#b91c1c}
 
 .bar-cell{display:flex;align-items:center;gap:8px}
-.mini-bar{height:6px;border-radius:3px;flex:1;background:var(--border);overflow:hidden}
-.mini-fill{height:100%;border-radius:3px;transition:width 0.5s}
-.pct{font-weight:700;font-size:12px;min-width:36px}
+.mini-bar{height:7px;border-radius:4px;flex:1;background:#dbeafe;overflow:hidden;min-width:60px}
+.mini-fill{height:100%;border-radius:4px;transition:width 0.5s}
+.pct{font-weight:700;font-size:12px;min-width:38px}
 
-.badge-sm{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
-.b-ok{background:var(--green-dim);color:var(--green);border:1px solid #bbf7d0}
-.b-warn{background:var(--amber-dim);color:var(--amber);border:1px solid #fde68a}
-.b-bad{background:var(--red-dim);color:var(--red);border:1px solid #fecaca}
+.badge-sm{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.b-ok{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.b-warn{background:#fef9c3;color:#92400e;border:1px solid #fde68a}
+.b-bad{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
 
 /* ── LOADING ── */
-.loading-state{text-align:center;padding:80px;color:var(--text3)}
-.spin{width:28px;height:28px;border:2px solid var(--border2);border-top-color:#2563eb;
-  border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+.loading-state{text-align:center;padding:80px;color:#64748b}
+.spin{width:30px;height:30px;border:3px solid #bfdbfe;border-top-color:#2563eb;
+  border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 14px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 .school-name-cell{max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.last-seen{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.last-seen{font-size:11px;color:#64748b;font-family:'DM Mono',monospace}
 
 ::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb{background:#93c5fd;border-radius:3px}
 </style>
 </head>
 <body>
@@ -279,6 +288,10 @@ async function load(){
   destroyCharts();
   try{
     const resp = await fetch(`/api/analytics?from=${from}&to=${to}`);
+    if(!resp.ok){
+      const txt = await resp.text();
+      throw new Error(`Server error ${resp.status} — API may be unavailable`);
+    }
     currentData = await resp.json();
     if(currentData.error) throw new Error(currentData.error);
     const days = Math.round((new Date(to)-new Date(from))/(1000*60*60*24))+1;
@@ -287,7 +300,12 @@ async function load(){
     render(currentData);
   }catch(e){
     document.getElementById('body').innerHTML =
-      `<div class="loading-state"><p style="color:var(--red)">Error: ${e.message}</p></div>`;
+      `<div class="loading-state">
+        <p style="font-size:32px;margin-bottom:12px">⚠️</p>
+        <p style="color:var(--red);font-weight:700;margin-bottom:8px">${e.message}</p>
+        <p style="color:var(--text3);font-size:12px">Check that the Railway server is running and the /api/analytics route is available.</p>
+        <button onclick="load()" style="margin-top:16px;padding:8px 20px;background:#2563eb;color:#fff;border:none;border-radius:20px;font-weight:700;cursor:pointer;font-size:12px;">↻ Retry</button>
+      </div>`;
   }
 }
 
@@ -320,64 +338,84 @@ function renderOverview(d){
   document.getElementById('body').innerHTML = `
   <div class="section">
     <div class="summary-grid">
-      <div class="sum-card" style="border-top-color:var(--gold)">
-        <div class="sum-n" style="color:var(--gold)">${subRate}%</div>
-        <div class="sum-l">Avg Submission Rate</div>
-        <div class="sum-sub">This period</div>
+      <div class="sum-card" style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border-color:#1d4ed8">
+        <div class="sum-icon">📤</div>
+        <div class="sum-card-inner">
+          <div class="sum-n">${subRate}%</div>
+          <div class="sum-l">Avg Submission Rate</div>
+          <div class="sum-sub">This period</div>
+        </div>
       </div>
-      <div class="sum-card" style="border-top-color:var(--green)">
-        <div class="sum-n" style="color:var(--green)">${avgAttend}%</div>
-        <div class="sum-l">Avg Attendance</div>
-        <div class="sum-sub">All schools</div>
+      <div class="sum-card" style="background:linear-gradient(135deg,#047857,#059669);color:#fff;border-color:#047857">
+        <div class="sum-icon">👥</div>
+        <div class="sum-card-inner">
+          <div class="sum-n">${avgAttend}%</div>
+          <div class="sum-l">Avg Attendance</div>
+          <div class="sum-sub">All schools</div>
+        </div>
       </div>
-      <div class="sum-card" style="border-top-color:var(--blue)">
-        <div class="sum-n" style="color:var(--blue)">${totalSubs}</div>
-        <div class="sum-l">Total Reports</div>
-        <div class="sum-sub">Submitted</div>
+      <div class="sum-card" style="background:linear-gradient(135deg,#0369a1,#0284c7);color:#fff;border-color:#0369a1">
+        <div class="sum-icon">📋</div>
+        <div class="sum-card-inner">
+          <div class="sum-n">${totalSubs}</div>
+          <div class="sum-l">Total Reports</div>
+          <div class="sum-sub">Submitted</div>
+        </div>
       </div>
-      <div class="sum-card" style="border-top-color:var(--purple)">
-        <div class="sum-n" style="color:var(--purple)">${avgTech}</div>
-        <div class="sum-l">Avg Tech/Day</div>
-        <div class="sum-sub">Schools</div>
+      <div class="sum-card" style="background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff;border-color:#6d28d9">
+        <div class="sum-icon">💻</div>
+        <div class="sum-card-inner">
+          <div class="sum-n">${avgTech}</div>
+          <div class="sum-l">Avg Tech / Day</div>
+          <div class="sum-sub">Schools using tech</div>
+        </div>
       </div>
-      <div class="sum-card" style="border-top-color:var(--border2)">
-        <div class="sum-n" style="color:var(--text)">${avgAssembly}</div>
-        <div class="sum-l">Avg Assembly/Day</div>
-        <div class="sum-sub">Per day</div>
+      <div class="sum-card" style="background:linear-gradient(135deg,#b45309,#d97706);color:#fff;border-color:#b45309">
+        <div class="sum-icon">🏛️</div>
+        <div class="sum-card-inner">
+          <div class="sum-n">${avgAssembly}</div>
+          <div class="sum-l">Avg Assembly / Day</div>
+          <div class="sum-sub">Per day</div>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="chart-row full">
-    <div class="chart-card">
-      <div class="chart-title">📈 Daily Submission Rate</div>
-      <div class="chart-sub">% of schools submitting feedback each day</div>
+    <div class="chart-card" style="border-left-color:#2563eb">
+      <div class="chart-header">
+        <div><div class="chart-title">📈 Daily Submission Rate</div><div class="chart-sub">% of schools submitting feedback each day</div></div>
+      </div>
       <div class="chart-wrap"><canvas id="c-submissions"></canvas></div>
     </div>
   </div>
 
   <div class="chart-row">
-    <div class="chart-card">
-      <div class="chart-title">👥 Attendance Trend</div>
-      <div class="chart-sub">Average attendance % per day</div>
+    <div class="chart-card" style="border-left-color:#059669">
+      <div class="chart-header">
+        <div><div class="chart-title">👥 Attendance Trend</div><div class="chart-sub">Average attendance % per day</div></div>
+      </div>
       <div class="chart-wrap"><canvas id="c-attendance"></canvas></div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">💻 Technology & Assembly</div>
-      <div class="chart-sub">Schools using tech and running assembly per day</div>
+    <div class="chart-card" style="border-left-color:#7c3aed">
+      <div class="chart-header">
+        <div><div class="chart-title">💻 Technology & Assembly</div><div class="chart-sub">Schools using tech and running assembly per day</div></div>
+      </div>
       <div class="chart-wrap"><canvas id="c-tech"></canvas></div>
     </div>
   </div>
 
   <div class="chart-row">
-    <div class="chart-card">
-      <div class="chart-title">🏆 Top Regional Coordinators</div>
-      <div class="chart-sub">Submission rate by RC</div>
+    <div class="chart-card" style="border-left-color:#d97706">
+      <div class="chart-header">
+        <div><div class="chart-title">🏆 Top Regional Coordinators</div><div class="chart-sub">Submission rate by RC</div></div>
+      </div>
       <div class="chart-wrap"><canvas id="c-rc-bar"></canvas></div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">📊 Attendance by RC</div>
-      <div class="chart-sub">Average attendance % by regional coordinator</div>
+    <div class="chart-card" style="border-left-color:#0284c7">
+      <div class="chart-header">
+        <div><div class="chart-title">📊 Attendance by RC</div><div class="chart-sub">Average attendance % by regional coordinator</div></div>
+      </div>
       <div class="chart-wrap"><canvas id="c-rc-attend"></canvas></div>
     </div>
   </div>`;
@@ -388,21 +426,21 @@ function renderOverview(d){
 
   mkLine('c-submissions', labels, [{
     label:'Submission Rate %', data: subRates,
-    borderColor:'#c9a84c', backgroundColor:'rgba(201,168,76,0.1)',
-    fill:true, tension:0.4
+    borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,0.08)',
+    fill:true, tension:0.4, pointBackgroundColor:'#2563eb', pointRadius:3
   }], {yMax:100, yLabel:'%'});
 
   mkLine('c-attendance', labels, [{
     label:'Attendance %', data: trend.map(r=>parseFloat(r.avg_attendance||0).toFixed(1)),
-    borderColor:'#059669', backgroundColor:'rgba(5,150,105,0.1)',
-    fill:true, tension:0.4
+    borderColor:'#059669', backgroundColor:'rgba(5,150,105,0.08)',
+    fill:true, tension:0.4, pointBackgroundColor:'#059669', pointRadius:3
   }], {yMax:100, yLabel:'%'});
 
   mkLine('c-tech', labels, [
     {label:'Tech Used',  data:trend.map(r=>parseInt(r.tech_count||0)),
-     borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,0.1)', fill:false, tension:0.4},
+     borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,0.08)', fill:false, tension:0.4, pointRadius:3},
     {label:'Assembly',   data:trend.map(r=>parseInt(r.assembly_count||0)),
-     borderColor:'#d97706', backgroundColor:'rgba(217,119,6,0.1)',  fill:false, tension:0.4}
+     borderColor:'#d97706', backgroundColor:'rgba(217,119,6,0.08)',  fill:false, tension:0.4, pointRadius:3}
   ], {yLabel:'Schools'});
 
   const rcRows = (d.rcPerf||[]).filter(r=>r.rc_name);
@@ -454,7 +492,7 @@ function renderRC(d){
 
   <div class="section">
     <div class="section-title">🏆 RC Leaderboard</div>
-    <div class="chart-card" style="padding:0;overflow:hidden">
+    <div class="table-wrap">
       <table class="perf-table">
         <tr>
           <th>#</th><th>Regional Coordinator</th><th>Region</th><th>Schools</th>
@@ -522,7 +560,7 @@ function renderCoord(d){
 
   <div class="section">
     <div class="section-title">📋 Coordinator Leaderboard <span class="section-sub">${rows.length} total</span></div>
-    <div class="chart-card" style="padding:0;overflow:hidden">
+    <div class="table-wrap">
       <table class="perf-table">
         <tr>
           <th>#</th><th>Coordinator</th><th>RC</th><th>Region</th><th>Schools</th>
@@ -571,32 +609,44 @@ function renderSchools(d){
   document.getElementById('body').innerHTML = `
   <div class="section">
     <div class="summary-grid" style="grid-template-columns:repeat(4,1fr)">
-      <div class="sum-card" style="border-top-color:var(--green)">
-        <div class="sum-n" style="color:var(--green)">${active.length}</div>
-        <div class="sum-l">Active Schools</div>
-      </div>
-      <div class="sum-card" style="border-top-color:var(--red)">
-        <div class="sum-n" style="color:var(--red)">${zero.length}</div>
-        <div class="sum-l">Zero Submissions</div>
-      </div>
-      <div class="sum-card" style="border-top-color:var(--blue)">
-        <div class="sum-n" style="color:var(--blue)">
-          ${active.length ? Math.round(active.reduce((a,r)=>a+parseFloat(r.avg_attendance||0),0)/active.length) : 0}%
+      <div class="sum-card" style="background:linear-gradient(135deg,#047857,#059669);color:#fff;border-color:#047857">
+        <div class="sum-icon">🏫</div>
+        <div class="sum-card-inner">
+          <div class="sum-n">${active.length}</div>
+          <div class="sum-l">Active Schools</div>
         </div>
-        <div class="sum-l">Avg Attendance (active)</div>
       </div>
-      <div class="sum-card" style="border-top-color:var(--gold)">
-        <div class="sum-n" style="color:var(--gold)">
-          ${active.length ? Math.round(active.reduce((a,r)=>a+parseInt(r.tech_count||0),0)/active.length*10)/10 : 0}
+      <div class="sum-card" style="background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff;border-color:#b91c1c">
+        <div class="sum-icon">❌</div>
+        <div class="sum-card-inner">
+          <div class="sum-n">${zero.length}</div>
+          <div class="sum-l">Zero Submissions</div>
         </div>
-        <div class="sum-l">Avg Tech Reports</div>
+      </div>
+      <div class="sum-card" style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border-color:#1d4ed8">
+        <div class="sum-icon">👥</div>
+        <div class="sum-card-inner">
+          <div class="sum-n">
+            ${active.length ? Math.round(active.reduce((a,r)=>a+parseFloat(r.avg_attendance||0),0)/active.length) : 0}%
+          </div>
+          <div class="sum-l">Avg Attendance (active)</div>
+        </div>
+      </div>
+      <div class="sum-card" style="background:linear-gradient(135deg,#6d28d9,#7c3aed);color:#fff;border-color:#6d28d9">
+        <div class="sum-icon">💻</div>
+        <div class="sum-card-inner">
+          <div class="sum-n">
+            ${active.length ? Math.round(active.reduce((a,r)=>a+parseInt(r.tech_count||0),0)/active.length*10)/10 : 0}
+          </div>
+          <div class="sum-l">Avg Tech Reports</div>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="section">
     <div class="section-title">🏠 All Schools <span class="section-sub">${rows.length} total</span></div>
-    <div class="chart-card" style="padding:0;overflow:hidden;max-height:600px;overflow-y:auto">
+    <div class="table-wrap" style="max-height:600px;overflow-y:auto">
       <table class="perf-table">
         <tr>
           <th>#</th><th>School</th><th>Region</th><th>Coordinator</th>
@@ -627,13 +677,14 @@ function renderSchools(d){
 const CHART_DEFAULTS = {
   responsive:true, maintainAspectRatio:false,
   plugins:{
-    legend:{labels:{font:{family:'Plus Jakarta Sans',size:11},color:'#a89070'}},
+    legend:{labels:{font:{family:'Plus Jakarta Sans',size:11},color:'#64748b'}},
   },
   scales:{
-    x:{ticks:{font:{family:'Plus Jakarta Sans',size:10},color:'#a89070'},
-       grid:{color:'rgba(232,224,208,0.6)'}},
-    y:{ticks:{font:{family:'Plus Jakarta Sans',size:10},color:'#a89070'},
-       grid:{color:'rgba(232,224,208,0.6)'}}
+    x:{ticks:{font:{family:'Plus Jakarta Sans',size:10},color:'#64748b'},
+       grid:{color:'rgba(191,219,254,0.5)'}},
+    y:{ticks:{font:{family:'Plus Jakarta Sans',size:10},color:'#64748b'},
+       grid:{color:'rgba(191,219,254,0.5)'},
+       min:0}
   }
 };
 
@@ -642,7 +693,8 @@ function mkLine(id, labels, datasets, opts={}){
   if(!ctx) return;
   const cfg = JSON.parse(JSON.stringify(CHART_DEFAULTS));
   if(opts.yMax) cfg.scales.y.max = opts.yMax;
-  if(opts.yLabel) cfg.scales.y.title = {display:true,text:opts.yLabel,font:{size:10,family:'Plus Jakarta Sans'},color:'#a89070'};
+  cfg.scales.y.min = 0;
+  if(opts.yLabel) cfg.scales.y.title = {display:true,text:opts.yLabel,font:{size:10,family:'Plus Jakarta Sans'},color:'#64748b'};
   charts[id] = new Chart(ctx, {type:'line', data:{labels, datasets}, options:cfg});
 }
 
@@ -651,11 +703,12 @@ function mkBar(id, labels, datasets, opts={}){
   if(!ctx) return;
   const cfg = JSON.parse(JSON.stringify(CHART_DEFAULTS));
   if(opts.yMax) cfg.scales.y.max = opts.yMax;
-  if(opts.yLabel) cfg.scales.y.title = {display:true,text:opts.yLabel,font:{size:10,family:'Plus Jakarta Sans'},color:'#a89070'};
+  cfg.scales.y.min = 0;
+  if(opts.yLabel) cfg.scales.y.title = {display:true,text:opts.yLabel,font:{size:10,family:'Plus Jakarta Sans'},color:'#64748b'};
   if(opts.horizontal){
     cfg.indexAxis = 'y';
-    cfg.scales.x = cfg.scales.y;
-    cfg.scales.y = {ticks:{font:{family:'Plus Jakarta Sans',size:10},color:'#a89070'},grid:{display:false}};
+    cfg.scales.x = {...cfg.scales.y, min:0};
+    cfg.scales.y = {ticks:{font:{family:'Plus Jakarta Sans',size:10},color:'#64748b'},grid:{display:false}};
   }
   charts[id] = new Chart(ctx, {type:'bar', data:{labels, datasets},
     options:{...cfg, plugins:{...cfg.plugins, legend:{display:false}}}});
@@ -681,7 +734,7 @@ function badgeClass(v){
   return 'b-bad';
 }
 
-// ── Init ─────────────────────────────────────────────────────────
+/// ── Init ─────────────────────────────────────────────────────────
 (function init(){
   const today = new Date();
   const fmt   = d => d.toISOString().split('T')[0];
