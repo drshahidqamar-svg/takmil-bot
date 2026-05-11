@@ -718,9 +718,10 @@ router.get('/api/assessment-dashboard', async (req, res) => {
     }
 
     // ── Grade → level range ──
-    let gradeWhere = '';
-    if (grade === 'Primary')     gradeWhere = ' AND level BETWEEN 1 AND 5';
-    if (grade === 'Elementary')  gradeWhere = ' AND level BETWEEN 6 AND 11';
+    let gradeWhere       = '';
+    let gradeWhereTablet = '';
+    if (grade === 'Primary')    { gradeWhere = ' AND sa.level BETWEEN 1 AND 5';  gradeWhereTablet = ' AND tr.level BETWEEN 1 AND 5'; }
+    if (grade === 'Elementary') { gradeWhere = ' AND sa.level BETWEEN 6 AND 11'; gradeWhereTablet = ' AND tr.level BETWEEN 6 AND 11'; }
 
     // ── Portal assessments (student_assessments table) ──
     let portalParams = [dateFrom, dateTo];
@@ -768,7 +769,7 @@ router.get('/api/assessment-dashboard', async (req, res) => {
 
     // ── Tablet assessments (tablet_results table) ──
     let tabletParams = [dateFrom, dateTo];
-    let tabletWhere  = gradeWhere;
+    let tabletWhere  = gradeWhereTablet;
     if (level)   { tabletParams.push(parseInt(level));  tabletWhere += ` AND tr.level=$${tabletParams.length}`; }
     if (subject) { tabletParams.push(subject);           tabletWhere += ` AND ts.subject ILIKE $${tabletParams.length}`; }
     if (student) { tabletParams.push('%'+student+'%');   tabletWhere += ` AND tr.student_name ILIKE $${tabletParams.length}`; }
