@@ -468,7 +468,7 @@ router.post('/api/lessons/start', async (req, res) => {
     await db.pool.query(`
       INSERT INTO lessons (video_id,video_name,subject,level,expected_duration,school_id,school_code,school_name,teacher_name,start_time,start_gps_lat,start_gps_lng,start_gps_acc,status,created_at)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'started',NOW())`,
-      [video_id, video_name, subject, parseInt(level), parseInt(expected_duration)||600, school_id, school_code, school_name, teacher_name,
+      [video_id, video_name, subject, parseInt(level)||null, parseInt(expected_duration)||600, school_id, school_code, school_name, teacher_name,
        start_time || new Date().toISOString(), start_gps?.lat||null, start_gps?.lng||null, start_gps?.acc||null]);
     const mapsLink = start_gps ? `maps.google.com/?q=${start_gps.lat},${start_gps.lng}` : 'Location unavailable';
     const ops = await db.pool.query(`SELECT phone FROM ops_team WHERE is_active=TRUE LIMIT 1`);
@@ -492,7 +492,7 @@ router.post('/api/lessons/end', async (req, res) => {
       await db.pool.query(`
         INSERT INTO lessons (video_id,video_name,subject,level,expected_duration,school_id,school_code,school_name,teacher_name,start_time,end_time,actual_duration,coverage_pct,start_gps_lat,start_gps_lng,end_gps_lat,end_gps_lng,gps_match,status,flagged,created_at)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,NOW())`,
-        [video_id, video_name, subject, parseInt(level), parseInt(expected_duration)||600, school_id, school_code, school_name, teacher_name,
+        [video_id, video_name, subject, parseInt(level)||null, parseInt(expected_duration)||600, school_id, school_code, school_name, teacher_name,
          start_time, end_time, parseInt(actual_duration)||0, parseFloat(coverage_pct)||0,
          start_gps?.lat||null, start_gps?.lng||null, end_gps?.lat||null, end_gps?.lng||null, !!gps_match, status||'completed', !!flagged]);
     }

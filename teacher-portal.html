@@ -379,6 +379,16 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
 
       <!-- LOCAL FILE SECTION -->
       <div id="video-local-section" style="display:none">
+        <label class="lbl">Level (for this video)</label>
+        <select class="inp inp-select" id="sel-level-local" onchange="document.getElementById('sel-level').value=this.value">
+          <option value="">— Select Level —</option>
+          <option value="1">Level 1</option><option value="2">Level 2</option>
+          <option value="3">Level 3</option><option value="4">Level 4</option>
+          <option value="5">Level 5</option><option value="6">Level 6</option>
+          <option value="7">Level 7</option><option value="8">Level 8</option>
+          <option value="9">Level 9</option><option value="10">Level 10</option>
+          <option value="11">Level 11</option>
+        </select>
         <div class="file-drop" id="file-drop-zone" onclick="document.getElementById('local-file-input').click()">
           <input type="file" id="local-file-input" accept="video/*,video/mp4,video/webm,video/ogg,video/avi,video/mov,.mp4,.webm,.ogg,.avi,.mov,.mkv" onchange="onLocalFileSelected(this)">
           <div class="file-drop-icon">📂</div>
@@ -909,7 +919,7 @@ async function startLesson(){
     // Local file mode
     videoName        = selectedFile.name.replace(/\.[^.]+$/, ''); // strip extension
     videoSubject     = 'Local File';
-    videoLevel       = '—';
+    videoLevel       = parseInt(document.getElementById('sel-level').value) || null;
     videoUnit        = '';
     expectedDuration = selectedFile._duration || 600;
 
@@ -1189,9 +1199,11 @@ async function autoSync(){
   const pending = lessons.filter(l=>!l.synced);
   for(const l of pending){
     try{
+      // Sanitize level — old records may have '—' which breaks the DB
+      const cleanRecord = {...l, level: parseInt(l.level)||null};
       const resp = await fetch(BASE+'/api/lessons/end',{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(l)
+        body:JSON.stringify(cleanRecord)
       });
       const data = await resp.json();
       if(data.saved){
