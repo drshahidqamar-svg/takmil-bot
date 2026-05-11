@@ -238,6 +238,28 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
 .att-pct-lbl{font-size:12px;font-weight:700;text-align:right}
 
 .wa-tick{font-size:11px;color:#16a34a;text-align:right;margin-top:4px}
+
+/* ── VIDEO SOURCE TABS ── */
+.src-tabs{display:flex;gap:0;background:var(--fog);border-radius:12px;padding:4px;margin-bottom:16px;border:1.5px solid var(--border)}
+.src-tab{flex:1;padding:9px 6px;border:none;background:transparent;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;color:#6b7280;transition:all 0.18s;text-align:center}
+.src-tab.active{background:var(--white);color:var(--ink2);box-shadow:0 2px 8px rgba(15,36,25,0.10)}
+
+/* ── LOCAL FILE PICKER ── */
+.file-drop{border:2.5px dashed var(--border);border-radius:var(--r2);padding:28px 16px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--fog)}
+.file-drop:hover,.file-drop.has-file{border-color:var(--leaf);background:var(--mist)}
+.file-drop input[type=file]{display:none}
+.file-drop-icon{font-size:36px;margin-bottom:8px}
+.file-drop-label{font-size:14px;font-weight:700;color:var(--ink2);margin-bottom:4px}
+.file-drop-hint{font-size:12px;color:#6b7280}
+.file-chosen{margin-top:14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:var(--r2);padding:12px 14px;display:none}
+.file-chosen-name{font-size:14px;font-weight:700;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-chosen-meta{font-size:12px;color:#6b7280;margin-top:2px}
+
+/* ── LESSON VIDEO PLAYER ── */
+#lesson-video-wrap{display:none;margin-bottom:14px}
+#lesson-video{width:100%;max-height:260px;border-radius:var(--r2);background:#000;display:block}
+.video-ctrl-bar{display:flex;align-items:center;gap:10px;margin-top:8px}
+.video-time-label{font-size:12px;font-weight:700;color:var(--ink2);min-width:85px;text-align:right}
 </style>
 </head>
 <body>
@@ -324,26 +346,55 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
 
     <div class="card">
       <div class="card-title" style="font-size:17px;margin-bottom:4px">📹 Select Today's Video</div>
-      <div class="card-sub" style="margin-bottom:14px">آج کا ویڈیو منتخب کریں</div>
-      <label class="lbl">Subject</label>
-      <select class="inp inp-select" id="sel-subject" onchange="filterVideos()">
-        <option value="">All Subjects</option>
-        <option value="Math">Math — ریاضی</option>
-        <option value="English">English — انگریزی</option>
-        <option value="Urdu">Urdu — اردو</option>
-        <option value="Science">Science — سائنس</option>
-      </select>
-      <label class="lbl">Level</label>
-      <select class="inp inp-select" id="sel-level" onchange="filterVideos()">
-        <option value="">All Levels</option>
-        <option value="1">Level 1</option><option value="2">Level 2</option>
-        <option value="3">Level 3</option><option value="4">Level 4</option>
-        <option value="5">Level 5</option><option value="6">Level 6</option>
-        <option value="7">Level 7</option><option value="8">Level 8</option>
-        <option value="9">Level 9</option><option value="10">Level 10</option>
-        <option value="11">Level 11</option>
-      </select>
-      <div id="video-list" style="max-height:320px;overflow-y:auto"></div>
+      <div class="card-sub" style="margin-bottom:12px">آج کا ویڈیو منتخب کریں</div>
+
+      <!-- Source toggle tabs -->
+      <div class="src-tabs">
+        <button class="src-tab active" id="tab-catalog" onclick="switchVideoTab('catalog')">📋 Catalog</button>
+        <button class="src-tab" id="tab-local" onclick="switchVideoTab('local')">📁 USB / Phone</button>
+      </div>
+
+      <!-- CATALOG SECTION -->
+      <div id="video-catalog-section">
+        <label class="lbl">Subject</label>
+        <select class="inp inp-select" id="sel-subject" onchange="filterVideos()">
+          <option value="">All Subjects</option>
+          <option value="Math">Math — ریاضی</option>
+          <option value="English">English — انگریزی</option>
+          <option value="Urdu">Urdu — اردو</option>
+          <option value="Science">Science — سائنس</option>
+        </select>
+        <label class="lbl">Level</label>
+        <select class="inp inp-select" id="sel-level" onchange="filterVideos()">
+          <option value="">All Levels</option>
+          <option value="1">Level 1</option><option value="2">Level 2</option>
+          <option value="3">Level 3</option><option value="4">Level 4</option>
+          <option value="5">Level 5</option><option value="6">Level 6</option>
+          <option value="7">Level 7</option><option value="8">Level 8</option>
+          <option value="9">Level 9</option><option value="10">Level 10</option>
+          <option value="11">Level 11</option>
+        </select>
+        <div id="video-list" style="max-height:320px;overflow-y:auto"></div>
+      </div>
+
+      <!-- LOCAL FILE SECTION -->
+      <div id="video-local-section" style="display:none">
+        <div class="file-drop" id="file-drop-zone" onclick="document.getElementById('local-file-input').click()">
+          <input type="file" id="local-file-input" accept="video/*,video/mp4,video/webm,video/ogg,video/avi,video/mov,.mp4,.webm,.ogg,.avi,.mov,.mkv" onchange="onLocalFileSelected(this)">
+          <div class="file-drop-icon">📂</div>
+          <div class="file-drop-label">Tap to choose video file</div>
+          <div class="file-drop-hint">USB, phone storage, SD card — یو ایس بی یا فون سے فائل منتخب کریں</div>
+        </div>
+        <div class="file-chosen" id="file-chosen-info">
+          <div class="file-chosen-name" id="file-chosen-name">—</div>
+          <div class="file-chosen-meta" id="file-chosen-meta">—</div>
+        </div>
+        <div style="margin-top:14px;padding:12px;background:#fef9c3;border-radius:var(--r2);font-size:12px;color:#92400e;line-height:1.6">
+          ⚠️ Video plays only on this device. Make sure you connect your phone/laptop to the projector first.<br>
+          پروجیکٹر سے پہلے جوڑیں، پھر ویڈیو چلائیں۔
+        </div>
+      </div>
+
       <div class="btn-gap"></div>
       <button class="btn btn-green" id="start-btn" onclick="goToLesson()" disabled>
         Start Lesson — سبق شروع کریں ▶
@@ -378,6 +429,16 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
       </div>
       <div style="font-size:18px;font-weight:800;color:var(--ink2);margin-bottom:4px" id="active-video-name"></div>
       <div style="font-size:13px;color:#6b7280" id="active-video-meta"></div>
+
+      <!-- Embedded video player (shown when playing from local file) -->
+      <div id="lesson-video-wrap">
+        <video id="lesson-video" controls playsinline></video>
+        <div class="video-ctrl-bar">
+          <span style="font-size:12px;color:#6b7280;flex:1">📺 Playing on device — connect to projector</span>
+          <span class="video-time-label" id="video-time-label">0:00 / 0:00</span>
+        </div>
+      </div>
+
       <div class="timer" id="lesson-timer">0:00</div>
       <div class="cov-wrap">
         <div class="cov-label">
@@ -579,6 +640,9 @@ let currentLesson  = null;
 let timerInterval  = null;
 let gpsData        = null;
 let selectedVideo  = null;
+let selectedFile   = null;   // File object from local picker
+let localVideoURL  = null;   // Object URL for the local file
+let activeVideoTab = 'catalog'; // 'catalog' | 'local'
 
 // ── Video catalog (populated from server or cached) ──────────────
 let videoCatalog = [];
@@ -761,8 +825,61 @@ function filterVideos(){
 // selectVideo now handled via event listeners in filterVideos()
 function selectVideo(id){ /* deprecated — kept for safety */ }
 
+// ── Video source tab switcher ────────────────────────────────────
+function switchVideoTab(tab){
+  activeVideoTab = tab;
+  document.getElementById('tab-catalog').classList.toggle('active', tab==='catalog');
+  document.getElementById('tab-local').classList.toggle('active', tab==='local');
+  document.getElementById('video-catalog-section').style.display = tab==='catalog' ? '' : 'none';
+  document.getElementById('video-local-section').style.display   = tab==='local'   ? '' : 'none';
+  // Reset selection when switching tabs
+  selectedVideo = null;
+  selectedFile  = null;
+  document.getElementById('start-btn').disabled = true;
+  document.querySelectorAll('.video-item').forEach(el=>el.classList.remove('sel'));
+}
+
+// ── Local file picker ────────────────────────────────────────────
+function onLocalFileSelected(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  selectedFile  = file;
+  selectedVideo = null; // no catalog entry for local files
+
+  // Show chosen file info
+  const zone  = document.getElementById('file-drop-zone');
+  const info  = document.getElementById('file-chosen-info');
+  const fname = document.getElementById('file-chosen-name');
+  const fmeta = document.getElementById('file-chosen-meta');
+
+  zone.classList.add('has-file');
+  info.style.display = 'block';
+  fname.textContent  = file.name;
+
+  // Try to get video duration via a temporary <video>
+  const tmpUrl = URL.createObjectURL(file);
+  const tmpVid = document.createElement('video');
+  tmpVid.preload = 'metadata';
+  tmpVid.onloadedmetadata = () => {
+    const dur = Math.round(tmpVid.duration) || 0;
+    const mb  = (file.size / 1048576).toFixed(1);
+    fmeta.textContent = (dur ? formatDur(dur) + ' · ' : '') + mb + ' MB · ' + file.type.split('/')[1]?.toUpperCase();
+    // Store duration so coverage bar works correctly
+    selectedFile._duration = dur || 600;
+    URL.revokeObjectURL(tmpUrl);
+  };
+  tmpVid.onerror = () => {
+    fmeta.textContent = (file.size / 1048576).toFixed(1) + ' MB';
+    selectedFile._duration = 600;
+    URL.revokeObjectURL(tmpUrl);
+  };
+  tmpVid.src = tmpUrl;
+
+  document.getElementById('start-btn').disabled = false;
+}
+
 function goToLesson(){
-  if(!selectedVideo) return;
+  if(!selectedVideo && !selectedFile) return;
   showScreen('s-lesson');
   startLesson();
 }
@@ -783,16 +900,83 @@ async function startLesson(){
     }
   });
 
-  document.getElementById('active-video-name').textContent = selectedVideo.name;
+  // ── Determine video info & set up player ──────────────────────
+  let videoName, videoSubject, videoLevel, videoUnit, expectedDuration;
+  const videoWrap = document.getElementById('lesson-video-wrap');
+  const videoEl   = document.getElementById('lesson-video');
+
+  if(selectedFile){
+    // Local file mode
+    videoName        = selectedFile.name.replace(/\.[^.]+$/, ''); // strip extension
+    videoSubject     = 'Local File';
+    videoLevel       = '—';
+    videoUnit        = '';
+    expectedDuration = selectedFile._duration || 600;
+
+    // Revoke any previous object URL
+    if(localVideoURL){ URL.revokeObjectURL(localVideoURL); localVideoURL = null; }
+    localVideoURL = URL.createObjectURL(selectedFile);
+
+    videoEl.src = localVideoURL;
+    videoEl.load();
+    videoEl.play().catch(()=>{}); // auto-play (may be muted on mobile)
+    videoWrap.style.display = 'block';
+
+    // Sync coverage from actual video position
+    videoEl.ontimeupdate = () => {
+      if(!currentLesson) return;
+      const cur = Math.floor(videoEl.currentTime);
+      const dur = Math.round(videoEl.duration) || currentLesson.expected_duration;
+      // Update the small time label
+      const tl = document.getElementById('video-time-label');
+      if(tl) tl.textContent = formatDur(cur) + ' / ' + formatDur(dur);
+      updateCoverageBar(cur, dur);
+    };
+    videoEl.onended = () => {
+      // Flash the end button when video finishes
+      document.getElementById('end-btn').style.animation = 'pulse-btn 1s infinite';
+      const hint = document.getElementById('cov-hint');
+      if(hint) hint.textContent = '✅ Video finished! Tap End Lesson now.';
+    };
+
+    // Use wall-clock timer for display (video may be paused/seeked)
+    timerInterval = setInterval(()=>{
+      const elapsed = Math.floor((new Date() - startTime)/1000);
+      document.getElementById('lesson-timer').textContent = formatDur(elapsed);
+      // If video is playing, coverage comes from ontimeupdate; otherwise fall back
+      if(videoEl.paused || videoEl.ended){
+        updateCoverageBar(Math.floor(videoEl.currentTime), Math.round(videoEl.duration)||currentLesson.expected_duration);
+      }
+    }, 1000);
+
+  } else {
+    // Catalog mode (no video player — teacher uses projector independently)
+    videoName        = selectedVideo.name;
+    videoSubject     = selectedVideo.subject;
+    videoLevel       = selectedVideo.level;
+    videoUnit        = selectedVideo.unit;
+    expectedDuration = selectedVideo.duration || selectedVideo.duration_seconds || 600;
+
+    videoWrap.style.display = 'none';
+    videoEl.src = '';
+    videoEl.ontimeupdate = null;
+    videoEl.onended = null;
+
+    timerInterval = setInterval(()=>updateTimer(startTime), 1000);
+  }
+
+  document.getElementById('active-video-name').textContent = videoName;
   document.getElementById('active-video-meta').textContent =
-    selectedVideo.subject + ' · Level ' + selectedVideo.level + ' · Expected: ' + formatDur(selectedVideo.duration||0);
+    videoSubject + (videoLevel !== '—' ? ' · Level ' + videoLevel : '') +
+    (videoUnit ? ' · ' + videoUnit : '') +
+    ' · Expected: ' + formatDur(expectedDuration);
 
   currentLesson = {
-    video_id:          selectedVideo.id,
-    video_name:        selectedVideo.name,
-    subject:           selectedVideo.subject,
-    level:             selectedVideo.level,
-    expected_duration: selectedVideo.duration || 600,
+    video_id:          selectedFile ? 'LOCAL:'+selectedFile.name : selectedVideo.id,
+    video_name:        videoName,
+    subject:           videoSubject,
+    level:             videoLevel,
+    expected_duration: expectedDuration,
     start_time:        startTime.toISOString(),
     school_code:       currentTeacher.school_code,
     school_name:       currentTeacher.school_name,
@@ -800,10 +984,11 @@ async function startLesson(){
     start_gps:         null,
     status:            'started',
     synced:            false,
+    source:            selectedFile ? 'local' : 'catalog',
   };
 
-  // Save start record
-  if(isOnline()){
+  // Save start record (catalog mode only — local files are private)
+  if(isOnline() && !selectedFile){
     try{
       await fetch(BASE+'/api/lessons/start',{
         method:'POST',headers:{'Content-Type':'application/json'},
@@ -811,17 +996,16 @@ async function startLesson(){
       });
     }catch(e){}
   }
-
-  // Start timer
-  timerInterval = setInterval(()=>updateTimer(startTime), 1000);
 }
 
 function updateTimer(startTime){
-  const elapsed  = Math.floor((new Date() - startTime)/1000);
-  const expected = currentLesson.expected_duration;
-  const pct      = Math.min(100, Math.round((elapsed/expected)*100));
-
+  const elapsed = Math.floor((new Date() - startTime)/1000);
   document.getElementById('lesson-timer').textContent = formatDur(elapsed);
+  updateCoverageBar(elapsed, currentLesson ? currentLesson.expected_duration : 600);
+}
+
+function updateCoverageBar(elapsed, expected){
+  const pct = Math.min(100, Math.round((elapsed/expected)*100));
   document.getElementById('cov-pct').textContent = pct+'%';
 
   const fill  = document.getElementById('cov-fill');
@@ -830,22 +1014,21 @@ function updateTimer(startTime){
 
   if(pct >= 100){
     fill.style.background='#16a34a';
-    timer.className='timer ok';
-    hint.textContent='✅ Video complete! Tap End Lesson now.';
-    // Flash the end button to prompt teacher
+    if(timer) timer.className='timer ok';
+    if(hint) hint.textContent='✅ Video complete! Tap End Lesson now.';
     document.getElementById('end-btn').style.animation='pulse-btn 1s infinite';
   } else if(pct >= 80){
     fill.style.background='#16a34a';
-    timer.className='timer ok';
-    hint.textContent='✅ Coverage target reached!';
+    if(timer) timer.className='timer ok';
+    if(hint) hint.textContent='✅ Coverage target reached!';
   } else if(pct >= 50){
     fill.style.background='#f59e0b';
-    timer.className='timer warn';
-    hint.textContent='Keep going — '+pct+'% of '+formatDur(expected)+' complete';
+    if(timer) timer.className='timer warn';
+    if(hint) hint.textContent='Keep going — '+pct+'% of '+formatDur(expected)+' complete';
   } else {
     fill.style.background='#e2e8f0';
-    timer.className='timer';
-    hint.textContent='Minimum 80% required ('+formatDur(Math.round(expected*0.8))+')';
+    if(timer) timer.className='timer';
+    if(hint) hint.textContent='Minimum 80% required ('+formatDur(Math.round(expected*0.8))+')';
   }
   fill.style.width = pct+'%';
 }
@@ -854,7 +1037,16 @@ async function endLesson(){
   clearInterval(timerInterval);
   const endTime = new Date();
   const startTime = new Date(currentLesson.start_time);
-  const actualDuration = Math.floor((endTime - startTime)/1000);
+
+  // For local file, use video's actual played time if available
+  const videoEl = document.getElementById('lesson-video');
+  let actualDuration;
+  if(selectedFile && videoEl && videoEl.duration){
+    actualDuration = Math.floor(videoEl.currentTime);
+  } else {
+    actualDuration = Math.floor((endTime - startTime)/1000);
+  }
+
   const expected = currentLesson.expected_duration;
   const pct = Math.round((actualDuration/expected)*100);
 
@@ -953,6 +1145,13 @@ async function endLesson(){
     </div>`;
 
   document.getElementById('sync-notice').style.display = synced ? 'none' : 'block';
+
+  // Release local file object URL
+  if(localVideoURL){ URL.revokeObjectURL(localVideoURL); localVideoURL = null; }
+  const videoEl2 = document.getElementById('lesson-video');
+  videoEl2.src = '';
+  document.getElementById('lesson-video-wrap').style.display = 'none';
+
   showScreen('s-result');
   currentLesson = null;
 }
@@ -960,14 +1159,26 @@ async function endLesson(){
 async function cancelLesson(){
   if(!confirm('Cancel this lesson? No record will be saved.')) return;
   clearInterval(timerInterval);
+  if(localVideoURL){ URL.revokeObjectURL(localVideoURL); localVideoURL = null; }
+  const videoEl = document.getElementById('lesson-video');
+  videoEl.src = '';
+  document.getElementById('lesson-video-wrap').style.display = 'none';
   currentLesson = null;
   showScreen('s-select');
 }
 
 function goBackToSelect(){
   selectedVideo = null;
+  selectedFile  = null;
   document.getElementById('start-btn').disabled = true;
   document.querySelectorAll('.video-item').forEach(el=>el.classList.remove('sel'));
+  // Reset local file picker UI
+  const zone = document.getElementById('file-drop-zone');
+  if(zone) zone.classList.remove('has-file');
+  const info = document.getElementById('file-chosen-info');
+  if(info) info.style.display = 'none';
+  const finput = document.getElementById('local-file-input');
+  if(finput) finput.value = '';
   loadTodayLessons();
   showScreen('s-select');
 }
