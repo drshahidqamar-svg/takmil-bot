@@ -1,5 +1,5 @@
-// TAKMIL Offline Service Worker v2
-const CACHE = 'takmil-offline-v2';
+// TAKMIL Offline Service Worker v3
+const CACHE = 'takmil-offline-v3';
 const ASSETS = [
   '/offline-portal',
   '/manifest.json',
@@ -28,6 +28,32 @@ self.addEventListener('activate', e => {
 // ── Fetch strategy ───────────────────────────────────────
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+
+  // Schools list — cache for offline school dropdown
+  if (url.pathname === '/api/schools/list') {
+    e.respondWith(
+      fetch(e.request)
+        .then(resp => {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return resp;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Attendance submit — network only, queue handled by app JS
+  if (url.pathname === '/api/attendance/submit') {
+    e.respondWith(
+      fetch(e.request).catch(() =>
+        new Response(JSON.stringify({ saved: false, error: 'offline', queued: true }), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+    );
+    return;
+  }
 
   // Question API — cache the response so tablets work offline after first load
   if (url.pathname.startsWith('/api/assess/questions/') ||
