@@ -97,6 +97,7 @@ app.get('/import',               (req, res) => res.sendFile(path.join(__dirname,
 app.get('/assess',               (req, res) => res.sendFile(path.join(__dirname, 'assess.html')));
 app.get('/compliance',           (req, res) => res.sendFile(path.join(__dirname, 'compliance.html')));
 app.get('/feedback',             (req, res) => res.sendFile(path.join(__dirname, 'feedback.html')));
+app.get('/feedback-table',       (req, res) => res.sendFile(path.join(__dirname, 'feedback-table.html')));
 app.get('/level-advancement',    (req, res) => res.sendFile(path.join(__dirname, 'level-advancement.html')));
 app.get('/image-portal',         (req, res) => res.sendFile(path.join(__dirname, 'image-portal.html')));
 app.get('/picture-questions',    (req, res) => res.sendFile(path.join(__dirname, 'picture-questions.html')));

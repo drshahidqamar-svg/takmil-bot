@@ -370,31 +370,25 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
   </div>
   <div class="card">
     <div class="card-title">📋 Daily Attendance</div>
-    <div class="card-sub" style="margin-bottom:14px">روزانہ حاضری — Select your school to begin</div>
+    <div class="card-sub" style="margin-bottom:14px">روزانہ حاضری — Enter your phone to load students</div>
 
     <label class="label">Your Phone Number — آپ کا نمبر</label>
-    <input class="input" id="att-phone" type="tel" placeholder="+923XXXXXXXXX" style="margin-bottom:4px">
-    <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Used to identify your school</div>
+    <input class="input" id="att-phone" type="tel" placeholder="+923XXXXXXXXX">
 
-    <label class="label">School — اسکول</label>
-    <select class="input" id="att-school" style="margin-bottom:4px">
-      <option value="">— Select or type below —</option>
-    </select>
-    <input class="input" id="att-school-manual" type="text" placeholder="Or type school name manually" style="margin-bottom:12px">
+    <label class="label">Date — تاریخ</label>
+    <input class="input" id="att-date" type="date">
 
-    <label class="label">Report Date — تاریخ</label>
-    <input class="input" id="att-date" type="date" style="margin-bottom:14px">
-
-    <button class="btn btn-green" onclick="goToAttForm()">Next — آگے ▶</button>
+    <button class="btn btn-green" onclick="loadStudentsForAttendance()">
+      Load Students — طلباء لوڈ کریں ▶
+    </button>
     <div id="att-home-err" style="color:#dc2626;font-size:13px;font-weight:700;text-align:center;margin-top:10px;display:none"></div>
   </div>
 
-  <!-- Pending attendance sync count -->
-  <div class="card" style="padding:14px 18px" id="att-pending-card">
+  <div class="card" style="padding:14px 18px">
     <div style="display:flex;align-items:center;justify-content:space-between">
       <div>
-        <div style="font-size:13px;font-weight:700" id="att-pending-label">0 attendance records pending sync</div>
-        <div style="font-size:11px;color:var(--muted)">Will sync automatically when online</div>
+        <div style="font-size:13px;font-weight:700" id="att-pending-label">0 records pending sync</div>
+        <div style="font-size:11px;color:var(--muted)">Syncs automatically when online</div>
       </div>
       <button onclick="syncAttendance()" class="btn btn-green" style="padding:6px 14px;font-size:12px">Sync ↑</button>
     </div>
@@ -584,6 +578,44 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
   </div>
 </div>
 
+<!-- ── SCREEN: STUDENT LIST ── -->
+<div class="screen" id="s-att-form">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <button onclick="showScreen('s-att-home')" style="background:none;border:none;color:white;font-size:22px;cursor:pointer">←</button>
+  </div>
+
+  <!-- Summary bar -->
+  <div style="width:100%;max-width:480px;background:#1a5c36;border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-size:14px;font-weight:800;color:#4ade80" id="att-form-school">School</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.65)" id="att-form-date">Date</div>
+    </div>
+    <div style="display:flex;gap:14px;text-align:center">
+      <div><div style="font-size:20px;font-weight:900;color:#4ade80" id="cnt-p">0</div><div style="font-size:9px;color:rgba(255,255,255,0.6);text-transform:uppercase">Present</div></div>
+      <div><div style="font-size:20px;font-weight:900;color:#f87171" id="cnt-a">0</div><div style="font-size:9px;color:rgba(255,255,255,0.6);text-transform:uppercase">Absent</div></div>
+      <div><div style="font-size:20px;font-weight:900;color:#fbbf24" id="cnt-l">0</div><div style="font-size:9px;color:rgba(255,255,255,0.6);text-transform:uppercase">Leave</div></div>
+    </div>
+  </div>
+
+  <!-- Mark all buttons -->
+  <div style="width:100%;max-width:480px;display:flex;gap:8px;margin-bottom:12px">
+    <button onclick="markAll('P')" style="flex:1;padding:10px;background:#dcfce7;border:2px solid #16a34a;color:#15803d;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">✅ All Present</button>
+    <button onclick="markAll('A')" style="flex:1;padding:10px;background:#fee2e2;border:2px solid #dc2626;color:#dc2626;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">❌ All Absent</button>
+  </div>
+
+  <!-- Student list -->
+  <div id="student-list" style="width:100%;max-width:480px"></div>
+
+  <!-- Submit -->
+  <div style="width:100%;max-width:480px;padding:0 0 20px">
+    <button class="btn btn-green" onclick="submitStudentAttendance()" style="font-size:16px;margin-top:4px">
+      ✅ Submit Attendance — جمع کریں
+    </button>
+    <div id="att-form-err" style="color:#dc2626;font-size:13px;font-weight:700;text-align:center;margin-top:10px;display:none"></div>
+  </div>
+</div>
+
 <!-- ── SCREEN: ATTENDANCE SAVED ── -->
 <div class="screen" id="s-att-saved">
   <div class="app-header">
@@ -643,7 +675,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 <script>
 const BASE = '';
 const DB_NAME = 'takmil_offline';
-const DB_VERSION = 2;  // bumped for attendance + schools stores
+const DB_VERSION = 3;  // v3 adds individual students store
 
 let db;
 let session = {
@@ -672,6 +704,8 @@ function openDB() {
         d.createObjectStore('attendance', { autoIncrement: true, keyPath: 'local_id' });
       if (!d.objectStoreNames.contains('schools'))
         d.createObjectStore('schools', { keyPath: 'identifier' });
+      if (!d.objectStoreNames.contains('students'))
+        d.createObjectStore('students', { keyPath: 'school_code' });
     };
     req.onsuccess = e => { db = e.target.result; res(db); };
     req.onerror = () => rej(req.error);
@@ -1213,190 +1247,174 @@ function showToast(msg) {
 }
 
 // ── ATTENDANCE STATE ──────────────────────────────────────────────
-const attState = { strength:30, boys:0, girls:0, present:0, absent:0, leave:0 };
-const ynState  = { assembly:null, tech:null, cr:null };
-let attSchool  = '', attPhone = '';
+let attStudents  = [];   // [{id, roll_number, student_name, status}]
+let attSchool    = '';
+let attSchoolName= '';
+let attPhone     = '';
+let attDate      = '';
 
-function adj(field, delta){
-  attState[field] = Math.max(0, attState[field] + delta);
-  document.getElementById('d-'+field).textContent = attState[field];
-  updateAttPct();
-}
-
-function updateAttPct(){
-  const pct = attState.strength > 0
-    ? Math.round(attState.present / attState.strength * 100) : 0;
-  const bar   = document.getElementById('att-pct-bar');
-  const label = document.getElementById('att-pct-label');
-  if(bar)   bar.style.width = pct + '%';
-  if(bar)   bar.style.background = pct>=80?'#16a34a':pct>=60?'#d97706':'#dc2626';
-  if(label) label.textContent = pct + '%';
-  if(label) label.style.color  = pct>=80?'#16a34a':pct>=60?'#d97706':'#dc2626';
-}
-
-function setYN(field, val, btn){
-  ynState[field] = val;
-  const row = document.getElementById('yn-'+field);
-  row.querySelectorAll('.yn-btn').forEach(b => {
-    b.className = 'yn-btn';
-    if(b === btn) b.classList.add(val==='yes'?'sel-yes':'sel-no');
-  });
-  if(field==='tech'){
-    const wrap = document.getElementById('tech-reason-wrap');
-    if(wrap) wrap.style.display = val==='no' ? '' : 'none';
-  }
-}
-
-// ── Load schools into dropdown ────────────────────────────────────
-async function loadSchoolsDropdown(){
-  const sel = document.getElementById('att-school');
-  if(!sel) return;
-  try {
-    const cached = await dbGetAll('schools');
-    if(cached.length > 0){
-      populateSchoolsSel(cached);
-    }
-    // Try to refresh from server if online
-    if(isOnline()){
-      const resp = await fetch('/api/schools/list');
-      if(resp.ok){
-        const data = await resp.json();
-        const schools = data.schools || [];
-        // Cache them
-        for(const s of schools) await dbPut('schools', s);
-        populateSchoolsSel(schools);
-      }
-    }
-  } catch(e){}
-}
-
-function populateSchoolsSel(schools){
-  const sel = document.getElementById('att-school');
-  if(!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">— Select school —</option>' +
-    schools.map(s=>`<option value="${s.identifier}">${s.name||s.identifier} (${s.region||''})</option>`).join('');
-  if(cur) sel.value = cur;
-}
-
-// ── Show attendance home ──────────────────────────────────────────
-async function showAttendanceHome(){
-  showScreen('s-att-home');
-  // Set today's date
-  const today = new Date();
-  const fmt = d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  document.getElementById('att-date').value = fmt(today);
-  await loadSchoolsDropdown();
-  await updateAttPendingCount();
-}
-
-async function updateAttPendingCount(){
-  try {
-    const all = await dbGetAll('attendance');
-    const pending = all.filter(r=>!r.synced).length;
-    const lbl = document.getElementById('att-pending-label');
-    if(lbl) lbl.textContent = pending + ' attendance record' + (pending!==1?'s':'') + ' pending sync';
-  } catch(e){}
-}
-
-// ── Go to attendance form ─────────────────────────────────────────
-function goToAttForm(){
-  const phone  = document.getElementById('att-phone').value.trim();
-  const selVal = document.getElementById('att-school').value;
-  const manual = document.getElementById('att-school-manual').value.trim();
-  const date   = document.getElementById('att-date').value;
-  const err    = document.getElementById('att-home-err');
-
-  if(!phone){ err.textContent='Please enter your phone number'; err.style.display='block'; return; }
-  if(!selVal && !manual){ err.textContent='Please select or enter your school'; err.style.display='block'; return; }
-  if(!date){ err.textContent='Please select a date'; err.style.display='block'; return; }
-  err.style.display='none';
-
-  attPhone  = phone;
-  attSchool = selVal || manual;
-
-  const sel   = document.getElementById('att-school');
-  const sName = selVal ? (sel.options[sel.selectedIndex]?.text || selVal) : manual;
-
-  document.getElementById('att-form-school').textContent = '📋 ' + sName;
-  document.getElementById('att-form-date').textContent   = date;
-
-  // Reset form state
-  Object.assign(attState, { strength:30, boys:0, girls:0, present:0, absent:0, leave:0 });
-  ['strength','boys','girls','present','absent','leave'].forEach(f=>{
-    const el = document.getElementById('d-'+f);
-    if(el) el.textContent = attState[f];
-  });
-  Object.assign(ynState, { assembly:null, tech:null, cr:null });
-  ['assembly','tech','cr'].forEach(f=>{
-    const row = document.getElementById('yn-'+f);
-    if(row) row.querySelectorAll('.yn-btn').forEach(b=>b.className='yn-btn');
-  });
-  document.querySelectorAll('.subj-input').forEach(el=>{ el.value=''; });
-  const techWrap = document.getElementById('tech-reason-wrap');
-  if(techWrap) techWrap.style.display='none';
-  updateAttPct();
-
-  showScreen('s-att-form');
-}
-
-// ── Collect subjects from form ────────────────────────────────────
-function collectSubjects(){
-  const subjects = ['English','Math','Science','Islamiat','Urdu','Skill Development'];
-  const result   = [];
-  for(const name of subjects){
-    const unit   = document.querySelector(`[data-subj="${name}"][data-field="unit"]`)?.value?.trim();
-    const lesson = document.querySelector(`[data-subj="${name}"][data-field="lesson"]`)?.value?.trim();
-    const act    = document.querySelector(`[data-subj="${name}"][data-field="activity"]`)?.value;
-    if(unit || lesson) result.push({ subject:name, unit:unit||'', lesson_no:lesson||'', activity:act||'' });
-  }
-  return result;
-}
-
-// ── Submit attendance ─────────────────────────────────────────────
-async function submitAttendance(){
-  const err  = document.getElementById('att-form-err');
-  const date = document.getElementById('att-form-date').textContent;
+// ── Load students for attendance ─────────────────────────────────
+async function loadStudentsForAttendance(){
+  const phone = document.getElementById('att-phone').value.trim();
+  const date  = document.getElementById('att-date').value;
+  const err   = document.getElementById('att-home-err');
   err.style.display = 'none';
 
-  if(attState.present === 0 && attState.absent === 0){
-    err.textContent = 'Please enter present/absent count';
+  if(!phone){ err.textContent='Enter your phone number'; err.style.display='block'; return; }
+  if(!date){  err.textContent='Select a date';           err.style.display='block'; return; }
+
+  attPhone = phone;
+  attDate  = date;
+
+  // Try server first (online), fall back to IndexedDB cache
+  let students = [], schoolName = phone;
+  try {
+    if(isOnline()){
+      // Look up school by phone
+      const sr = await fetch('/api/register/school-by-phone?phone='+encodeURIComponent(phone));
+      if(!sr.ok) throw new Error((await sr.json()).error || 'Phone not registered');
+      const sd = await sr.json();
+      attSchool     = sd.school?.identifier || sd.identifier || phone;
+      attSchoolName = sd.school?.name       || sd.name       || phone;
+
+      // Load students from server
+      const r = await fetch(`/api/register/students?school_code=${encodeURIComponent(attSchool)}&date=${date}`);
+      if(!r.ok) throw new Error('Failed to load students');
+      const d = await r.json();
+      students = d.students || [];
+      schoolName = d.school?.name || attSchoolName;
+
+      // Cache for offline use
+      await dbPut('students', {
+        school_code: attSchool,
+        school_name: schoolName,
+        students,
+        cached_at: new Date().toISOString()
+      });
+    } else {
+      // Offline: try cached students
+      // Try to find by phone from schools cache first
+      const allSchools = await dbGetAll('schools');
+      const school = allSchools.find(s => (s.teacher_phone||'').replace('whatsapp:','') === phone.replace('+','').replace('whatsapp:',''));
+      if(school){ attSchool = school.identifier; attSchoolName = school.name; }
+      else { attSchool = phone; attSchoolName = phone; }
+
+      const cached = await dbGet('students', attSchool).catch(()=>null);
+      if(cached && cached.students?.length){
+        students = cached.students;
+        schoolName = cached.school_name || attSchoolName;
+        showToast('Loaded ' + students.length + ' students from cache');
+      } else {
+        err.textContent = 'No student list cached. Connect to internet once to download students.';
+        err.style.display = 'block';
+        return;
+      }
+    }
+  } catch(e){
+    err.textContent = e.message;
     err.style.display = 'block';
     return;
   }
 
+  attStudents = students.map(s => ({
+    id:           s.id,
+    roll_number:  s.roll_number,
+    student_name: s.student_name,
+    status:       s.status || 'P'   // default all Present
+  }));
+
+  attSchoolName = schoolName;
+
+  document.getElementById('att-form-school').textContent = schoolName;
+  document.getElementById('att-form-date').textContent   = date;
+
+  renderStudentList();
+  updateAttCounts();
+  showScreen('s-att-form');
+}
+
+// ── Render student list ───────────────────────────────────────────
+function renderStudentList(){
+  const container = document.getElementById('student-list');
+  if(!attStudents.length){
+    container.innerHTML = '<div class="card" style="text-align:center;color:var(--muted)">No students registered for this school.</div>';
+    return;
+  }
+  container.innerHTML = attStudents.map((s,i) => `
+    <div style="background:white;border-radius:12px;padding:12px 14px;margin-bottom:8px;
+      display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);
+      border-left:4px solid ${s.status==='P'?'#16a34a':s.status==='A'?'#dc2626':'#d97706'}">
+      <div style="width:32px;height:32px;border-radius:50%;background:#f1f5f9;
+        display:flex;align-items:center;justify-content:center;
+        font-size:12px;font-weight:800;color:#64748b;flex-shrink:0">${s.roll_number||i+1}</div>
+      <div style="flex:1;font-size:14px;font-weight:700;color:#111827">${s.student_name}</div>
+      <div style="display:flex;gap:6px">
+        <button onclick="setStatus(${i},'P')" style="width:38px;height:38px;border-radius:50%;border:2px solid;
+          cursor:pointer;font-size:16px;font-weight:700;
+          background:${s.status==='P'?'#16a34a':'#f1f5f9'};
+          color:${s.status==='P'?'white':'#94a3b8'};
+          border-color:${s.status==='P'?'#16a34a':'#e2e8f0'}">P</button>
+        <button onclick="setStatus(${i},'A')" style="width:38px;height:38px;border-radius:50%;border:2px solid;
+          cursor:pointer;font-size:16px;font-weight:700;
+          background:${s.status==='A'?'#dc2626':'#f1f5f9'};
+          color:${s.status==='A'?'white':'#94a3b8'};
+          border-color:${s.status==='A'?'#dc2626':'#e2e8f0'}">A</button>
+        <button onclick="setStatus(${i},'L')" style="width:38px;height:38px;border-radius:50%;border:2px solid;
+          cursor:pointer;font-size:14px;font-weight:700;
+          background:${s.status==='L'?'#d97706':'#f1f5f9'};
+          color:${s.status==='L'?'white':'#94a3b8'};
+          border-color:${s.status==='L'?'#d97706':'#e2e8f0'}">L</button>
+      </div>
+    </div>`).join('');
+}
+
+function setStatus(idx, status){
+  attStudents[idx].status = status;
+  renderStudentList();
+  updateAttCounts();
+}
+
+function markAll(status){
+  attStudents.forEach(s => s.status = status);
+  renderStudentList();
+  updateAttCounts();
+}
+
+function updateAttCounts(){
+  document.getElementById('cnt-p').textContent = attStudents.filter(s=>s.status==='P').length;
+  document.getElementById('cnt-a').textContent = attStudents.filter(s=>s.status==='A').length;
+  document.getElementById('cnt-l').textContent = attStudents.filter(s=>s.status==='L').length;
+}
+
+// ── Submit individual student attendance ─────────────────────────
+async function submitStudentAttendance(){
+  const err = document.getElementById('att-form-err');
+  err.style.display = 'none';
+  if(!attStudents.length){ err.textContent='No students to submit'; err.style.display='block'; return; }
+
   const record = {
-    teacher_phone:     attPhone,
-    school_name:       attSchool,
-    school_identifier: attSchool,
-    report_date:       date,
-    grade:             document.getElementById('att-grade').value,
-    level:             parseInt(document.getElementById('att-level').value),
-    total_strength:    attState.strength,
-    boys:              attState.boys,
-    girls:             attState.girls,
-    present:           attState.present,
-    absent:            attState.absent,
-    leave_count:       attState.leave,
-    assembly_conducted: ynState.assembly === 'yes',
-    technology_used:   ynState.tech === 'yes',
-    technology_reason: document.getElementById('att-tech-reason')?.value?.trim() || null,
-    cr_media_shared:   ynState.cr === 'yes',
-    subjects:          collectSubjects(),
-    submitted_at:      new Date().toISOString(),
-    synced:            false,
+    school_code:  attSchool,
+    school_name:  attSchoolName,
+    date:         attDate,
+    submitted_by: attPhone,
+    attendance:   attStudents.map(s=>({
+      roll_number:  s.roll_number,
+      student_name: s.student_name,
+      status:       s.status
+    })),
+    submitted_at: new Date().toISOString(),
+    synced:       false,
   };
 
-  // Save to IndexedDB
   await dbPut('attendance', record);
 
-  // Show saved screen
-  const pct = record.total_strength > 0
-    ? Math.round(record.present / record.total_strength * 100) : 0;
-
-  document.getElementById('att-saved-school').textContent  = record.school_name + ' · ' + record.report_date;
-  document.getElementById('att-saved-present').textContent = record.present;
-  document.getElementById('att-saved-absent').textContent  = record.absent;
+  // Update saved screen stats
+  const p = attStudents.filter(s=>s.status==='P').length;
+  const a = attStudents.filter(s=>s.status==='A').length;
+  const pct = attStudents.length ? Math.round(p/attStudents.length*100) : 0;
+  document.getElementById('att-saved-school').textContent  = attSchoolName + ' · ' + attDate;
+  document.getElementById('att-saved-present').textContent = p + ' / ' + attStudents.length;
+  document.getElementById('att-saved-absent').textContent  = a;
   document.getElementById('att-saved-pct').textContent     = pct + '%';
 
   const badge = document.getElementById('att-saved-badge');
@@ -1404,78 +1422,83 @@ async function submitAttendance(){
   const msg   = document.getElementById('att-saved-msg');
   const title = document.getElementById('att-saved-title');
 
-  if(isOnline()){
-    badge.className = 'sync-badge syncing';
-    badge.textContent = '↑ Syncing...';
-    icon.textContent  = '🔄';
-    showScreen('s-att-saved');
+  showScreen('s-att-saved');
 
+  if(isOnline()){
+    badge.className='sync-badge syncing'; badge.textContent='↑ Syncing...'; icon.textContent='🔄';
     const ok = await syncOneAttendance(record);
     if(ok){
-      record.synced = true;
-      await dbPut('attendance', record);
-      badge.className   = 'sync-badge online';
-      badge.textContent = '✓ Synced';
-      icon.textContent  = '✅';
-      title.textContent = 'Attendance Saved!';
-      msg.textContent   = 'Successfully submitted to server ✓';
+      record.synced=true; await dbPut('attendance', record);
+      badge.className='sync-badge online'; badge.textContent='✓ Synced';
+      icon.textContent='✅'; title.textContent='Attendance Saved!';
+      msg.textContent='Submitted to server successfully ✓';
     } else {
-      badge.className   = 'sync-badge offline';
-      badge.textContent = '● Saved Offline';
-      icon.textContent  = '💾';
-      title.textContent = 'Saved Offline';
-      msg.textContent   = 'Could not reach server. Will sync when internet returns.';
+      badge.className='sync-badge offline'; badge.textContent='● Saved Offline';
+      icon.textContent='💾'; title.textContent='Saved Offline';
+      msg.textContent='Could not reach server. Will sync when internet returns.';
     }
   } else {
-    badge.className   = 'sync-badge offline';
-    badge.textContent = '● Offline';
-    icon.textContent  = '💾';
-    title.textContent = 'Saved Offline';
-    msg.textContent   = 'No internet — saved on phone. Will sync automatically when online.';
-    showScreen('s-att-saved');
+    badge.className='sync-badge offline'; badge.textContent='● Offline';
+    icon.textContent='💾'; title.textContent='Saved Offline';
+    msg.textContent='No internet — saved on phone. Syncs automatically when online.';
   }
   await updateAttPendingCount();
 }
 
-// ── Sync one attendance record ────────────────────────────────────
+// ── Pending count ─────────────────────────────────────────────────
+async function updateAttPendingCount(){
+  try {
+    const all = await dbGetAll('attendance');
+    const pending = all.filter(r=>!r.synced).length;
+    const lbl = document.getElementById('att-pending-label');
+    if(lbl) lbl.textContent = pending + ' record' + (pending!==1?'s':'') + ' pending sync';
+  } catch(e){}
+}
+
+// ── Sync one record ───────────────────────────────────────────────
 async function syncOneAttendance(record){
   try {
-    const resp = await fetch('/api/attendance/submit', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(record)
+    const resp = await fetch('/api/register/submit', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        school_code:  record.school_code,
+        date:         record.date,
+        attendance:   record.attendance,
+        submitted_by: record.submitted_by
+      })
     });
     const data = await resp.json();
     return data.saved === true;
   } catch(e){ return false; }
 }
 
-// ── Sync all pending attendance ───────────────────────────────────
+// ── Sync all pending ──────────────────────────────────────────────
 async function syncAttendance(){
   if(!isOnline()){ showToast('No internet connection'); return; }
-  const all     = await dbGetAll('attendance');
-  const pending = all.filter(r => !r.synced);
+  const all = await dbGetAll('attendance');
+  const pending = all.filter(r=>!r.synced);
   let synced = 0;
   for(const rec of pending){
     const ok = await syncOneAttendance(rec);
-    if(ok){
-      rec.synced = true;
-      await dbPut('attendance', rec);
-      synced++;
-    }
+    if(ok){ rec.synced=true; await dbPut('attendance', rec); synced++; }
   }
-  showToast(synced > 0 ? `✅ Synced ${synced} record${synced!==1?'s':''}!` : 'Nothing new to sync');
+  showToast(synced>0 ? '✅ Synced '+synced+' record'+(synced!==1?'s':'')+'!' : 'Nothing to sync');
   await updateAttPendingCount();
 }
 
-// ── Auto-sync attendance on connect ──────────────────────────────
-window.addEventListener('online', () => {
-  updateConnBadge();
-  autoSync();
-  syncAttendance();
-});
+window.addEventListener('online', ()=>{ updateConnBadge(); autoSync(); syncAttendance(); });
+
+async function showAttendanceHome(){
+  showScreen('s-att-home');
+  const today = new Date();
+  const fmt = d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('att-date').value = fmt(today);
+  await updateAttPendingCount();
+}
 
 // ── ATTENDANCE ── end ─────────────────────────────────────────────
+
+// ── Init ──────────────────────────────────────────────────────────
 
 // ── Init ──────────────────────────────────────────────────────────
 async function init() {
@@ -1485,7 +1508,22 @@ async function init() {
 
   // Register service worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => {
+        console.log('SW registered:', reg.scope);
+        // Tell user when SW is ready
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if(newWorker.state === 'activated') {
+              showToast('✅ App ready — works offline now!');
+            }
+          });
+        });
+        // If already active, page is cached
+        if(reg.active) showToast('✅ App cached — works offline');
+      })
+      .catch(err => console.log('SW error:', err));
   }
 
   // Auto-sync if online
