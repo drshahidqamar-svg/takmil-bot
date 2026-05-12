@@ -237,7 +237,12 @@ router.get('/api/feedback', async (req, res) => {
         f.present, f.absent, f.total_strength,
         f.assembly_conducted, f.technology_used,
         f.cr_media_shared, f.subjects, f.child_of_day,
-        f.teacher_phone AS reporter_phone, f.created_at AS submitted_at
+        f.teacher_phone AS reporter_phone, f.created_at AS submitted_at,
+        f.photo_url, f.photo_head_count, f.head_count_diff,
+        f.photo_verified, f.photo_flag,
+        f.projector_visible, f.lesson_verified,
+        (f.photo_data IS NOT NULL) AS photo_available,
+        f.photo_expires_at
       FROM schools s
       LEFT JOIN regional_coordinators rc ON rc.id=s.regional_coordinator_id
       LEFT JOIN school_coordinators   sc ON sc.id=s.school_coordinator_id
