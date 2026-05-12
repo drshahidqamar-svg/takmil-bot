@@ -194,11 +194,11 @@ let allRows = [];
 
 function applyPreset(p){
   if(!p) return;
-  const today = new Date(), fmt = d=>d.toISOString().split('T')[0];
-  let from, to = fmt(today);
+  const today = new Date();
+  let from, to = fmtLocal(today);
   if(p==='today') from=to;
-  else if(p==='week'){ const d=new Date(today); d.setDate(d.getDate()-6); from=fmt(d); }
-  else if(p==='month') from=fmt(new Date(today.getFullYear(),today.getMonth(),1));
+  else if(p==='week'){ const d=new Date(today); d.setDate(d.getDate()-6); from=fmtLocal(d); }
+  else if(p==='month') from=fmtLocal(new Date(today.getFullYear(),today.getMonth(),1));
   document.getElementById('f-from').value=from;
   document.getElementById('f-to').value=to;
   load();
@@ -206,9 +206,9 @@ function applyPreset(p){
 
 function clearFilters(){
   ['f-region','f-rc','f-coord','f-grade','f-preset'].forEach(id=>document.getElementById(id).value='');
-  const today=new Date(), fmt=d=>d.toISOString().split('T')[0];
-  document.getElementById('f-from').value=fmt(new Date(today.getFullYear(),today.getMonth(),1));
-  document.getElementById('f-to').value=fmt(today);
+  const today=new Date();
+  document.getElementById("f-from").value=fmtLocal(new Date(today.getFullYear(),today.getMonth(),1));
+  document.getElementById("f-to").value=fmtLocal(today);
   load();
 }
 
@@ -447,6 +447,14 @@ function exportCSV(){
 // Init
 let refreshInterval, countdownInterval, secondsLeft = 60;
 
+// Use LOCAL date (not UTC) to avoid timezone off-by-one
+const fmtLocal = d => {
+  const y   = d.getFullYear();
+  const m   = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+};
+
 function startAutoRefresh(){
   clearInterval(refreshInterval);
   clearInterval(countdownInterval);
@@ -464,9 +472,9 @@ function startAutoRefresh(){
 }
 
 (()=>{
-  const today=new Date(), fmt=d=>d.toISOString().split('T')[0];
-  document.getElementById('f-from').value=fmt(new Date(today.getFullYear(),today.getMonth(),1));
-  document.getElementById('f-to').value=fmt(today);
+  const today=new Date();
+  document.getElementById('f-from').value=fmtLocal(new Date(today.getFullYear(),today.getMonth(),1));
+  document.getElementById('f-to').value=fmtLocal(today);
   load();
   startAutoRefresh();
 })();
