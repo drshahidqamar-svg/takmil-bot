@@ -298,6 +298,9 @@ router.get('/api/feedback/table', async (req, res) => {
         f.cr_media_shared, f.tech_media_shared,
         f.check_in, f.check_out,
         f.projector_shown, f.lesson_verified,
+        f.photo_url, f.photo_head_count, f.head_count_diff,
+        f.photo_verified, f.photo_flag,
+        (f.photo_data IS NOT NULL) AS photo_available,
         f.subjects, f.raw_message
       FROM daily_feedback f
       LEFT JOIN schools s ON (s.identifier = f.school_identifier OR s.name ILIKE f.school_name)

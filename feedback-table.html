@@ -328,6 +328,22 @@ function renderTable(rows){
       <td>${subj(r,'urdu')}</td>
       <td>${subj(r,'skill_development')}</td>
       <td class="c-mono c-dim">${r.teacher_phone||'—'}</td>
+      <td class="c-num">${r.present||'—'}</td>
+      <td class="c-num" style="color:${r.photo_head_count!=null?(Math.abs(r.head_count_diff||0)>3?'#dc2626':'#059669'):'#94a3b8'}">${r.photo_head_count??'—'}</td>
+      <td class="c-center">${
+        r.photo_head_count==null
+          ? '<span style="font-size:10px;color:#94a3b8">No photo</span>'
+          : r.photo_flag
+            ? `<span class="yn yn-n">⚠️ Mismatch</span><div style="font-size:9px;color:#dc2626;margin-top:2px">${r.head_count_diff>0?'+':''}${r.head_count_diff}</div>`
+            : '<span class="yn yn-y">✅ Match</span>'
+      }</td>
+      <td class="c-center">${
+        r.photo_available && r.photo_url
+          ? `<a href="${r.photo_url}" target="_blank" style="font-size:10px;font-weight:700;color:#2563eb;text-decoration:none;padding:3px 8px;background:#dbeafe;border-radius:10px">📷 View</a>`
+          : r.photo_head_count!=null
+            ? '<span style="font-size:9px;color:#94a3b8">Expired</span>'
+            : '—'
+      }</td>
     </tr>`;
   }).join('');
 
@@ -347,6 +363,7 @@ function renderTable(rows){
         <th colspan="3" class="cg-hdr cg-subj5">Urdu</th>
         <th colspan="3" class="cg-hdr cg-subj6">Skill Dev</th>
         <th colspan="1" class="cg-hdr cg-basic">Teacher</th>
+        <th colspan="4" class="cg-hdr" style="background:#fce7f3;color:#be185d">📸 Photo Verification</th>
       </tr>
       <tr>
         <th class="col">#</th>
@@ -376,6 +393,10 @@ function renderTable(rows){
         <th class="col">Unit/Lesson/Act</th>
         <th class="col">Unit/Lesson/Act</th>
         <th class="col">Phone</th>
+        <th class="col">Reported</th>
+        <th class="col">AI Count</th>
+        <th class="col">Result</th>
+        <th class="col">Photo</th>
       </tr>
     </thead>
     <tbody>${tbody}</tbody>
@@ -391,7 +412,7 @@ function exportCSV(){
     'Grade','Level','Strength','Boys','Girls','Present','Absent','Leave','Att %',
     'Assembly','Tech Used','Tech Reason','CR Media','Tech Media','Projector',
     ...subjNames.flatMap(s=>[`${s} Unit`,`${s} Lesson`,`${s} Activity`]),
-    'Teacher Phone'
+    'Teacher Phone','Present','AI Head Count','Photo Result','Mismatch Detail'
   ];
   const csvRows=allRows.map((r,i)=>[
     i+1,
@@ -405,7 +426,11 @@ function exportCSV(){
     r.cr_media_shared?'Yes':'No',r.tech_media_shared?'Yes':'No',
     r.projector_shown?'Yes':'No',
     ...subjects.flatMap(s=>[r[`${s}_unit`]||'',r[`${s}_lesson`]||'',r[`${s}_activity`]||'']),
-    r.teacher_phone||''
+    r.teacher_phone||'',
+    r.present||'',
+    r.photo_head_count??'',
+    r.photo_head_count==null?'No photo':r.photo_flag?'Mismatch':'Match',
+    r.photo_flag||''
   ]);
   const csv=[headers,...csvRows].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');
