@@ -27,6 +27,18 @@ const PHOTOS_DIR = path.join(__dirname, 'public', 'photos');
 if (!fs.existsSync(PHOTOS_DIR)) fs.mkdirSync(PHOTOS_DIR, { recursive: true });
 app.use('/photos', express.static(path.join(__dirname, 'public', 'photos')));
 
+// ── Service Worker & Manifest (must be served from root with correct headers) ─
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(__dirname, 'sw.js'));
+});
+app.get('/manifest.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.sendFile(path.join(__dirname, 'manifest.json'));
+});
+
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
@@ -70,7 +82,6 @@ app.get('/teacher-portal',       (req, res) => res.sendFile(path.join(__dirname,
 app.get('/lessons-admin',        (req, res) => res.sendFile(path.join(__dirname, 'lessons-admin.html')));
 app.get('/admin-portal', (req, res) => res.sendFile(path.join(__dirname, 'takmil-ops-console.html')));
 app.get('/dashboard',            (req, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
-app.get('/assessment-dashboard', (req, res) => res.sendFile(path.join(__dirname, 'assessment-dashboard.html')));
 app.get('/question-bank',        (req, res) => res.sendFile(path.join(__dirname, 'takmil-question-bank.html')));
 app.get('/register',             (req, res) => res.sendFile(path.join(__dirname, 'register.html')));
 app.get('/results',              (req, res) => res.sendFile(path.join(__dirname, 'results.html')));
@@ -82,7 +93,6 @@ app.get('/import',               (req, res) => res.sendFile(path.join(__dirname,
 app.get('/assess',               (req, res) => res.sendFile(path.join(__dirname, 'assess.html')));
 app.get('/compliance',           (req, res) => res.sendFile(path.join(__dirname, 'compliance.html')));
 app.get('/feedback',             (req, res) => res.sendFile(path.join(__dirname, 'feedback.html')));
-app.get('/feedback-table',       (req, res) => res.sendFile(path.join(__dirname, 'feedback-table.html')));
 app.get('/level-advancement',    (req, res) => res.sendFile(path.join(__dirname, 'level-advancement.html')));
 app.get('/image-portal',         (req, res) => res.sendFile(path.join(__dirname, 'image-portal.html')));
 app.get('/picture-questions',    (req, res) => res.sendFile(path.join(__dirname, 'picture-questions.html')));

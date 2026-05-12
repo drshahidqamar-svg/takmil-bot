@@ -1,20 +1,17 @@
-// TAKMIL Offline Service Worker v3
-const CACHE = 'takmil-offline-v3';
-const ASSETS = [
-  '/offline-portal',
-  '/manifest.json',
-];
+// TAKMIL Offline Service Worker v4
+// Handles navigation requests so app opens without internet
 
-// ── Install: cache static assets ────────────────────────
+const CACHE   = 'takmil-offline-v4';
+const SHELL   = ['/offline-portal', '/manifest.json'];
+
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE)
-      .then(c => c.addAll(ASSETS))
+      .then(c => c.addAll(SHELL))
       .then(() => self.skipWaiting())
   );
 });
 
-// ── Activate: clear old caches ───────────────────────────
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
@@ -25,11 +22,29 @@ self.addEventListener('activate', e => {
   );
 });
 
-// ── Fetch strategy ───────────────────────────────────────
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Schools list — cache for offline school dropdown
+  // Navigation (opening app / refresh) — network first, cached shell fallback
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then(resp => {
+          if (resp.ok) {
+            const clone = resp.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+          }
+          return resp;
+        })
+        .catch(() =>
+          caches.match(e.request)
+            .then(cached => cached || caches.match('/offline-portal'))
+        )
+    );
+    return;
+  }
+
+  // Schools list — cache for offline dropdown
   if (url.pathname === '/api/schools/list') {
     e.respondWith(
       fetch(e.request)
@@ -43,11 +58,11 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Attendance submit — network only, queue handled by app JS
+  // Attendance submit — network only, app JS handles offline queue
   if (url.pathname === '/api/attendance/submit') {
     e.respondWith(
       fetch(e.request).catch(() =>
-        new Response(JSON.stringify({ saved: false, error: 'offline', queued: true }), {
+        new Response(JSON.stringify({ saved:false, error:'offline', queued:true }), {
           headers: { 'Content-Type': 'application/json' }
         })
       )
@@ -55,28 +70,27 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Question API — cache the response so tablets work offline after first load
+  // Question APIs — cache for offline assessments
   if (url.pathname.startsWith('/api/assess/questions/') ||
       url.pathname.startsWith('/api/assess/session/')) {
     e.respondWith(
       fetch(e.request)
         .then(resp => {
-          // Cache a clone of the response
           const clone = resp.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
           return resp;
         })
-        .catch(() => caches.match(e.request)) // offline: return cached version
+        .catch(() => caches.match(e.request))
     );
     return;
   }
 
-  // Submit endpoints — network only, queue handled by app JS
+  // Assessment submit — network only
   if (url.pathname.startsWith('/portal/offline/submit') ||
       url.pathname.startsWith('/api/assess/submit')) {
     e.respondWith(
       fetch(e.request).catch(() =>
-        new Response(JSON.stringify({ error: 'offline', queued: true }), {
+        new Response(JSON.stringify({ error:'offline', queued:true }), {
           headers: { 'Content-Type': 'application/json' }
         })
       )
@@ -84,14 +98,19 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Static assets — cache first, network fallback
+  // Everything else — cache first, network fallback
   e.respondWith(
     caches.match(e.request)
-      .then(cached => cached || fetch(e.request).then(resp => {
-        const clone = resp.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return resp;
-      }))
+      .then(cached => {
+        if (cached) return cached;
+        return fetch(e.request).then(resp => {
+          if (resp.ok) {
+            const clone = resp.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+          }
+          return resp;
+        });
+      })
       .catch(() => caches.match('/offline-portal'))
   );
 });
