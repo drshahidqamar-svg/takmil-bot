@@ -407,9 +407,10 @@ tbody tr{animation:fade-in 0.25s ease both}
       <option>A → Z</option>
     </select>
     <button class="tb-btn btn-approve-all" onclick="approveAll()">✓ Approve all pending</button>
-    <button class="tb-btn btn-export">↓ Export CSV</button>
-    <button class="tb-btn btn-import">↑ Import CSV</button>
-    <button class="tb-btn btn-refresh" onclick="applyFilters()">↻ Refresh</button>
+    <button class="tb-btn btn-export" onclick="exportCSV()">↓ Export CSV</button>
+    <button class="tb-btn btn-import" onclick="document.getElementById('import-file-input').click()">↑ Import CSV</button>
+    <input type="file" id="import-file-input" accept=".csv" style="display:none" onchange="importCSV(this)">
+    <button class="tb-btn btn-refresh" onclick="loadFromAPI()">↻ Refresh</button>
     <span class="q-count-badge" id="q-count">500 questions</span>
   </div>
 
@@ -433,41 +434,69 @@ tbody tr{animation:fade-in 0.25s ease both}
 </div>
 
 <script>
-const QUESTIONS = Array.from({length:500},(_,i)=>{
-  const subjects=['English','English','English','Math','Urdu','Urdu','Urdu'];
-  const qs={
-    English:['What is the main topic of this video?','What does the person want in one of the sentences?','What does the person drink in the sentences?','Where does the person live?','What can the person do according to the sentences?','What emotion is mentioned?','What does the person see?','Which sentence talks about having something?'],
-    Math:['Solve: 4 × 7 = ?','What is 15% of 200?','Round 3.67 to the nearest whole number','What is the perimeter of a rectangle 5×3?','Calculate: 144 ÷ 12'],
-    Urdu:['اس سبق کا موضوع کیا ہے؟','جملے میں کون سا فعل استعمال ہوا؟','اس پیراگراف کا خلاصہ لکھیں','درج ذیل الفاظ کے معنی لکھیں','مناسب حرف جار لگائیں']
-  };
-  const subj=subjects[i%subjects.length];
-  return{
-    id:i+1,subject:subj,
-    level:'L'+(Math.min(5,Math.floor(i/60)+1)),
-    question:qs[subj][i%qs[subj].length],
-    status:i<5?'approved':i===499?'flagged':'pending'
-  };
-});
+// ── Live data from API ────────────────────────────────────────────
+let QUESTIONS = [];
+let filtered  = [];
+let activeSubject='', activeLevel='', activeStatus='';
+let loading = false;
 
-let filtered=[...QUESTIONS];
-let activeSubject='',activeLevel='',activeStatus='';
+async function loadFromAPI(){
+  if(loading) return;
+  loading = true;
+  document.getElementById('q-tbody').innerHTML =
+    '<tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8">⏳ Loading questions...</td></tr>';
+  try {
+    const resp = await fetch('/api/questions/bank?limit=2000');
+    if(!resp.ok) throw new Error('Server error ' + resp.status);
+    const data = await resp.json();
+    QUESTIONS = (data.questions || data || []).map(q => ({
+      id:       q.id || q.question_id,
+      subject:  q.subject || '—',
+      level:    q.level ? 'L'+q.level : (q.level_tag || '—'),
+      question: q.question_text || q.question || '—',
+      answer:   q.correct_answer || q.answer || '',
+      options:  q.options || [],
+      topic:    q.topic || '',
+      status:   q.status || 'pending',
+      source:   q.source || '',
+    }));
+    applyFilters();
+    showBanner('✅ Loaded ' + QUESTIONS.length + ' questions', '#dcfce7', '#15803d');
+  } catch(e) {
+    QUESTIONS = Array.from({length:10},(_,i)=>({
+      id:i+1, subject:['English','Math','Urdu'][i%3],
+      level:'L'+(i%5+1),
+      question:'[Sample] Connect to server to load real questions ('+e.message+')',
+      status:'pending', answer:'', options:[], topic:'', source:''
+    }));
+    applyFilters();
+    showBanner('⚠️ Using sample data — ' + e.message, '#fef9c3', '#92400e');
+  } finally { loading = false; }
+}
+
+function showBanner(msg, bg, color){
+  let b = document.getElementById('api-banner');
+  if(!b){ b=document.createElement('div'); b.id='api-banner';
+    b.style.cssText='width:100%;padding:8px 18px;font-size:12px;font-weight:700;text-align:center;position:sticky;top:0;z-index:50';
+    document.body.prepend(b); }
+  b.style.background=bg; b.style.color=color; b.textContent=msg;
+  setTimeout(()=>{ if(b) b.remove(); }, 4000);
+}
 
 function setSubject(s,el){
   activeSubject=s;
   document.querySelectorAll('.sb-item').forEach(x=>{
     if(x.closest('.sb-sec')===el.closest('.sb-sec')) x.classList.remove('active');
   });
-  el.classList.add('active');
-  applyFilters();
+  el.classList.add('active'); applyFilters();
 }
-function setLevel(l){activeLevel=l;applyFilters()}
+function setLevel(l){activeLevel=l;applyFilters();}
 function setStatus(s,el){
   activeStatus=s;
   document.querySelectorAll('.sb-item').forEach(x=>{
     if(x.closest('.sb-sec')===el.closest('.sb-sec')) x.classList.remove('active');
   });
-  el.classList.add('active');
-  applyFilters();
+  el.classList.add('active'); applyFilters();
 }
 
 function applyFilters(){
@@ -476,25 +505,30 @@ function applyFilters(){
     (!activeSubject||q.subject===activeSubject)&&
     (!activeLevel||q.level===activeLevel)&&
     (!activeStatus||q.status===activeStatus)&&
-    (!search||q.question.toLowerCase().includes(search)||String(q.id).includes(search))
+    (!search||q.question.toLowerCase().includes(search)||String(q.id).includes(search)||(q.topic||'').toLowerCase().includes(search))
   );
-  renderTable();renderPipeline();updateCounts();
+  renderTable(); renderPipeline(); updateCounts();
 }
 
 function renderTable(){
   document.getElementById('q-count').textContent=filtered.length+' questions';
-  document.getElementById('q-tbody').innerHTML=filtered.slice(0,100).map((q,i)=>`
+  if(!filtered.length){
+    document.getElementById('q-tbody').innerHTML='<tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8">No questions found</td></tr>';
+    return;
+  }
+  document.getElementById('q-tbody').innerHTML=filtered.slice(0,200).map((q,i)=>`
     <tr style="animation-delay:${i*8}ms">
       <td class="num">#${String(q.id).padStart(3,'0')}</td>
-      <td><span class="tag tag-${q.subject.toLowerCase()}">${q.subject}</span></td>
+      <td><span class="tag tag-${(q.subject||'').toLowerCase()}">${q.subject}</span></td>
       <td><span class="lvl">${q.level}</span></td>
       <td class="question-cell">${q.question}</td>
       <td><span class="status-pill sp-${q.status}">${q.status.charAt(0).toUpperCase()+q.status.slice(1)}</span></td>
       <td><div class="acts">
         ${q.status!=='approved'?`<button class="act act-ok" onclick="approveQ(${q.id},event)">✓ Approve</button>`:''}
-        <button class="act act-edit">✎ Edit</button>
+        <button class="act act-edit" onclick="editQ(${q.id},event)">✎ Edit</button>
       </div></td>
-    </tr>`).join('');
+    </tr>`).join('')+
+    (filtered.length>200?`<tr><td colspan="6" style="text-align:center;padding:10px;color:#94a3b8;font-size:12px">Showing 200 of ${filtered.length} — use filters to narrow</td></tr>`:'');
 }
 
 function renderPipeline(){
@@ -503,7 +537,7 @@ function renderPipeline(){
   document.getElementById('pipeline-grid').innerHTML=pending.map(q=>`
     <div class="pipe-item">
       <div class="pipe-tags">
-        <span class="pipe-tag tag-${q.subject.toLowerCase()}">${q.subject}</span>
+        <span class="pipe-tag tag-${(q.subject||'').toLowerCase()}">${q.subject}</span>
         <span class="lvl" style="font-size:8px">${q.level}</span>
       </div>
       <div class="pipe-q">${q.question}</div>
@@ -514,29 +548,105 @@ function renderPipeline(){
     </div>`).join('');
 }
 
-function approveQ(id,e){
+async function approveQ(id,e){
   e.stopPropagation();
-  const q=QUESTIONS.find(x=>x.id===id);
-  if(q) q.status='approved';
+  const q=QUESTIONS.find(x=>x.id===id); if(!q) return;
+  q.status='approved';
+  try{ await fetch('/api/questions/'+id+'/approve',{method:'POST'}); }catch(_){}
   applyFilters();
 }
-function approveAll(){
+async function approveAll(){
   QUESTIONS.filter(q=>q.status==='pending').forEach(q=>q.status='approved');
+  try{ await fetch('/api/questions/approve-all',{method:'POST'}); }catch(_){}
   applyFilters();
+}
+function editQ(id,e){
+  e.stopPropagation();
+  const q=QUESTIONS.find(x=>x.id===id); if(!q) return;
+  const newQ=prompt('Edit question:', q.question);
+  if(newQ&&newQ.trim()){ q.question=newQ.trim(); applyFilters(); }
 }
 
 function updateCounts(){
   const approved=QUESTIONS.filter(q=>q.status==='approved').length;
-  const pending=QUESTIONS.filter(q=>q.status==='pending').length;
-  const flagged=QUESTIONS.filter(q=>q.status==='flagged').length;
-  ['s-total','hdr-total'].forEach(id=>document.getElementById(id).textContent=QUESTIONS.length);
-  ['s-approved','hdr-approved','cnt-approved'].forEach(id=>document.getElementById(id).textContent=approved);
-  ['s-pending','hdr-pending','cnt-pending'].forEach(id=>document.getElementById(id).textContent=pending);
-  ['s-flagged','cnt-flagged'].forEach(id=>document.getElementById(id).textContent=flagged);
-  document.getElementById('s-flagged').textContent=flagged;
+  const pending =QUESTIONS.filter(q=>q.status==='pending').length;
+  const flagged =QUESTIONS.filter(q=>q.status==='flagged').length;
+  ['s-total','hdr-total'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=QUESTIONS.length;});
+  ['s-approved','hdr-approved','cnt-approved'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=approved;});
+  ['s-pending','hdr-pending','cnt-pending'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=pending;});
+  ['s-flagged','cnt-flagged'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=flagged;});
 }
 
-applyFilters();
+// ── EXPORT CSV ────────────────────────────────────────────────────
+function exportCSV(){
+  const src = (filtered.length && filtered.length < QUESTIONS.length) ? filtered : QUESTIONS;
+  if(!src.length){ alert('No questions to export'); return; }
+  const headers=['ID','Subject','Level','Question','Answer','Topic','Status','Source'];
+  const rows=src.map(q=>[q.id,q.subject,q.level,q.question,q.answer||'',q.topic||'',q.status,q.source||'']);
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='takmil-questions-'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  showBanner('✅ Exported '+src.length+' questions','#dcfce7','#15803d');
+}
+
+// ── IMPORT CSV ────────────────────────────────────────────────────
+function importCSV(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    const text=e.target.result.replace(/^\uFEFF/,'');
+    const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+    if(!lines.length){ alert('Empty file'); return; }
+    const headers=parseCSVRow(lines[0]).map(h=>h.toLowerCase().trim());
+    const col=h=>headers.indexOf(h);
+    const qIdx=col('question')>=0?col('question'):col('question text')>=0?col('question text'):3;
+    const sIdx=col('subject')>=0?col('subject'):1;
+    const lIdx=col('level')>=0?col('level'):2;
+    const aIdx=col('answer')>=0?col('answer'):col('correct answer')>=0?col('correct answer'):-1;
+    const tIdx=col('topic')>=0?col('topic'):-1;
+    const stIdx=col('status')>=0?col('status'):-1;
+    const imported=[];
+    for(let i=1;i<lines.length;i++){
+      const cols=parseCSVRow(lines[i]);
+      if(!cols[qIdx]) continue;
+      imported.push({
+        id:Date.now()+i, subject:cols[sIdx]||'', level:cols[lIdx]||'',
+        question:cols[qIdx]||'', answer:aIdx>=0?(cols[aIdx]||''):'',
+        topic:tIdx>=0?(cols[tIdx]||''):'',
+        status:stIdx>=0?(cols[stIdx]||'pending'):'pending', source:'csv-import'
+      });
+    }
+    if(!imported.length){ alert('No valid questions found in CSV.\nMake sure first row has headers: Subject, Level, Question'); return; }
+    if(!window.confirm('Import '+imported.length+' questions?')) { input.value=''; return; }
+    try{
+      const resp=await fetch('/api/questions/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questions:imported})});
+      const data=await resp.json();
+      showBanner('✅ Imported '+(data.imported||imported.length)+' questions to server','#dcfce7','#15803d');
+      await loadFromAPI();
+    }catch(_){
+      QUESTIONS.push(...imported); applyFilters();
+      showBanner('⚠️ Added '+imported.length+' locally (server save failed)','#fef9c3','#92400e');
+    }
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVRow(row){
+  const result=[],re=/("(?:[^"]|"")*"|[^,]*)(,|$)/g;
+  let m;
+  while((m=re.exec(row))!==null){
+    let v=m[1];
+    if(v.startsWith('"')&&v.endsWith('"')) v=v.slice(1,-1).replace(/""/g,'"');
+    result.push(v.trim());
+    if(m[2]==='') break;
+  }
+  return result;
+}
+
+loadFromAPI();
 </script>
 </body>
 </html>
