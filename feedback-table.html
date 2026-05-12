@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Feedback Data Table</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563eb;--blue2:#3b82f6;--blue3:#1d4ed8;
+  --green:#059669;--red:#dc2626;--amber:#d97706;--purple:#7c3aed;
+  --bg:#eff6ff;--white:#fff;
+  --border:#bfdbfe;--text:#1e3a5f;--text2:#334155;--text3:#64748b;
+}
+html,body{min-height:100%;background:var(--bg);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:var(--text2)}
+
+/* TOPBAR */
+.hdr{background:var(--blue3);height:52px;padding:0 20px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:30}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.home-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.18);
+  border:1.5px solid rgba(255,255,255,0.35);color:#fff;text-decoration:none;
+  font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px}
+.hdr-div{color:rgba(255,255,255,0.35);font-size:16px;margin:0 4px}
+.hdr-logo{font-size:14px;font-weight:800;color:#fff}
+.hdr-slash{color:rgba(255,255,255,0.4);margin:0 5px}
+.hdr-title{font-size:10px;font-weight:700;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:1.5px}
+.hdr-pill{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;
+  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff}
+
+/* FILTER BAR */
+.fbar{background:var(--blue2);padding:10px 20px;border-bottom:1px solid var(--blue);
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;position:sticky;top:52px;z-index:20}
+.fi{padding:5px 11px;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);
+  border-radius:20px;font-size:11px;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;
+  outline:none;min-width:110px}
+.fi option{background:#1d4ed8}
+.fi::placeholder{color:rgba(255,255,255,0.6)}
+.fi:focus{border-color:#fff;background:rgba(255,255,255,0.25)}
+.fbtn{padding:6px 16px;background:#fff;border:none;border-radius:20px;
+  font-size:11px;font-weight:800;color:var(--blue);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+.fclr{padding:6px 12px;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.3);
+  border-radius:20px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.8);cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif}
+.fcnt{font-size:11px;color:rgba(255,255,255,0.7);margin-left:auto;font-family:'DM Mono',monospace}
+
+/* BODY */
+.body{padding:18px 20px}
+
+/* STAT CARDS */
+.sgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px}
+@media(max-width:900px){.sgrid{grid-template-columns:repeat(3,1fr)}}
+.sc{border-radius:12px;padding:14px 14px;color:#fff;position:relative;overflow:hidden;border:1.5px solid transparent}
+.sc-n{font-size:24px;font-weight:800;line-height:1;letter-spacing:-0.5px;margin-bottom:4px}
+.sc-l{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:0.75}
+.sc-icon{position:absolute;right:10px;top:10px;font-size:22px;opacity:0.2}
+
+/* TABLE WRAP */
+.twrap{background:var(--white);border:1.5px solid var(--border);border-radius:14px;overflow:hidden}
+.thdr{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;border-bottom:2px solid var(--border);background:#f8fbff}
+.thdr-title{font-size:13px;font-weight:800;color:var(--text)}
+.thdr-meta{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.export-btn{padding:5px 14px;background:var(--blue);color:#fff;border:none;
+  border-radius:20px;font-size:11px;font-weight:700;cursor:pointer}
+
+/* TABLE */
+.tscroll{overflow-x:auto;max-height:650px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:2400px}
+
+/* Column group headers */
+.cg-hdr{text-align:center;padding:6px 8px;font-size:9px;font-weight:800;
+  text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border)}
+.cg-basic{background:#dbeafe;color:#1d4ed8}
+.cg-attend{background:#dcfce7;color:#15803d}
+.cg-tech{background:#ede9fe;color:#5b21b6}
+.cg-subj{background:#fff7ed;color:#c2410c}
+.cg-subj2{background:#fef9c3;color:#92400e}
+.cg-subj3{background:#f0fdf4;color:#15803d}
+.cg-subj4{background:#fdf2f8;color:#86198f}
+.cg-subj5{background:#eff6ff;color:#1d4ed8}
+.cg-subj6{background:#fef3c7;color:#b45309}
+
+thead th.col{text-align:left;padding:8px 10px;
+  background:#f8fbff;border-bottom:2px solid var(--border);
+  font-size:9.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.8px;color:var(--blue);white-space:nowrap;
+  font-family:'DM Mono',monospace;position:sticky;top:32px;z-index:4}
+
+tbody td{padding:8px 10px;border-bottom:1px solid #e0f0ff;vertical-align:middle;white-space:nowrap}
+tbody tr:nth-child(even) td{background:#f8fbff}
+tbody tr:hover td{background:#eff6ff}
+
+/* Cell styles */
+.c-school{font-weight:700;color:var(--text);max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.c-dim{color:var(--text3);font-size:10px}
+.c-mono{font-family:'DM Mono',monospace;font-size:10px}
+.c-num{font-weight:700;text-align:center}
+.c-center{text-align:center}
+
+.yn{font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;white-space:nowrap}
+.yn-y{background:#dcfce7;color:#15803d}
+.yn-n{background:#fee2e2;color:#b91c1c}
+.yn-na{background:#f1f5f9;color:#94a3b8}
+
+.att-bar{display:flex;align-items:center;gap:5px}
+.att-track{width:50px;height:5px;background:#dbeafe;border-radius:3px;overflow:hidden}
+.att-fill{height:100%;border-radius:3px}
+
+/* Loading */
+.lstate{text-align:center;padding:60px;color:var(--text3)}
+.spin{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--blue);
+  border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:#93c5fd;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <a href="/" class="home-btn">⌂ Home</a>
+    <span class="hdr-div">|</span>
+    <span class="hdr-logo">TAKMIL</span>
+    <span class="hdr-slash">/</span>
+    <span class="hdr-title">Feedback Data Table</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span class="hdr-pill" id="date-pill">—</span>
+    <a href="/feedback" class="home-btn" style="background:rgba(255,255,255,0.13)">📋 Dashboard View</a>
+  </div>
+</div>
+
+<div class="fbar">
+  <input type="date" class="fi" id="f-from">
+  <input type="date" class="fi" id="f-to">
+  <select class="fi" id="f-region"><option value="">All Regions</option></select>
+  <select class="fi" id="f-rc"><option value="">All RCs</option></select>
+  <select class="fi" id="f-coord"><option value="">All Coordinators</option></select>
+  <select class="fi" id="f-grade"><option value="">All Grades</option>
+    <option value="Primary">Primary</option><option value="Elementary">Elementary</option></select>
+  <select class="fi" id="f-preset" onchange="applyPreset(this.value)">
+    <option value="">📅 Quick Range</option>
+    <option value="today">Today</option>
+    <option value="week">This Week</option>
+    <option value="month">This Month</option>
+  </select>
+  <button class="fbtn" onclick="load()">Apply ▶</button>
+  <button class="fclr" onclick="clearFilters()">✕ Clear</button>
+  <span class="fcnt" id="fcnt"></span>
+</div>
+
+<div class="body">
+  <!-- Stats -->
+  <div class="sgrid" id="sgrid">
+    <div class="sc" style="background:linear-gradient(135deg,#1d4ed8,#2563eb)">
+      <div class="sc-icon">📋</div><div class="sc-n" id="s-total">—</div><div class="sc-l">Total Submissions</div></div>
+    <div class="sc" style="background:linear-gradient(135deg,#047857,#059669)">
+      <div class="sc-icon">👥</div><div class="sc-n" id="s-att">—</div><div class="sc-l">Avg Attendance %</div></div>
+    <div class="sc" style="background:linear-gradient(135deg,#6d28d9,#7c3aed)">
+      <div class="sc-icon">💻</div><div class="sc-n" id="s-tech">—</div><div class="sc-l">Tech Used</div></div>
+    <div class="sc" style="background:linear-gradient(135deg,#0369a1,#0284c7)">
+      <div class="sc-icon">📺</div><div class="sc-n" id="s-cr">—</div><div class="sc-l">CR Media Shared</div></div>
+    <div class="sc" style="background:linear-gradient(135deg,#b45309,#d97706)">
+      <div class="sc-icon">🏛️</div><div class="sc-n" id="s-asm">—</div><div class="sc-l">Assembly Held</div></div>
+    <div class="sc" style="background:linear-gradient(135deg,#b91c1c,#dc2626)">
+      <div class="sc-icon">📚</div><div class="sc-n" id="s-subj">—</div><div class="sc-l">Avg Subjects/Day</div></div>
+  </div>
+
+  <!-- Table -->
+  <div class="twrap">
+    <div class="thdr">
+      <div>
+        <div class="thdr-title">📊 All Feedback Records — Full KPI View</div>
+        <div class="thdr-meta" id="tmeta">Loading...</div>
+      </div>
+      <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+    <div class="tscroll" id="tscroll">
+      <div class="lstate"><div class="spin"></div><p>Loading feedback data...</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let allRows = [];
+
+function applyPreset(p){
+  if(!p) return;
+  const today = new Date(), fmt = d=>d.toISOString().split('T')[0];
+  let from, to = fmt(today);
+  if(p==='today') from=to;
+  else if(p==='week'){ const d=new Date(today); d.setDate(d.getDate()-6); from=fmt(d); }
+  else if(p==='month') from=fmt(new Date(today.getFullYear(),today.getMonth(),1));
+  document.getElementById('f-from').value=from;
+  document.getElementById('f-to').value=to;
+  load();
+}
+
+function clearFilters(){
+  ['f-region','f-rc','f-coord','f-grade','f-preset'].forEach(id=>document.getElementById(id).value='');
+  const today=new Date(), fmt=d=>d.toISOString().split('T')[0];
+  document.getElementById('f-from').value=fmt(new Date(today.getFullYear(),today.getMonth(),1));
+  document.getElementById('f-to').value=fmt(today);
+  load();
+}
+
+async function load(){
+  document.getElementById('tscroll').innerHTML='<div class="lstate"><div class="spin"></div><p>Loading...</p></div>';
+  document.getElementById('fcnt').textContent='';
+  try{
+    const p=new URLSearchParams();
+    const from=document.getElementById('f-from').value;
+    const to=document.getElementById('f-to').value;
+    const rc=document.getElementById('f-rc').value;
+    const coord=document.getElementById('f-coord').value;
+    const region=document.getElementById('f-region').value;
+    if(from) p.set('from',from);
+    if(to)   p.set('to',to);
+    if(rc)   p.set('rc',rc);
+    if(coord) p.set('coordinator',coord);
+    if(region) p.set('region',region);
+
+    const resp=await fetch('/api/feedback/table?'+p.toString());
+    if(!resp.ok) throw new Error('Server error '+resp.status);
+    const d=await resp.json();
+    if(d.error) throw new Error(d.error);
+
+    allRows=d.rows;
+    populateDropdowns(d.filterOptions);
+    renderStats(d.rows);
+    renderTable(d.rows);
+    document.getElementById('date-pill').textContent=`📅 ${d.dateFrom} → ${d.dateTo}`;
+    document.getElementById('fcnt').textContent=`${d.rows.length} record${d.rows.length!==1?'s':''}`;
+  }catch(e){
+    document.getElementById('tscroll').innerHTML=`<div class="lstate"><p style="color:var(--red);font-weight:700">⚠️ ${e.message}</p></div>`;
+  }
+}
+
+function populateDropdowns(opts){
+  if(!opts) return;
+  const make=(id,label,vals)=>{
+    const el=document.getElementById(id), cur=el.value;
+    el.innerHTML=`<option value="">${label}</option>`+vals.map(v=>`<option value="${v}" ${v===cur?'selected':''}>${v}</option>`).join('');
+  };
+  make('f-region','All Regions',opts.regions||[]);
+  make('f-rc','All RCs',opts.rcs||[]);
+  make('f-coord','All Coordinators',opts.coordinators||[]);
+}
+
+function renderStats(rows){
+  const n=rows.length;
+  document.getElementById('s-total').textContent=n;
+  const att=n?Math.round(rows.reduce((a,r)=>a+(r.att_pct||0),0)/n):0;
+  document.getElementById('s-att').textContent=att+'%';
+  document.getElementById('s-tech').textContent=rows.filter(r=>r.technology_used).length;
+  document.getElementById('s-cr').textContent=rows.filter(r=>r.cr_media_shared).length;
+  document.getElementById('s-asm').textContent=rows.filter(r=>r.assembly_conducted).length;
+  // avg subjects per row
+  const subjects=['english','math','science','islamiat','urdu','skill_development'];
+  const avgSubj=n?Math.round(rows.reduce((a,r)=>{
+    const cnt=subjects.filter(s=>r[`${s}_lesson`]).length;
+    return a+cnt;
+  },0)/n*10)/10:0;
+  document.getElementById('s-subj').textContent=avgSubj;
+}
+
+function yn(val,reason){
+  if(val===null||val===undefined) return '<span class="yn yn-na">—</span>';
+  return val
+    ? '<span class="yn yn-y">✅ Yes</span>'
+    : `<span class="yn yn-n">❌ No</span>${reason?`<div style="font-size:9px;color:#dc2626;margin-top:2px">${reason}</div>`:''}`;
+}
+
+function subj(row, key){
+  const u=row[`${key}_unit`], l=row[`${key}_lesson`], a=row[`${key}_activity`];
+  if(!l) return '<span style="color:#cbd5e1">—</span>';
+  return `<span style="font-size:10px"><strong>${l}</strong>${u?` U${u}`:''}${a?'<br><span style="color:#059669;font-size:9px">✅ Activity</span>':'<br><span style="color:#94a3b8;font-size:9px">No activity</span>'}</span>`;
+}
+
+function renderTable(rows){
+  const meta=document.getElementById('tmeta');
+  if(!rows.length){
+    meta.textContent='No records found';
+    document.getElementById('tscroll').innerHTML='<div class="lstate"><p style="font-size:24px">🔍</p><p style="font-weight:700;margin-top:8px">No feedback records found</p><p style="color:var(--text3);margin-top:4px">Try adjusting the date range</p></div>';
+    return;
+  }
+  meta.textContent=`${rows.length} record${rows.length!==1?'s':''} · sorted by date desc`;
+
+  const tbody=rows.map((r,i)=>{
+    const pct=r.att_pct||0;
+    const attColor=pct>=80?'#059669':pct>=60?'#d97706':'#dc2626';
+    const dt=r.report_date?new Date(r.report_date).toLocaleDateString([],{day:'2-digit',month:'short',year:'numeric'}):'—';
+    const submittedAt=r.submitted_at?new Date(r.submitted_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'—';
+    return `<tr>
+      <td class="c-mono" style="color:var(--text3)">${i+1}</td>
+      <td>${dt}<div class="c-dim">${submittedAt}</div></td>
+      <td class="c-school" title="${r.school_name||''}">${r.school_name||'—'}</td>
+      <td class="c-dim">${r.region||'—'}</td>
+      <td class="c-dim">${r.regional_coordinator||'—'}</td>
+      <td class="c-dim">${r.school_coordinator||'—'}</td>
+      <td class="c-center">${r.grade||'—'}</td>
+      <td class="c-center c-mono">L${r.level||'—'}</td>
+      <td class="c-num">${r.total_strength||'—'}</td>
+      <td class="c-num" style="color:#2563eb">${r.boys||0}</td>
+      <td class="c-num" style="color:#db2777">${r.girls||0}</td>
+      <td class="c-num" style="color:#059669">${r.present||0}</td>
+      <td class="c-num" style="color:#dc2626">${r.absent||0}</td>
+      <td class="c-num" style="color:#d97706">${r.leave_count||0}</td>
+      <td>
+        <div class="att-bar">
+          <div class="att-track"><div class="att-fill" style="width:${Math.min(pct,100)}%;background:${attColor}"></div></div>
+          <span style="font-weight:700;color:${attColor};font-size:11px">${pct}%</span>
+        </div>
+      </td>
+      <td class="c-center">${yn(r.assembly_conducted)}</td>
+      <td class="c-center">${yn(r.technology_used, r.technology_reason)}</td>
+      <td class="c-center">${yn(r.cr_media_shared)}</td>
+      <td class="c-center">${yn(r.tech_media_shared)}</td>
+      <td class="c-center">${yn(r.projector_shown)}</td>
+      <td>${subj(r,'english')}</td>
+      <td>${subj(r,'math')}</td>
+      <td>${subj(r,'science')}</td>
+      <td>${subj(r,'islamiat')}</td>
+      <td>${subj(r,'urdu')}</td>
+      <td>${subj(r,'skill_development')}</td>
+      <td class="c-mono c-dim">${r.teacher_phone||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tscroll').innerHTML=`
+  <table>
+    <thead>
+      <tr>
+        <th colspan="2" class="cg-hdr cg-basic">Date</th>
+        <th colspan="4" class="cg-hdr cg-basic">School Info</th>
+        <th colspan="2" class="cg-hdr cg-basic">Grade</th>
+        <th colspan="7" class="cg-hdr cg-attend">Attendance</th>
+        <th colspan="5" class="cg-hdr cg-tech">Activities & Tech</th>
+        <th colspan="3" class="cg-hdr cg-subj">English</th>
+        <th colspan="3" class="cg-hdr cg-subj2">Math</th>
+        <th colspan="3" class="cg-hdr cg-subj3">Science</th>
+        <th colspan="3" class="cg-hdr cg-subj4">Islamiat</th>
+        <th colspan="3" class="cg-hdr cg-subj5">Urdu</th>
+        <th colspan="3" class="cg-hdr cg-subj6">Skill Dev</th>
+        <th colspan="1" class="cg-hdr cg-basic">Teacher</th>
+      </tr>
+      <tr>
+        <th class="col">#</th>
+        <th class="col">Date / Time</th>
+        <th class="col">School</th>
+        <th class="col">Region</th>
+        <th class="col">RC</th>
+        <th class="col">Coordinator</th>
+        <th class="col">Grade</th>
+        <th class="col">Level</th>
+        <th class="col">Strength</th>
+        <th class="col">Boys</th>
+        <th class="col">Girls</th>
+        <th class="col">Present</th>
+        <th class="col">Absent</th>
+        <th class="col">Leave</th>
+        <th class="col">Att %</th>
+        <th class="col">Assembly</th>
+        <th class="col">Tech Used</th>
+        <th class="col">CR Media</th>
+        <th class="col">Tech Media</th>
+        <th class="col">Projector</th>
+        <th class="col">Unit/Lesson/Act</th>
+        <th class="col">Unit/Lesson/Act</th>
+        <th class="col">Unit/Lesson/Act</th>
+        <th class="col">Unit/Lesson/Act</th>
+        <th class="col">Unit/Lesson/Act</th>
+        <th class="col">Unit/Lesson/Act</th>
+        <th class="col">Phone</th>
+      </tr>
+    </thead>
+    <tbody>${tbody}</tbody>
+  </table>`;
+}
+
+function exportCSV(){
+  if(!allRows.length) return alert('No data to export');
+  const subjects=['english','math','science','islamiat','urdu','skill_development'];
+  const subjNames=['English','Math','Science','Islamiat','Urdu','Skill Dev'];
+  const headers=[
+    '#','Date','Submitted At','School','Region','RC','Coordinator',
+    'Grade','Level','Strength','Boys','Girls','Present','Absent','Leave','Att %',
+    'Assembly','Tech Used','Tech Reason','CR Media','Tech Media','Projector',
+    ...subjNames.flatMap(s=>[`${s} Unit`,`${s} Lesson`,`${s} Activity`]),
+    'Teacher Phone'
+  ];
+  const csvRows=allRows.map((r,i)=>[
+    i+1,
+    r.report_date?new Date(r.report_date).toLocaleDateString():'',
+    r.submitted_at?new Date(r.submitted_at).toLocaleString():'',
+    r.school_name,r.region,r.regional_coordinator,r.school_coordinator,
+    r.grade,r.level,r.total_strength,r.boys,r.girls,
+    r.present,r.absent,r.leave_count,r.att_pct,
+    r.assembly_conducted?'Yes':'No',
+    r.technology_used?'Yes':'No',r.technology_reason||'',
+    r.cr_media_shared?'Yes':'No',r.tech_media_shared?'Yes':'No',
+    r.projector_shown?'Yes':'No',
+    ...subjects.flatMap(s=>[r[`${s}_unit`]||'',r[`${s}_lesson`]||'',r[`${s}_activity`]||'']),
+    r.teacher_phone||''
+  ]);
+  const csv=[headers,...csvRows].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`takmil-feedback-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+}
+
+// Init
+(()=>{
+  const today=new Date(), fmt=d=>d.toISOString().split('T')[0];
+  document.getElementById('f-from').value=fmt(new Date(today.getFullYear(),today.getMonth(),1));
+  document.getElementById('f-to').value=fmt(today);
+  load();
+})();
+</script>
+</body>
+</html>
