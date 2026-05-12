@@ -130,6 +130,10 @@ tbody tr:hover td{background:#eff6ff}
   </div>
   <div style="display:flex;gap:8px;align-items:center">
     <span class="hdr-pill" id="date-pill">—</span>
+    <span class="hdr-pill" id="refresh-pill" style="background:rgba(52,211,153,0.2);border-color:rgba(52,211,153,0.4)">
+      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;margin-right:4px;animation:pulse 2s infinite"></span>
+      <span id="refresh-countdown">Auto-refresh in 60s</span>
+    </span>
     <a href="/feedback" class="home-btn" style="background:rgba(255,255,255,0.13)">📋 Dashboard View</a>
   </div>
 </div>
@@ -235,6 +239,7 @@ async function load(){
     renderTable(d.rows);
     document.getElementById('date-pill').textContent=`📅 ${d.dateFrom} → ${d.dateTo}`;
     document.getElementById('fcnt').textContent=`${d.rows.length} record${d.rows.length!==1?'s':''}`;
+    startAutoRefresh();
   }catch(e){
     document.getElementById('tscroll').innerHTML=`<div class="lstate"><p style="color:var(--red);font-weight:700">⚠️ ${e.message}</p></div>`;
   }
@@ -440,11 +445,30 @@ function exportCSV(){
 }
 
 // Init
+let refreshInterval, countdownInterval, secondsLeft = 60;
+
+function startAutoRefresh(){
+  clearInterval(refreshInterval);
+  clearInterval(countdownInterval);
+  secondsLeft = 60;
+
+  countdownInterval = setInterval(()=>{
+    secondsLeft--;
+    const el = document.getElementById('refresh-countdown');
+    if(el) el.textContent = secondsLeft > 0 ? `Auto-refresh in ${secondsLeft}s` : 'Refreshing...';
+    if(secondsLeft <= 0){
+      secondsLeft = 60;
+      load();
+    }
+  }, 1000);
+}
+
 (()=>{
   const today=new Date(), fmt=d=>d.toISOString().split('T')[0];
   document.getElementById('f-from').value=fmt(new Date(today.getFullYear(),today.getMonth(),1));
   document.getElementById('f-to').value=fmt(today);
   load();
+  startAutoRefresh();
 })();
 </script>
 </body>
