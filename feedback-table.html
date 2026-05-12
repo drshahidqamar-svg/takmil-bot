@@ -298,11 +298,17 @@ function renderTable(rows){
   const tbody=rows.map((r,i)=>{
     const pct=r.att_pct||0;
     const attColor=pct>=80?'#059669':pct>=60?'#d97706':'#dc2626';
-    const dt=r.report_date?new Date(r.report_date).toLocaleDateString([],{day:'2-digit',month:'short',year:'numeric'}):'—';
-    const submittedAt=r.submitted_at?new Date(r.submitted_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'—';
+    const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtDate(iso){
+    if(!iso) return '—';
+    const [y,m,d]=(iso.split('T')[0]).split('-');
+    return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+  }
+  const dt   = fmtDate(r.report_date);
+  const time = r.submitted_at ? new Date(r.submitted_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '—';
     return `<tr>
       <td class="c-mono" style="color:var(--text3)">${i+1}</td>
-      <td>${dt}<div class="c-dim">${submittedAt}</div></td>
+      <td>${dt}<div class="c-dim">${time}</div></td>
       <td class="c-school" title="${r.school_name||''}">${r.school_name||'—'}</td>
       <td class="c-dim">${r.region||'—'}</td>
       <td class="c-dim">${r.regional_coordinator||'—'}</td>
