@@ -149,7 +149,6 @@ router.get('/api/analytics', async (req, res) => {
     const dateFrom = from || new Date(Date.now() - 29*24*60*60*1000).toISOString().split('T')[0];
     const dateTo   = to   || new Date().toISOString().split('T')[0];
 
-    // Daily trend — always safe, only uses daily_feedback
     const dailyTrend = await db.pool.query(`
       SELECT f.report_date::date AS day,
         COUNT(DISTINCT f.id) AS submissions,
@@ -158,77 +157,64 @@ router.get('/api/analytics', async (req, res) => {
         SUM(CASE WHEN f.technology_used THEN 1 ELSE 0 END)    AS tech_count,
         SUM(CASE WHEN f.assembly_conducted THEN 1 ELSE 0 END) AS assembly_count
       FROM daily_feedback f
-      WHERE f.report_date::date BETWEEN $1::date AND $2::date
+      WHERE f.report_date BETWEEN $1 AND $2
       GROUP BY f.report_date::date ORDER BY day ASC
     `, [dateFrom, dateTo]);
 
-    // RC performance — safe fallback if regional_coordinators table missing
-    let rcPerf = { rows: [] };
-    try {
-      rcPerf = await db.pool.query(`
-        SELECT rc.name AS rc_name, rc.region,
-          COUNT(DISTINCT s.id) AS total_schools,
-          COUNT(DISTINCT f.id) AS submissions,
-          ROUND(COUNT(DISTINCT f.id)*100.0/NULLIF(COUNT(DISTINCT s.id),0),1) AS submission_rate,
-          ROUND(AVG(f.present*100.0/NULLIF(f.total_strength,0)),1) AS avg_attendance,
-          SUM(CASE WHEN f.technology_used THEN 1 ELSE 0 END)    AS tech_count,
-          SUM(CASE WHEN f.assembly_conducted THEN 1 ELSE 0 END) AS assembly_count,
-          SUM(f.present) AS total_present, SUM(f.total_strength) AS total_strength
-        FROM regional_coordinators rc
-        LEFT JOIN schools s ON s.regional_coordinator_id=rc.id AND s.identifier IS NOT NULL
-        LEFT JOIN daily_feedback f ON (f.school_identifier=s.identifier OR f.school_name ILIKE s.name)
-          AND f.report_date::date BETWEEN $1::date AND $2::date
-        GROUP BY rc.id,rc.name,rc.region ORDER BY submission_rate DESC NULLS LAST
-      `, [dateFrom, dateTo]);
-    } catch(e) { console.log('rcPerf skipped:', e.message); }
+    const rcPerf = await db.pool.query(`
+      SELECT rc.name AS rc_name, rc.region,
+        COUNT(DISTINCT s.id) AS total_schools,
+        COUNT(DISTINCT f.id) AS submissions,
+        ROUND(COUNT(DISTINCT f.id)*100.0/NULLIF(COUNT(DISTINCT s.id),0),1) AS submission_rate,
+        ROUND(AVG(f.present*100.0/NULLIF(f.total_strength,0)),1) AS avg_attendance,
+        SUM(CASE WHEN f.technology_used THEN 1 ELSE 0 END)   AS tech_count,
+        SUM(CASE WHEN f.assembly_conducted THEN 1 ELSE 0 END) AS assembly_count,
+        SUM(f.present) AS total_present, SUM(f.total_strength) AS total_strength
+      FROM regional_coordinators rc
+      LEFT JOIN schools s ON s.regional_coordinator_id=rc.id AND s.identifier IS NOT NULL
+      LEFT JOIN daily_feedback f ON (f.school_identifier=s.identifier OR f.school_name ILIKE s.name)
+        AND f.report_date BETWEEN $1 AND $2
+      GROUP BY rc.id,rc.name,rc.region ORDER BY submission_rate DESC NULLS LAST
+    `, [dateFrom, dateTo]);
 
-    // Coordinator performance — safe fallback
-    let coordPerf = { rows: [] };
-    try {
-      coordPerf = await db.pool.query(`
-        SELECT sc.name AS coord_name, rc.name AS rc_name, rc.region,
-          COUNT(DISTINCT s.id) AS total_schools,
-          COUNT(DISTINCT f.id) AS submissions,
-          ROUND(COUNT(DISTINCT f.id)*100.0/NULLIF(COUNT(DISTINCT s.id),0),1) AS submission_rate,
-          ROUND(AVG(f.present*100.0/NULLIF(f.total_strength,0)),1) AS avg_attendance,
-          SUM(CASE WHEN f.technology_used THEN 1 ELSE 0 END)    AS tech_count,
-          SUM(CASE WHEN f.assembly_conducted THEN 1 ELSE 0 END) AS assembly_count
-        FROM school_coordinators sc
-        LEFT JOIN regional_coordinators rc ON rc.id=sc.regional_coordinator_id
-        LEFT JOIN schools s ON s.school_coordinator_id=sc.id AND s.identifier IS NOT NULL
-        LEFT JOIN daily_feedback f ON (f.school_identifier=s.identifier OR f.school_name ILIKE s.name)
-          AND f.report_date::date BETWEEN $1::date AND $2::date
-        GROUP BY sc.id,sc.name,rc.name,rc.region ORDER BY submission_rate DESC NULLS LAST
-      `, [dateFrom, dateTo]);
-    } catch(e) { console.log('coordPerf skipped:', e.message); }
+    const coordPerf = await db.pool.query(`
+      SELECT sc.name AS coord_name, rc.name AS rc_name, rc.region,
+        COUNT(DISTINCT s.id) AS total_schools,
+        COUNT(DISTINCT f.id) AS submissions,
+        ROUND(COUNT(DISTINCT f.id)*100.0/NULLIF(COUNT(DISTINCT s.id),0),1) AS submission_rate,
+        ROUND(AVG(f.present*100.0/NULLIF(f.total_strength,0)),1) AS avg_attendance,
+        SUM(CASE WHEN f.technology_used THEN 1 ELSE 0 END)   AS tech_count,
+        SUM(CASE WHEN f.assembly_conducted THEN 1 ELSE 0 END) AS assembly_count
+      FROM school_coordinators sc
+      LEFT JOIN regional_coordinators rc ON rc.id=sc.regional_coordinator_id
+      LEFT JOIN schools s ON s.school_coordinator_id=sc.id AND s.identifier IS NOT NULL
+      LEFT JOIN daily_feedback f ON (f.school_identifier=s.identifier OR f.school_name ILIKE s.name)
+        AND f.report_date BETWEEN $1 AND $2
+      GROUP BY sc.id,sc.name,rc.name,rc.region ORDER BY submission_rate DESC NULLS LAST
+    `, [dateFrom, dateTo]);
 
-    // School performance — safe fallback
-    let schoolPerf = { rows: [] };
-    try {
-      schoolPerf = await db.pool.query(`
-        SELECT s.name AS school_name, s.identifier, s.region,
-          rc.name AS rc_name, sc.name AS coord_name,
-          COUNT(DISTINCT f.id) AS submissions,
-          ROUND(COUNT(DISTINCT f.id)*100.0/NULLIF(($2::date-$1::date+1),0),1) AS submission_rate,
-          ROUND(AVG(f.present*100.0/NULLIF(f.total_strength,0)),1) AS avg_attendance,
-          SUM(CASE WHEN f.technology_used THEN 1 ELSE 0 END)    AS tech_count,
-          SUM(CASE WHEN f.assembly_conducted THEN 1 ELSE 0 END) AS assembly_count,
-          MAX(f.report_date) AS last_submission
-        FROM schools s
-        LEFT JOIN regional_coordinators rc ON rc.id=s.regional_coordinator_id
-        LEFT JOIN school_coordinators   sc ON sc.id=s.school_coordinator_id
-        LEFT JOIN daily_feedback f ON (f.school_identifier=s.identifier OR f.school_name ILIKE s.name)
-          AND f.report_date::date BETWEEN $1::date AND $2::date
-        WHERE s.identifier IS NOT NULL
-        GROUP BY s.id,s.name,s.identifier,s.region,rc.name,sc.name
-        ORDER BY submission_rate DESC NULLS LAST
-      `, [dateFrom, dateTo]);
-    } catch(e) { console.log('schoolPerf skipped:', e.message); }
+    const schoolPerf = await db.pool.query(`
+      SELECT s.name AS school_name, s.identifier, s.region,
+        rc.name AS rc_name, sc.name AS coord_name,
+        COUNT(DISTINCT f.id) AS submissions,
+        ROUND(COUNT(DISTINCT f.id)*100.0/NULLIF(($2::date-$1::date+1),0),1) AS submission_rate,
+        ROUND(AVG(f.present*100.0/NULLIF(f.total_strength,0)),1) AS avg_attendance,
+        SUM(CASE WHEN f.technology_used THEN 1 ELSE 0 END)   AS tech_count,
+        SUM(CASE WHEN f.assembly_conducted THEN 1 ELSE 0 END) AS assembly_count,
+        MAX(f.report_date) AS last_submission
+      FROM schools s
+      LEFT JOIN regional_coordinators rc ON rc.id=s.regional_coordinator_id
+      LEFT JOIN school_coordinators   sc ON sc.id=s.school_coordinator_id
+      LEFT JOIN daily_feedback f ON (f.school_identifier=s.identifier OR f.school_name ILIKE s.name)
+        AND f.report_date BETWEEN $1 AND $2
+      WHERE s.identifier IS NOT NULL
+      GROUP BY s.id,s.name,s.identifier,s.region,rc.name,sc.name
+      ORDER BY submission_rate DESC NULLS LAST
+    `, [dateFrom, dateTo]);
 
     res.json({ dateFrom, dateTo,
       dailyTrend: dailyTrend.rows, rcPerf: rcPerf.rows,
-      coordPerf: coordPerf.rows,   schoolPerf: schoolPerf.rows });
-
+      coordPerf: coordPerf.rows, schoolPerf: schoolPerf.rows });
   } catch(err) {
     console.log('analytics error:', err.message);
     res.status(500).json({ error: err.message });
@@ -282,6 +268,80 @@ router.get('/api/feedback', async (req, res) => {
   } catch(err) {
     console.log('feedback api error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Feedback Table API (full KPI data) ───────────────────────────────────────
+router.get('/api/feedback/table', async (req, res) => {
+  try {
+    const { from, to, region, rc, coordinator } = req.query;
+    const today = new Date().toISOString().split('T')[0];
+    const dateFrom = from || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+    const dateTo   = to || today;
+
+    const r = await db.pool.query(`
+      SELECT
+        f.id, f.report_date, f.created_at AS submitted_at,
+        s.name AS school_name, s.identifier, s.region, s.province,
+        rc.name AS regional_coordinator, sc.name AS school_coordinator,
+        f.teacher_phone,
+        f.grade, f.level,
+        f.total_strength, f.boys, f.girls,
+        f.present, f.absent, f.leave_count,
+        f.assembly_conducted, f.child_of_day,
+        f.technology_used, f.technology_reason,
+        f.cr_media_shared, f.tech_media_shared,
+        f.check_in, f.check_out,
+        f.projector_shown, f.lesson_verified,
+        f.subjects, f.raw_message
+      FROM daily_feedback f
+      LEFT JOIN schools s ON (s.identifier = f.school_identifier OR s.name ILIKE f.school_name)
+      LEFT JOIN regional_coordinators rc ON rc.id = s.regional_coordinator_id
+      LEFT JOIN school_coordinators   sc ON sc.id = s.school_coordinator_id
+      WHERE f.report_date::date BETWEEN $1::date AND $2::date
+        AND (f.school_name IS NOT NULL AND f.school_name != '')
+      ORDER BY f.report_date DESC, s.region, s.name
+    `, [dateFrom, dateTo]);
+
+    let rows = r.rows;
+
+    // Post-query filters
+    if (region)      rows = rows.filter(r => (r.region||'').toLowerCase().includes(region.toLowerCase()));
+    if (rc)          rows = rows.filter(r => r.regional_coordinator === rc);
+    if (coordinator) rows = rows.filter(r => r.school_coordinator === coordinator);
+
+    // Expand subjects JSONB into per-subject fields
+    const subjects = ['English','Math','Science','Islamiat','Urdu','Skill Development'];
+    const expanded = rows.map(row => {
+      const subs = (() => { try { return typeof row.subjects === 'string' ? JSON.parse(row.subjects) : (row.subjects||[]); } catch(e){ return []; } })();
+      const subMap = {};
+      for (const s of subs) { if(s.subject) subMap[s.subject] = s; }
+      const subFields = {};
+      for (const name of subjects) {
+        const key = name.replace(' ','_').toLowerCase();
+        const s   = subMap[name] || {};
+        subFields[`${key}_unit`]     = s.unit     || '';
+        subFields[`${key}_lesson`]   = s.lesson_no || '';
+        subFields[`${key}_activity`] = s.activity  || '';
+      }
+      const att_pct = row.total_strength > 0
+        ? Math.round(row.present * 100 / row.total_strength) : null;
+      return { ...row, ...subFields, att_pct, subjects: undefined, raw_message: undefined };
+    });
+
+    // Build filter option lists
+    const uniq = arr => [...new Set(arr.filter(Boolean))].sort();
+    const filterOptions = {
+      regions:      uniq(rows.map(r => r.region)),
+      rcs:          uniq(rows.map(r => r.regional_coordinator)),
+      coordinators: uniq(rows.map(r => r.school_coordinator)),
+      grades:       uniq(rows.map(r => r.grade)),
+    };
+
+    res.json({ rows: expanded, total: expanded.length, dateFrom, dateTo, filterOptions });
+  } catch(err) {
+    console.log('feedback/table error:', err.message);
+    res.status(500).json({ error: err.message, rows: [] });
   }
 });
 
