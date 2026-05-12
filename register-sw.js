@@ -1,50 +1,84 @@
-// TAKMIL Register — Service Worker
-// Caches the register page for offline use.
-// API calls are handled by app-level IndexedDB logic, not intercepted here.
+// TAKMIL Register — Service Worker v3
+// Fixed: cache /register (not /register.html) + handle navigation requests offline
 
-const CACHE = 'takmil-register-v2';
-const CACHE_ASSETS = ['/register.html', '/register-sw.js'];
+const CACHE = 'takmil-register-v3';
+const SHELL = ['/register'];
 
-// Install: cache page assets
+// Install: cache the register page
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(CACHE_ASSETS)).catch(() => {})
+    caches.open(CACHE)
+      .then(c => c.addAll(SHELL))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 // Activate: remove old caches
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch: serve register.html from cache when offline; pass API calls through
+// Fetch
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Always network-first for API calls — app handles offline via IndexedDB
+  // Navigation requests (opening app from home screen icon)
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then(resp => {
+          if (resp.ok) {
+            const clone = resp.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+          }
+          return resp;
+        })
+        .catch(() =>
+          caches.match(e.request)
+            .then(cached => cached || caches.match('/register'))
+        )
+    );
+    return;
+  }
+
+  // API calls — network first, return offline JSON on failure
+  // App-level IndexedDB handles the offline queue
   if (url.pathname.startsWith('/api/')) {
     e.respondWith(
       fetch(e.request).catch(() =>
-        new Response(JSON.stringify({ offline: true }),
-          { status: 503, headers: { 'Content-Type': 'application/json' } })
+        new Response(
+          JSON.stringify({ offline: true }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        )
       )
     );
     return;
   }
 
-  // Cache-first for page assets
+  // Everything else — cache first, network fallback
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    caches.match(e.request)
+      .then(cached => {
+        if (cached) return cached;
+        return fetch(e.request).then(resp => {
+          if (resp.ok) {
+            const clone = resp.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+          }
+          return resp;
+        });
+      })
+      .catch(() => caches.match('/register'))
   );
 });
 
-// Background Sync (fires when connection restored, if browser supports it)
+// Background Sync — notify app to sync queued attendance
 self.addEventListener('sync', e => {
   if (e.tag === 'sync-attendance') {
     e.waitUntil(
