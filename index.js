@@ -38,6 +38,10 @@ app.get('/manifest.json', (req, res) => {
   res.setHeader('Content-Type', 'application/manifest+json');
   res.sendFile(path.join(__dirname, 'manifest.json'));
 });
+app.get('/offline-portal', (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(path.join(__dirname, 'offline-portal.html'));
+});
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
