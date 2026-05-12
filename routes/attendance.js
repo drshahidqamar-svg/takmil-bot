@@ -90,7 +90,18 @@ function parseFeedback(text, teacherPhone) {
   if (fb.report_date) {
     const parts = fb.report_date.split('/');
     if (parts.length === 3) {
-      fb.report_date = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+      const [a, b, y] = parts;
+      // Try DD/MM/YYYY (Pakistani standard) and MM/DD/YYYY (US format)
+      const ddmm = `${y}-${b.padStart(2,'0')}-${a.padStart(2,'0')}`;
+      const mmdd = `${y}-${a.padStart(2,'0')}-${b.padStart(2,'0')}`;
+      const today     = new Date();
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      // If DD/MM puts date more than 7 days in the future, use MM/DD instead
+      if ((new Date(ddmm) - today) > sevenDays && (new Date(mmdd) - today) <= sevenDays) {
+        fb.report_date = mmdd;
+      } else {
+        fb.report_date = ddmm;
+      }
     }
   } else {
     fb.report_date = new Date().toISOString().split('T')[0];
