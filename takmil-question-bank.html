@@ -51,7 +51,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .tb-logo{font-family:var(--serif);font-size:20px;font-weight:600;color:#fff;letter-spacing:0.5px;font-style:italic}
 .tb-slash{color:rgba(255,255,255,0.3);font-size:18px;margin:0 2px}
 .tb-section{font-size:11px;font-weight:600;color:rgba(255,255,255,0.55);letter-spacing:1.5px;text-transform:uppercase}
-.tb-pills{margin-left:auto;display:flex;gap:8px}
+.tb-pills{margin-left:auto;display:flex;gap:8px;flex-shrink:1;overflow:hidden}
 .tb-pill{
   font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:0.3px;
   background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;
@@ -276,9 +276,10 @@ tbody tr{animation:fade-in 0.25s ease both}
     display:inline-flex;align-items:center;gap:6px;
     background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.25);
     color:#fff;text-decoration:none;font-family:var(--sans);
-    font-size:10px;font-weight:700;padding:4px 13px;border-radius:20px;
-    letter-spacing:0.3px;transition:background 0.15s;margin-left:6px;
-  " onmouseover="this.style.background='rgba(255,255,255,0.22)'"
+    font-size:10px;font-weight:700;padding:6px 16px;border-radius:20px;
+    letter-spacing:0.5px;transition:background 0.15s;margin-left:12px;
+    white-space:nowrap;flex-shrink:0;
+  " onmouseover="this.style.background='rgba(255,255,255,0.28)'"
      onmouseout="this.style.background='rgba(255,255,255,0.13)'">⌂ Home</a>
 </div>
 
