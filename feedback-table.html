@@ -344,7 +344,7 @@ function renderTable(rows){
       <td class="c-center">${yn(r.technology_used, r.technology_reason)}</td>
       <td class="c-center">${yn(r.cr_media_shared)}</td>
       <td class="c-center">${yn(r.tech_media_shared)}</td>
-      <td class="c-center">${yn(r.projector_shown)}</td>
+      <td class="c-center">${yn(r.projector_visible)}</td>
       <td class="c-center">${r.lms_upload===null||r.lms_upload===undefined?'<span class="yn yn-na">—</span>':yn(r.lms_upload)}</td>
       <td>${subj(r,'english')}</td>
       <td>${subj(r,'math')}</td>
@@ -411,7 +411,7 @@ function renderTable(rows){
         <th class="col">Tech Used</th>
         <th class="col">CR Media</th>
         <th class="col">Tech Media</th>
-        <th class="col">Projector</th>
+        <th class="col">Projector (AI)</th>
         <th class="col">LMS Upload</th>
         <th class="col">Unit/Lesson/Act</th>
         <th class="col">Unit/Lesson/Act</th>
