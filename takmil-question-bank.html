@@ -599,29 +599,84 @@ function importCSV(input){
     const text=e.target.result.replace(/^\uFEFF/,'');
     const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
     if(!lines.length){ alert('Empty file'); return; }
+
+    // Parse headers — support both old and new DB column names
     const headers=parseCSVRow(lines[0]).map(h=>h.toLowerCase().trim());
-    const col=h=>headers.indexOf(h);
-    const qIdx=col('question')>=0?col('question'):col('question text')>=0?col('question text'):3;
-    const sIdx=col('subject')>=0?col('subject'):1;
-    const lIdx=col('level')>=0?col('level'):2;
-    const aIdx=col('answer')>=0?col('answer'):col('correct answer')>=0?col('correct answer'):-1;
-    const tIdx=col('topic')>=0?col('topic'):-1;
-    const stIdx=col('status')>=0?col('status'):-1;
+    const col=(...names)=>{ for(const n of names){ const i=headers.indexOf(n); if(i>=0) return i; } return -1; };
+
+    // Map every known column name variant to the correct DB field
+    const qIdx  = col('q_text_english','question_text','question text','question');
+    const sIdx  = col('subject');
+    const lIdx  = col('level');
+    const aIdx  = col('correct_option','correct answer','answer');
+    const tIdx  = col('topic_tag','topic');
+    const uIdx  = col('q_text_urdu','question_urdu','urdu');
+    const imgIdx= col('image_url','image');
+    const idIdx = col('question_id','id');
+    const oaIdx = col('option_a');
+    const obIdx = col('option_b');
+    const ocIdx = col('option_c');
+    const odIdx = col('option_d');
+    const stIdx = col('active','status');
+
+    if(qIdx<0){
+      alert('Could not find question column.\nMake sure your CSV has one of these headers:\nq_text_english, question_text, or question');
+      input.value=''; return;
+    }
+
     const imported=[];
     for(let i=1;i<lines.length;i++){
       const cols=parseCSVRow(lines[i]);
-      if(!cols[qIdx]) continue;
+      const qText=(cols[qIdx]||'').trim();
+      if(!qText) continue;
+
+      // level: strip "L" prefix if present, store as integer string e.g. "1"
+      let lvl=(lIdx>=0?cols[lIdx]||'':'').trim().replace(/^L/i,'');
+
+      // active/status: map "pending"→1, "approved"→2, number stays as-is
+      let activeVal=1;
+      if(stIdx>=0){
+        const sv=(cols[stIdx]||'').trim().toLowerCase();
+        if(sv==='approved'||sv==='2') activeVal=2;
+        else if(sv==='flagged'||sv==='3') activeVal=3;
+        else if(!isNaN(sv)&&sv!=='') activeVal=parseInt(sv);
+      }
+
       imported.push({
-        id:Date.now()+i, subject:cols[sIdx]||'', level:cols[lIdx]||'',
-        question:cols[qIdx]||'', answer:aIdx>=0?(cols[aIdx]||''):'',
-        topic:tIdx>=0?(cols[tIdx]||''):'',
-        status:stIdx>=0?(cols[stIdx]||'pending'):'pending', source:'csv-import'
+        question_id:  idIdx>=0?(cols[idIdx]||'').trim()||('IMPORT-'+Date.now()+'-'+i) : 'IMPORT-'+Date.now()+'-'+i,
+        subject:      sIdx>=0?(cols[sIdx]||'').trim():'',
+        level:        lvl,
+        topic_tag:    tIdx>=0?(cols[tIdx]||'').trim():'',
+        q_text_english: qText,
+        q_text_urdu:  uIdx>=0?(cols[uIdx]||'').trim():'',
+        image_url:    imgIdx>=0?(cols[imgIdx]||'').trim():'',
+        option_a:     oaIdx>=0?(cols[oaIdx]||'').trim():'',
+        option_b:     obIdx>=0?(cols[obIdx]||'').trim():'',
+        option_c:     ocIdx>=0?(cols[ocIdx]||'').trim():'',
+        option_d:     odIdx>=0?(cols[odIdx]||'').trim():'',
+        correct_option: aIdx>=0?(cols[aIdx]||'').trim():'',
+        active:       activeVal,
+        // keep display fields for local rendering
+        question:     qText,
+        answer:       aIdx>=0?(cols[aIdx]||'').trim():'',
+        topic:        tIdx>=0?(cols[tIdx]||'').trim():'',
+        status:       activeVal===2?'approved':activeVal===3?'flagged':'pending',
+        source:       'csv-import'
       });
     }
-    if(!imported.length){ alert('No valid questions found in CSV.\nMake sure first row has headers: Subject, Level, Question'); return; }
-    if(!window.confirm('Import '+imported.length+' questions?')) { input.value=''; return; }
+
+    if(!imported.length){
+      alert('No valid questions found in CSV.\nMake sure your CSV has a question column:\nq_text_english, question_text, or question');
+      input.value=''; return;
+    }
+    if(!window.confirm('Import '+imported.length+' questions?')){ input.value=''; return; }
+
     try{
-      const resp=await fetch('/api/questions/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questions:imported})});
+      const resp=await fetch('/api/questions/import',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({questions:imported})
+      });
       const data=await resp.json();
       showBanner('✅ Imported '+(data.imported||imported.length)+' questions to server','#dcfce7','#15803d');
       await loadFromAPI();
