@@ -155,7 +155,7 @@ async function saveFeedback(fb) {
        boys, girls, present, absent, leave_count,
        assembly_conducted, child_of_day, technology_used, technology_reason,
        cr_media_shared, tech_media_shared, lms_upload, subjects, raw_message, projector_shown)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
     ON CONFLICT DO NOTHING`,
     [fb.teacher_phone, fb.school_name||null, fb.school_identifier||null,
      fb.report_date, fb.check_in, fb.check_out,
