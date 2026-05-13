@@ -560,6 +560,26 @@ async function approveAll(){
   try{ await fetch('/api/questions/approve-all',{method:'POST'}); }catch(_){}
   applyFilters();
 }
+async function loadBreakdown(){
+  try{
+    const r=await fetch('/api/questions/breakdown');
+    const data=await r.json();
+    const counts={Math:0,English:0,Urdu:0,Videos:0};
+    Object.entries(data).forEach(([subj,levels])=>{
+      const total=levels.reduce((s,l)=>s+l.total,0);
+      if(subj==='Math') counts.Math=total;
+      else if(subj==='English') counts.English=total;
+      else if(subj==='Urdu') counts.Urdu=total;
+      else if(subj==='Videos') counts.Videos=total;
+    });
+    const el=id=>document.getElementById(id);
+    if(el('cnt-math'))    el('cnt-math').textContent=counts.Math;
+    if(el('cnt-english')) el('cnt-english').textContent=counts.English;
+    if(el('cnt-urdu'))    el('cnt-urdu').textContent=counts.Urdu;
+    if(el('cnt-videos'))  el('cnt-videos').textContent=counts.Videos;
+    if(el('cnt-all'))     el('cnt-all').textContent=Object.values(counts).reduce((a,b)=>a+b,0);
+  }catch(_){}
+}
 function editQ(id,e){
   e.stopPropagation();
   const q=QUESTIONS.find(x=>x.id===id); if(!q) return;
@@ -702,6 +722,7 @@ function parseCSVRow(row){
 }
 
 loadFromAPI();
+loadBreakdown();
 </script>
 </body>
 </html>

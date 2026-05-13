@@ -178,6 +178,90 @@ router.get('/api/questions/export', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Question Bank dashboard route (used by takmil-question-bank.html) ────────
+router.get('/api/questions/bank', async (req, res) => {
+  try {
+    const { subject, level, status, limit = 2000 } = req.query;
+    let query = `SELECT
+      question_id AS id, subject, level, topic_tag,
+      COALESCE(q_text_english, q_text_urdu) AS question,
+      q_text_english, q_text_urdu, image_url,
+      option_a, option_b, option_c, option_d, correct_option,
+      CASE WHEN active=1 THEN 'approved' WHEN active=-1 THEN 'flagged' ELSE 'pending' END AS status,
+      active, created_at
+      FROM questions WHERE 1=1`;
+    const params = [];
+    if (subject) { params.push(subject); query += ` AND subject=$${params.length}`; }
+    if (level)   { params.push(parseInt(level)); query += ` AND level=$${params.length}`; }
+    if (status === 'approved') query += ` AND active=1`;
+    if (status === 'pending')  query += ` AND (active=0 OR active IS NULL)`;
+    if (status === 'flagged')  query += ` AND active=-1`;
+    params.push(parseInt(limit));
+    query += ` ORDER BY subject, level, created_at DESC LIMIT $${params.length}`;
+    const result = await db.pool.query(query, params);
+    res.json({ questions: result.rows, count: result.rows.length });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Question import from question bank HTML (POST /api/questions/import) ─────
+router.post('/api/questions/import', async (req, res) => {
+  try {
+    const { questions } = req.body;
+    if (!questions || !Array.isArray(questions)) return res.status(400).json({ error: 'questions array required' });
+    let imported = 0, skipped = 0, errors = 0, lastError = '';
+    for (const row of questions) {
+      try {
+        const questionId  = String(row.question_id || '').trim() || ('IMPORT-' + Date.now() + '-' + Math.random());
+        const level       = parseInt(row.level) || 1;
+        const subject     = String(row.subject || '').trim();
+        const qText       = String(row.q_text_english || row.question || '').trim();
+        const qTextUrdu   = String(row.q_text_urdu || '').trim();
+        const optA        = String(row.option_a || '').trim();
+        const optB        = String(row.option_b || '').trim();
+        const optC        = String(row.option_c || '').trim();
+        const optD        = String(row.option_d || '').trim();
+        const correctOpt  = String(row.correct_option || row.answer || 'A').trim().toUpperCase();
+        const topicTag    = String(row.topic_tag || row.topic || '').trim();
+        const imageUrl    = String(row.image_url || '').trim() || null;
+        const activeVal   = row.active !== undefined ? parseInt(row.active) : 0;
+        if (!qText) { skipped++; continue; }
+        await db.pool.query(`
+          INSERT INTO questions
+            (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
+             image_url, question_type, option_a, option_b, option_c, option_d,
+             correct_option, active, created_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,
+            CASE WHEN $7 IS NOT NULL AND $7!='' THEN 'picture' ELSE 'text' END,
+            $8,$9,$10,$11,$12,$13,NOW())
+          ON CONFLICT (question_id) DO UPDATE SET
+            q_text_english = COALESCE(NULLIF($5,''), questions.q_text_english),
+            q_text_urdu    = COALESCE(NULLIF($6,''), questions.q_text_urdu),
+            option_a=$8, option_b=$9, option_c=$10, option_d=$11,
+            correct_option=$12`,
+          [questionId, level, subject, topicTag, qText, qTextUrdu,
+           imageUrl, optA, optB, optC, optD, correctOpt, activeVal]);
+        imported++;
+      } catch(err) { lastError = err.message; errors++; }
+    }
+    res.json({ imported, skipped, errors, lastError });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Approve/flag via question bank HTML ───────────────────────────────────────
+router.post('/api/questions/:id/approve', async (req, res) => {
+  try {
+    await db.pool.query(`UPDATE questions SET active=1 WHERE question_id=$1`, [req.params.id]);
+    res.json({ approved: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/api/questions/approve-all', async (req, res) => {
+  try {
+    const r = await db.pool.query(`UPDATE questions SET active=1 WHERE active=0 OR active IS NULL RETURNING question_id`);
+    res.json({ approved: r.rowCount });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 router.get('/api/questions/breakdown', async (req, res) => {
   try {
     const r = await db.pool.query(`
