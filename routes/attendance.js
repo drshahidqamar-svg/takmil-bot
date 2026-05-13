@@ -69,20 +69,42 @@ function parseFeedback(text, teacherPhone) {
     if (/^assembly.?conducted/i.test(line))    { fb.assembly_conducted = bool(val(line)); continue; }
     if (/^projector.?shown/i.test(line))       { fb.projector_shown    = bool(val(line)); continue; }
     if (/^name.?child/i.test(line))            { fb.child_of_day       = val(line); continue; }
+    if (/^lms/i.test(line))                    { fb.lms_upload         = bool(val(line)); continue; }
     if (/^technology.?used/i.test(line))       { fb.technology_used    = bool(val(line)); continue; }
-    if (/^if.?no.?reason/i.test(line))         { fb.technology_reason  = lines[i+1] || val(line); continue; }
+    // Capture reason — look ahead up to 3 lines for non-empty content
+    if (/^if.?no.?reason/i.test(line)) {
+      const inline = val(line);
+      if (inline && inline.length > 2) {
+        fb.technology_reason = inline;
+      } else {
+        for (let j = i+1; j <= i+3 && j < lines.length; j++) {
+          const next = lines[j].replace(/^[_\-\s]+|[_\-\s]+$/g,'').trim();
+          if (next && !/^subject|^unit|^lesson|^topic|^activity/i.test(next)) {
+            fb.technology_reason = next; break;
+          }
+        }
+      }
+      continue;
+    }
     if (/^class.?room.*media/i.test(line))     { fb.cr_media_shared    = bool(val(line)); continue; }
-    if (/^technology.*tech.*media/i.test(line)){ fb.tech_media_shared  = bool(val(line)); continue; }
+    // Match "Technology Media", "Tech Media", "Technology (Tech) Media"
+    if (/^tech(nology)?.*(media)/i.test(line)) { fb.tech_media_shared  = bool(val(line)); continue; }
     if (/^subject\s*:/i.test(line)) {
       if (currentSubject) fb.subjects.push(currentSubject);
-      currentSubject = { subject: val(line), unit: null, lesson_no: null, topic: null, activity: null };
+      currentSubject = { subject: val(line), unit_name: null, unit: null, lesson_no: null, topic: null, page_no: null, activity: null };
       continue;
     }
     if (currentSubject) {
-      if (/^unit/i.test(line))       { currentSubject.unit      = val(line); continue; }
-      if (/^lesson.?no/i.test(line)) { currentSubject.lesson_no = val(line); continue; }
-      if (/^topic/i.test(line))      { currentSubject.topic     = val(line); continue; }
-      if (/^activity/i.test(line))   { currentSubject.activity  = val(line); continue; }
+      // Unit Name must come before generic Unit to avoid overwrite
+      if (/^unit\s*name/i.test(line))           { currentSubject.unit_name = val(line); continue; }
+      if (/^unit\s*(no|number)\s*:/i.test(line)) { currentSubject.unit      = val(line); continue; }
+      if (/^unit\s*:/i.test(line))               { currentSubject.unit      = val(line); continue; }
+      if (/^unit\s+\S/i.test(line))              { currentSubject.unit      = val(line); continue; }
+      if (/^lesson.?no/i.test(line))             { currentSubject.lesson_no = val(line); continue; }
+      if (/^lesson\s*:/i.test(line))             { currentSubject.lesson_no = val(line); continue; }
+      if (/^topic/i.test(line))                  { currentSubject.topic     = val(line); continue; }
+      if (/^page.?no/i.test(line))               { currentSubject.page_no   = val(line); continue; }
+      if (/^activity/i.test(line))               { currentSubject.activity  = val(line); continue; }
     }
   }
   if (currentSubject) fb.subjects.push(currentSubject);
@@ -132,8 +154,8 @@ async function saveFeedback(fb) {
        check_in, check_out, grade, level, total_strength,
        boys, girls, present, absent, leave_count,
        assembly_conducted, child_of_day, technology_used, technology_reason,
-       cr_media_shared, tech_media_shared, subjects, raw_message, projector_shown)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+       cr_media_shared, tech_media_shared, lms_upload, subjects, raw_message, projector_shown)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
     ON CONFLICT DO NOTHING`,
     [fb.teacher_phone, fb.school_name||null, fb.school_identifier||null,
      fb.report_date, fb.check_in, fb.check_out,
@@ -141,7 +163,7 @@ async function saveFeedback(fb) {
      fb.boys, fb.girls, fb.present, fb.absent, fb.leave_count,
      fb.assembly_conducted, fb.child_of_day,
      fb.technology_used, fb.technology_reason,
-     fb.cr_media_shared, fb.tech_media_shared,
+     fb.cr_media_shared, fb.tech_media_shared, fb.lms_upload ?? null,
      JSON.stringify(fb.subjects), fb.raw_message, fb.projector_shown ?? null]
   );
 }
@@ -149,6 +171,16 @@ async function saveFeedback(fb) {
 // ── HTML pages ────────────────────────────────────────────────────────────────
 router.get('/analytics',  (req, res) => res.sendFile(path.join(__dirname, '../analytics.html')));
 router.get('/feedback',   (req, res) => res.sendFile(path.join(__dirname, '../feedback.html')));
+
+// ── Ensure new columns exist ──────────────────────────────────────────────────
+(async () => {
+  try {
+    await db.pool.query(`
+      ALTER TABLE daily_feedback
+        ADD COLUMN IF NOT EXISTS lms_upload BOOLEAN
+    `);
+  } catch(e) {}
+})();
 router.get('/register',   (req, res) => res.sendFile(path.join(__dirname, '../register.html')));
 router.get('/register-sw.js', (req, res) => res.sendFile(path.join(__dirname, '../register-sw.js')));
 router.get('/attendance', (req, res) => res.sendFile(path.join(__dirname, '../attendance-dashboard.html')));
@@ -309,6 +341,7 @@ router.get('/api/feedback/table', async (req, res) => {
         f.cr_media_shared, f.tech_media_shared,
         f.check_in, f.check_out,
         f.projector_shown, f.lesson_verified,
+        f.lms_upload,
         f.photo_url, f.photo_head_count, f.head_count_diff,
         f.photo_verified, f.photo_flag,
         (f.photo_data IS NOT NULL) AS photo_available,
@@ -339,9 +372,12 @@ router.get('/api/feedback/table', async (req, res) => {
       for (const name of subjects) {
         const key = name.replace(' ','_').toLowerCase();
         const s   = subMap[name] || {};
-        subFields[`${key}_unit`]     = s.unit     || '';
-        subFields[`${key}_lesson`]   = s.lesson_no || '';
-        subFields[`${key}_activity`] = s.activity  || '';
+        subFields[`${key}_unit_name`] = s.unit_name || '';
+        subFields[`${key}_unit`]      = s.unit      || '';
+        subFields[`${key}_lesson`]    = s.lesson_no  || '';
+        subFields[`${key}_topic`]     = s.topic      || '';
+        subFields[`${key}_page`]      = s.page_no    || '';
+        subFields[`${key}_activity`]  = s.activity   || '';
       }
       const att_pct = row.total_strength > 0
         ? Math.round(row.present * 100 / row.total_strength) : null;

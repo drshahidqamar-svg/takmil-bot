@@ -281,9 +281,22 @@ function yn(val,reason){
 }
 
 function subj(row, key){
-  const u=row[`${key}_unit`], l=row[`${key}_lesson`], a=row[`${key}_activity`];
-  if(!l) return '<span style="color:#cbd5e1">—</span>';
-  return `<span style="font-size:10px"><strong>${l}</strong>${u?` U${u}`:''}${a?'<br><span style="color:#059669;font-size:9px">✅ Activity</span>':'<br><span style="color:#94a3b8;font-size:9px">No activity</span>'}</span>`;
+  const un   = row[`${key}_unit_name`];
+  const u    = row[`${key}_unit`];
+  const l    = row[`${key}_lesson`];
+  const t    = row[`${key}_topic`];
+  const pg   = row[`${key}_page`];
+  const a    = row[`${key}_activity`];
+  if(!l && !u && !un) return '<span style="color:#cbd5e1">—</span>';
+  const lines = [];
+  if(un) lines.push(`<span style="font-size:10px;font-weight:700;color:#1e3a5f" title="${un}">${un.length>20?un.slice(0,20)+'…':un}</span>`);
+  if(u||l) lines.push(`<span style="font-size:11px;font-weight:700">${[u&&'U'+u, l&&'L'+l].filter(Boolean).join(' ')}</span>`);
+  if(t)  lines.push(`<span style="font-size:9px;color:#64748b" title="${t}">${t.length>25?t.slice(0,25)+'…':t}</span>`);
+  if(pg) lines.push(`<span style="font-size:9px;color:#94a3b8">Pg ${pg}</span>`);
+  const actColor = (a||'').toLowerCase()==='yes'?'#059669':'#dc2626';
+  const actLabel = (a||'').toLowerCase()==='yes'?'✅ Activity':'❌ No act';
+  if(a) lines.push(`<span style="font-size:9px;font-weight:700;color:${actColor}">${actLabel}</span>`);
+  return `<div style="display:flex;flex-direction:column;gap:2px">${lines.join('')}</div>`;
 }
 
 function renderTable(rows){
@@ -332,6 +345,7 @@ function renderTable(rows){
       <td class="c-center">${yn(r.cr_media_shared)}</td>
       <td class="c-center">${yn(r.tech_media_shared)}</td>
       <td class="c-center">${yn(r.projector_shown)}</td>
+      <td class="c-center">${r.lms_upload===null||r.lms_upload===undefined?'<span class="yn yn-na">—</span>':yn(r.lms_upload)}</td>
       <td>${subj(r,'english')}</td>
       <td>${subj(r,'math')}</td>
       <td>${subj(r,'science')}</td>
@@ -367,6 +381,7 @@ function renderTable(rows){
         <th colspan="2" class="cg-hdr cg-basic">Grade</th>
         <th colspan="7" class="cg-hdr cg-attend">Attendance</th>
         <th colspan="5" class="cg-hdr cg-tech">Activities & Tech</th>
+        <th colspan="1" class="cg-hdr" style="background:#f0fdf4;color:#15803d">LMS</th>
         <th colspan="3" class="cg-hdr cg-subj">English</th>
         <th colspan="3" class="cg-hdr cg-subj2">Math</th>
         <th colspan="3" class="cg-hdr cg-subj3">Science</th>
@@ -397,6 +412,7 @@ function renderTable(rows){
         <th class="col">CR Media</th>
         <th class="col">Tech Media</th>
         <th class="col">Projector</th>
+        <th class="col">LMS Upload</th>
         <th class="col">Unit/Lesson/Act</th>
         <th class="col">Unit/Lesson/Act</th>
         <th class="col">Unit/Lesson/Act</th>
@@ -421,8 +437,8 @@ function exportCSV(){
   const headers=[
     '#','Date','Submitted At','School','Region','RC','Coordinator',
     'Grade','Level','Strength','Boys','Girls','Present','Absent','Leave','Att %',
-    'Assembly','Tech Used','Tech Reason','CR Media','Tech Media','Projector',
-    ...subjNames.flatMap(s=>[`${s} Unit`,`${s} Lesson`,`${s} Activity`]),
+    'Assembly','Tech Used','Tech Reason','CR Media','Tech Media','Projector','LMS Upload',
+    ...subjNames.flatMap(s=>[`${s} Unit Name`,`${s} Unit`,`${s} Lesson`,`${s} Topic`,`${s} Page`,`${s} Activity`]),
     'Teacher Phone','Present','AI Head Count','Photo Result','Mismatch Detail'
   ];
   const csvRows=allRows.map((r,i)=>[
@@ -436,7 +452,12 @@ function exportCSV(){
     r.technology_used?'Yes':'No',r.technology_reason||'',
     r.cr_media_shared?'Yes':'No',r.tech_media_shared?'Yes':'No',
     r.projector_shown?'Yes':'No',
-    ...subjects.flatMap(s=>[r[`${s}_unit`]||'',r[`${s}_lesson`]||'',r[`${s}_activity`]||'']),
+    r.lms_upload==null?'':r.lms_upload?'Yes':'No',
+    ...subjects.flatMap(s=>[
+      r[`${s}_unit_name`]||'',r[`${s}_unit`]||'',
+      r[`${s}_lesson`]||'',r[`${s}_topic`]||'',
+      r[`${s}_page`]||'',r[`${s}_activity`]||''
+    ]),
     r.teacher_phone||'',
     r.present||'',
     r.photo_head_count??'',
