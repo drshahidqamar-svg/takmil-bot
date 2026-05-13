@@ -340,7 +340,7 @@ router.get('/api/feedback/table', async (req, res) => {
         f.technology_used, f.technology_reason,
         f.cr_media_shared, f.tech_media_shared,
         f.check_in, f.check_out,
-        f.projector_shown, f.lesson_verified,
+        f.projector_shown, f.projector_visible, f.lesson_verified,
         f.lms_upload,
         f.photo_url, f.photo_head_count, f.head_count_diff,
         f.photo_verified, f.photo_flag,
