@@ -939,6 +939,17 @@ function dbPut(store, val) {
   });
 }
 
+function dbPutGetKey(store, val) {
+  return new Promise((res, rej) => {
+    openDB().then(db => {
+      const tx  = db.transaction(store, 'readwrite');
+      const req = tx.objectStore(store).put(val);
+      req.onsuccess = () => res(req.result);
+      req.onerror   = () => rej(req.error);
+    });
+  });
+}
+
 function dbGetAll(store) {
   return new Promise((res, rej) => {
     const tx = db.transaction(store, 'readonly');
@@ -1924,7 +1935,9 @@ async function submitFeedbackForm(){
     photo_result:      fbPhotoResult,
   };
 
-  await dbPut('offline_feedback', record);
+  // Save to IndexedDB and get back the assigned local_id
+  const localId = await dbPutGetKey('offline_feedback', record);
+  record.local_id = localId;
 
   // Update saved screen
   document.getElementById('fb-saved-school').textContent = fbSchoolName+' · '+fbDate;
@@ -1943,7 +1956,8 @@ async function submitFeedbackForm(){
     badge.className='sync-badge syncing'; badge.textContent='↑ Syncing...'; icon.textContent='🔄';
     const ok=await syncOneFeedback(record);
     if(ok){
-      record.synced=true; await dbPut('offline_feedback',record);
+      record.synced=true;
+      await dbPut('offline_feedback', record); // now has local_id so updates correctly
       badge.className='sync-badge online'; badge.textContent='✓ Synced';
       icon.textContent='✅'; title.textContent='Feedback Saved!';
       msg.textContent='Submitted to server successfully ✓';
@@ -1975,12 +1989,18 @@ async function syncFeedback(){
   if(!isOnline()){ showToast('No internet connection'); return; }
   const all=await dbGetAll('offline_feedback');
   const pending=all.filter(r=>!r.synced);
+  if(!pending.length){ showToast('Nothing to sync'); await updateFbPendingCount(); return; }
   let synced=0;
   for(const rec of pending){
     const ok=await syncOneFeedback(rec);
-    if(ok){ rec.synced=true; await dbPut('offline_feedback',rec); synced++; }
+    if(ok){
+      rec.synced=true;
+      // local_id is set — dbPut will update the existing record correctly
+      await dbPut('offline_feedback', rec);
+      synced++;
+    }
   }
-  showToast(synced>0?'✅ Synced '+synced+' feedback record'+(synced!==1?'s':'')+'!':'Nothing to sync');
+  showToast(synced>0?'✅ Synced '+synced+' feedback record'+(synced!==1?'s':'')+'!':'Could not reach server — will retry when online');
   await updateFbPendingCount();
 }
 
