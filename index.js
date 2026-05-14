@@ -57,8 +57,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 // ── Load route modules ────────────────────────────────────────────────────────
 const { router: chatbotRouter, registerHandlers } = require('./routes/chatbot');
