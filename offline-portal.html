@@ -22,7 +22,7 @@
 html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',sans-serif;color:var(--text)}
 
 /* ── SCREENS ── */
-.screen{display:none;position:fixed;inset:0;overflow-y:auto;padding:16px;background:var(--bg)}
+.screen{display:none;position:fixed;top:44px;left:0;right:0;bottom:0;overflow-y:auto;padding:16px;background:var(--bg)}
 .screen.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
 
 /* ── HEADER ── */
@@ -206,16 +206,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 <body>
 
   <!-- Home Button Top Bar -->
-  <div style="
+  <div id="top-bar" style="
     width:100%;
     background:#15803D;
     padding:8px 20px;
     display:flex;
     align-items:center;
     gap:10px;
-    position:sticky;
+    position:fixed;
     top:0;
-    z-index:9999;
+    left:0;
+    right:0;
+    height:44px;
+    z-index:10000;
     box-shadow:0 2px 8px rgba(0,0,0,0.15);
   ">
     <a href="/" style="
