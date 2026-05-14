@@ -41,7 +41,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 .sync-badge.offline{background:#fef2f2;color:#dc2626}
 .sync-badge.syncing{background:#dbeafe;color:#1d4ed8}
 
-/* ── CARDS ── **/
+/* ── CARDS ── */
 .card{
   width:100%;max-width:480px;background:var(--card);
   border-radius:var(--r);padding:24px;box-shadow:var(--shadow);
@@ -249,12 +249,23 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 
   <!-- ── TEACHER ATTENDANCE CARD ── -->
   <div class="card" style="border:2px solid #16a34a">
-    <div class="card-title" style="font-size:15px">📋 Teacher Attendance</div>
+    <div class="card-title" style="font-size:15px">📋 Student Attendance</div>
     <div class="card-sub" style="margin-bottom:12px">
-      حاضری درج کریں — Mark attendance offline. Syncs automatically when internet returns.
+      حاضری درج کریں — Mark individual student attendance offline.
     </div>
     <button class="btn btn-green" onclick="showAttendanceHome()">
       Mark Attendance — حاضری درج کریں ▶
+    </button>
+  </div>
+
+  <!-- ── DAILY FEEDBACK CARD ── -->
+  <div class="card" style="border:2px solid #2563eb;margin-top:0">
+    <div class="card-title" style="font-size:15px">📝 Daily Feedback Report</div>
+    <div class="card-sub" style="margin-bottom:12px">
+      روزانہ رپورٹ — Full feedback form offline. Syncs when internet returns.
+    </div>
+    <button class="btn" style="background:#2563eb;color:#fff" onclick="showFeedbackHome()">
+      Submit Feedback — فیڈبیک جمع کریں ▶
     </button>
   </div>
 
@@ -654,6 +665,168 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
   </div>
 </div>
 
+<!-- ── SCREEN: FEEDBACK HOME ── -->
+<div class="screen" id="s-fb-home">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <button onclick="showScreen('s-home')" style="background:none;border:none;color:white;font-size:22px;cursor:pointer">←</button>
+  </div>
+  <div class="card">
+    <div class="card-title">📝 Daily Feedback Report</div>
+    <div class="card-sub" style="margin-bottom:14px">روزانہ رپورٹ — Works offline · Auto-syncs when online</div>
+    <label class="label">Your Phone Number</label>
+    <input class="input" id="fb-phone" type="tel" placeholder="+923XXXXXXXXX">
+    <label class="label">Report Date — تاریخ</label>
+    <input class="input" id="fb-date" type="date">
+    <button class="btn" style="background:#2563eb;color:#fff;margin-top:4px" onclick="goToFeedbackForm()">
+      Start Report ▶
+    </button>
+    <div id="fb-home-err" style="color:#dc2626;font-size:13px;font-weight:700;text-align:center;margin-top:10px;display:none"></div>
+  </div>
+  <div class="card" style="padding:14px 18px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:13px;font-weight:700" id="fb-pending-label">0 feedback reports pending sync</div>
+        <div style="font-size:11px;color:var(--muted)">Syncs automatically when online</div>
+      </div>
+      <button onclick="syncFeedback()" class="btn" style="background:#2563eb;color:#fff;padding:6px 14px;font-size:12px">Sync ↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCREEN: FEEDBACK FORM ── -->
+<div class="screen" id="s-fb-form">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <button onclick="showScreen('s-fb-home')" style="background:none;border:none;color:white;font-size:22px;cursor:pointer">←</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="fb-form-title">Daily Feedback</div>
+    <div class="card-sub" id="fb-form-date" style="margin-bottom:16px"></div>
+
+    <!-- Grade & Level -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div>
+        <label class="label">Grade</label>
+        <select class="input" id="fb-grade" style="margin-bottom:0">
+          <option value="Primary">Primary (L1–5)</option>
+          <option value="Elementary">Elementary (L6–11)</option>
+          <option value="Elementary-8">Elementary-8</option>
+        </select>
+      </div>
+      <div>
+        <label class="label">Level</label>
+        <select class="input" id="fb-level" style="margin-bottom:0">
+          <option value="1">L1</option><option value="2">L2</option>
+          <option value="3">L3</option><option value="4">L4</option>
+          <option value="5">L5</option><option value="6">L6</option>
+          <option value="7">L7</option><option value="8">L8</option>
+          <option value="9">L9</option><option value="10">L10</option>
+          <option value="11">L11</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Attendance numbers -->
+    <div class="section-head">👥 Attendance — حاضری</div>
+    <div class="att-grid">
+      <div class="att-box"><div class="att-label">Strength</div><div class="att-num" id="fb-d-strength">30</div>
+        <div class="att-btn-row"><button class="att-ctrl att-minus" onclick="fbAdj('strength',-1)">−</button><button class="att-ctrl att-plus" onclick="fbAdj('strength',+1)">+</button></div></div>
+      <div class="att-box"><div class="att-label">Boys</div><div class="att-num" id="fb-d-boys" style="color:#2563eb">0</div>
+        <div class="att-btn-row"><button class="att-ctrl att-minus" onclick="fbAdj('boys',-1)">−</button><button class="att-ctrl att-plus" onclick="fbAdj('boys',+1)">+</button></div></div>
+      <div class="att-box"><div class="att-label">Girls</div><div class="att-num" id="fb-d-girls" style="color:#db2777">0</div>
+        <div class="att-btn-row"><button class="att-ctrl att-minus" onclick="fbAdj('girls',-1)">−</button><button class="att-ctrl att-plus" onclick="fbAdj('girls',+1)">+</button></div></div>
+      <div class="att-box"><div class="att-label">Present</div><div class="att-num" id="fb-d-present" style="color:#16a34a">0</div>
+        <div class="att-btn-row"><button class="att-ctrl att-minus" onclick="fbAdj('present',-1)">−</button><button class="att-ctrl att-plus" onclick="fbAdj('present',+1)">+</button></div></div>
+      <div class="att-box"><div class="att-label">Absent</div><div class="att-num" id="fb-d-absent" style="color:#dc2626">0</div>
+        <div class="att-btn-row"><button class="att-ctrl att-minus" onclick="fbAdj('absent',-1)">−</button><button class="att-ctrl att-plus" onclick="fbAdj('absent',+1)">+</button></div></div>
+      <div class="att-box"><div class="att-label">Leave</div><div class="att-num" id="fb-d-leave" style="color:#d97706">0</div>
+        <div class="att-btn-row"><button class="att-ctrl att-minus" onclick="fbAdj('leave',-1)">−</button><button class="att-ctrl att-plus" onclick="fbAdj('leave',+1)">+</button></div></div>
+    </div>
+
+    <!-- LMS -->
+    <div class="section-head">📚 LMS & Technology</div>
+    <label class="label">LMS Attendance Upload</label>
+    <div class="yn-row" id="yn-fb-lms">
+      <button class="yn-btn" onclick="fbSetYN('lms','yes',this)">✅ Yes</button>
+      <button class="yn-btn" onclick="fbSetYN('lms','no',this)">❌ No</button>
+    </div>
+
+    <label class="label">Technology Used</label>
+    <div class="yn-row" id="yn-fb-tech">
+      <button class="yn-btn" onclick="fbSetYN('tech','yes',this)">✅ Yes</button>
+      <button class="yn-btn" onclick="fbSetYN('tech','no',this)">❌ No</button>
+    </div>
+    <div id="fb-tech-reason-wrap" style="display:none">
+      <label class="label">Reason if No</label>
+      <input class="input" id="fb-tech-reason" type="text" placeholder="e.g. USB not available">
+    </div>
+
+    <label class="label">Classroom Media Shared</label>
+    <div class="yn-row" id="yn-fb-cr">
+      <button class="yn-btn" onclick="fbSetYN('cr','yes',this)">✅ Yes</button>
+      <button class="yn-btn" onclick="fbSetYN('cr','no',this)">❌ No</button>
+    </div>
+
+    <label class="label">Technology Media Shared</label>
+    <div class="yn-row" id="yn-fb-tm">
+      <button class="yn-btn" onclick="fbSetYN('tm','yes',this)">✅ Yes</button>
+      <button class="yn-btn" onclick="fbSetYN('tm','no',this)">❌ No</button>
+    </div>
+
+    <!-- Assembly -->
+    <div class="section-head">🏛️ Assembly</div>
+    <div class="yn-row" id="yn-fb-asm">
+      <button class="yn-btn" onclick="fbSetYN('asm','yes',this)">✅ Yes</button>
+      <button class="yn-btn" onclick="fbSetYN('asm','no',this)">❌ No</button>
+    </div>
+
+    <!-- Subjects -->
+    <div class="section-head">📖 Subjects Taught</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Unit Name · Unit No · Lesson · Topic · Page · Activity</div>
+    <div id="fb-subj-rows">
+      <!-- Generated by JS -->
+    </div>
+
+    <div style="height:14px"></div>
+    <button class="btn" style="background:#2563eb;color:#fff;font-size:16px" onclick="submitFeedbackForm()">
+      ✅ Submit Report — رپورٹ جمع کریں
+    </button>
+    <div id="fb-form-err" style="color:#dc2626;font-size:13px;font-weight:700;text-align:center;margin-top:10px;display:none"></div>
+  </div>
+</div>
+
+<!-- ── SCREEN: FEEDBACK SAVED ── -->
+<div class="screen" id="s-fb-saved">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <div class="sync-badge" id="fb-saved-badge">Saving...</div>
+  </div>
+  <div class="card" style="text-align:center;padding:36px 24px">
+    <div style="font-size:60px;margin-bottom:16px" id="fb-saved-icon">✅</div>
+    <div class="card-title" style="font-size:20px;text-align:center" id="fb-saved-title">Feedback Submitted!</div>
+    <div class="card-sub" style="text-align:center;margin-bottom:6px" id="fb-saved-school"></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:24px" id="fb-saved-msg"></div>
+    <div style="background:#eff6ff;border-radius:12px;padding:16px;margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #dbeafe">
+        <span style="font-size:13px;color:var(--muted)">Present</span>
+        <span style="font-size:15px;font-weight:800;color:#16a34a" id="fb-saved-present">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #dbeafe">
+        <span style="font-size:13px;color:var(--muted)">Absent</span>
+        <span style="font-size:15px;font-weight:800;color:#dc2626" id="fb-saved-absent">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0">
+        <span style="font-size:13px;color:var(--muted)">Submitted at</span>
+        <span style="font-size:13px;font-weight:700;color:#2563eb" id="fb-saved-time">—</span>
+      </div>
+    </div>
+    <button class="btn" style="background:#2563eb;color:#fff" onclick="showScreen('s-fb-home')">← Back</button>
+    <button class="btn" onclick="showScreen('s-home')" style="background:var(--bg);color:var(--text);margin-top:10px">Go to Home</button>
+  </div>
+</div>
+
 <!-- ── SCREEN: SYNC ── -->
 <div class="screen" id="s-sync">
   <div class="app-header">
@@ -675,7 +848,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 <script>
 const BASE = '';
 const DB_NAME = 'takmil_offline';
-const DB_VERSION = 3;  // v3 adds individual students store
+const DB_VERSION = 4;  // v4 adds offline_feedback store
 
 let db;
 let session = {
@@ -706,6 +879,8 @@ function openDB() {
         d.createObjectStore('schools', { keyPath: 'identifier' });
       if (!d.objectStoreNames.contains('students'))
         d.createObjectStore('students', { keyPath: 'school_code' });
+      if (!d.objectStoreNames.contains('offline_feedback'))
+        d.createObjectStore('offline_feedback', { autoIncrement: true, keyPath: 'local_id' });
     };
     req.onsuccess = e => { db = e.target.result; res(db); };
     req.onerror = () => rej(req.error);
@@ -1486,9 +1661,218 @@ async function syncAttendance(){
   await updateAttPendingCount();
 }
 
-window.addEventListener('online', ()=>{ updateConnBadge(); autoSync(); syncAttendance(); });
+// ── OFFLINE FEEDBACK FORM ─────────────────────────────────────────
+const FB_SUBJECTS = ['English','Math','Science','Islamiat','Urdu','Skill Development'];
+const fbState = { strength:30, boys:0, girls:0, present:0, absent:0, leave:0 };
+const fbYN    = { lms:null, tech:null, cr:null, tm:null, asm:null };
+let fbPhone='', fbSchoolName='', fbSchoolId='', fbDate='';
 
-async function showAttendanceHome(){
+function fbAdj(field, delta){
+  fbState[field] = Math.max(0, fbState[field]+delta);
+  document.getElementById('fb-d-'+field).textContent = fbState[field];
+}
+
+function fbSetYN(field, val, btn){
+  fbYN[field]=val;
+  const row=document.getElementById('yn-fb-'+field);
+  row.querySelectorAll('.yn-btn').forEach(b=>{
+    b.className='yn-btn';
+    if(b===btn) b.classList.add(val==='yes'?'sel-yes':'sel-no');
+  });
+  if(field==='tech'){
+    const w=document.getElementById('fb-tech-reason-wrap');
+    if(w) w.style.display=val==='no'?'':'none';
+  }
+}
+
+function renderFbSubjects(){
+  document.getElementById('fb-subj-rows').innerHTML = FB_SUBJECTS.map(s=>`
+    <div style="background:var(--bg);border-radius:10px;padding:10px;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:800;color:var(--green);margin-bottom:8px">${s}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Unit Name</div>
+          <input class="input" data-subj="${s}" data-field="unit_name" placeholder="e.g. My Homeland" style="margin:0;padding:7px 10px;font-size:12px"></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Unit No · Lesson</div>
+          <div style="display:flex;gap:4px">
+            <input class="input" data-subj="${s}" data-field="unit" placeholder="U" style="margin:0;padding:7px 8px;font-size:12px;width:50px">
+            <input class="input" data-subj="${s}" data-field="lesson_no" placeholder="L" style="margin:0;padding:7px 8px;font-size:12px;flex:1">
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 60px;gap:6px">
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Topic</div>
+          <input class="input" data-subj="${s}" data-field="topic" placeholder="Topic / صفحہ" style="margin:0;padding:7px 10px;font-size:12px"></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Page</div>
+          <input class="input" data-subj="${s}" data-field="page_no" placeholder="14" style="margin:0;padding:7px 8px;font-size:12px;text-align:center"></div>
+      </div>
+      <div style="margin-top:6px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--text)">
+          <input type="checkbox" data-subj="${s}" data-field="activity" style="width:18px;height:18px"> Activity done ✅
+        </label>
+      </div>
+    </div>`).join('');
+}
+
+function collectFbSubjects(){
+  return FB_SUBJECTS.map(s=>{
+    const g = f => document.querySelector(`[data-subj="${s}"][data-field="${f}"]`)?.value?.trim()||'';
+    const act = document.querySelector(`[data-subj="${s}"][data-field="activity"]`)?.checked;
+    const unit_name=g('unit_name'), unit=g('unit'), lesson_no=g('lesson_no'), topic=g('topic'), page_no=g('page_no');
+    if(!unit_name && !unit && !lesson_no && !topic) return null;
+    return { subject:s, unit_name, unit, lesson_no, topic, page_no, activity: act?'Yes':'No' };
+  }).filter(Boolean);
+}
+
+async function showFeedbackHome(){
+  showScreen('s-fb-home');
+  const today=new Date();
+  const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('fb-date').value=fmt(today);
+  await updateFbPendingCount();
+}
+
+async function goToFeedbackForm(){
+  const phone=document.getElementById('fb-phone').value.trim();
+  const date=document.getElementById('fb-date').value;
+  const err=document.getElementById('fb-home-err');
+  err.style.display='none';
+  if(!phone){ err.textContent='Enter your phone number'; err.style.display='block'; return; }
+  if(!date){ err.textContent='Select a date'; err.style.display='block'; return; }
+
+  fbPhone=phone; fbDate=date;
+  fbSchoolName=phone; fbSchoolId=phone;
+
+  // Try to find school from cache
+  try {
+    const allSchools=await dbGetAll('schools');
+    const norm=phone.replace(/\D/g,'').slice(-10);
+    const school=allSchools.find(s=>(s.teacher_phone||'').replace(/\D/g,'').slice(-10)===norm);
+    if(school){ fbSchoolName=school.name||school.identifier; fbSchoolId=school.identifier; }
+    else if(isOnline()){
+      const sr=await fetch('/api/register/school-by-phone?phone='+encodeURIComponent(phone));
+      if(sr.ok){ const sd=await sr.json(); fbSchoolName=sd.school?.name||sd.name||phone; fbSchoolId=sd.school?.identifier||sd.identifier||phone; }
+    }
+  } catch(e){}
+
+  // Reset form
+  Object.assign(fbState,{strength:30,boys:0,girls:0,present:0,absent:0,leave:0});
+  ['strength','boys','girls','present','absent','leave'].forEach(f=>{ document.getElementById('fb-d-'+f).textContent=fbState[f]; });
+  Object.assign(fbYN,{lms:null,tech:null,cr:null,tm:null,asm:null});
+  ['lms','tech','cr','tm','asm'].forEach(f=>{ const row=document.getElementById('yn-fb-'+f); if(row) row.querySelectorAll('.yn-btn').forEach(b=>b.className='yn-btn'); });
+  const techWrap=document.getElementById('fb-tech-reason-wrap');
+  if(techWrap) techWrap.style.display='none';
+
+  document.getElementById('fb-form-title').textContent='📝 '+fbSchoolName;
+  document.getElementById('fb-form-date').textContent=date;
+  renderFbSubjects();
+  showScreen('s-fb-form');
+}
+
+async function submitFeedbackForm(){
+  const err=document.getElementById('fb-form-err');
+  err.style.display='none';
+  if(!fbState.present && !fbState.absent){ err.textContent='Enter present/absent count'; err.style.display='block'; return; }
+
+  const now=new Date();
+  const record={
+    teacher_phone:     fbPhone,
+    school_name:       fbSchoolName,
+    school_identifier: fbSchoolId,
+    report_date:       fbDate,
+    submitted_at:      now.toISOString(),
+    grade:             document.getElementById('fb-grade').value,
+    level:             parseInt(document.getElementById('fb-level').value),
+    total_strength:    fbState.strength,
+    boys:              fbState.boys,
+    girls:             fbState.girls,
+    present:           fbState.present,
+    absent:            fbState.absent,
+    leave_count:       fbState.leave,
+    lms_upload:        fbYN.lms==='yes',
+    technology_used:   fbYN.tech==='yes',
+    technology_reason: document.getElementById('fb-tech-reason')?.value?.trim()||null,
+    cr_media_shared:   fbYN.cr==='yes',
+    tech_media_shared: fbYN.tm==='yes',
+    assembly_conducted:fbYN.asm==='yes',
+    subjects:          collectFbSubjects(),
+    source:            'offline-portal',
+    synced:            false,
+  };
+
+  await dbPut('offline_feedback', record);
+
+  // Update saved screen
+  document.getElementById('fb-saved-school').textContent = fbSchoolName+' · '+fbDate;
+  document.getElementById('fb-saved-present').textContent = fbState.present+' / '+fbState.strength;
+  document.getElementById('fb-saved-absent').textContent  = fbState.absent;
+  document.getElementById('fb-saved-time').textContent    = now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+  const badge=document.getElementById('fb-saved-badge');
+  const icon =document.getElementById('fb-saved-icon');
+  const msg  =document.getElementById('fb-saved-msg');
+  const title=document.getElementById('fb-saved-title');
+
+  showScreen('s-fb-saved');
+
+  if(isOnline()){
+    badge.className='sync-badge syncing'; badge.textContent='↑ Syncing...'; icon.textContent='🔄';
+    const ok=await syncOneFeedback(record);
+    if(ok){
+      record.synced=true; await dbPut('offline_feedback',record);
+      badge.className='sync-badge online'; badge.textContent='✓ Synced';
+      icon.textContent='✅'; title.textContent='Feedback Saved!';
+      msg.textContent='Submitted to server successfully ✓';
+    } else {
+      badge.className='sync-badge offline'; badge.textContent='● Saved Offline';
+      icon.textContent='💾'; title.textContent='Saved Offline';
+      msg.textContent='Could not reach server. Will sync when internet returns.';
+    }
+  } else {
+    badge.className='sync-badge offline'; badge.textContent='● Offline';
+    icon.textContent='💾'; title.textContent='Saved Offline';
+    msg.textContent='No internet — saved on phone. Syncs automatically when online.';
+  }
+  await updateFbPendingCount();
+}
+
+async function syncOneFeedback(record){
+  try {
+    const resp=await fetch('/api/attendance/submit',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(record)
+    });
+    const data=await resp.json();
+    return data.saved===true;
+  } catch(e){ return false; }
+}
+
+async function syncFeedback(){
+  if(!isOnline()){ showToast('No internet connection'); return; }
+  const all=await dbGetAll('offline_feedback');
+  const pending=all.filter(r=>!r.synced);
+  let synced=0;
+  for(const rec of pending){
+    const ok=await syncOneFeedback(rec);
+    if(ok){ rec.synced=true; await dbPut('offline_feedback',rec); synced++; }
+  }
+  showToast(synced>0?'✅ Synced '+synced+' feedback record'+(synced!==1?'s':'')+'!':'Nothing to sync');
+  await updateFbPendingCount();
+}
+
+async function updateFbPendingCount(){
+  try {
+    const all=await dbGetAll('offline_feedback');
+    const n=all.filter(r=>!r.synced).length;
+    const el=document.getElementById('fb-pending-label');
+    if(el) el.textContent=n+' feedback report'+(n!==1?'s':'')+' pending sync';
+  } catch(e){}
+}
+
+window.addEventListener('online',()=>{ updateConnBadge(); autoSync(); syncAttendance(); syncFeedback(); });
+
+// ── OFFLINE FEEDBACK ── end ───────────────────────────────────────
+
+// ── Init ──────────────────────────────────────────────────────────
   showScreen('s-att-home');
   const today = new Date();
   const fmt = d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
