@@ -179,6 +179,10 @@ router.get('/feedback',   (req, res) => res.sendFile(path.join(__dirname, '../fe
       ALTER TABLE daily_feedback
         ADD COLUMN IF NOT EXISTS lms_upload BOOLEAN
     `);
+    await db.pool.query(`
+      ALTER TABLE daily_feedback
+        ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP
+    `);
   } catch(e) {}
 })();
 router.get('/register',   (req, res) => res.sendFile(path.join(__dirname, '../register.html')));
@@ -496,6 +500,70 @@ router.post('/api/register/submit', async (req, res) => {
     res.json({ saved: true, total: attendance.length, present, absent, leave });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
+
+// ── Offline portal: submit daily feedback form ────────────────────────────────
+// Called by offline-portal.html when syncing queued feedback records
+router.post('/api/attendance/submit', async (req, res) => {
+  try {
+    const fb = req.body;
+
+    // Build a feedback object matching the saveFeedback schema
+    const record = {
+      teacher_phone:      fb.teacher_phone || fb.school_identifier || 'offline',
+      school_name:        fb.school_name   || null,
+      school_identifier:  fb.school_identifier || null,
+      report_date:        fb.report_date   || new Date().toISOString().split('T')[0],
+      check_in:           fb.check_in      || null,
+      check_out:          fb.check_out     || null,
+      grade:              fb.grade         || null,
+      level:              fb.level         || null,
+      total_strength:     fb.total_strength|| null,
+      boys:               fb.boys          || null,
+      girls:              fb.girls         || null,
+      present:            fb.present       || null,
+      absent:             fb.absent        || null,
+      leave_count:        fb.leave_count   || null,
+      assembly_conducted: fb.assembly_conducted || false,
+      child_of_day:       fb.child_of_day  || null,
+      technology_used:    fb.technology_used || false,
+      technology_reason:  fb.technology_reason || null,
+      cr_media_shared:    fb.cr_media_shared || false,
+      tech_media_shared:  fb.tech_media_shared || false,
+      lms_upload:         fb.lms_upload    || null,
+      projector_shown:    fb.projector_shown || null,
+      subjects:           fb.subjects      || [],
+      raw_message:        fb.raw_message   || JSON.stringify(fb),
+      submitted_at:       fb.submitted_at  || new Date().toISOString(), // capture submission time
+    };
+
+    await db.pool.query(`
+      INSERT INTO daily_feedback
+        (teacher_phone, school_name, school_identifier, report_date,
+         check_in, check_out, grade, level, total_strength,
+         boys, girls, present, absent, leave_count,
+         assembly_conducted, child_of_day, technology_used, technology_reason,
+         cr_media_shared, tech_media_shared, lms_upload, subjects, raw_message,
+         projector_shown, submitted_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
+      ON CONFLICT DO NOTHING`,
+      [record.teacher_phone, record.school_name, record.school_identifier,
+       record.report_date, record.check_in, record.check_out,
+       record.grade, record.level, record.total_strength,
+       record.boys, record.girls, record.present, record.absent, record.leave_count,
+       record.assembly_conducted, record.child_of_day,
+       record.technology_used, record.technology_reason,
+       record.cr_media_shared, record.tech_media_shared, record.lms_upload,
+       JSON.stringify(record.subjects), record.raw_message,
+       record.projector_shown, record.submitted_at]
+    );
+
+    res.json({ saved: true, submitted_at: record.submitted_at });
+  } catch(err) {
+    console.error('offline submit error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 router.get('/api/register/history', async (req, res) => {
   try {
