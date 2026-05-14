@@ -1976,9 +1976,37 @@ async function submitFeedbackForm(){
 
 async function syncOneFeedback(record){
   try {
+    // Map offline field names → backend field names
+    const pr = record.photo_result || {};
+    const reported = record.present || 0;
+    const headCount = pr.head_count != null ? parseInt(pr.head_count) : null;
+    const diff = headCount != null ? headCount - reported : null;
+    const absDiff = diff != null ? Math.abs(diff) : null;
+    const pctDiff = reported > 0 && diff != null ? Math.round(absDiff / reported * 100) : null;
+    const flagged = absDiff != null && absDiff > 3 && pctDiff > 15;
+
+    const payload = {
+      ...record,
+      // Rename photo fields to match backend
+      photo_data:       record.photo_base64 || null,
+      photo_mime_type:  record.photo_mime   || null,
+      // Expand photo_result object into individual fields
+      photo_head_count: headCount,
+      projector_visible: pr.projector_visible != null ? !!pr.projector_visible : null,
+      photo_verified:   headCount != null ? !flagged : null,
+      head_count_diff:  diff,
+      photo_flag:       flagged && diff != null
+        ? (diff > 0 ? `Photo shows ${diff} MORE than reported` : `Photo shows ${absDiff} FEWER than reported`)
+        : null,
+    };
+    // Remove old field names so backend doesn't get confused
+    delete payload.photo_base64;
+    delete payload.photo_mime;
+    delete payload.photo_result;
+
     const resp=await fetch('/api/attendance/submit',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(record)
+      body:JSON.stringify(payload)
     });
     const data=await resp.json();
     return data.saved===true;
