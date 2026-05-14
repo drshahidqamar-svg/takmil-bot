@@ -20,10 +20,9 @@
   --r:16px;
 }
 html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',sans-serif;color:var(--text)}
-body{padding-top:44px}
 
 /* ── SCREENS ── */
-.screen{display:none;position:fixed;top:44px;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;background:var(--bg)}
+.screen{display:none;position:fixed;inset:0;overflow-y:auto;padding:16px;background:var(--bg)}
 .screen.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
 
 /* ── HEADER ── */
@@ -210,14 +209,13 @@ body{padding-top:44px}
   <div style="
     width:100%;
     background:#15803D;
-    padding:0 20px;
+    padding:8px 20px;
     display:flex;
     align-items:center;
     gap:10px;
-    position:fixed;
-    top:0;left:0;right:0;
-    height:44px;
-    z-index:10000;
+    position:sticky;
+    top:0;
+    z-index:9999;
     box-shadow:0 2px 8px rgba(0,0,0,0.15);
   ">
     <a href="/" style="
@@ -608,43 +606,6 @@ body{padding-top:44px}
 </div>
 
 <!-- ── SCREEN: STUDENT LIST ── -->
-<div class="screen" id="s-att-form">
-  <div class="app-header">
-    <div class="logo">TAKMIL</div>
-    <button onclick="showScreen('s-att-home')" style="background:none;border:none;color:white;font-size:22px;cursor:pointer">←</button>
-  </div>
-
-  <!-- Summary bar -->
-  <div style="width:100%;max-width:480px;background:#1a5c36;border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
-    <div>
-      <div style="font-size:14px;font-weight:800;color:#4ade80" id="att-form-school">School</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.65)" id="att-form-date">Date</div>
-    </div>
-    <div style="display:flex;gap:14px;text-align:center">
-      <div><div style="font-size:20px;font-weight:900;color:#4ade80" id="cnt-p">0</div><div style="font-size:9px;color:rgba(255,255,255,0.6);text-transform:uppercase">Present</div></div>
-      <div><div style="font-size:20px;font-weight:900;color:#f87171" id="cnt-a">0</div><div style="font-size:9px;color:rgba(255,255,255,0.6);text-transform:uppercase">Absent</div></div>
-      <div><div style="font-size:20px;font-weight:900;color:#fbbf24" id="cnt-l">0</div><div style="font-size:9px;color:rgba(255,255,255,0.6);text-transform:uppercase">Leave</div></div>
-    </div>
-  </div>
-
-  <!-- Mark all buttons -->
-  <div style="width:100%;max-width:480px;display:flex;gap:8px;margin-bottom:12px">
-    <button onclick="markAll('P')" style="flex:1;padding:10px;background:#dcfce7;border:2px solid #16a34a;color:#15803d;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">✅ All Present</button>
-    <button onclick="markAll('A')" style="flex:1;padding:10px;background:#fee2e2;border:2px solid #dc2626;color:#dc2626;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">❌ All Absent</button>
-  </div>
-
-  <!-- Student list -->
-  <div id="student-list" style="width:100%;max-width:480px"></div>
-
-  <!-- Submit -->
-  <div style="width:100%;max-width:480px;padding:0 0 20px">
-    <button class="btn btn-green" onclick="submitStudentAttendance()" style="font-size:16px;margin-top:4px">
-      ✅ Submit Attendance — جمع کریں
-    </button>
-    <div id="att-form-err" style="color:#dc2626;font-size:13px;font-weight:700;text-align:center;margin-top:10px;display:none"></div>
-  </div>
-</div>
-
 <!-- ── SCREEN: ATTENDANCE SAVED ── -->
 <div class="screen" id="s-att-saved">
   <div class="app-header">
@@ -1423,7 +1384,13 @@ async function syncNow() {
 // ── Helpers ───────────────────────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function showAttendanceHome() {
+  showScreen('s-att-home');
 }
 
 function newStudent() {
