@@ -179,10 +179,6 @@ router.get('/feedback',   (req, res) => res.sendFile(path.join(__dirname, '../fe
       ALTER TABLE daily_feedback
         ADD COLUMN IF NOT EXISTS lms_upload BOOLEAN
     `);
-    await db.pool.query(`
-      ALTER TABLE daily_feedback
-        ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP
-    `);
   } catch(e) {}
 })();
 router.get('/register',   (req, res) => res.sendFile(path.join(__dirname, '../register.html')));
@@ -404,6 +400,115 @@ router.get('/api/feedback/table', async (req, res) => {
   }
 });
 
+// ── Offline Attendance / Feedback Submit ─────────────────────────────────────
+router.post('/api/attendance/submit', async (req, res) => {
+  try {
+    const {
+      teacher_phone, school_name, school_identifier, report_date,
+      grade, level, total_strength, boys, girls,
+      present, absent, leave_count,
+      assembly_conducted, technology_used, technology_reason,
+      cr_media_shared, tech_media_shared, lms_upload,
+      subjects,
+      // Photo verification fields from offline portal
+      photo_head_count, photo_data, photo_mime_type,
+      projector_visible, photo_verified, head_count_diff,
+      photo_flag,
+    } = req.body;
+
+    if (!school_name || !report_date) {
+      return res.json({ saved: false, error: 'Missing school or date' });
+    }
+
+    // Build photo_url if photo data provided
+    const subjectsJson = JSON.stringify(subjects || []);
+
+    // Insert or update
+    const result = await db.pool.query(`
+      INSERT INTO daily_feedback (
+        teacher_phone, school_name, school_identifier, report_date,
+        grade, level, total_strength, boys, girls,
+        present, absent, leave_count,
+        assembly_conducted, technology_used, technology_reason,
+        cr_media_shared, tech_media_shared, lms_upload,
+        subjects,
+        photo_head_count, head_count_diff,
+        photo_verified, photo_flag,
+        projector_visible,
+        photo_data, photo_mime_type, photo_expires_at
+      ) VALUES (
+        $1,$2,$3,$4::date,$5,$6,$7,$8,$9,$10,$11,$12,
+        $13,$14,$15,$16,$17,$18,$19,
+        $20,$21,$22,$23,$24,$25,$26,$27
+      )
+      ON CONFLICT (school_name, report_date) DO UPDATE SET
+        present            = EXCLUDED.present,
+        absent             = EXCLUDED.absent,
+        leave_count        = EXCLUDED.leave_count,
+        total_strength     = EXCLUDED.total_strength,
+        boys               = EXCLUDED.boys,
+        girls              = EXCLUDED.girls,
+        assembly_conducted = EXCLUDED.assembly_conducted,
+        technology_used    = EXCLUDED.technology_used,
+        technology_reason  = EXCLUDED.technology_reason,
+        cr_media_shared    = EXCLUDED.cr_media_shared,
+        tech_media_shared  = EXCLUDED.tech_media_shared,
+        lms_upload         = EXCLUDED.lms_upload,
+        subjects           = EXCLUDED.subjects,
+        grade              = EXCLUDED.grade,
+        level              = EXCLUDED.level,
+        photo_head_count   = COALESCE(EXCLUDED.photo_head_count, daily_feedback.photo_head_count),
+        head_count_diff    = COALESCE(EXCLUDED.head_count_diff,  daily_feedback.head_count_diff),
+        photo_verified     = COALESCE(EXCLUDED.photo_verified,   daily_feedback.photo_verified),
+        photo_flag         = COALESCE(EXCLUDED.photo_flag,       daily_feedback.photo_flag),
+        projector_visible  = COALESCE(EXCLUDED.projector_visible,daily_feedback.projector_visible),
+        photo_data         = COALESCE(EXCLUDED.photo_data,       daily_feedback.photo_data),
+        photo_mime_type    = COALESCE(EXCLUDED.photo_mime_type,  daily_feedback.photo_mime_type),
+        photo_expires_at   = COALESCE(EXCLUDED.photo_expires_at, daily_feedback.photo_expires_at)
+      RETURNING id
+    `, [
+      teacher_phone, school_name, school_identifier || school_name,
+      report_date, grade, parseInt(level)||null,
+      parseInt(total_strength)||0, parseInt(boys)||0, parseInt(girls)||0,
+      parseInt(present)||0, parseInt(absent)||0, parseInt(leave_count)||0,
+      !!assembly_conducted, !!technology_used, technology_reason||null,
+      !!cr_media_shared, !!tech_media_shared, lms_upload!=null?!!lms_upload:null,
+      subjectsJson,
+      photo_head_count!=null?parseInt(photo_head_count):null,
+      head_count_diff!=null?parseInt(head_count_diff):null,
+      photo_verified!=null?!!photo_verified:null,
+      photo_flag||null,
+      projector_visible!=null?!!projector_visible:null,
+      photo_data||null, photo_mime_type||null,
+      photo_data ? new Date(Date.now() + 48*60*60*1000) : null,
+    ]);
+
+    // Update photo_url to point to the new record id
+    if (photo_data && result.rows[0]) {
+      await db.pool.query(
+        `UPDATE daily_feedback SET photo_url=$1 WHERE id=$2`,
+        [`/api/photo/${result.rows[0].id}`, result.rows[0].id]
+      );
+    }
+
+    res.json({ saved: true });
+  } catch(err) {
+    console.log('attendance/submit error:', err.message);
+    res.status(500).json({ saved: false, error: err.message });
+  }
+});
+
+// ── Schools list for offline caching ─────────────────────────────────────────
+router.get('/api/schools/list', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT identifier, name, region, province, teacher_phone
+      FROM schools WHERE identifier IS NOT NULL ORDER BY region, name
+    `);
+    res.json({ schools: r.rows });
+  } catch(err) { res.status(500).json({ schools: [], error: err.message }); }
+});
+
 // ── Student Register API ──────────────────────────────────────────────────────
 router.post('/api/register/import', async (req, res) => {
   try {
@@ -500,70 +605,6 @@ router.post('/api/register/submit', async (req, res) => {
     res.json({ saved: true, total: attendance.length, present, absent, leave });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
-
-// ── Offline portal: submit daily feedback form ────────────────────────────────
-// Called by offline-portal.html when syncing queued feedback records
-router.post('/api/attendance/submit', async (req, res) => {
-  try {
-    const fb = req.body;
-
-    // Build a feedback object matching the saveFeedback schema
-    const record = {
-      teacher_phone:      fb.teacher_phone || fb.school_identifier || 'offline',
-      school_name:        fb.school_name   || null,
-      school_identifier:  fb.school_identifier || null,
-      report_date:        fb.report_date   || new Date().toISOString().split('T')[0],
-      check_in:           fb.check_in      || null,
-      check_out:          fb.check_out     || null,
-      grade:              fb.grade         || null,
-      level:              fb.level         || null,
-      total_strength:     fb.total_strength|| null,
-      boys:               fb.boys          || null,
-      girls:              fb.girls         || null,
-      present:            fb.present       || null,
-      absent:             fb.absent        || null,
-      leave_count:        fb.leave_count   || null,
-      assembly_conducted: fb.assembly_conducted || false,
-      child_of_day:       fb.child_of_day  || null,
-      technology_used:    fb.technology_used || false,
-      technology_reason:  fb.technology_reason || null,
-      cr_media_shared:    fb.cr_media_shared || false,
-      tech_media_shared:  fb.tech_media_shared || false,
-      lms_upload:         fb.lms_upload    || null,
-      projector_shown:    fb.projector_shown || null,
-      subjects:           fb.subjects      || [],
-      raw_message:        fb.raw_message   || JSON.stringify(fb),
-      submitted_at:       fb.submitted_at  || new Date().toISOString(), // capture submission time
-    };
-
-    await db.pool.query(`
-      INSERT INTO daily_feedback
-        (teacher_phone, school_name, school_identifier, report_date,
-         check_in, check_out, grade, level, total_strength,
-         boys, girls, present, absent, leave_count,
-         assembly_conducted, child_of_day, technology_used, technology_reason,
-         cr_media_shared, tech_media_shared, lms_upload, subjects, raw_message,
-         projector_shown, submitted_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
-      ON CONFLICT DO NOTHING`,
-      [record.teacher_phone, record.school_name, record.school_identifier,
-       record.report_date, record.check_in, record.check_out,
-       record.grade, record.level, record.total_strength,
-       record.boys, record.girls, record.present, record.absent, record.leave_count,
-       record.assembly_conducted, record.child_of_day,
-       record.technology_used, record.technology_reason,
-       record.cr_media_shared, record.tech_media_shared, record.lms_upload,
-       JSON.stringify(record.subjects), record.raw_message,
-       record.projector_shown, record.submitted_at]
-    );
-
-    res.json({ saved: true, submitted_at: record.submitted_at });
-  } catch(err) {
-    console.error('offline submit error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
-
 
 router.get('/api/register/history', async (req, res) => {
   try {
