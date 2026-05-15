@@ -189,20 +189,22 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 
 <script>
 const BASE = '';
-const DB_NAME = 'takmil_offline_v3';
+const DB_NAME = 'takmil_offline';
 let db;
 let session = { pin:'', name:'', studentId:'', level:1, subjects:['English','Math','Urdu'], subjectIdx:0, subjectResults:[], currentQuestions:[], answers:[], currentQ:0, currentSubject:'', gps:null };
 
 // ── IndexedDB ─────────────────────────────────────────────────────
 function openDB() {
   return new Promise((res, rej) => {
-    const req = indexedDB.open(DB_NAME, 3);
+    const req = indexedDB.open(DB_NAME, 4);
     req.onupgradeneeded = e => {
       const d = e.target.result;
-      ['questions','pins','results'].forEach(s => {
-        if (!d.objectStoreNames.contains(s))
-          d.createObjectStore(s, { keyPath: s === 'results' ? 'timestamp' : (s === 'pins' ? 'pin_code' : 'question_id') });
-      });
+      if (!d.objectStoreNames.contains('questions'))
+        d.createObjectStore('questions', { keyPath: 'question_id' });
+      if (!d.objectStoreNames.contains('pins'))
+        d.createObjectStore('pins', { keyPath: 'pin' });
+      if (!d.objectStoreNames.contains('results'))
+        d.createObjectStore('results', { autoIncrement: true, keyPath: 'local_id' });
     };
     req.onsuccess = e => { db = e.target.result; res(db); };
     req.onerror = () => rej(req.error);
