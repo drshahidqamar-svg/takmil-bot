@@ -218,12 +218,13 @@ function isOnline() { return navigator.onLine; }
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); const el=document.getElementById(id); if(el)el.classList.add('active'); window.scrollTo(0,0); }
 function showToast(msg,ms=2500){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',ms); }
 
-async function validatePin(pin) {
+async function validatePin(pin, name) {
   if (isOnline()) {
     try {
-      const resp = await fetch(BASE + '/portal/session/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ pin, studentName: session.name, subject: null }) });
+      const resp = await fetch(BASE + '/portal/session/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ pin, studentName: name, subject: null }) });
       const data = await resp.json();
       if (!resp.ok || data.error) return { valid:false, error:data.error };
+      if (data.isMultiSubject) return { valid:true, level:data.level, online:true, multiSubject:true };
       return { valid:true, level:data.level, online:true, sessionId:data.sessionId };
     } catch(e) {}
   }
@@ -234,10 +235,10 @@ async function validatePin(pin) {
   return { valid:true, level:pinRec.level, online:false };
 }
 
-async function getQuestions(subject, level) {
+async function getQuestions(subject, level, name, pin) {
   if (isOnline()) {
     try {
-      const resp = await fetch(BASE + '/portal/session/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ pin:session.pin, studentName:session.name, subject }) });
+      const resp = await fetch(BASE + '/portal/session/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ pin, studentName: name, subject }) });
       const data = await resp.json();
       if (data.questions) return data.questions;
     } catch(e) {}
@@ -262,7 +263,7 @@ async function startAssessment() {
 
   showScreen('s-loading');
   document.getElementById('load-msg').textContent = 'Validating PIN...';
-  const result = await validatePin(pin);
+  const result = await validatePin(pin, name);  // pass name directly
   if (!result.valid) { document.getElementById('home-err').textContent=result.error; document.getElementById('home-err').style.display='block'; showScreen('s-home'); return; }
 
   session.level=result.level;
@@ -276,7 +277,7 @@ async function loadSubject(subject) {
   showScreen('s-loading');
   document.getElementById('load-msg').textContent = 'Loading ' + subject + ' questions...';
   document.getElementById('load-sub').textContent = 'Subject ' + (session.subjectIdx+1) + ' of 3';
-  const questions = await getQuestions(subject, session.level);
+  const questions = await getQuestions(subject, session.level, session.name, session.pin);
   if (!questions || questions.length===0) {
     showToast('No '+subject+' questions for Level '+session.level+'. Skipping...');
     session.subjectResults.push({subject,score:0,total:0,pct:0});
