@@ -246,22 +246,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 <div class="screen active" id="s-home">
   <div class="app-header">
     <div class="logo">TAKMIL</div>
-    <div style="font-size:13px;color:rgba(255,255,255,0.7)">طالب علم امتحان</div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Student Assessment</div>
-    <div class="card-sub">طالب علم امتحان — Enter PIN from your teacher</div>
-    <label class="label">Assessment PIN</label>
-    <input class="input" id="pin-input" type="text" maxlength="10"
-      placeholder="e.g. X4K9MN" autocomplete="off" style="text-transform:uppercase;font-size:22px;letter-spacing:4px;font-weight:900;text-align:center">
-    <label class="label">Your Full Name — اپنا نام</label>
-    <input class="input" id="name-input" type="text" placeholder="Student name">
-    <label class="label">Student ID (optional)</label>
-    <input class="input" id="id-input" type="text" placeholder="Roll number or ID">
-    <div style="height:4px"></div>
-    <button class="btn btn-green" onclick="startAssessment()">Start Assessment — شروع کریں ▶</button>
-    <div id="home-err" style="color:#dc2626;font-size:13px;font-weight:700;text-align:center;margin-top:12px;display:none"></div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.7)">استاد پورٹل</div>
   </div>
 
   <!-- ── TEACHER ATTENDANCE CARD ── -->
@@ -305,6 +290,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
     <button class="btn btn-dark" onclick="downloadForOffline()" style="background:var(--green);color:white">
       ⬇ Download for Offline
     </button>
+  </div>
+
+  <!-- ── STUDENT ASSESSMENT LINK ── -->
+  <div class="card" style="border:2px solid var(--amber);margin-top:0;text-align:center">
+    <div style="font-size:32px;margin-bottom:8px">🎓</div>
+    <div class="card-title" style="font-size:15px;color:var(--amber)">Student Assessment</div>
+    <div class="card-sub" style="margin-bottom:14px">
+      Students use a separate page for assessments.
+    </div>
+    <a href="/student-portal" style="display:block;width:100%;padding:14px;background:var(--amber);color:white;border-radius:12px;font-size:15px;font-weight:800;text-decoration:none;text-align:center">
+      Open Student Portal →
+    </a>
   </div>
 </div>
 
