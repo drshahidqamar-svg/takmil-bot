@@ -237,6 +237,7 @@ body{
   .main{margin-left:0!important}
   .main-grid{grid-template-columns:1fr!important}
   .prov-row{grid-template-columns:1fr!important}
+  .coord-grid{grid-template-columns:1fr 1fr!important}
   .topbar{padding:0 14px;gap:10px}
   .tb-bc{font-size:13px}
   .tb-pills .pill:not(.live){display:none}
@@ -274,16 +275,17 @@ body{
 /* hamburger button in topbar */
 .mob-ham{
   display:none;align-items:center;justify-content:center;
-  width:40px;height:40px;border:none;background:#f0fdf4;
+  width:44px;height:44px;border:none;background:#059669;
   border-radius:10px;cursor:pointer;flex-shrink:0;
-  border:1.5px solid #bbf7d0;
 }
-.mob-ham span{display:block;width:18px;height:2px;background:#059669;
+.mob-ham span{display:block;width:20px;height:2.5px;background:#fff;
   border-radius:2px;position:relative;}
 .mob-ham span::before,.mob-ham span::after{content:'';position:absolute;
-  width:18px;height:2px;background:#059669;border-radius:2px;left:0;}
-.mob-ham span::before{top:-5px}
-.mob-ham span::after{top:5px}
+  width:20px;height:2.5px;background:#fff;border-radius:2px;left:0;}
+.mob-ham span::before{top:-6px}
+.mob-ham span::after{top:6px}
+/* coordinator cards responsive grid */
+.coord-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -482,7 +484,7 @@ body{
 
     <div class="sec-lbl" style="margin-top:4px">Coordinators</div>
 
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:4px">
+    <div class="coord-grid">
 
       <div class="pc" style="background:#4f46e5;color:#fff;min-height:160px">
         <div class="pc-stripe"></div>
