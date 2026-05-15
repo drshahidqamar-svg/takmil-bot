@@ -747,8 +747,36 @@ router.post('/api/web-feedback', async (req, res) => {
     }
   }
 
+  const values = [
+    phone,
+    school.name,
+    school.identifier,
+    body.date,
+    gradeStr,
+    level,
+    parseInt(body.strength)  || null,
+    parseInt(body.boys)      || null,
+    parseInt(body.girls)     || null,
+    parseInt(body.present)   || 0,
+    parseInt(body.absent)    || null,
+    parseInt(body.leave)     || null,
+    body.assembly  === 'Yes',
+    body.tech      === 'Yes',
+    body.techReason || null,
+    body.crMedia   === 'Yes',
+    body.techMedia === 'Yes',
+    body.lms       === 'Yes',
+    JSON.stringify(subjects),
+    `web_form | ${body.schoolType || ''} | ${new Date().toISOString()}`,
+    null,        // projector_shown — not collected by web form
+    photoData,
+    photoMime,
+    photoExpires,
+  ];
+
   try {
-    const result = await db.pool.query(`
+    // Step 1: Try INSERT — use ON CONFLICT DO NOTHING (same approach as WhatsApp bot)
+    const insertResult = await db.pool.query(`
       INSERT INTO daily_feedback (
         teacher_phone, school_name, school_identifier, report_date,
         grade, level, total_strength, boys, girls,
@@ -767,58 +795,68 @@ router.post('/api/web-feedback', async (req, res) => {
         $19,$20,$21,
         $22,$23,$24
       )
-      ON CONFLICT (school_name, report_date) DO UPDATE SET
-        present           = EXCLUDED.present,
-        absent            = EXCLUDED.absent,
-        leave_count       = EXCLUDED.leave_count,
-        total_strength    = EXCLUDED.total_strength,
-        boys              = EXCLUDED.boys,
-        girls             = EXCLUDED.girls,
-        assembly_conducted= EXCLUDED.assembly_conducted,
-        technology_used   = EXCLUDED.technology_used,
-        technology_reason = EXCLUDED.technology_reason,
-        cr_media_shared   = EXCLUDED.cr_media_shared,
-        tech_media_shared = EXCLUDED.tech_media_shared,
-        lms_upload        = EXCLUDED.lms_upload,
-        subjects          = EXCLUDED.subjects,
-        grade             = EXCLUDED.grade,
-        level             = EXCLUDED.level,
-        raw_message       = EXCLUDED.raw_message,
-        photo_data        = COALESCE(EXCLUDED.photo_data,       daily_feedback.photo_data),
-        photo_mime_type   = COALESCE(EXCLUDED.photo_mime_type,  daily_feedback.photo_mime_type),
-        photo_expires_at  = COALESCE(EXCLUDED.photo_expires_at, daily_feedback.photo_expires_at)
+      ON CONFLICT DO NOTHING
       RETURNING id`,
-      [
-        phone,
-        school.name,
-        school.identifier,
-        body.date,
-        gradeStr,
-        level,
-        parseInt(body.strength)  || null,
-        parseInt(body.boys)      || null,
-        parseInt(body.girls)     || null,
-        parseInt(body.present)   || 0,
-        parseInt(body.absent)    || null,
-        parseInt(body.leave)     || null,
-        body.assembly  === 'Yes',
-        body.tech      === 'Yes',
-        body.techReason || null,
-        body.crMedia   === 'Yes',
-        body.techMedia === 'Yes',
-        body.lms       === 'Yes',
-        JSON.stringify(subjects),
-        `web_form | ${body.schoolType || ''} | ${new Date().toISOString()}`,
-        null,        // projector_shown — not collected by web form
-        photoData,
-        photoMime,
-        photoExpires,
-      ]
+      values
     );
 
-    // Set photo_url after insert
-    if (photoData && result.rows[0]) {
-      const feedbackId = result.rows[0].id;
+    let feedbackId = insertResult.rows[0]?.id;
+
+    // Step 2: If conflict (row already exists for this school+date), UPDATE it
+    if (!feedbackId) {
+      const updateResult = await db.pool.query(`
+        UPDATE daily_feedback SET
+          present            = $1,
+          absent             = $2,
+          leave_count        = $3,
+          total_strength     = $4,
+          boys               = $5,
+          girls              = $6,
+          assembly_conducted = $7,
+          technology_used    = $8,
+          technology_reason  = $9,
+          cr_media_shared    = $10,
+          tech_media_shared  = $11,
+          lms_upload         = $12,
+          subjects           = $13,
+          grade              = $14,
+          level              = $15,
+          raw_message        = $16,
+          photo_data         = COALESCE($17, photo_data),
+          photo_mime_type    = COALESCE($18, photo_mime_type),
+          photo_expires_at   = COALESCE($19, photo_expires_at)
+        WHERE school_name = $20
+          AND report_date::date = $21::date
+        RETURNING id`,
+        [
+          parseInt(body.present) || 0,
+          parseInt(body.absent)  || null,
+          parseInt(body.leave)   || null,
+          parseInt(body.strength) || null,
+          parseInt(body.boys)    || null,
+          parseInt(body.girls)   || null,
+          body.assembly  === 'Yes',
+          body.tech      === 'Yes',
+          body.techReason || null,
+          body.crMedia   === 'Yes',
+          body.techMedia === 'Yes',
+          body.lms       === 'Yes',
+          JSON.stringify(subjects),
+          gradeStr,
+          level,
+          `web_form | ${body.schoolType || ''} | ${new Date().toISOString()}`,
+          photoData,
+          photoMime,
+          photoExpires,
+          school.name,
+          body.date,
+        ]
+      );
+      feedbackId = updateResult.rows[0]?.id;
+    }
+
+    // Step 3: Set photo_url if photo was uploaded
+    if (photoData && feedbackId) {
       await db.pool.query(
         `UPDATE daily_feedback SET photo_url=$1 WHERE id=$2`,
         [`/api/photo/${feedbackId}`, feedbackId]

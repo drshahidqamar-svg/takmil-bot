@@ -1155,18 +1155,33 @@ async function submitFeedback() {
       body: JSON.stringify(payload)
     });
     const result = await res.json();
-    if (result.success !== false) {
+
+    if (result.saved) {
+      // ✅ Server confirmed save
       localStorage.removeItem('takmil_draft_' + currentPhone);
       showSuccessScreen(data, false);
     } else {
-      throw new Error(result.message || 'Server error');
+      // ❌ Server returned an error — show it, don't silently queue
+      const msg = result.error || result.message || 'Server error';
+      showToast('❌ ' + msg);
+      btn.disabled = false;
+      btn.innerHTML = 'Submit Feedback';
     }
   } catch(e) {
-    // Queue for retry
-    queueSubmission(payload);
-    localStorage.removeItem('takmil_draft_' + currentPhone);
-    showSuccessScreen(data, true);
+    // Network failure — queue for retry when back online
+    if (!navigator.onLine) {
+      queueSubmission(payload);
+      localStorage.removeItem('takmil_draft_' + currentPhone);
+      showSuccessScreen(data, true);
+    } else {
+      showToast('❌ Could not reach server. Check your connection.');
+      btn.disabled = false;
+      btn.innerHTML = 'Submit Feedback';
+    }
   } finally {
+    // Note: btn is re-enabled inside each branch above on error paths;
+    // on success showSuccessScreen hides the bar so it doesn't matter
+    if (!btn.disabled) { /* already handled */ }
     btn.disabled = false;
     btn.innerHTML = 'Submit Feedback';
   }
