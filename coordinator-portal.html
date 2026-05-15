@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>TAKMIL — Coordinator Portal</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -27,6 +29,29 @@ body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
 .card h3{font-size:15px;font-weight:700;color:#1a3a2a;margin-bottom:14px;padding-bottom:10px;border-bottom:1.5px solid #f1f5f9}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+/* ── MOBILE FIXES ── */
+@media(max-width:600px){
+  body{font-size:15px}
+  .container{padding:14px 12px}
+  .header{padding:12px 16px}
+  .logo{font-size:18px}
+  .tabs{gap:2px;padding:4px}
+  .tab{padding:11px 6px;font-size:13px}
+  .card{padding:16px 14px}
+  .card h3{font-size:15px}
+  .field select,.field input{padding:13px 14px;font-size:15px;min-height:48px}
+  .btn{min-height:50px;font-size:15px;padding:14px}
+  .tbl{font-size:12px}
+  .tbl th,.tbl td{padding:10px 8px}
+  .stat-row{font-size:14px;padding:12px 0}
+  .welcome-bar{flex-direction:column;align-items:flex-start;gap:4px;padding:14px}
+  .welcome-name{font-size:17px}
+  .pin-code{font-size:30px;letter-spacing:4px}
+  #login-screen{margin:20px auto;padding:24px 18px;border-radius:14px}
+  /* Home bar */
+  .home-bar-link{font-size:14px!important;padding:8px 16px!important;min-height:40px}
+  .home-bar-title{font-size:13px!important}
+}
 .welcome-bar{background:white;border-radius:12px;padding:14px 20px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
 .welcome-name{font-weight:700;font-size:16px;color:#1a3a2a}
 .welcome-region{font-size:13px;color:#64748b}

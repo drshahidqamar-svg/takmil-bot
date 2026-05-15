@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>TAKMIL Monitoring Hub</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -229,6 +231,59 @@ body{
   .main-grid{grid-template-columns:1fr}
   .prov-row{grid-template-columns:1fr 1fr}
 }
+/* ── MOBILE (phones) ── */
+@media(max-width:600px){
+  .sidebar{display:none}
+  .main{margin-left:0!important}
+  .main-grid{grid-template-columns:1fr!important}
+  .prov-row{grid-template-columns:1fr!important}
+  .topbar{padding:0 14px;gap:10px}
+  .tb-bc{font-size:13px}
+  .tb-pills .pill:not(.live){display:none}
+  .content{padding:14px 12px 32px}
+  .page-header h1{font-size:20px}
+  .page-header p{font-size:13px}
+  /* hamburger */
+  .mob-ham{display:flex}
+}
+/* Mobile drawer overlay */
+.mob-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);
+  z-index:998;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+}
+.mob-overlay.open{display:block}
+.mob-drawer{
+  position:fixed;top:0;left:0;bottom:0;width:80%;max-width:300px;
+  background:#ecfdf5;z-index:999;
+  transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  display:flex;flex-direction:column;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.mob-drawer.open{transform:translateX(0)}
+.mob-drawer-brand{
+  height:58px;display:flex;align-items:center;gap:11px;
+  padding:0 18px;border-bottom:1px solid #bbf7d0;flex-shrink:0;
+  justify-content:space-between;
+}
+.mob-close{
+  width:36px;height:36px;border:none;background:transparent;
+  font-size:22px;color:#059669;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;border-radius:8px;
+}
+.mob-close:active{background:#d1fae5}
+/* hamburger button in topbar */
+.mob-ham{
+  display:none;align-items:center;justify-content:center;
+  width:40px;height:40px;border:none;background:#f0fdf4;
+  border-radius:10px;cursor:pointer;flex-shrink:0;
+  border:1.5px solid #bbf7d0;
+}
+.mob-ham span{display:block;width:18px;height:2px;background:#059669;
+  border-radius:2px;position:relative;}
+.mob-ham span::before,.mob-ham span::after{content:'';position:absolute;
+  width:18px;height:2px;background:#059669;border-radius:2px;left:0;}
+.mob-ham span::before{top:-5px}
+.mob-ham span::after{top:5px}
 </style>
 </head>
 <body>
@@ -283,6 +338,7 @@ body{
 
 <div class="main">
   <div class="topbar">
+    <button class="mob-ham" onclick="openMobDrawer()" aria-label="Open menu"><span></span></button>
     <div class="tb-bc">
       <span>TAKMIL</span><span class="sep">/</span><span class="cur">Monitoring Hub</span>
     </div>
@@ -489,7 +545,53 @@ body{
   </footer>
 </div>
 
+<!-- Mobile drawer -->
+<div class="mob-overlay" id="mob-overlay" onclick="closeMobDrawer()"></div>
+<nav class="mob-drawer" id="mob-drawer">
+  <div class="mob-drawer-brand">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="sb-logo">T</div>
+      <div class="sb-name"><span>TAKMIL</span><span>Foundation · Pakistan</span></div>
+    </div>
+    <button class="mob-close" onclick="closeMobDrawer()">✕</button>
+  </div>
+  <div class="sidebar-section" style="display:block">Services</div>
+  <a href="/portal"          class="sidebar-item"><i class="ti ti-device-tablet"></i><span>Student Portal</span></a>
+  <a href="/teacher-portal"  class="sidebar-item"><i class="ti ti-chalkboard"></i><span>Teacher Portal</span></a>
+  <a href="/offline-portal"  class="sidebar-item"><i class="ti ti-wifi-off"></i><span>Offline Portal</span></a>
+  <a href="/attendance"      class="sidebar-item"><i class="ti ti-calendar-check"></i><span>Attendance</span></a>
+  <a href="/register"        class="sidebar-item"><i class="ti ti-user-plus"></i><span>Student Register</span></a>
+  <a href="/pin-generator"   class="sidebar-item"><i class="ti ti-key"></i><span>PIN Generator</span></a>
+  <a href="/feedback-table"  class="sidebar-item"><i class="ti ti-message-report"></i><span>Feedback</span></a>
+  <a href="/compliance"      class="sidebar-item"><i class="ti ti-clipboard-check"></i><span>Compliance</span></a>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section" style="display:block">Management</div>
+  <a href="/coordinator"          class="sidebar-item"><i class="ti ti-users-group"></i><span>Coordinator Portal</span></a>
+  <a href="/admin-portal"         class="sidebar-item"><i class="ti ti-shield-check"></i><span>Admin Bot Portal</span></a>
+  <a href="/assessment-dashboard" class="sidebar-item"><i class="ti ti-chart-bar"></i><span>Assessment Dashboard</span></a>
+  <a href="/question-bank"        class="sidebar-item"><i class="ti ti-list-check"></i><span>Question Bank</span></a>
+  <a href="/lessons-admin"        class="sidebar-item"><i class="ti ti-book-2"></i><span>Lessons Monitor</span></a>
+  <a href="/level-advancement"    class="sidebar-item"><i class="ti ti-award"></i><span>Level Advancement</span></a>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section" style="display:block">Reports</div>
+  <a href="/analytics"            class="sidebar-item active"><i class="ti ti-chart-dots"></i><span>Analytics</span></a>
+  <a href="/attendance-dashboard" class="sidebar-item"><i class="ti ti-report-analytics"></i><span>Attendance Analytics</span></a>
+  <div class="sidebar-footer" style="display:block;margin-top:auto">
+    <strong>TAKMIL Foundation</strong><br>Teach a Kid, Make Individual Life<br>Pakistan · 4 Provinces
+  </div>
+</nav>
+
 <script>
+  function openMobDrawer(){
+    document.getElementById('mob-drawer').classList.add('open');
+    document.getElementById('mob-overlay').classList.add('open');
+    document.body.style.overflow='hidden';
+  }
+  function closeMobDrawer(){
+    document.getElementById('mob-drawer').classList.remove('open');
+    document.getElementById('mob-overlay').classList.remove('open');
+    document.body.style.overflow='';
+  }
   function tick(){
     document.getElementById('clock').textContent =
       new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'});
