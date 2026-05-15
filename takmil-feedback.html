@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a5c38">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>TAKMIL · Daily Feedback</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-deep: #0f3d22;
+    --green-mid:  #1a5c38;
+    --green-bright: #2d8653;
+    --green-light: #e6f4ec;
+    --green-tint: #f0f9f4;
+    --gold: #c9952a;
+    --gold-light: #fdf4e3;
+    --red: #c0392b;
+    --red-light: #fdecea;
+    --text: #1c2b22;
+    --text-muted: #5a7263;
+    --border: #cde3d6;
+    --white: #ffffff;
+    --card-shadow: 0 2px 16px rgba(15,61,34,0.10);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--green-tint);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: var(--green-deep);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  .app-logo {
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 1px;
+  }
+  .app-logo span { color: var(--gold); }
+  .user-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .user-pill:hover { background: rgba(255,255,255,0.2); }
+  .user-pill svg { width:16px; height:16px; fill:#fff; flex-shrink:0; }
+  .user-pill span { font-size: 13px; color: #fff; font-weight: 600; }
+
+  /* Offline banner */
+  #offline-banner {
+    display: none;
+    background: var(--gold);
+    color: #fff;
+    text-align: center;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  #offline-banner.show { display: block; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── LOGIN ── */
+  .login-wrap {
+    min-height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+  .login-card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 36px 28px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: var(--card-shadow);
+    text-align: center;
+  }
+  .login-icon {
+    width: 72px; height: 72px;
+    background: var(--green-light);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+  }
+  .login-icon svg { width:36px; height:36px; fill: var(--green-mid); }
+  .login-card h2 { font-size: 22px; font-weight: 800; color: var(--green-deep); margin-bottom: 6px; }
+  .login-card p { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; line-height: 1.5; }
+
+  .phone-row {
+    display: flex;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .phone-row:focus-within { border-color: var(--green-bright); }
+  .phone-prefix {
+    background: var(--green-light);
+    padding: 0 14px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--green-deep);
+    display: flex; align-items: center;
+    border-right: 2px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+  }
+  .phone-row input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 13px 14px;
+    font-size: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    color: var(--text);
+    background: transparent;
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--green-mid);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-size: 16px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary:hover { background: var(--green-bright); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { background: #a0bfae; cursor: not-allowed; }
+  .btn-primary svg { width:18px; height:18px; fill:#fff; }
+
+  .error-msg {
+    color: var(--red);
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 10px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* ── FORM ── */
+  .form-wrap {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px 16px 100px;
+  }
+
+  .section-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 8px rgba(15,61,34,0.07);
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--green-bright);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  label .req { color: var(--red); margin-left: 2px; }
+
+  input[type=text], input[type=date], input[type=number], select, textarea {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    font-size: 15px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--green-bright); }
+  textarea { resize: vertical; min-height: 70px; font-size: 14px; }
+
+  /* Toggle row */
+  .toggle-group {
+    display: flex;
+    gap: 8px;
+  }
+  .toggle-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .toggle-btn.active-yes {
+    background: var(--green-light);
+    border-color: var(--green-bright);
+    color: var(--green-deep);
+  }
+  .toggle-btn.active-no {
+    background: var(--red-light);
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .toggle-btn.active-type {
+    background: var(--green-deep);
+    border-color: var(--green-deep);
+    color: #fff;
+  }
+
+  /* Row grid */
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  /* Reason field */
+  .reason-field {
+    margin-top: 10px;
+    display: none;
+  }
+  .reason-field.show { display: block; }
+
+  /* Subject block */
+  .subject-block {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .subject-block:last-child { margin-bottom: 0; }
+  .subject-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--green-deep);
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .subject-emoji { font-size: 16px; }
+
+  /* Photo upload */
+  .photo-drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--green-tint);
+  }
+  .photo-drop-zone:hover, .photo-drop-zone.drag-over {
+    border-color: var(--green-bright);
+    background: var(--green-light);
+  }
+  .photo-drop-zone input[type=file] { display: none; }
+  .drop-icon { font-size: 36px; margin-bottom: 8px; }
+  .drop-text { font-size: 14px; font-weight: 700; color: var(--text-muted); }
+  .drop-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  .photo-preview {
+    position: relative;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    display: none;
+  }
+  .photo-preview.show { display: block; }
+  .photo-preview img {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    display: block;
+    border-radius: var(--radius-sm);
+  }
+  .photo-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .btn-photo {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-replace {
+    background: var(--green-light);
+    color: var(--green-deep);
+  }
+  .btn-replace:hover { background: #c5e8d3; }
+  .btn-delete {
+    background: var(--red-light);
+    color: var(--red);
+  }
+  .btn-delete:hover { background: #f5c6c3; }
+
+  /* Submit bar */
+  .submit-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    gap: 10px;
+    z-index: 90;
+    box-shadow: 0 -4px 20px rgba(15,61,34,0.1);
+  }
+  .btn-save-draft {
+    background: var(--green-light);
+    color: var(--green-deep);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 13px 16px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .btn-save-draft:hover { background: #c5e8d3; }
+  .btn-submit {
+    flex: 1;
+    background: var(--green-mid);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 13px;
+    font-size: 16px;
+    font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-submit:hover { background: var(--green-bright); }
+  .btn-submit:disabled { background: #a0bfae; cursor: not-allowed; }
+
+  /* ── SUCCESS ── */
+  .success-wrap {
+    min-height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .success-icon {
+    font-size: 72px;
+    margin-bottom: 20px;
+    animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .success-wrap h2 { font-size: 26px; font-weight: 900; color: var(--green-deep); margin-bottom: 10px; }
+  .success-wrap p { font-size: 15px; color: var(--text-muted); line-height: 1.6; max-width: 320px; }
+  .success-details {
+    background: var(--green-light);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 20px 0;
+    text-align: left;
+    width: 100%;
+    max-width: 340px;
+  }
+  .success-details div { font-size: 13px; color: var(--green-deep); font-weight: 700; margin-bottom: 6px; }
+  .success-details div:last-child { margin-bottom: 0; }
+  .success-details span { font-weight: 400; color: var(--text-muted); }
+
+  /* Draft badge */
+  .draft-badge {
+    display: none;
+    background: var(--gold);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .draft-badge.show { display: inline-block; }
+
+  /* Spinner */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2.5px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--green-deep);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  select option { font-weight: 600; }
+
+  /* Queue indicator */
+  .queue-dot {
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 6px;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  @media (max-width: 380px) {
+    .row-3 { grid-template-columns: 1fr 1fr; }
+    .section-card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="offline-banner">⚡ You're offline — your submission will be saved and sent when reconnected</div>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="app-logo">TAK<span>MIL</span></div>
+  <div class="user-pill" id="user-pill" onclick="handleLogout()" style="display:none">
+    <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+    <span id="user-phone-label">–</span>
+  </div>
+</header>
+
+<!-- ──────── LOGIN SCREEN ──────── -->
+<div id="screen-login" class="screen active">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-icon">
+        <svg viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.29 21 3 13.71 3 4.5c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.24 1.02l-2.21 2.2z"/></svg>
+      </div>
+      <h2>Teacher Login</h2>
+      <p>Enter the phone number registered<br>with your TAKMIL school account</p>
+      <div class="phone-row">
+        <div class="phone-prefix">+92</div>
+        <input type="tel" id="phone-input" placeholder="3001234567" maxlength="10" inputmode="numeric"
+          onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+          oninput="this.value=this.value.replace(/\D/g,'')"
+          onkeydown="if(event.key==='Enter') doLogin()">
+      </div>
+      <button class="btn-primary" id="login-btn" onclick="doLogin()">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        Verify & Continue
+      </button>
+      <div class="error-msg" id="login-error">Phone not found. Check with your admin.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ──────── FEEDBACK FORM ──────── -->
+<div id="screen-form" class="screen">
+  <div class="form-wrap">
+
+    <!-- BASIC INFO -->
+    <div class="section-card">
+      <div class="section-title">📋 Basic Information</div>
+
+      <div class="field">
+        <label>Feedback Date <span class="req">*</span></label>
+        <input type="date" id="f-date">
+      </div>
+
+      <!-- Grade Type toggle -->
+      <div class="field">
+        <label>School Type <span class="req">*</span></label>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="type-primary" onclick="selectType('Primary')">🏫 Primary</button>
+          <button class="toggle-btn" id="type-elementary" onclick="selectType('Elementary')">🎓 Elementary</button>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label>Grade <span class="req">*</span></label>
+          <select id="f-grade">
+            <option value="">— Select —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Level <span class="req">*</span></label>
+          <select id="f-level">
+            <option value="">— Select —</option>
+            <option>1</option><option>2</option><option>3</option>
+            <option>4</option><option>5</option><option>6</option>
+            <option>7</option><option>8</option><option>9</option><option>10</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="section-card">
+      <div class="section-title">👥 Attendance</div>
+
+      <div class="field">
+        <label>Total Strength <span class="req">*</span></label>
+        <input type="number" id="f-strength" placeholder="e.g. 25" min="0">
+      </div>
+
+      <div class="row-3">
+        <div class="field">
+          <label>Boys</label>
+          <input type="number" id="f-boys" placeholder="0" min="0">
+        </div>
+        <div class="field">
+          <label>Girls</label>
+          <input type="number" id="f-girls" placeholder="0" min="0">
+        </div>
+        <div class="field">
+          <label>Leave</label>
+          <input type="number" id="f-leave" placeholder="0" min="0">
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label>Present <span class="req">*</span></label>
+          <input type="number" id="f-present" placeholder="0" min="0">
+        </div>
+        <div class="field">
+          <label>Absent</label>
+          <input type="number" id="f-absent" placeholder="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- TECHNOLOGY & ACTIVITY -->
+    <div class="section-card">
+      <div class="section-title">🖥️ Technology & Activity</div>
+
+      <div class="field">
+        <label>LMS Attendance Upload</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" onclick="toggleYesNo('lms',true,this)">✓ Yes</button>
+          <button class="toggle-btn" onclick="toggleYesNo('lms',false,this)">✗ No</button>
+        </div>
+        <input type="hidden" id="f-lms" value="">
+      </div>
+
+      <div class="field">
+        <label>Technology Used</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" onclick="toggleYesNo('tech',true,this)">✓ Yes</button>
+          <button class="toggle-btn" onclick="toggleYesNo('tech',false,this)">✗ No</button>
+        </div>
+        <input type="hidden" id="f-tech" value="">
+        <div class="reason-field" id="tech-reason-wrap">
+          <input type="text" id="f-tech-reason" placeholder="Reason if No (e.g. USB not available)">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Classroom Media</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" onclick="toggleYesNo('crmedia',true,this)">✓ Yes</button>
+          <button class="toggle-btn" onclick="toggleYesNo('crmedia',false,this)">✗ No</button>
+        </div>
+        <input type="hidden" id="f-crmedia" value="">
+      </div>
+
+      <div class="field">
+        <label>Technology Media</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" onclick="toggleYesNo('techmedia',true,this)">✓ Yes</button>
+          <button class="toggle-btn" onclick="toggleYesNo('techmedia',false,this)">✗ No</button>
+        </div>
+        <input type="hidden" id="f-techmedia" value="">
+      </div>
+
+      <div class="field">
+        <label>Assembly Conducted</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" onclick="toggleYesNo('assembly',true,this)">✓ Yes</button>
+          <button class="toggle-btn" onclick="toggleYesNo('assembly',false,this)">✗ No</button>
+        </div>
+        <input type="hidden" id="f-assembly" value="">
+      </div>
+    </div>
+
+    <!-- SUBJECTS -->
+    <div class="section-card">
+      <div class="section-title">📚 Subjects Taught</div>
+
+      <!-- English -->
+      <div class="subject-block">
+        <div class="subject-label"><span class="subject-emoji">🇬🇧</span> English</div>
+        <div class="field"><label>Unit Name</label><input type="text" id="eng-unit-name" placeholder="e.g. My Homeland"></div>
+        <div class="row-2">
+          <div class="field"><label>Unit #</label><input type="number" id="eng-unit" placeholder="2" min="1"></div>
+          <div class="field"><label>Page No.</label><input type="number" id="eng-page" placeholder="14" min="1"></div>
+        </div>
+        <div class="field"><label>Lesson</label><input type="text" id="eng-lesson" placeholder="e.g. 2.10"></div>
+        <div class="field"><label>Topic</label><input type="text" id="eng-topic" placeholder="e.g. Write an essay on justice"></div>
+        <div class="field">
+          <label>Activity</label>
+          <div class="toggle-group">
+            <button class="toggle-btn" onclick="toggleYesNo('eng-act',true,this)">✓ Yes</button>
+            <button class="toggle-btn" onclick="toggleYesNo('eng-act',false,this)">✗ No</button>
+          </div>
+          <input type="hidden" id="f-eng-act" value="">
+        </div>
+      </div>
+
+      <!-- Math -->
+      <div class="subject-block">
+        <div class="subject-label"><span class="subject-emoji">🔢</span> Mathematics</div>
+        <div class="field"><label>Unit Name</label><input type="text" id="math-unit-name" placeholder="e.g. Real Numbers"></div>
+        <div class="row-2">
+          <div class="field"><label>Unit #</label><input type="number" id="math-unit" placeholder="1" min="1"></div>
+          <div class="field"><label>Page No.</label><input type="number" id="math-page" placeholder="11" min="1"></div>
+        </div>
+        <div class="field"><label>Lesson</label><input type="text" id="math-lesson" placeholder="e.g. 1.6"></div>
+        <div class="field"><label>Topic</label><input type="text" id="math-topic" placeholder="e.g. Properties of real numbers"></div>
+        <div class="field">
+          <label>Activity</label>
+          <div class="toggle-group">
+            <button class="toggle-btn" onclick="toggleYesNo('math-act',true,this)">✓ Yes</button>
+            <button class="toggle-btn" onclick="toggleYesNo('math-act',false,this)">✗ No</button>
+          </div>
+          <input type="hidden" id="f-math-act" value="">
+        </div>
+      </div>
+
+      <!-- Urdu -->
+      <div class="subject-block">
+        <div class="subject-label"><span class="subject-emoji">📖</span> Urdu · اردو</div>
+        <div class="field"><label>Unit Name</label><input type="text" id="urdu-unit-name" placeholder="اردو یونٹ کا نام" dir="auto"></div>
+        <div class="row-2">
+          <div class="field"><label>Unit #</label><input type="number" id="urdu-unit" placeholder="2" min="1"></div>
+          <div class="field"><label>Page No.</label><input type="number" id="urdu-page" placeholder="11" min="1"></div>
+        </div>
+        <div class="field"><label>Lesson</label><input type="text" id="urdu-lesson" placeholder="e.g. 2.1" dir="auto"></div>
+        <div class="field"><label>Topic</label><input type="text" id="urdu-topic" placeholder="سبق کا عنوان" dir="auto"></div>
+        <div class="field">
+          <label>Activity</label>
+          <div class="toggle-group">
+            <button class="toggle-btn" onclick="toggleYesNo('urdu-act',true,this)">✓ Yes</button>
+            <button class="toggle-btn" onclick="toggleYesNo('urdu-act',false,this)">✗ No</button>
+          </div>
+          <input type="hidden" id="f-urdu-act" value="">
+        </div>
+      </div>
+    </div>
+
+    <!-- CLASSROOM PHOTO -->
+    <div class="section-card">
+      <div class="section-title">📸 Classroom Photo</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.5;">
+        Take a clear photo showing students' heads/faces. If a projector is on, include it in the frame.
+      </p>
+
+      <!-- Drop zone -->
+      <div class="photo-drop-zone" id="photo-drop-zone" onclick="document.getElementById('photo-file').click()"
+        ondragover="e=event;e.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handlePhotoDrop(event)">
+        <input type="file" id="photo-file" accept="image/*" capture="environment" onchange="handlePhotoSelect(event)">
+        <div class="drop-icon">📷</div>
+        <div class="drop-text">Tap to take or upload photo</div>
+        <div class="drop-hint">JPEG / PNG · max 10 MB</div>
+      </div>
+
+      <!-- Preview -->
+      <div class="photo-preview" id="photo-preview">
+        <img id="photo-img" src="" alt="Classroom photo">
+        <div class="photo-actions">
+          <button class="btn-photo btn-replace" onclick="document.getElementById('photo-file').click()">
+            🔄 Replace Photo
+          </button>
+          <button class="btn-photo btn-delete" onclick="deletePhoto()">
+            🗑 Remove
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /form-wrap -->
+
+  <!-- SUBMIT BAR -->
+  <div class="submit-bar">
+    <button class="btn-save-draft" onclick="saveDraft()">💾 Save Draft</button>
+    <button class="btn-submit" id="submit-btn" onclick="submitFeedback()">
+      Submit Feedback
+    </button>
+  </div>
+</div>
+
+<!-- ──────── SUCCESS SCREEN ──────── -->
+<div id="screen-success" class="screen">
+  <div class="success-wrap">
+    <div class="success-icon">✅</div>
+    <h2>Feedback Sent!</h2>
+    <p>Your daily feedback has been recorded successfully.</p>
+    <div class="success-details" id="success-details"></div>
+    <button class="btn-primary" style="max-width:300px;margin-top:8px" onclick="newSubmission()">
+      Submit Another Day
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//   CONFIG — update this to your backend URL
+// ══════════════════════════════════════════════
+const API_BASE = 'https://takmil-bot-production-0f51.up.railway.app';
+
+// ══════════════════════════════════════════════
+//   STATE
+// ══════════════════════════════════════════════
+let currentPhone = null;
+let currentSchool = null;
+let photoBase64 = null;
+let photoFile = null;
+let schoolType = null;
+let submissionQueue = [];
+
+// ══════════════════════════════════════════════
+//   INIT
+// ══════════════════════════════════════════════
+window.addEventListener('load', () => {
+  // Set today's date
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const dd = String(today.getDate()).padStart(2,'0');
+  document.getElementById('f-date').value = `${yyyy}-${mm}-${dd}`;
+
+  // Check saved session
+  const saved = localStorage.getItem('takmil_session');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      currentPhone = s.phone;
+      currentSchool = s.school;
+      activateFormScreen();
+      loadDraft();
+    } catch(e) { localStorage.removeItem('takmil_session'); }
+  }
+
+  // Offline detection
+  updateOnlineStatus();
+  window.addEventListener('online', () => { updateOnlineStatus(); flushQueue(); });
+  window.addEventListener('offline', updateOnlineStatus);
+
+  // Load queue
+  const q = localStorage.getItem('takmil_queue');
+  if (q) try { submissionQueue = JSON.parse(q); } catch(e) {}
+});
+
+function updateOnlineStatus() {
+  const banner = document.getElementById('offline-banner');
+  if (navigator.onLine) {
+    banner.classList.remove('show');
+  } else {
+    banner.classList.add('show');
+  }
+}
+
+// ══════════════════════════════════════════════
+//   AUTH
+// ══════════════════════════════════════════════
+async function doLogin() {
+  const input = document.getElementById('phone-input').value.trim();
+  if (input.length < 9 || input.length > 11) {
+    showError('Enter a valid Pakistani mobile number (without +92)');
+    return;
+  }
+  const phone = '+92' + input;
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Verifying...';
+  hideError();
+
+  if (!navigator.onLine) {
+    // Offline: allow cached login
+    const cached = localStorage.getItem('takmil_known_' + phone);
+    if (cached) {
+      const c = JSON.parse(cached);
+      currentPhone = phone;
+      currentSchool = c.school;
+      saveSession();
+      activateFormScreen();
+      loadDraft();
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Verify & Continue';
+      return;
+    } else {
+      showError('Offline — cannot verify new phone. Please connect to the internet for first-time login.');
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Verify & Continue';
+      return;
+    }
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/verify-phone`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({phone})
+    });
+    const data = await res.json();
+    if (data.success && data.school) {
+      currentPhone = phone;
+      currentSchool = data.school;
+      // Cache for offline use
+      localStorage.setItem('takmil_known_' + phone, JSON.stringify({school: data.school}));
+      saveSession();
+      activateFormScreen();
+      loadDraft();
+    } else {
+      showError(data.message || 'Phone not registered. Contact your admin.');
+    }
+  } catch(e) {
+    // Network error — try local cache
+    const cached = localStorage.getItem('takmil_known_' + phone);
+    if (cached) {
+      const c = JSON.parse(cached);
+      currentPhone = phone;
+      currentSchool = c.school;
+      saveSession();
+      activateFormScreen();
+      loadDraft();
+    } else {
+      showError('Could not connect to server. Please try again.');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Verify & Continue';
+  }
+}
+
+function saveSession() {
+  localStorage.setItem('takmil_session', JSON.stringify({phone: currentPhone, school: currentSchool}));
+}
+
+function handleLogout() {
+  if (!confirm('Log out? Your draft will be saved.')) return;
+  saveDraft();
+  currentPhone = null; currentSchool = null;
+  localStorage.removeItem('takmil_session');
+  showScreen('login');
+  document.getElementById('user-pill').style.display = 'none';
+  document.getElementById('phone-input').value = '';
+}
+
+function activateFormScreen() {
+  showScreen('form');
+  document.getElementById('user-pill').style.display = 'flex';
+  const label = document.getElementById('user-phone-label');
+  label.textContent = currentSchool ? currentSchool.substring(0,18) : currentPhone;
+}
+
+function showError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideError() {
+  document.getElementById('login-error').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════
+//   SCHOOL TYPE & GRADE
+// ══════════════════════════════════════════════
+function selectType(type) {
+  schoolType = type;
+  document.getElementById('type-primary').className   = 'toggle-btn' + (type==='Primary' ? ' active-type' : '');
+  document.getElementById('type-elementary').className = 'toggle-btn' + (type==='Elementary' ? ' active-type' : '');
+
+  const gradeSelect = document.getElementById('f-grade');
+  gradeSelect.innerHTML = '<option value="">— Select Grade —</option>';
+  const grades = type === 'Primary'
+    ? [1,2,3,4,5]
+    : [6,7,8];
+  grades.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = `${type}-${g}`;
+    opt.textContent = `Grade ${g}`;
+    gradeSelect.appendChild(opt);
+  });
+}
+
+// ══════════════════════════════════════════════
+//   YES/NO TOGGLES
+// ══════════════════════════════════════════════
+function toggleYesNo(field, isYes, btn) {
+  const parent = btn.closest('.toggle-group');
+  const btns = parent.querySelectorAll('.toggle-btn');
+  btns.forEach((b,i) => {
+    const thisYes = i === 0;
+    b.className = 'toggle-btn' + (thisYes === isYes ? (isYes ? ' active-yes' : ' active-no') : '');
+  });
+  document.getElementById('f-' + field).value = isYes ? 'Yes' : 'No';
+
+  // Show/hide reason for tech
+  if (field === 'tech') {
+    document.getElementById('tech-reason-wrap').classList.toggle('show', !isYes);
+  }
+}
+
+// ══════════════════════════════════════════════
+//   PHOTO
+// ══════════════════════════════════════════════
+function handlePhotoSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { showToast('Photo too large (max 10 MB)'); return; }
+  loadPhoto(file);
+}
+
+function handlePhotoDrop(e) {
+  e.preventDefault();
+  document.getElementById('photo-drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadPhoto(file);
+}
+
+function loadPhoto(file) {
+  photoFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    photoBase64 = ev.target.result;
+    document.getElementById('photo-img').src = photoBase64;
+    document.getElementById('photo-drop-zone').style.display = 'none';
+    document.getElementById('photo-preview').classList.add('show');
+  };
+  reader.readAsDataURL(file);
+}
+
+function deletePhoto() {
+  photoBase64 = null;
+  photoFile = null;
+  document.getElementById('photo-file').value = '';
+  document.getElementById('photo-img').src = '';
+  document.getElementById('photo-preview').classList.remove('show');
+  document.getElementById('photo-drop-zone').style.display = '';
+}
+
+// ══════════════════════════════════════════════
+//   DRAFT
+// ══════════════════════════════════════════════
+function getFormData() {
+  return {
+    date: document.getElementById('f-date').value,
+    schoolType,
+    grade: document.getElementById('f-grade').value,
+    level: document.getElementById('f-level').value,
+    strength: document.getElementById('f-strength').value,
+    boys: document.getElementById('f-boys').value,
+    girls: document.getElementById('f-girls').value,
+    present: document.getElementById('f-present').value,
+    absent: document.getElementById('f-absent').value,
+    leave: document.getElementById('f-leave').value,
+    lms: document.getElementById('f-lms').value,
+    tech: document.getElementById('f-tech').value,
+    techReason: document.getElementById('f-tech-reason').value,
+    crMedia: document.getElementById('f-crmedia').value,
+    techMedia: document.getElementById('f-techmedia').value,
+    assembly: document.getElementById('f-assembly').value,
+    english: {
+      unitName: document.getElementById('eng-unit-name').value,
+      unit: document.getElementById('eng-unit').value,
+      lesson: document.getElementById('eng-lesson').value,
+      topic: document.getElementById('eng-topic').value,
+      page: document.getElementById('eng-page').value,
+      activity: document.getElementById('f-eng-act').value
+    },
+    math: {
+      unitName: document.getElementById('math-unit-name').value,
+      unit: document.getElementById('math-unit').value,
+      lesson: document.getElementById('math-lesson').value,
+      topic: document.getElementById('math-topic').value,
+      page: document.getElementById('math-page').value,
+      activity: document.getElementById('f-math-act').value
+    },
+    urdu: {
+      unitName: document.getElementById('urdu-unit-name').value,
+      unit: document.getElementById('urdu-unit').value,
+      lesson: document.getElementById('urdu-lesson').value,
+      topic: document.getElementById('urdu-topic').value,
+      page: document.getElementById('urdu-page').value,
+      activity: document.getElementById('f-urdu-act').value
+    }
+  };
+}
+
+function saveDraft() {
+  const data = getFormData();
+  localStorage.setItem('takmil_draft_' + currentPhone, JSON.stringify(data));
+  showToast('✅ Draft saved');
+}
+
+function loadDraft() {
+  const raw = localStorage.getItem('takmil_draft_' + currentPhone);
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    if (d.date) document.getElementById('f-date').value = d.date;
+    if (d.schoolType) selectType(d.schoolType);
+    if (d.grade) document.getElementById('f-grade').value = d.grade;
+    if (d.level) document.getElementById('f-level').value = d.level;
+    if (d.strength) document.getElementById('f-strength').value = d.strength;
+    if (d.boys) document.getElementById('f-boys').value = d.boys;
+    if (d.girls) document.getElementById('f-girls').value = d.girls;
+    if (d.present) document.getElementById('f-present').value = d.present;
+    if (d.absent) document.getElementById('f-absent').value = d.absent;
+    if (d.leave) document.getElementById('f-leave').value = d.leave;
+    if (d.techReason) document.getElementById('f-tech-reason').value = d.techReason;
+    // Subjects
+    ['english','math','urdu'].forEach(s => {
+      if (!d[s]) return;
+      const pfx = s === 'english' ? 'eng' : s;
+      if (d[s].unitName) document.getElementById(`${pfx}-unit-name`).value = d[s].unitName;
+      if (d[s].unit) document.getElementById(`${pfx}-unit`).value = d[s].unit;
+      if (d[s].lesson) document.getElementById(`${pfx}-lesson`).value = d[s].lesson;
+      if (d[s].topic) document.getElementById(`${pfx}-topic`).value = d[s].topic;
+      if (d[s].page) document.getElementById(`${pfx}-page`).value = d[s].page;
+    });
+    showToast('📋 Draft restored');
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════
+//   SUBMIT
+// ══════════════════════════════════════════════
+async function submitFeedback() {
+  const data = getFormData();
+
+  // Validation
+  if (!data.date) { showToast('⚠️ Please set the feedback date'); return; }
+  if (!data.schoolType) { showToast('⚠️ Select Primary or Elementary'); return; }
+  if (!data.grade) { showToast('⚠️ Select a grade'); return; }
+  if (!data.level) { showToast('⚠️ Select a level'); return; }
+  if (!data.present) { showToast('⚠️ Enter present count'); return; }
+
+  const payload = {
+    phone: currentPhone,
+    school: currentSchool,
+    ...data,
+    photo: photoBase64 || null,
+    submittedAt: new Date().toISOString()
+  };
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Submitting...';
+
+  if (!navigator.onLine) {
+    queueSubmission(payload);
+    btn.disabled = false;
+    btn.innerHTML = 'Submit Feedback';
+    showSuccessScreen(data, true);
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/web-feedback`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (result.success !== false) {
+      localStorage.removeItem('takmil_draft_' + currentPhone);
+      showSuccessScreen(data, false);
+    } else {
+      throw new Error(result.message || 'Server error');
+    }
+  } catch(e) {
+    // Queue for retry
+    queueSubmission(payload);
+    localStorage.removeItem('takmil_draft_' + currentPhone);
+    showSuccessScreen(data, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Submit Feedback';
+  }
+}
+
+function queueSubmission(payload) {
+  submissionQueue.push(payload);
+  localStorage.setItem('takmil_queue', JSON.stringify(submissionQueue));
+  showToast('📥 Saved — will send when online');
+}
+
+async function flushQueue() {
+  if (submissionQueue.length === 0) return;
+  const pending = [...submissionQueue];
+  submissionQueue = [];
+  localStorage.setItem('takmil_queue', JSON.stringify(submissionQueue));
+  for (const payload of pending) {
+    try {
+      await fetch(`${API_BASE}/api/web-feedback`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+    } catch(e) {
+      submissionQueue.push(payload);
+    }
+  }
+  localStorage.setItem('takmil_queue', JSON.stringify(submissionQueue));
+  if (submissionQueue.length === 0) showToast('✅ Queued submissions sent!');
+}
+
+function showSuccessScreen(data, queued) {
+  const dd = document.getElementById('success-details');
+  const [y,m,d2] = data.date.split('-');
+  dd.innerHTML = `
+    <div>📅 Date: <span>${d2}/${m}/${y}</span></div>
+    <div>🏫 School: <span>${currentSchool || currentPhone}</span></div>
+    <div>📖 Grade: <span>${data.grade} · Level ${data.level}</span></div>
+    <div>👥 Present: <span>${data.present} of ${data.strength}</span></div>
+    ${queued ? '<div>⏳ <span>Queued for send when online</span></div>' : ''}
+  `;
+  showScreen('success');
+}
+
+function newSubmission() {
+  deletePhoto();
+  document.getElementById('f-date').value = '';
+  // Reset date to today
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const dd = String(today.getDate()).padStart(2,'0');
+  document.getElementById('f-date').value = `${yyyy}-${mm}-${dd}`;
+  showScreen('form');
+  window.scrollTo(0,0);
+}
+
+// ══════════════════════════════════════════════
+//   UTILITIES
+// ══════════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// Auto-save draft every 30s
+setInterval(() => {
+  if (currentPhone && document.getElementById('screen-form').classList.contains('active')) {
+    const data = getFormData();
+    localStorage.setItem('takmil_draft_' + currentPhone, JSON.stringify(data));
+  }
+}, 30000);
+</script>
+</body>
+</html>
