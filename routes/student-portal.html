@@ -221,12 +221,23 @@ function showToast(msg,ms=2500){ const t=document.getElementById('toast'); t.tex
 async function validatePin(pin, name) {
   if (isOnline()) {
     try {
-      const resp = await fetch(BASE + '/portal/session/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ pin, studentName: name, subject: null }) });
+      const payload = { pin, studentName: name, subject: null };
+      console.log('Sending to server:', JSON.stringify(payload));
+      const resp = await fetch(BASE + '/portal/session/start', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
       const data = await resp.json();
+      console.log('Server response:', JSON.stringify(data));
+      // Show debug alert so we can see on phone
+      alert('DEBUG — Sent: ' + JSON.stringify(payload) + '\n\nReceived: ' + JSON.stringify(data));
       if (!resp.ok || data.error) return { valid:false, error:data.error };
       if (data.isMultiSubject) return { valid:true, level:data.level, online:true, multiSubject:true };
       return { valid:true, level:data.level, online:true, sessionId:data.sessionId };
-    } catch(e) {}
+    } catch(e) {
+      alert('DEBUG — Fetch error: ' + e.message);
+    }
   }
   const pinRec = await dbGet('pins', pin.toUpperCase());
   if (!pinRec) return { valid:false, error:'PIN not found. Ask teacher to download PINs when online.' };
