@@ -238,30 +238,50 @@ router.get('/api/photos', async (req, res) => {
 });
 
 
-// ── Analyze photo from offline portal ────────────────────────────────────────
+// ── Analyze photo from offline portal / web form ─────────────────────────────
 router.post('/api/photo/analyze', async (req, res) => {
   try {
     const { image_base64, mime_type, reported_present, feedback_id } = req.body;
     if (!image_base64) return res.status(400).json({ error: 'No image provided' });
 
-    const mimeType = mime_type || 'image/jpeg';
+    const result = await analyzeAndSave(image_base64, mime_type, reported_present, feedback_id);
 
-    // ── Claude Vision — same prompt as WhatsApp flow ──────────────────────
-    const apiResp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model:      'claude-opus-4-5-20251101',
-        max_tokens: 300,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mimeType, data: image_base64 } },
-            { type: 'text', text: `You are analyzing a classroom photo from a school in rural Pakistan.
+    res.json({
+      head_count:             result.headCount,
+      projector_visible:      result.projector_visible,
+      lesson_verified:        result.lesson_verified,
+      confidence:             result.confidence,
+      note:                   result.note,
+      reported_present:       parseInt(reported_present) || 0,
+      diff:                   result.diff,
+      flagged:                result.flagged,
+    });
+  } catch(err) {
+    console.error('photo analyze error:', err.message);
+    res.status(500).json({ error: 'Could not analyse photo: ' + err.message });
+  }
+});
+
+// ── Shared: analyse photo + save results to DB ───────────────────────────────
+// Called by both /api/photo/analyze route AND the web feedback endpoint
+async function analyzeAndSave(imageBase64, mimeType, reportedPresent, feedbackId) {
+  mimeType = mimeType || 'image/jpeg';
+
+  const apiResp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type':      'application/json',
+      'x-api-key':         process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model:      'claude-opus-4-5-20251101',
+      max_tokens: 300,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mimeType, data: imageBase64 } },
+          { type: 'text', text: `You are analyzing a classroom photo from a school in rural Pakistan.
 Return ONLY valid JSON — no other text:
 {
   "head_count": <integer: count ALL people visible - students AND teachers>,
@@ -274,86 +294,72 @@ Return ONLY valid JSON — no other text:
   "note": "<one sentence describing what you see>"
 }
 NOTE: Pakistani classrooms often use small portable projectors on tables or boxes.` }
-          ]
-        }]
-      })
-    });
+        ]
+      }]
+    })
+  });
 
-    const apiData = await apiResp.json();
-    if (apiData.error) return res.status(500).json({ error: 'AI error: ' + apiData.error.message });
+  const apiData = await apiResp.json();
+  if (apiData.error) throw new Error('Vision API: ' + apiData.error.message);
 
-    const rawText = apiData.content?.[0]?.text || '';
-    let headCount = null, note = '', vis = {};
-    try {
-      const match = rawText.replace(/```json|```/g, '').trim().match(/\{[\s\S]*\}/);
-      if (match) {
-        const p   = JSON.parse(match[0]);
-        const raw = p.head_count ?? p.count ?? p.number ?? p.total;
-        headCount = raw !== undefined ? parseInt(raw) : null;
-        note      = p.note || '';
-        vis.projector_visible      = !!p.projector_visible;
-        vis.screen_visible         = !!p.screen_visible;
-        vis.content_on_screen      = !!p.content_on_screen;
-        vis.students_facing_screen = !!p.students_facing_screen;
-        vis.lesson_verified        = !!p.lesson_verified;
-        vis.confidence             = p.confidence || 'medium';
-      }
-    } catch(e) {}
-
-    // Fallback number extraction
-    if (headCount === null || isNaN(headCount)) {
-      for (const m of (rawText.match(/\b(\d+)\b/g) || [])) {
-        const n = parseInt(m);
-        if (n >= 1 && n <= 200) { headCount = n; break; }
-      }
+  const rawText = apiData.content?.[0]?.text || '';
+  let headCount = null, note = '', vis = {};
+  try {
+    const match = rawText.replace(/```json|```/g, '').trim().match(/\{[\s\S]*\}/);
+    if (match) {
+      const p   = JSON.parse(match[0]);
+      const raw = p.head_count ?? p.count ?? p.number ?? p.total;
+      headCount = raw !== undefined ? parseInt(raw) : null;
+      note      = p.note || '';
+      vis.projector_visible       = !!p.projector_visible;
+      vis.screen_visible          = !!p.screen_visible;
+      vis.content_on_screen       = !!p.content_on_screen;
+      vis.students_facing_screen  = !!p.students_facing_screen;
+      vis.lesson_verified         = !!p.lesson_verified;
+      vis.confidence              = p.confidence || 'medium';
     }
+  } catch(e) {}
 
-    // ── Calculate mismatch ────────────────────────────────────────────────
-    const reported = parseInt(reported_present) || 0;
-    const diff     = headCount !== null ? headCount - reported : null;
-    const absDiff  = diff !== null ? Math.abs(diff) : null;
-    const pctDiff  = reported > 0 && diff !== null ? Math.round(absDiff / reported * 100) : null;
-    const flagged  = absDiff !== null && absDiff > 3 && pctDiff > 15;
-
-    // ── Save photo to DB if feedback_id provided ──────────────────────────
-    if (feedback_id) {
-      const publicUrl = `/api/photo/${feedback_id}`;
-      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
-      const flag = flagged
-        ? (diff > 0 ? `Photo shows ${diff} MORE than reported` : `Photo shows ${absDiff} FEWER than reported`)
-        : null;
-      await db.pool.query(`
-        UPDATE daily_feedback SET
-          photo_url        = $1, photo_data       = $2,
-          photo_mime_type  = $3, photo_expires_at = $4,
-          photo_head_count = $5, head_count_diff  = $6,
-          photo_verified   = $7, photo_flag       = $8,
-          projector_visible= $9, lesson_verified  = $10
-        WHERE id = $11
-      `, [publicUrl, image_base64, mimeType, expiresAt,
-          headCount, diff, !flagged, flag,
-          vis.projector_visible || false, vis.lesson_verified || false,
-          feedback_id]);
+  // Fallback: extract first reasonable number from text
+  if (headCount === null || isNaN(headCount)) {
+    for (const m of (rawText.match(/(\d+)/g) || [])) {
+      const n = parseInt(m);
+      if (n >= 1 && n <= 200) { headCount = n; break; }
     }
-
-    res.json({
-      head_count:            headCount,
-      projector_visible:     vis.projector_visible || false,
-      lesson_verified:       vis.lesson_verified   || false,
-      screen_visible:        vis.screen_visible    || false,
-      content_on_screen:     vis.content_on_screen || false,
-      students_facing_screen:vis.students_facing_screen || false,
-      confidence:            vis.confidence || 'medium',
-      note,
-      reported_present:      reported,
-      diff,
-      flagged,
-    });
-
-  } catch(err) {
-    console.error('photo analyze error:', err.message);
-    res.status(500).json({ error: 'Could not analyse photo: ' + err.message });
   }
-});
 
-module.exports = { router, handleClassPhoto };
+  console.log(`📸 [analyzeAndSave] Head count: ${headCount} — ${note}`);
+
+  // Calculate mismatch
+  const reported = parseInt(reportedPresent) || 0;
+  const diff     = headCount !== null ? headCount - reported : null;
+  const absDiff  = diff !== null ? Math.abs(diff) : null;
+  const pctDiff  = reported > 0 && diff !== null ? Math.round(absDiff / reported * 100) : null;
+  const flagged  = absDiff !== null && absDiff > 3 && pctDiff > 15;
+  const flag     = flagged
+    ? (diff > 0 ? `Photo shows ${diff} MORE than reported` : `Photo shows ${absDiff} FEWER than reported`)
+    : null;
+
+  // Save results to DB
+  if (feedbackId) {
+    const publicUrl = `/api/photo/${feedbackId}`;
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    await db.pool.query(`
+      UPDATE daily_feedback SET
+        photo_url         = $1,  photo_data        = $2,
+        photo_mime_type   = $3,  photo_expires_at  = $4,
+        photo_head_count  = $5,  head_count_diff   = $6,
+        photo_verified    = $7,  photo_flag        = $8,
+        projector_visible = $9,  lesson_verified   = $10
+      WHERE id = $11
+    `, [publicUrl, imageBase64, mimeType, expiresAt,
+        headCount, diff, !flagged, flag,
+        vis.projector_visible || false, vis.lesson_verified || false,
+        feedbackId]);
+  }
+
+  return { headCount, diff, flagged, flag, projector_visible: vis.projector_visible || false,
+           lesson_verified: vis.lesson_verified || false, note, confidence: vis.confidence };
+}
+
+module.exports = { router, handleClassPhoto, analyzeAndSave };

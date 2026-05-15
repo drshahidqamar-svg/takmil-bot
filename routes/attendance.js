@@ -5,6 +5,7 @@
 const router = require('express').Router();
 const db     = require('../database');
 const path   = require('path');
+const { analyzeAndSave } = require('./photo-verify');
 
 // ── Feedback message detection ────────────────────────────────────────────────
 function isFeedbackMessage(text) {
@@ -855,12 +856,13 @@ router.post('/api/web-feedback', async (req, res) => {
       feedbackId = updateResult.rows[0]?.id;
     }
 
-    // Step 3: Set photo_url if photo was uploaded
+    // Step 3: Run AI photo analysis (async — does not block response)
+    // analyzeAndSave handles: head count, projector detection, mismatch flag,
+    // photo_url, photo_data, photo_expires_at — all written back to daily_feedback
     if (photoData && feedbackId) {
-      await db.pool.query(
-        `UPDATE daily_feedback SET photo_url=$1 WHERE id=$2`,
-        [`/api/photo/${feedbackId}`, feedbackId]
-      );
+      analyzeAndSave(photoData, photoMime, body.present, feedbackId)
+        .then(r => console.log(`📸 [web-feedback] AI done — heads:${r.headCount} projector:${r.projector_visible} flagged:${r.flagged}`))
+        .catch(e => console.error('[web-feedback] photo AI error:', e.message));
     }
 
     return res.json({ saved: true, school: school.name, date: body.date, present: parseInt(body.present) });
