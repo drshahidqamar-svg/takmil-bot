@@ -648,4 +648,199 @@ router.get('/api/register/absent', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Web Feedback: Verify Phone ────────────────────────────────────────────────
+// POST /api/verify-phone
+// Body:    { phone: "+923001234567" }
+// Returns: { success, school, identifier, region }
+router.post('/api/verify-phone', async (req, res) => {
+  let { phone } = req.body || {};
+  if (!phone) return res.status(400).json({ success: false, message: 'Phone is required.' });
+
+  phone = normalisePhone(phone);
+  if (!phone) return res.status(400).json({ success: false, message: 'Invalid phone format.' });
+
+  try {
+    const r = await db.pool.query(
+      `SELECT name, identifier, region, province
+       FROM schools
+       WHERE teacher_phone = $1
+       LIMIT 1`,
+      [phone]
+    );
+    if (!r.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: 'Phone not registered. Ask your admin to link this number to a school.',
+      });
+    }
+    const s = r.rows[0];
+    return res.json({ success: true, school: s.name, identifier: s.identifier, region: s.region, province: s.province });
+  } catch (err) {
+    console.error('[verify-phone] error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error. Try again.' });
+  }
+});
+
+// ── Web Feedback: Submit ──────────────────────────────────────────────────────
+// POST /api/web-feedback
+// Body: full JSON payload from takmil-feedback.html
+// Returns: { saved, school, date, present }
+router.post('/api/web-feedback', async (req, res) => {
+  const body = req.body || {};
+
+  // Re-verify phone on every submit
+  let phone = normalisePhone(body.phone);
+  if (!phone) return res.status(400).json({ saved: false, error: 'Invalid phone number.' });
+
+  let school;
+  try {
+    const r = await db.pool.query(
+      `SELECT name, identifier, region FROM schools WHERE teacher_phone = $1 LIMIT 1`,
+      [phone]
+    );
+    if (!r.rows.length) return res.status(403).json({ saved: false, error: 'Phone not registered.' });
+    school = r.rows[0];
+  } catch (err) {
+    console.error('[web-feedback] school lookup:', err.message);
+    return res.status(500).json({ saved: false, error: 'DB error during school lookup.' });
+  }
+
+  if (!body.date || !body.present) {
+    return res.status(400).json({ saved: false, error: 'Date and Present count are required.' });
+  }
+
+  // Grade string e.g. "Elementary-8" or "Primary-4"
+  const gradeStr = body.grade || null;
+  const level    = parseInt(body.level) || null;
+
+  // Build subjects JSONB — matches your existing schema exactly
+  const subjects = [];
+  const subjectMap = { English: body.english, Math: body.math, Urdu: body.urdu };
+  for (const [name, s] of Object.entries(subjectMap)) {
+    if (!s) continue;
+    if (!s.topic && !s.lesson && !s.unitName && !s.unit && !s.page) continue;
+    subjects.push({
+      subject:   name,
+      unit_name: s.unitName || null,
+      unit:      s.unit     || null,
+      lesson_no: s.lesson   || null,
+      topic:     s.topic    || null,
+      page_no:   s.page     || null,
+      activity:  s.activity === 'Yes',
+    });
+  }
+
+  // Decode photo: base64 → Buffer for bytea storage
+  let photoData    = null;
+  let photoMime    = null;
+  let photoExpires = null;
+  if (body.photo && body.photo.startsWith('data:image/')) {
+    try {
+      const match = body.photo.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (match) {
+        photoMime    = match[1];
+        photoData    = Buffer.from(match[2], 'base64');
+        photoExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      }
+    } catch (e) {
+      console.warn('[web-feedback] Photo decode failed:', e.message);
+    }
+  }
+
+  try {
+    const result = await db.pool.query(`
+      INSERT INTO daily_feedback (
+        teacher_phone, school_name, school_identifier, report_date,
+        grade, level, total_strength, boys, girls,
+        present, absent, leave_count,
+        assembly_conducted, technology_used, technology_reason,
+        cr_media_shared, tech_media_shared, lms_upload,
+        subjects, raw_message, projector_shown,
+        photo_data, photo_mime_type, photo_expires_at
+      )
+      VALUES (
+        $1,$2,$3,$4::date,
+        $5,$6,$7,$8,$9,
+        $10,$11,$12,
+        $13,$14,$15,
+        $16,$17,$18,
+        $19,$20,$21,
+        $22,$23,$24
+      )
+      ON CONFLICT (school_name, report_date) DO UPDATE SET
+        present           = EXCLUDED.present,
+        absent            = EXCLUDED.absent,
+        leave_count       = EXCLUDED.leave_count,
+        total_strength    = EXCLUDED.total_strength,
+        boys              = EXCLUDED.boys,
+        girls             = EXCLUDED.girls,
+        assembly_conducted= EXCLUDED.assembly_conducted,
+        technology_used   = EXCLUDED.technology_used,
+        technology_reason = EXCLUDED.technology_reason,
+        cr_media_shared   = EXCLUDED.cr_media_shared,
+        tech_media_shared = EXCLUDED.tech_media_shared,
+        lms_upload        = EXCLUDED.lms_upload,
+        subjects          = EXCLUDED.subjects,
+        grade             = EXCLUDED.grade,
+        level             = EXCLUDED.level,
+        raw_message       = EXCLUDED.raw_message,
+        photo_data        = COALESCE(EXCLUDED.photo_data,       daily_feedback.photo_data),
+        photo_mime_type   = COALESCE(EXCLUDED.photo_mime_type,  daily_feedback.photo_mime_type),
+        photo_expires_at  = COALESCE(EXCLUDED.photo_expires_at, daily_feedback.photo_expires_at)
+      RETURNING id`,
+      [
+        phone,
+        school.name,
+        school.identifier,
+        body.date,
+        gradeStr,
+        level,
+        parseInt(body.strength)  || null,
+        parseInt(body.boys)      || null,
+        parseInt(body.girls)     || null,
+        parseInt(body.present)   || 0,
+        parseInt(body.absent)    || null,
+        parseInt(body.leave)     || null,
+        body.assembly  === 'Yes',
+        body.tech      === 'Yes',
+        body.techReason || null,
+        body.crMedia   === 'Yes',
+        body.techMedia === 'Yes',
+        body.lms       === 'Yes',
+        JSON.stringify(subjects),
+        `web_form | ${body.schoolType || ''} | ${new Date().toISOString()}`,
+        null,        // projector_shown — not collected by web form
+        photoData,
+        photoMime,
+        photoExpires,
+      ]
+    );
+
+    // Set photo_url after insert
+    if (photoData && result.rows[0]) {
+      const feedbackId = result.rows[0].id;
+      await db.pool.query(
+        `UPDATE daily_feedback SET photo_url=$1 WHERE id=$2`,
+        [`/api/photo/${feedbackId}`, feedbackId]
+      );
+    }
+
+    return res.json({ saved: true, school: school.name, date: body.date, present: parseInt(body.present) });
+
+  } catch (err) {
+    console.error('[web-feedback] insert error:', err.message);
+    return res.status(500).json({ saved: false, error: 'Failed to save: ' + err.message });
+  }
+});
+
+// ── Helper: normalise Pakistani phone to E.164 ────────────────────────────────
+function normalisePhone(raw) {
+  if (!raw) return null;
+  let p = String(raw).replace(/[\s\-().]/g, '');
+  if (p.startsWith('0'))  p = '+92' + p.slice(1);
+  if (!p.startsWith('+')) p = '+' + p;
+  if (!/^\+92\d{10}$/.test(p)) return null;
+  return p;
+}
+
 module.exports = { router, isFeedbackMessage, parseFeedback, saveFeedback };

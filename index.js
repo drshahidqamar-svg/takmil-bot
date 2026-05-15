@@ -57,8 +57,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.urlencoded({ extended: false, limit: '10mb' }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '15mb' }));
+app.use(express.json({ limit: '15mb' }));
 
 // ── Load route modules ────────────────────────────────────────────────────────
 const { router: chatbotRouter, registerHandlers } = require('./routes/chatbot');
@@ -109,6 +109,7 @@ app.get('/feedback-table',       (req, res) => res.sendFile(path.join(__dirname,
 app.get('/level-advancement',    (req, res) => res.sendFile(path.join(__dirname, 'level-advancement.html')));
 app.get('/image-portal',         (req, res) => res.sendFile(path.join(__dirname, 'image-portal.html')));
 app.get('/picture-questions',    (req, res) => res.sendFile(path.join(__dirname, 'picture-questions.html')));
+app.get('/teacher-feedback',     (req, res) => res.sendFile(path.join(__dirname, 'takmil-feedback.html')));
 app.get('/takmil-classroom',     (req, res) => res.sendFile(path.join(__dirname, 'takmil-classroom.html')));
 
 
