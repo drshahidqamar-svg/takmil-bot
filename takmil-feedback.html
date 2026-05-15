@@ -485,6 +485,37 @@
 
   select option { font-weight: 600; }
 
+  /* Tech type checkboxes */
+  .check-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .check-chip {
+    display: flex; align-items: center; gap: 6px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 13px;
+    font-size: 13px; font-weight: 700; font-family: 'Nunito', sans-serif;
+    cursor: pointer; transition: all 0.15s; background: var(--white); color: var(--text-muted);
+  }
+  .check-chip input[type=checkbox] { display: none; }
+  .check-chip.checked { background: var(--green-light); border-color: var(--green-bright); color: var(--green-deep); }
+
+  /* Subject note */
+  .subject-note {
+    width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 9px 13px; font-size: 14px; font-family: 'Nunito', sans-serif;
+    font-weight: 500; color: var(--text); background: var(--white);
+    outline: none; resize: none; min-height: 56px; transition: border-color 0.2s;
+    margin-top: 0;
+  }
+  .subject-note:focus { border-color: var(--green-bright); }
+  .subject-note::placeholder { color: #a0bfae; font-style: italic; }
+
+  /* Subject group hint */
+  .level-hint {
+    font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--gold); background: var(--gold-light); border-radius: 20px;
+    padding: 3px 10px; display: inline-block; margin-bottom: 14px;
+  }
+
   /* Queue indicator */
   .queue-dot {
     width: 8px; height: 8px;
@@ -562,22 +593,11 @@
         </div>
       </div>
 
-      <div class="row-2">
-        <div class="field">
-          <label>Grade <span class="req">*</span></label>
-          <select id="f-grade">
-            <option value="">— Select —</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Level <span class="req">*</span></label>
-          <select id="f-level">
-            <option value="">— Select —</option>
-            <option>1</option><option>2</option><option>3</option>
-            <option>4</option><option>5</option><option>6</option>
-            <option>7</option><option>8</option><option>9</option><option>10</option>
-          </select>
-        </div>
+      <div class="field">
+        <label>Level <span class="req">*</span></label>
+        <select id="f-level" onchange="onLevelChange()">
+          <option value="">— Select level —</option>
+        </select>
       </div>
     </div>
 
@@ -615,6 +635,10 @@
           <input type="number" id="f-absent" placeholder="0" min="0">
         </div>
       </div>
+      <div class="field">
+        <label>Absence Reason</label>
+        <input type="text" id="f-absence-reason" placeholder="e.g. sick, bad weather (optional)">
+      </div>
     </div>
 
     <!-- TECHNOLOGY & ACTIVITY -->
@@ -628,6 +652,9 @@
           <button class="toggle-btn" onclick="toggleYesNo('lms',false,this)">✗ No</button>
         </div>
         <input type="hidden" id="f-lms" value="">
+        <div class="reason-field" id="lms-reason-wrap">
+          <input type="text" id="f-lms-reason" placeholder="Reason if No">
+        </div>
       </div>
 
       <div class="field">
@@ -639,6 +666,20 @@
         <input type="hidden" id="f-tech" value="">
         <div class="reason-field" id="tech-reason-wrap">
           <input type="text" id="f-tech-reason" placeholder="Reason if No (e.g. USB not available)">
+        </div>
+        <div class="reason-field" id="tech-type-wrap">
+          <label style="margin-top:8px">Technology Type</label>
+          <div class="check-group">
+            <label class="check-chip" id="chip-projector" onclick="toggleChip('projector',this)">
+              <input type="checkbox" id="f-tech-projector"> 📽️ Projector
+            </label>
+            <label class="check-chip" id="chip-laptop" onclick="toggleChip('laptop',this)">
+              <input type="checkbox" id="f-tech-laptop"> 💻 Laptop
+            </label>
+            <label class="check-chip" id="chip-tablets" onclick="toggleChip('tablets',this)">
+              <input type="checkbox" id="f-tech-tablets"> 📱 Chromebooks / Tablets
+            </label>
+          </div>
         </div>
       </div>
 
@@ -670,69 +711,10 @@
       </div>
     </div>
 
-    <!-- SUBJECTS -->
-    <div class="section-card">
+    <!-- SUBJECTS — rendered dynamically by renderSubjects() -->
+    <div class="section-card" id="subjects-card" style="display:none">
       <div class="section-title">📚 Subjects Taught</div>
-
-      <!-- English -->
-      <div class="subject-block">
-        <div class="subject-label"><span class="subject-emoji">🇬🇧</span> English</div>
-        <div class="field"><label>Unit Name</label><input type="text" id="eng-unit-name" placeholder="e.g. My Homeland"></div>
-        <div class="row-2">
-          <div class="field"><label>Unit #</label><input type="number" id="eng-unit" placeholder="2" min="1"></div>
-          <div class="field"><label>Page No.</label><input type="number" id="eng-page" placeholder="14" min="1"></div>
-        </div>
-        <div class="field"><label>Lesson</label><input type="text" id="eng-lesson" placeholder="e.g. 2.10"></div>
-        <div class="field"><label>Topic</label><input type="text" id="eng-topic" placeholder="e.g. Write an essay on justice"></div>
-        <div class="field">
-          <label>Activity</label>
-          <div class="toggle-group">
-            <button class="toggle-btn" onclick="toggleYesNo('eng-act',true,this)">✓ Yes</button>
-            <button class="toggle-btn" onclick="toggleYesNo('eng-act',false,this)">✗ No</button>
-          </div>
-          <input type="hidden" id="f-eng-act" value="">
-        </div>
-      </div>
-
-      <!-- Math -->
-      <div class="subject-block">
-        <div class="subject-label"><span class="subject-emoji">🔢</span> Mathematics</div>
-        <div class="field"><label>Unit Name</label><input type="text" id="math-unit-name" placeholder="e.g. Real Numbers"></div>
-        <div class="row-2">
-          <div class="field"><label>Unit #</label><input type="number" id="math-unit" placeholder="1" min="1"></div>
-          <div class="field"><label>Page No.</label><input type="number" id="math-page" placeholder="11" min="1"></div>
-        </div>
-        <div class="field"><label>Lesson</label><input type="text" id="math-lesson" placeholder="e.g. 1.6"></div>
-        <div class="field"><label>Topic</label><input type="text" id="math-topic" placeholder="e.g. Properties of real numbers"></div>
-        <div class="field">
-          <label>Activity</label>
-          <div class="toggle-group">
-            <button class="toggle-btn" onclick="toggleYesNo('math-act',true,this)">✓ Yes</button>
-            <button class="toggle-btn" onclick="toggleYesNo('math-act',false,this)">✗ No</button>
-          </div>
-          <input type="hidden" id="f-math-act" value="">
-        </div>
-      </div>
-
-      <!-- Urdu -->
-      <div class="subject-block">
-        <div class="subject-label"><span class="subject-emoji">📖</span> Urdu · اردو</div>
-        <div class="field"><label>Unit Name</label><input type="text" id="urdu-unit-name" placeholder="اردو یونٹ کا نام" dir="auto"></div>
-        <div class="row-2">
-          <div class="field"><label>Unit #</label><input type="number" id="urdu-unit" placeholder="2" min="1"></div>
-          <div class="field"><label>Page No.</label><input type="number" id="urdu-page" placeholder="11" min="1"></div>
-        </div>
-        <div class="field"><label>Lesson</label><input type="text" id="urdu-lesson" placeholder="e.g. 2.1" dir="auto"></div>
-        <div class="field"><label>Topic</label><input type="text" id="urdu-topic" placeholder="سبق کا عنوان" dir="auto"></div>
-        <div class="field">
-          <label>Activity</label>
-          <div class="toggle-group">
-            <button class="toggle-btn" onclick="toggleYesNo('urdu-act',true,this)">✓ Yes</button>
-            <button class="toggle-btn" onclick="toggleYesNo('urdu-act',false,this)">✗ No</button>
-          </div>
-          <input type="hidden" id="f-urdu-act" value="">
-        </div>
-      </div>
+      <div id="subjects-container"></div>
     </div>
 
     <!-- CLASSROOM PHOTO -->
@@ -957,22 +939,126 @@ function hideError() {
 // ══════════════════════════════════════════════
 //   SCHOOL TYPE & GRADE
 // ══════════════════════════════════════════════
+// ── Subject definitions ───────────────────────────────────────────────────────
+// full:true = Unit + Lesson No + Topic + Activity + Note
+// full:false = Activity + Note only
+const SUBJECT_SETS = {
+  'Primary-1-6': [
+    { name:'English',              emoji:'🇬🇧', full:true  },
+    { name:'Math',                 emoji:'🔢', full:true  },
+    { name:'Urdu',                 emoji:'📖', full:true  },
+    { name:'Communication Skills', emoji:'🗣️', full:false },
+    { name:'Physical Education',   emoji:'⚽', full:false },
+    { name:'Art',                  emoji:'🎨', full:false },
+    { name:'STEAM',                emoji:'🔬', full:false },
+  ],
+  'Primary-7-12': [
+    { name:'English',       emoji:'🇬🇧', full:true },
+    { name:'Math',          emoji:'🔢', full:true },
+    { name:'Urdu',          emoji:'📖', full:true },
+    { name:'Science',       emoji:'🧪', full:true },
+    { name:'Social Studies',emoji:'🌍', full:true },
+    { name:'Islamiat',      emoji:'☪️', full:true },
+  ],
+  'Elementary-1-3': [
+    { name:'English',          emoji:'🇬🇧', full:true  },
+    { name:'Math',             emoji:'🔢', full:true  },
+    { name:'Science',          emoji:'🧪', full:true  },
+    { name:'Islamiat / SST',   emoji:'☪️', full:true  },
+    { name:'Skill Development',emoji:'⭐', full:false },
+  ],
+};
+
+function subjectKey(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g,'_');
+}
+
 function selectType(type) {
   schoolType = type;
-  document.getElementById('type-primary').className   = 'toggle-btn' + (type==='Primary' ? ' active-type' : '');
-  document.getElementById('type-elementary').className = 'toggle-btn' + (type==='Elementary' ? ' active-type' : '');
+  document.getElementById('type-primary').className    = 'toggle-btn' + (type==='Primary'     ? ' active-type' : '');
+  document.getElementById('type-elementary').className = 'toggle-btn' + (type==='Elementary'  ? ' active-type' : '');
 
-  const gradeSelect = document.getElementById('f-grade');
-  gradeSelect.innerHTML = '<option value="">— Select Grade —</option>';
-  const grades = type === 'Primary'
-    ? [1,2,3,4,5]
-    : [6,7,8];
-  grades.forEach(g => {
-    const opt = document.createElement('option');
-    opt.value = `${type}-${g}`;
-    opt.textContent = `Grade ${g}`;
-    gradeSelect.appendChild(opt);
+  const lvl = document.getElementById('f-level');
+  lvl.innerHTML = '<option value="">— Select level —</option>';
+  const levels = type === 'Primary' ? [1,2,3,4,5,6,7,8,9,10,11,12] : [1,2,3];
+  levels.forEach(n => {
+    const o = document.createElement('option');
+    o.value = n; o.textContent = `Level ${n}`;
+    lvl.appendChild(o);
   });
+  renderSubjects();
+}
+
+function onLevelChange() { renderSubjects(); }
+
+function getSubjectSetKey() {
+  if (!schoolType) return null;
+  const lvl = parseInt(document.getElementById('f-level').value);
+  if (!lvl) return null;
+  if (schoolType === 'Primary') return lvl <= 6 ? 'Primary-1-6' : 'Primary-7-12';
+  return 'Elementary-1-3';
+}
+
+function renderSubjects() {
+  const key = getSubjectSetKey();
+  const card = document.getElementById('subjects-card');
+  const container = document.getElementById('subjects-container');
+
+  if (!key) { card.style.display = 'none'; return; }
+  card.style.display = '';
+
+  const subjects = SUBJECT_SETS[key];
+  const lvl = parseInt(document.getElementById('f-level').value);
+  const hintText = schoolType === 'Primary'
+    ? (lvl <= 6 ? 'Primary · Levels 1–6' : 'Primary · Levels 7–12')
+    : 'Elementary · Levels 1–3';
+
+  container.innerHTML = `<div class="level-hint">${hintText}</div>` +
+    subjects.map(s => buildSubjectBlock(s)).join('');
+}
+
+function buildSubjectBlock(s) {
+  const k = subjectKey(s.name);
+  const isUrdu = s.name === 'Urdu';
+  const dir = isUrdu ? ' dir="auto"' : '';
+
+  const fullFields = s.full ? `
+    <div class="field">
+      <label>Unit Name</label>
+      <input type="text" id="${k}-unit-name" placeholder="Unit name"${dir}>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Unit #</label>
+        <input type="number" id="${k}-unit" placeholder="1" min="1">
+      </div>
+      <div class="field">
+        <label>Lesson No.</label>
+        <input type="text" id="${k}-lesson" placeholder="e.g. 1.3"${dir}>
+      </div>
+    </div>
+    <div class="field">
+      <label>Topic</label>
+      <input type="text" id="${k}-topic" placeholder="Lesson topic"${dir}>
+    </div>` : '';
+
+  return `
+  <div class="subject-block">
+    <div class="subject-label"><span class="subject-emoji">${s.emoji}</span> ${s.name}</div>
+    ${fullFields}
+    <div class="field">
+      <label>Activity</label>
+      <div class="toggle-group">
+        <button class="toggle-btn" onclick="toggleYesNo('${k}-act',true,this)">✓ Yes</button>
+        <button class="toggle-btn" onclick="toggleYesNo('${k}-act',false,this)">✗ No</button>
+      </div>
+      <input type="hidden" id="f-${k}-act" value="">
+    </div>
+    <div class="field">
+      <label>Note <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+      <textarea class="subject-note" id="${k}-note" placeholder="Any notes about this subject…"${dir}></textarea>
+    </div>
+  </div>`;
 }
 
 // ══════════════════════════════════════════════
@@ -980,17 +1066,25 @@ function selectType(type) {
 // ══════════════════════════════════════════════
 function toggleYesNo(field, isYes, btn) {
   const parent = btn.closest('.toggle-group');
-  const btns = parent.querySelectorAll('.toggle-btn');
-  btns.forEach((b,i) => {
+  parent.querySelectorAll('.toggle-btn').forEach((b,i) => {
     const thisYes = i === 0;
     b.className = 'toggle-btn' + (thisYes === isYes ? (isYes ? ' active-yes' : ' active-no') : '');
   });
-  document.getElementById('f-' + field).value = isYes ? 'Yes' : 'No';
+  const hid = document.getElementById('f-' + field);
+  if (hid) hid.value = isYes ? 'Yes' : 'No';
 
-  // Show/hide reason for tech
   if (field === 'tech') {
     document.getElementById('tech-reason-wrap').classList.toggle('show', !isYes);
+    document.getElementById('tech-type-wrap').classList.toggle('show', isYes);
   }
+  if (field === 'lms') {
+    document.getElementById('lms-reason-wrap').classList.toggle('show', !isYes);
+  }
+}
+
+function toggleChip(type, label) {
+  label.classList.toggle('checked');
+  document.getElementById('f-tech-' + type).checked = label.classList.contains('checked');
 }
 
 // ══════════════════════════════════════════════
@@ -1035,47 +1129,53 @@ function deletePhoto() {
 //   DRAFT
 // ══════════════════════════════════════════════
 function getFormData() {
+  // Collect subjects dynamically from whatever is rendered
+  const key = getSubjectSetKey();
+  const subjects = [];
+  if (key && SUBJECT_SETS[key]) {
+    SUBJECT_SETS[key].forEach(s => {
+      const k = subjectKey(s.name);
+      const entry = { subject: s.name, activity: document.getElementById('f-' + k + '-act')?.value || '' };
+      if (s.full) {
+        entry.unit_name = document.getElementById(k + '-unit-name')?.value || '';
+        entry.unit      = document.getElementById(k + '-unit')?.value      || '';
+        entry.lesson_no = document.getElementById(k + '-lesson')?.value    || '';
+        entry.topic     = document.getElementById(k + '-topic')?.value     || '';
+      }
+      entry.note = document.getElementById(k + '-note')?.value || '';
+      subjects.push(entry);
+    });
+  }
+
+  const techTypes = [];
+  if (document.getElementById('f-tech-projector')?.checked) techTypes.push('Projector');
+  if (document.getElementById('f-tech-laptop')?.checked)    techTypes.push('Laptop');
+  if (document.getElementById('f-tech-tablets')?.checked)   techTypes.push('Chromebooks/Tablets');
+
+  const lvl = parseInt(document.getElementById('f-level').value) || null;
+  const grade = schoolType && lvl ? `${schoolType}-${lvl}` : '';
+
   return {
-    date: document.getElementById('f-date').value,
+    date:          document.getElementById('f-date').value,
     schoolType,
-    grade: document.getElementById('f-grade').value,
-    level: document.getElementById('f-level').value,
-    strength: document.getElementById('f-strength').value,
-    boys: document.getElementById('f-boys').value,
-    girls: document.getElementById('f-girls').value,
-    present: document.getElementById('f-present').value,
-    absent: document.getElementById('f-absent').value,
-    leave: document.getElementById('f-leave').value,
-    lms: document.getElementById('f-lms').value,
-    tech: document.getElementById('f-tech').value,
-    techReason: document.getElementById('f-tech-reason').value,
-    crMedia: document.getElementById('f-crmedia').value,
-    techMedia: document.getElementById('f-techmedia').value,
-    assembly: document.getElementById('f-assembly').value,
-    english: {
-      unitName: document.getElementById('eng-unit-name').value,
-      unit: document.getElementById('eng-unit').value,
-      lesson: document.getElementById('eng-lesson').value,
-      topic: document.getElementById('eng-topic').value,
-      page: document.getElementById('eng-page').value,
-      activity: document.getElementById('f-eng-act').value
-    },
-    math: {
-      unitName: document.getElementById('math-unit-name').value,
-      unit: document.getElementById('math-unit').value,
-      lesson: document.getElementById('math-lesson').value,
-      topic: document.getElementById('math-topic').value,
-      page: document.getElementById('math-page').value,
-      activity: document.getElementById('f-math-act').value
-    },
-    urdu: {
-      unitName: document.getElementById('urdu-unit-name').value,
-      unit: document.getElementById('urdu-unit').value,
-      lesson: document.getElementById('urdu-lesson').value,
-      topic: document.getElementById('urdu-topic').value,
-      page: document.getElementById('urdu-page').value,
-      activity: document.getElementById('f-urdu-act').value
-    }
+    grade,
+    level:         document.getElementById('f-level').value,
+    strength:      document.getElementById('f-strength').value,
+    boys:          document.getElementById('f-boys').value,
+    girls:         document.getElementById('f-girls').value,
+    present:       document.getElementById('f-present').value,
+    absent:        document.getElementById('f-absent').value,
+    leave:         document.getElementById('f-leave').value,
+    absenceReason: document.getElementById('f-absence-reason').value,
+    lms:           document.getElementById('f-lms').value,
+    lmsReason:     document.getElementById('f-lms-reason').value,
+    tech:          document.getElementById('f-tech').value,
+    techReason:    document.getElementById('f-tech-reason').value,
+    techTypes,
+    crMedia:       document.getElementById('f-crmedia').value,
+    techMedia:     document.getElementById('f-techmedia').value,
+    assembly:      document.getElementById('f-assembly').value,
+    subjects,
   };
 }
 
@@ -1090,27 +1190,37 @@ function loadDraft() {
   if (!raw) return;
   try {
     const d = JSON.parse(raw);
-    if (d.date) document.getElementById('f-date').value = d.date;
-    if (d.schoolType) selectType(d.schoolType);
-    if (d.grade) document.getElementById('f-grade').value = d.grade;
-    if (d.level) document.getElementById('f-level').value = d.level;
-    if (d.strength) document.getElementById('f-strength').value = d.strength;
-    if (d.boys) document.getElementById('f-boys').value = d.boys;
-    if (d.girls) document.getElementById('f-girls').value = d.girls;
-    if (d.present) document.getElementById('f-present').value = d.present;
-    if (d.absent) document.getElementById('f-absent').value = d.absent;
-    if (d.leave) document.getElementById('f-leave').value = d.leave;
-    if (d.techReason) document.getElementById('f-tech-reason').value = d.techReason;
-    // Subjects
-    ['english','math','urdu'].forEach(s => {
-      if (!d[s]) return;
-      const pfx = s === 'english' ? 'eng' : s;
-      if (d[s].unitName) document.getElementById(`${pfx}-unit-name`).value = d[s].unitName;
-      if (d[s].unit) document.getElementById(`${pfx}-unit`).value = d[s].unit;
-      if (d[s].lesson) document.getElementById(`${pfx}-lesson`).value = d[s].lesson;
-      if (d[s].topic) document.getElementById(`${pfx}-topic`).value = d[s].topic;
-      if (d[s].page) document.getElementById(`${pfx}-page`).value = d[s].page;
-    });
+    if (d.date)          document.getElementById('f-date').value = d.date;
+    if (d.schoolType)  { selectType(d.schoolType); }
+    if (d.level)       { document.getElementById('f-level').value = d.level; renderSubjects(); }
+    if (d.strength)      document.getElementById('f-strength').value   = d.strength;
+    if (d.boys)          document.getElementById('f-boys').value        = d.boys;
+    if (d.girls)         document.getElementById('f-girls').value       = d.girls;
+    if (d.present)       document.getElementById('f-present').value     = d.present;
+    if (d.absent)        document.getElementById('f-absent').value      = d.absent;
+    if (d.leave)         document.getElementById('f-leave').value       = d.leave;
+    if (d.absenceReason) document.getElementById('f-absence-reason').value = d.absenceReason;
+    if (d.techReason)    document.getElementById('f-tech-reason').value = d.techReason;
+    if (d.lmsReason)     document.getElementById('f-lms-reason').value  = d.lmsReason;
+    // Tech types
+    if (d.techTypes) {
+      if (d.techTypes.includes('Projector'))         { document.getElementById('chip-projector').classList.add('checked'); document.getElementById('f-tech-projector').checked = true; }
+      if (d.techTypes.includes('Laptop'))            { document.getElementById('chip-laptop').classList.add('checked');    document.getElementById('f-tech-laptop').checked    = true; }
+      if (d.techTypes.includes('Chromebooks/Tablets')){ document.getElementById('chip-tablets').classList.add('checked'); document.getElementById('f-tech-tablets').checked   = true; }
+    }
+    // Restore subjects into rendered blocks
+    if (d.subjects && Array.isArray(d.subjects)) {
+      d.subjects.forEach(s => {
+        const k = subjectKey(s.subject || s.name || '');
+        if (!k) return;
+        const trySet = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+        trySet(k + '-unit-name', s.unit_name);
+        trySet(k + '-unit',      s.unit);
+        trySet(k + '-lesson',    s.lesson_no || s.lesson);
+        trySet(k + '-topic',     s.topic);
+        trySet(k + '-note',      s.note);
+      });
+    }
     showToast('📋 Draft restored');
   } catch(e) {}
 }

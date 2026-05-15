@@ -714,22 +714,17 @@ router.post('/api/web-feedback', async (req, res) => {
   const gradeStr = body.grade || null;
   const level    = parseInt(body.level) || null;
 
-  // Build subjects JSONB — matches your existing schema exactly
-  const subjects = [];
-  const subjectMap = { English: body.english, Math: body.math, Urdu: body.urdu };
-  for (const [name, s] of Object.entries(subjectMap)) {
-    if (!s) continue;
-    if (!s.topic && !s.lesson && !s.unitName && !s.unit && !s.page) continue;
-    subjects.push({
-      subject:   name,
-      unit_name: s.unitName || null,
-      unit:      s.unit     || null,
-      lesson_no: s.lesson   || null,
-      topic:     s.topic    || null,
-      page_no:   s.page     || null,
-      activity:  s.activity === 'Yes',
-    });
-  }
+  // Subjects: web form sends a pre-built array, use it directly
+  // Each entry: { subject, unit_name, unit, lesson_no, topic, activity, note }
+  const subjects = Array.isArray(body.subjects)
+    ? body.subjects.filter(s => s && s.subject)
+    : [];
+
+  // Tech types: array of selected types e.g. ['Projector', 'Laptop']
+  const techTypes   = Array.isArray(body.techTypes) ? body.techTypes : [];
+  const techReason  = body.techReason  || null;
+  const lmsReason   = body.lmsReason   || null;
+  const absenceReason = body.absenceReason || null;
 
   // Store photo as base64 text — photo_data column is type TEXT not bytea
   let photoData    = null;
@@ -768,8 +763,8 @@ router.post('/api/web-feedback', async (req, res) => {
     body.techMedia === 'Yes',
     body.lms       === 'Yes',
     JSON.stringify(subjects),
-    `web_form | ${body.schoolType || ''} | ${new Date().toISOString()}`,
-    null,        // projector_shown — not collected by web form
+    `web_form | ${body.schoolType||''} | tech:${techTypes.join(',')||'none'} | ${new Date().toISOString()}`,
+    null,        // projector_shown — set by AI after photo analysis
     photoData,
     photoMime,
     photoExpires,
@@ -815,7 +810,7 @@ router.post('/api/web-feedback', async (req, res) => {
           girls              = $6,
           assembly_conducted = $7,
           technology_used    = $8,
-          technology_reason  = $9,
+          technology_reason  = COALESCE($9, daily_feedback.technology_reason),
           cr_media_shared    = $10,
           tech_media_shared  = $11,
           lms_upload         = $12,
