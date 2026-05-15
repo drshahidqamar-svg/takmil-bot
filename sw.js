@@ -1,8 +1,8 @@
-// TAKMIL Offline Service Worker v4
+// TAKMIL Offline Service Worker v5
 // Handles navigation requests so app opens without internet
 
-const CACHE   = 'takmil-offline-v4';
-const SHELL   = ['/offline-portal', '/manifest.json'];
+const CACHE   = 'takmil-offline-v5';
+const SHELL   = ['/offline-portal', '/student-portal', '/teacher-portal', '/manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -36,10 +36,17 @@ self.addEventListener('fetch', e => {
           }
           return resp;
         })
-        .catch(() =>
-          caches.match(e.request)
-            .then(cached => cached || caches.match('/offline-portal'))
-        )
+        .catch(() => {
+          // Serve the correct cached page based on URL
+          return caches.match(e.request).then(cached => {
+            if (cached) return cached;
+            // Fallback: pick the right shell page
+            const path = new URL(e.request.url).pathname;
+            if (path.startsWith('/student-portal')) return caches.match('/student-portal');
+            if (path.startsWith('/teacher-portal')) return caches.match('/teacher-portal');
+            return caches.match('/offline-portal');
+          });
+        })
     );
     return;
   }
@@ -91,6 +98,19 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       fetch(e.request).catch(() =>
         new Response(JSON.stringify({ error:'offline', queued:true }), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+    );
+    return;
+  }
+
+  // Portal session/start — network only, fall through to offline PIN check in app
+  if (url.pathname === '/portal/session/start') {
+    e.respondWith(
+      fetch(e.request).catch(() =>
+        new Response(JSON.stringify({ error:'offline' }), {
+          status: 503,
           headers: { 'Content-Type': 'application/json' }
         })
       )
