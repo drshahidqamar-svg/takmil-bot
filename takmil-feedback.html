@@ -523,12 +523,12 @@
         <svg viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.29 21 3 13.71 3 4.5c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.24 1.02l-2.21 2.2z"/></svg>
       </div>
       <h2>Teacher Login</h2>
-      <p>Enter the phone number registered<br>with your TAKMIL school account</p>
+      <p>Enter your number with country code<br><span style="font-size:12px;color:var(--text-muted)">Pakistan: 923001234567 &nbsp;·&nbsp; US/Test: 16024305897</span></p>
       <div class="phone-row">
-        <div class="phone-prefix">+92</div>
-        <input type="tel" id="phone-input" placeholder="3001234567" maxlength="10" inputmode="numeric"
-          onkeypress="return event.charCode >= 48 && event.charCode <= 57"
-          oninput="this.value=this.value.replace(/\D/g,'')"
+        <div class="phone-prefix">+</div>
+        <input type="tel" id="phone-input" placeholder="923001234567 or 16024305897"
+          maxlength="15" inputmode="tel"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'')"
           onkeydown="if(event.key==='Enter') doLogin()">
       </div>
       <button class="btn-primary" id="login-btn" onclick="doLogin()">
@@ -855,12 +855,12 @@ function updateOnlineStatus() {
 //   AUTH
 // ══════════════════════════════════════════════
 async function doLogin() {
-  const input = document.getElementById('phone-input').value.trim();
-  if (input.length < 9 || input.length > 11) {
-    showError('Enter a valid Pakistani mobile number (without +92)');
+  const input = document.getElementById('phone-input').value.trim().replace(/[^0-9]/g, '');
+  if (input.length < 7 || input.length > 15) {
+    showError('Enter your number with country code — e.g. 923001234567 or 16024305897');
     return;
   }
-  const phone = '+92' + input;
+  const phone = '+' + input;
   const btn = document.getElementById('login-btn');
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Verifying...';

@@ -833,13 +833,16 @@ router.post('/api/web-feedback', async (req, res) => {
   }
 });
 
-// ── Helper: normalise Pakistani phone to E.164 ────────────────────────────────
+// ── Helper: normalise phone to E.164 (Pakistani + international) ─────────────
 function normalisePhone(raw) {
   if (!raw) return null;
-  let p = String(raw).replace(/[\s\-().]/g, '');
-  if (p.startsWith('0'))  p = '+92' + p.slice(1);
-  if (!p.startsWith('+')) p = '+' + p;
-  if (!/^\+92\d{10}$/.test(p)) return null;
+  let p = String(raw).replace(/[\s\-().]/g, "");
+  // Pakistani shorthand: leading 0 → +92
+  if (p.startsWith("0") && !p.startsWith("00")) p = "+92" + p.slice(1);
+  // Ensure + prefix
+  if (!p.startsWith("+")) p = "+" + p;
+  // Must be + followed by 7–15 digits (ITU E.164)
+  if (!/^\+\d{7,15}$/.test(p)) return null;
   return p;
 }
 
