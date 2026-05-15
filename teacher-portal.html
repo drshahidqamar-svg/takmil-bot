@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 :root{
   --ink:#0f2419;--ink2:#1a3a2a;--ink3:#2d5a3d;
   --leaf:#16a34a;--leaf2:#22c55e;--leaf3:#bbf7d0;
@@ -18,94 +18,108 @@
   --fog:#f0f7f2;--mist:#e2f0e8;--border:#c8e6d0;
   --danger:#dc2626;--warn:#f59e0b;--ok:#16a34a;
   --white:#ffffff;--shadow:0 4px 24px rgba(15,36,25,0.12);
-  --r:20px;--r2:14px;
+  --r:18px;--r2:14px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
 }
-html,body{height:100%;overflow:hidden;background:var(--fog);
-  font-family:'DM Sans',sans-serif;color:var(--ink)}
+html{height:100%;height:-webkit-fill-available}
+body{
+  min-height:100vh;min-height:-webkit-fill-available;
+  overflow:hidden;background:var(--fog);
+  font-family:'DM Sans',sans-serif;color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  touch-action:manipulation;
+}
 
 /* SCREENS */
-.scr{display:none;position:fixed;inset:0;overflow-y:auto;background:var(--fog)}
+.scr{display:none;position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;background:var(--fog);
+  -webkit-overflow-scrolling:touch}
 .scr.on{display:flex;flex-direction:column;align-items:center}
 
 /* HEADER */
 .hdr{
   width:100%;background:var(--ink2);
-  padding:16px 20px 14px;
+  padding:14px 16px 12px;
+  padding-top:calc(14px + var(--safe-top));
   display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:10;
+  -webkit-backdrop-filter:blur(10px);
 }
-.hdr-logo{font-size:22px;font-weight:800;color:var(--leaf2);letter-spacing:0.5px}
+.hdr-logo{font-size:20px;font-weight:800;color:var(--leaf2);letter-spacing:0.5px}
 .hdr-right{display:flex;align-items:center;gap:8px}
 .net-pill{
-  font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;
-  display:flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;
+  display:flex;align-items:center;gap:5px;min-height:32px;
 }
 .net-pill.online{background:#dcfce7;color:#15803d}
 .net-pill.offline{background:#fee2e2;color:#991b1b}
-.net-dot{width:6px;height:6px;border-radius:50%}
+.net-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .net-pill.online .net-dot{background:#16a34a}
 .net-pill.offline .net-dot{background:#dc2626;animation:blink 1s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 
 /* BODY WRAP */
-.wrap{width:100%;max-width:440px;padding:20px 16px 40px}
+.wrap{width:100%;max-width:480px;padding:16px 14px calc(32px + var(--safe-bot))}
 
 /* CARDS */
-.card{background:var(--white);border-radius:var(--r);padding:24px;
-  box-shadow:var(--shadow);margin-bottom:16px;border:1.5px solid var(--border)}
-.card-icon{font-size:36px;margin-bottom:12px}
+.card{background:var(--white);border-radius:var(--r);padding:20px;
+  box-shadow:var(--shadow);margin-bottom:14px;border:1.5px solid var(--border)}
+.card-icon{font-size:40px;margin-bottom:12px}
 .card-title{font-size:20px;font-weight:800;color:var(--ink2);margin-bottom:4px}
-.card-sub{font-size:13px;color:#6b7280;margin-bottom:20px;line-height:1.5}
+.card-sub{font-size:14px;color:#6b7280;margin-bottom:18px;line-height:1.6}
 .card-sub-ur{font-family:'Noto Nastaliq Urdu',serif;direction:rtl;text-align:right;
-  font-size:15px;color:#6b7280;display:block;margin-bottom:20px}
+  font-size:16px;color:#6b7280;display:block;margin-bottom:18px}
 
 /* INPUTS */
-.lbl{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
-  letter-spacing:0.6px;margin-bottom:6px;display:block}
-.inp{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:var(--r2);
+.lbl{font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;
+  letter-spacing:0.6px;margin-bottom:7px;display:block}
+.inp{width:100%;padding:16px 18px;border:2px solid var(--border);border-radius:var(--r2);
   font-size:16px;font-family:'DM Sans',sans-serif;color:var(--ink);
-  background:var(--fog);outline:none;transition:all 0.2s;margin-bottom:14px}
+  background:var(--fog);outline:none;transition:all 0.2s;margin-bottom:14px;
+  min-height:54px;-webkit-appearance:none;appearance:none}
 .inp:focus{border-color:var(--leaf);background:white}
-.inp-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' fill='none' stroke-width='2'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 14px center}
+.inp-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%236b7280' fill='none' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 16px center;
+  padding-right:42px;cursor:pointer}
 
 /* BUTTONS */
-.btn{width:100%;padding:17px;border:none;border-radius:var(--r2);
+.btn{width:100%;padding:18px 20px;border:none;border-radius:var(--r2);
   font-size:17px;font-weight:800;cursor:pointer;
   font-family:'DM Sans',sans-serif;transition:all 0.18s;
-  letter-spacing:0.2px;position:relative;overflow:hidden}
-.btn::after{content:'';position:absolute;inset:0;background:white;opacity:0;transition:opacity 0.2s}
-.btn:active::after{opacity:0.15}
+  letter-spacing:0.2px;position:relative;overflow:hidden;
+  min-height:58px;touch-action:manipulation;
+  -webkit-user-select:none;user-select:none}
+.btn::after{content:'';position:absolute;inset:0;background:white;opacity:0;transition:opacity 0.15s}
+.btn:active::after{opacity:0.18}
+.btn:active{transform:scale(0.98)}
 .btn-green{background:linear-gradient(135deg,var(--leaf),var(--ink3));color:white;
   box-shadow:0 4px 16px rgba(22,163,74,0.35)}
-.btn-green:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,163,74,0.4)}
 .btn-red{background:linear-gradient(135deg,#dc2626,#991b1b);color:white;
   box-shadow:0 4px 16px rgba(220,38,38,0.35)}
-.btn-red:hover{transform:translateY(-1px)}
-.btn-outline{background:transparent;border:2px solid var(--border);color:var(--ink);font-size:15px;padding:13px}
-.btn-outline:hover{border-color:var(--leaf);color:var(--leaf)}
-.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important}
-.btn-sm{padding:10px 16px;font-size:14px;width:auto;border-radius:10px}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--ink);font-size:16px;padding:16px}
+.btn-outline:active{border-color:var(--leaf);color:var(--leaf);background:var(--mist)}
+.btn:disabled{opacity:0.45;cursor:not-allowed;transform:none!important}
+.btn-sm{padding:12px 18px;font-size:14px;width:auto;border-radius:10px;min-height:44px}
 .btn-gap{height:10px}
 
 /* VIDEO LIST */
 .video-item{
-  display:flex;align-items:center;gap:12px;padding:14px;
+  display:flex;align-items:center;gap:12px;padding:16px 14px;
   border:1.5px solid var(--border);border-radius:var(--r2);
-  margin-bottom:10px;cursor:pointer;transition:all 0.2s;background:var(--fog);
+  margin-bottom:10px;cursor:pointer;transition:all 0.18s;background:var(--fog);
+  min-height:64px;
 }
-.video-item:hover,.video-item.sel{border-color:var(--leaf);background:var(--mist)}
-.video-item.sel{background:#f0fdf4}
-.vi-dot{width:10px;height:10px;border-radius:50%;background:var(--border);flex-shrink:0}
+.video-item.sel{border-color:var(--leaf);background:#f0fdf4}
+.vi-dot{width:12px;height:12px;border-radius:50%;background:var(--border);flex-shrink:0}
 .video-item.sel .vi-dot{background:var(--leaf)}
 .vi-body{flex:1;min-width:0}
-.vi-name{font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vi-meta{font-size:12px;color:#6b7280;margin-top:2px}
-.vi-dur{font-size:12px;font-weight:700;color:var(--ink3);flex-shrink:0}
+.vi-name{font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vi-meta{font-size:13px;color:#6b7280;margin-top:3px}
+.vi-dur{font-size:13px;font-weight:700;color:var(--ink3);flex-shrink:0}
 
 /* STATUS CARD */
 .status-card{
-  border-radius:var(--r);padding:24px;margin-bottom:16px;
+  border-radius:var(--r);padding:22px 20px;margin-bottom:14px;
   border:2px solid;text-align:center;
 }
 .status-card.recording{
@@ -118,32 +132,33 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
 .status-card.flagged{background:#fef2f2;border-color:var(--danger)}
 
 .rec-indicator{
-  width:16px;height:16px;border-radius:50%;background:#dc2626;
+  width:14px;height:14px;border-radius:50%;background:#dc2626;
   display:inline-block;margin-right:8px;animation:rec 1s infinite;
+  vertical-align:middle;
 }
 @keyframes rec{0%,100%{opacity:1}50%{opacity:0.3}}
 
-.timer{font-size:52px;font-weight:800;color:var(--ink2);
-  font-variant-numeric:tabular-nums;letter-spacing:-1px;margin:16px 0}
+.timer{font-size:56px;font-weight:800;color:var(--ink2);
+  font-variant-numeric:tabular-nums;letter-spacing:-2px;margin:14px 0}
 .timer.warn{color:var(--amber)}
 .timer.ok{color:var(--leaf)}
 
 /* COVERAGE BAR */
-.cov-wrap{margin:16px 0}
-.cov-label{display:flex;justify-content:space-between;font-size:13px;
+.cov-wrap{margin:14px 0}
+.cov-label{display:flex;justify-content:space-between;font-size:14px;
   font-weight:700;margin-bottom:8px}
-.cov-bar{height:12px;background:var(--mist);border-radius:6px;overflow:hidden}
-.cov-fill{height:100%;border-radius:6px;transition:width 0.5s,background 0.5s}
+.cov-bar{height:14px;background:var(--mist);border-radius:7px;overflow:hidden}
+.cov-fill{height:100%;border-radius:7px;transition:width 0.5s,background 0.5s}
 
 /* RESULT */
-.result-big{font-size:64px;margin:16px 0}
+.result-big{font-size:68px;margin:14px 0}
 .result-title{font-size:24px;font-weight:800;margin-bottom:8px}
-.result-meta{font-size:14px;color:#6b7280;line-height:1.8}
+.result-meta{font-size:15px;color:#6b7280;line-height:1.8}
 
 /* GPS */
 .gps-badge{
   display:inline-flex;align-items:center;gap:6px;
-  padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;
+  padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;
   background:var(--mist);color:var(--ink3);margin-top:10px;
 }
 .gps-badge.confirmed{background:#dcfce7;color:#15803d}
@@ -207,19 +222,20 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
 
 .att-student-row{
   display:flex;align-items:center;gap:10px;
-  padding:12px 0;border-bottom:1px solid var(--border);
+  padding:14px 4px;border-bottom:1px solid var(--border);
 }
 .att-student-row:last-child{border-bottom:none}
-.att-snum{font-size:12px;color:#6b7280;font-weight:700;min-width:22px}
-.att-sname{flex:1;font-size:15px;font-weight:700;color:var(--ink)}
-.att-btns{display:flex;gap:6px}
+.att-snum{font-size:13px;color:#6b7280;font-weight:700;min-width:24px}
+.att-sname{flex:1;font-size:16px;font-weight:700;color:var(--ink)}
+.att-btns{display:flex;gap:8px}
 .att-btn{
-  width:36px;height:36px;border-radius:50%;border:2px solid var(--border);
-  font-size:13px;font-weight:800;cursor:pointer;background:var(--fog);
+  width:44px;height:44px;border-radius:50%;border:2px solid var(--border);
+  font-size:14px;font-weight:800;cursor:pointer;background:var(--fog);
   display:flex;align-items:center;justify-content:center;
   transition:all 0.15s;color:#6b7280;font-family:'DM Sans',sans-serif;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;
 }
-.att-btn:active{transform:scale(0.9)}
+.att-btn:active{transform:scale(0.88)}
 .att-btn.sel-p{background:#dcfce7;border-color:#16a34a;color:#15803d}
 .att-btn.sel-a{background:#fee2e2;border-color:#dc2626;color:#dc2626}
 .att-btn.sel-l{background:#fef9c3;border-color:#f59e0b;color:#92400e}
@@ -229,13 +245,13 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
   border-radius:var(--r2);overflow:hidden;
   border:1.5px solid var(--border);margin:14px 0;
 }
-.att-sum-cell{flex:1;text-align:center;padding:10px 4px}
-.att-sum-n{font-size:20px;font-weight:900}
-.att-sum-l{font-size:9px;font-weight:700;text-transform:uppercase;
-  letter-spacing:0.5px;color:#6b7280;margin-top:2px}
-.att-prog{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:10px 0 4px}
-.att-prog-fill{height:100%;border-radius:3px;background:var(--leaf);transition:width 0.4s}
-.att-pct-lbl{font-size:12px;font-weight:700;text-align:right}
+.att-sum-cell{flex:1;text-align:center;padding:12px 4px}
+.att-sum-n{font-size:24px;font-weight:900}
+.att-sum-l{font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.5px;color:#6b7280;margin-top:3px}
+.att-prog{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:10px 0 4px}
+.att-prog-fill{height:100%;border-radius:4px;background:var(--leaf);transition:width 0.4s}
+.att-pct-lbl{font-size:13px;font-weight:700;text-align:right}
 
 .wa-tick{font-size:11px;color:#16a34a;text-align:right;margin-top:4px}
 
@@ -255,7 +271,15 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
 .file-chosen-name{font-size:14px;font-weight:700;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .file-chosen-meta{font-size:12px;color:#6b7280;margin-top:2px}
 
-/* ── LESSON VIDEO PLAYER ── */
+/* ── INSTALL BANNER ── */
+#install-banner{display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 28px);max-width:480px;z-index:9999;background:var(--ink2);border:2px solid var(--leaf2);border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,0.25);align-items:center;gap:12px;}
+#install-banner .ib-icon{font-size:26px;flex-shrink:0}
+#install-banner .ib-text{flex:1;color:#fff}
+#install-banner .ib-title{font-size:14px;font-weight:800;margin-bottom:2px}
+#install-banner .ib-sub{font-size:11px;color:var(--leaf3);line-height:1.4}
+#install-banner .ib-btns{display:flex;gap:8px;flex-shrink:0}
+#install-banner .ib-install{background:var(--leaf2);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif;min-height:38px}
+#install-banner .ib-dismiss{background:transparent;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:10px;padding:9px 10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;min-height:38px}
 #lesson-video-wrap{display:none;margin-bottom:14px}
 #lesson-video{width:100%;max-height:260px;border-radius:var(--r2);background:#000;display:block}
 .video-ctrl-bar{display:flex;align-items:center;gap:10px;margin-top:8px}
@@ -265,39 +289,10 @@ html,body{height:100%;overflow:hidden;background:var(--fog);
 <body>
 
   <!-- Home Button Top Bar -->
-  <div style="
-    width:100%;
-    background:#15803D;
-    padding:8px 20px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    position:sticky;
-    top:0;
-    z-index:9999;
-    box-shadow:0 2px 8px rgba(0,0,0,0.15);
-  ">
-    <a href="/" style="
-      display:inline-flex;
-      align-items:center;
-      gap:7px;
-      background:rgba(255,255,255,0.18);
-      color:#ffffff;
-      text-decoration:none;
-      font-family:'Segoe UI',sans-serif;
-      font-size:13px;
-      font-weight:700;
-      padding:5px 16px;
-      border-radius:20px;
-      border:1.5px solid rgba(255,255,255,0.35);
-      transition:background 0.15s;
-    " onmouseover="this.style.background='rgba(255,255,255,0.28)'"
-       onmouseout="this.style.background='rgba(255,255,255,0.18)'">
-      ⌂ Home
-    </a>
-    <span style="color:rgba(255,255,255,0.6);font-size:12px;font-family:'Segoe UI',sans-serif;">
-      TAKMIL Monitoring Hub
-    </span>
+  <div style="width:100%;background:#15803D;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+    <a href="/" style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.18);color:#ffffff;text-decoration:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:8px 18px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.35);min-height:40px;">⌂ Home</a>
+    <span style="color:rgba(255,255,255,0.7);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;">TAKMIL Monitoring Hub</span>
+  </div>
   </div>
 
 <!-- ══ SCREEN: LOGIN ══ -->
@@ -1527,6 +1522,65 @@ async function init(){
 }
 
 init();
+
+// ── PWA Install ───────────────────────────────────────────────────
+let _deferredPrompt = null;
+function setupInstallPrompt() {
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) return;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); _deferredPrompt = e;
+    setTimeout(() => showInstallBanner(), 4000);
+  });
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if (isIOS && isSafari) setTimeout(() => showInstallBanner(true), 4000);
+  window.addEventListener('appinstalled', () => {
+    document.getElementById('install-banner').style.display = 'none';
+    showToast('✅ App installed!');
+  });
+}
+function showInstallBanner(ios = false) {
+  const dismissed = localStorage.getItem('install_dismissed_teacher');
+  if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 60 * 60 * 1000) return;
+  const banner = document.getElementById('install-banner');
+  if (!banner) return;
+  if (ios) { banner.querySelector('.ib-sub').textContent = 'Tap Share → "Add to Home Screen"'; banner.querySelector('.ib-install').textContent = 'Got it'; banner.querySelector('.ib-install').onclick = dismissInstallBanner; }
+  banner.style.display = 'flex';
+}
+async function installApp() {
+  if (_deferredPrompt) {
+    _deferredPrompt.prompt();
+    const { outcome } = await _deferredPrompt.userChoice;
+    _deferredPrompt = null;
+    document.getElementById('install-banner').style.display = 'none';
+    if (outcome === 'accepted') showToast('✅ Installing...');
+  } else { dismissInstallBanner(); }
+}
+function dismissInstallBanner() {
+  document.getElementById('install-banner').style.display = 'none';
+  localStorage.setItem('install_dismissed_teacher', Date.now().toString());
+}
+setupInstallPrompt();
+
+function showToast(msg, ms=2500) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id='toast'; t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a3a2a;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:340px;text-align:center;'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', ms);
+}
 </script>
+
+<!-- Install Banner -->
+<div id="install-banner">
+  <div class="ib-icon">📲</div>
+  <div class="ib-text">
+    <div class="ib-title">Install TAKMIL Teacher App</div>
+    <div class="ib-sub">Works offline — open from home screen without internet</div>
+  </div>
+  <div class="ib-btns">
+    <button class="ib-install" onclick="installApp()">Install</button>
+    <button class="ib-dismiss" onclick="dismissInstallBanner()">✕</button>
+  </div>
+</div>
 </body>
 </html>

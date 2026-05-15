@@ -2070,6 +2070,67 @@ async function init() {
 
   // Auto-sync if online
   if (isOnline()) setTimeout(autoSync, 2000);
+
+  // ── PWA Install prompt ─────────────────────────────────────────
+  setupInstallPrompt();
+}
+
+let _deferredPrompt = null;
+
+function setupInstallPrompt() {
+  // Already installed — don't show
+  if (window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true) return;
+
+  // Android / Chrome — capture the prompt
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    _deferredPrompt = e;
+    setTimeout(() => showInstallBanner(), 3000);
+  });
+
+  // iOS Safari — show manual instructions
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if (isIOS && isSafari) {
+    setTimeout(() => showInstallBanner(true), 3000);
+  }
+
+  // Hide banner after install
+  window.addEventListener('appinstalled', () => {
+    document.getElementById('install-banner').style.display = 'none';
+    showToast('✅ App installed! Open from home screen anytime.');
+  });
+}
+
+function showInstallBanner(ios = false) {
+  const dismissed = localStorage.getItem('install_dismissed');
+  if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 60 * 60 * 1000) return;
+  const banner = document.getElementById('install-banner');
+  if (!banner) return;
+  if (ios) {
+    banner.querySelector('.ib-sub').textContent = 'Tap Share → "Add to Home Screen" to install';
+    banner.querySelector('.ib-install').textContent = 'Got it';
+    banner.querySelector('.ib-install').onclick = dismissInstallBanner;
+  }
+  banner.style.display = 'flex';
+}
+
+async function installApp() {
+  if (_deferredPrompt) {
+    _deferredPrompt.prompt();
+    const { outcome } = await _deferredPrompt.userChoice;
+    _deferredPrompt = null;
+    document.getElementById('install-banner').style.display = 'none';
+    if (outcome === 'accepted') showToast('✅ Installing app...');
+  } else {
+    dismissInstallBanner();
+  }
+}
+
+function dismissInstallBanner() {
+  document.getElementById('install-banner').style.display = 'none';
+  localStorage.setItem('install_dismissed', Date.now().toString());
 }
 
 init();

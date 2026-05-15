@@ -82,6 +82,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 /* TOAST */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a3a2a;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;display:none;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:340px;text-align:center;}
+/* INSTALL BANNER */
+#install-banner{display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:480px;z-index:9999;background:#1a3a2a;border:2px solid #4ade80;border-radius:16px;padding:16px 20px;box-shadow:0 8px 32px rgba(0,0,0,0.3);align-items:center;gap:12px;}
+#install-banner .ib-icon{font-size:28px;flex-shrink:0}
+#install-banner .ib-text{flex:1;color:white}
+#install-banner .ib-title{font-size:14px;font-weight:800;margin-bottom:2px}
+#install-banner .ib-sub{font-size:11px;color:#86efac;line-height:1.4}
+#install-banner .ib-btns{display:flex;gap:8px;flex-shrink:0}
+#install-banner .ib-install{background:#4ade80;color:#0f2419;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif}
+#install-banner .ib-dismiss{background:transparent;border:1px solid rgba(255,255,255,0.3);color:white;border-radius:10px;padding:8px 10px;font-size:13px;cursor:pointer;font-family:'Nunito',sans-serif}
 </style>
 </head>
 <body>
@@ -187,6 +196,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 
 <div class="toast" id="toast"></div>
 
+<div id="install-banner">
+  <div class="ib-icon">📲</div>
+  <div class="ib-text">
+    <div class="ib-title">Install TAKMIL Student App</div>
+    <div class="ib-sub">Works offline — open from home screen without internet</div>
+  </div>
+  <div class="ib-btns">
+    <button class="ib-install" onclick="installApp()">Install</button>
+    <button class="ib-dismiss" onclick="dismissInstallBanner()">✕</button>
+  </div>
+</div>
+
 <script>
 const BASE = '';
 const DB_NAME = 'takmil_offline';
@@ -222,22 +243,16 @@ async function validatePin(pin, name) {
   if (isOnline()) {
     try {
       const payload = { pin, studentName: name, subject: null };
-      console.log('Sending to server:', JSON.stringify(payload));
       const resp = await fetch(BASE + '/portal/session/start', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify(payload)
       });
       const data = await resp.json();
-      console.log('Server response:', JSON.stringify(data));
-      // Show debug alert so we can see on phone
-      alert('DEBUG — Sent: ' + JSON.stringify(payload) + '\n\nReceived: ' + JSON.stringify(data));
       if (!resp.ok || data.error) return { valid:false, error:data.error };
       if (data.isMultiSubject) return { valid:true, level:data.level, online:true, multiSubject:true };
       return { valid:true, level:data.level, online:true, sessionId:data.sessionId };
-    } catch(e) {
-      alert('DEBUG — Fetch error: ' + e.message);
-    }
+    } catch(e) {}
   }
   const pinRec = await dbGet('pins', pin.toUpperCase());
   if (!pinRec) return { valid:false, error:'PIN not found. Ask teacher to download PINs when online.' };
@@ -396,7 +411,46 @@ function newStudent() {
 }
 
 window.addEventListener('online', ()=>{ showToast('Back online ✓'); });
-openDB().catch(console.error);
+
+// ── PWA Install ───────────────────────────────────────────────────
+let _deferredPrompt = null;
+function setupInstallPrompt() {
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) return;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); _deferredPrompt = e;
+    setTimeout(() => showInstallBanner(), 3000);
+  });
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if (isIOS && isSafari) setTimeout(() => showInstallBanner(true), 3000);
+  window.addEventListener('appinstalled', () => {
+    document.getElementById('install-banner').style.display = 'none';
+    showToast('✅ App installed! Open from home screen anytime.');
+  });
+}
+function showInstallBanner(ios = false) {
+  const dismissed = localStorage.getItem('install_dismissed_student');
+  if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 60 * 60 * 1000) return;
+  const banner = document.getElementById('install-banner');
+  if (!banner) return;
+  if (ios) { banner.querySelector('.ib-sub').textContent = 'Tap Share → "Add to Home Screen" to install'; banner.querySelector('.ib-install').textContent = 'Got it'; banner.querySelector('.ib-install').onclick = dismissInstallBanner; }
+  banner.style.display = 'flex';
+}
+async function installApp() {
+  if (_deferredPrompt) {
+    _deferredPrompt.prompt();
+    const { outcome } = await _deferredPrompt.userChoice;
+    _deferredPrompt = null;
+    document.getElementById('install-banner').style.display = 'none';
+    if (outcome === 'accepted') showToast('✅ Installing app...');
+  } else { dismissInstallBanner(); }
+}
+function dismissInstallBanner() {
+  document.getElementById('install-banner').style.display = 'none';
+  localStorage.setItem('install_dismissed_student', Date.now().toString());
+}
+
+openDB().then(setupInstallPrompt).catch(console.error);
 </script>
 </body>
 </html>
