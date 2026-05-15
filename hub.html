@@ -231,21 +231,35 @@ body{
   .main-grid{grid-template-columns:1fr}
   .prov-row{grid-template-columns:1fr 1fr}
 }
-/* ── MOBILE (phones) ── */
-@media(max-width:600px){
-  .sidebar{display:none}
-  .main{margin-left:0!important}
+/* ── MOBILE NAV STRIP (always visible on phones) ── */
+.mob-nav-strip{
+  display:none;
+  position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:#1a3a2a;height:52px;
+  align-items:center;padding:0 14px;gap:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.25);
+}
+.mob-nav-ham{
+  width:44px;height:44px;border:none;background:rgba(255,255,255,0.12);
+  border-radius:10px;cursor:pointer;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  padding:0;
+}
+.mob-nav-ham span{display:block;width:22px;height:2.5px;background:#4ade80;border-radius:2px}
+.mob-nav-title{color:#fff;font-size:15px;font-weight:700;flex:1}
+.mob-nav-live{background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;
+  padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:4px}
+@media(max-width:640px){
+  .mob-nav-strip{display:flex}
+  .sidebar{display:none!important}
+  .main{margin-left:0!important;padding-top:52px}
+  .topbar{display:none}
   .main-grid{grid-template-columns:1fr!important}
   .prov-row{grid-template-columns:1fr!important}
   .coord-grid{grid-template-columns:1fr 1fr!important}
-  .topbar{padding:0 14px;gap:10px}
-  .tb-bc{font-size:13px}
-  .tb-pills .pill:not(.live){display:none}
-  .content{padding:14px 12px 32px}
+  .content{padding:14px 12px 40px}
   .page-header h1{font-size:20px}
-  .page-header p{font-size:13px}
-  /* hamburger */
-  .mob-ham{display:flex}
+  .page-header p{font-size:13px;line-height:1.5}
 }
 /* Mobile drawer overlay */
 .mob-overlay{
@@ -289,6 +303,15 @@ body{
 </style>
 </head>
 <body>
+
+<!-- Mobile nav strip (phones only) -->
+<div class="mob-nav-strip" id="mob-nav-strip">
+  <button class="mob-nav-ham" onclick="openMobDrawer()" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <span class="mob-nav-title">TAKMIL · Monitoring Hub</span>
+  <div class="mob-nav-live"><span style="width:6px;height:6px;background:#16a34a;border-radius:50%;display:inline-block"></span> Live</div>
+</div>
 
 <aside class="sidebar">
   <a href="/" class="sidebar-brand">
@@ -340,7 +363,6 @@ body{
 
 <div class="main">
   <div class="topbar">
-    <button class="mob-ham" onclick="openMobDrawer()" aria-label="Open menu"><span></span></button>
     <div class="tb-bc">
       <span>TAKMIL</span><span class="sep">/</span><span class="cur">Monitoring Hub</span>
     </div>
