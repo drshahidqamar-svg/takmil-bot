@@ -730,7 +730,7 @@ router.post('/api/web-feedback', async (req, res) => {
     });
   }
 
-  // Decode photo: base64 → Buffer for bytea storage
+  // Store photo as base64 text — photo_data column is type TEXT not bytea
   let photoData    = null;
   let photoMime    = null;
   let photoExpires = null;
@@ -739,7 +739,7 @@ router.post('/api/web-feedback', async (req, res) => {
       const match = body.photo.match(/^data:(image\/\w+);base64,(.+)$/);
       if (match) {
         photoMime    = match[1];
-        photoData    = Buffer.from(match[2], 'base64');
+        photoData    = match[2];   // store raw base64 string directly
         photoExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
       }
     } catch (e) {
