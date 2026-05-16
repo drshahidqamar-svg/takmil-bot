@@ -887,11 +887,9 @@
       <div class="section-title">👥 Attendance</div>
 
       <div class="field">
-        <label>Total Strength <span class="req">*</span>
-          <span style="font-size:10px;color:var(--text-muted);font-weight:400;margin-left:4px">auto-fills from Boys + Girls</span>
-        </label>
+        <label>Total Strength <span class="req">*</span></label>
         <input type="text" inputmode="none" readonly id="f-strength"
-          placeholder="Tap Boys &amp; Girls to auto-fill"
+          placeholder="0"
           onclick="openKeypad('f-strength','Total Strength')"
           style="cursor:pointer">
       </div>
@@ -1704,24 +1702,25 @@ async function submitFeedback() {
   const abs  = parseInt(data.absent)   || 0;
   const lv   = parseInt(data.leave)    || 0;
 
-  // Rule 1: Total Strength = Boys + Girls (only if both entered)
-  if (boys > 0 || girls > 0) {
-    if (str !== boys + girls) {
-      showToast(`⚠️ Total Strength (${str}) must equal Boys + Girls (${boys}+${girls}=${boys+girls})`);
-      document.getElementById('f-strength').classList.add('mismatch');
+  // Rule 1: Boys + Girls must equal Total Strength
+  if (str > 0 && (boys > 0 || girls > 0)) {
+    if (boys + girls !== str) {
+      showToast(`⚠️ Boys (${boys}) + Girls (${girls}) = ${boys+girls}, but Total Strength is ${str}`);
       document.getElementById('f-boys').classList.add('mismatch');
       document.getElementById('f-girls').classList.add('mismatch');
+      document.getElementById('balance-gender').scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
   }
 
-  // Rule 2: Total Strength = Present + Absent + Leave
+  // Rule 2: Present + Absent + Leave must equal Total Strength
   if (str > 0) {
-    if (str !== pres + abs + lv) {
-      showToast(`⚠️ Total Strength (${str}) must equal Present+Absent+Leave (${pres}+${abs}+${lv}=${pres+abs+lv})`);
+    if (pres + abs + lv !== str) {
+      showToast(`⚠️ Present (${pres}) + Absent (${abs}) + Leave (${lv}) = ${pres+abs+lv}, but Total Strength is ${str}`);
       document.getElementById('f-present').classList.add('mismatch');
       document.getElementById('f-absent').classList.add('mismatch');
       document.getElementById('f-leave').classList.add('mismatch');
+      document.getElementById('balance-attendance').scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
   }
@@ -1981,19 +1980,12 @@ function recalcAndCheck() {
   const abs   = getNum('f-absent');
   const lv    = getNum('f-leave');
 
-  // AUTO-FILL Total Strength = Boys + Girls (when at least one is set)
-  if (boys > 0 || girls > 0) {
-    const autoStr = boys + girls;
-    const strInput = document.getElementById('f-strength');
-    strInput.value = autoStr;
-    strInput.classList.add('auto-calc');
-  }
-
+  // Total Strength is always entered by the teacher — never auto-filled
   const str = getNum('f-strength');
 
-  // Balance bar 1: Boys + Girls vs Total Strength
+  // Balance bar 1: Boys + Girls must equal Total Strength (teacher entered Total first)
   const gBar = document.getElementById('balance-gender');
-  if (boys > 0 || girls > 0) {
+  if (str > 0 && (boys > 0 || girls > 0)) {
     const gSum = boys + girls;
     gBar.classList.add('show');
     if (gSum === str) {
@@ -2002,7 +1994,7 @@ function recalcAndCheck() {
       ['f-boys','f-girls','f-strength'].forEach(id => document.getElementById(id).classList.remove('mismatch'));
     } else {
       gBar.className = 'balance-bar show err';
-      gBar.textContent = `⚠️ Boys (${boys}) + Girls (${girls}) = ${gSum} — doesn't match Total Strength (${str})`;
+      gBar.textContent = `⚠️ Boys (${boys}) + Girls (${girls}) = ${gSum} — must equal Total Strength (${str})`;
     }
   } else {
     gBar.classList.remove('show');
