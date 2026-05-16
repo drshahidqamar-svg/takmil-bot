@@ -671,33 +671,64 @@
 
 <!-- iOS Install Instructions Modal -->
 <div class="ios-modal-backdrop" id="ios-modal" onclick="closeIOSModal(event)">
-  <div class="ios-modal">
-    <h3>📲 Save to Home Screen</h3>
-    <p>Follow these 3 quick steps in Safari<br>to install the TAKMIL app on your phone</p>
+  <div class="ios-modal" id="ios-modal-inner">
+    <h3>📲 Save App to Phone</h3>
 
-    <div class="ios-step">
-      <div class="ios-step-num">1</div>
-      <div class="ios-step-text">
-        Tap the <span>Share button</span> <span class="ios-share-icon">⬆️</span><br>
-        at the bottom of your Safari screen
+    <!-- Android instructions (shown by default) -->
+    <div id="android-steps">
+      <p>Open the <strong>browser menu</strong> to install<br>
+      the TAKMIL app on your home screen</p>
+      <div class="ios-step">
+        <div class="ios-step-num">1</div>
+        <div class="ios-step-text">
+          Tap the <span>three-dot menu ⋮</span><br>
+          in the top-right corner of Chrome
+        </div>
       </div>
-    </div>
-    <div class="ios-step">
-      <div class="ios-step-num">2</div>
-      <div class="ios-step-text">
-        Scroll down and tap<br>
-        <span>"Add to Home Screen"</span>
+      <div class="ios-step">
+        <div class="ios-step-num">2</div>
+        <div class="ios-step-text">
+          Tap <span>"Add to Home screen"</span><br>
+          or <span>"Install app"</span>
+        </div>
       </div>
-    </div>
-    <div class="ios-step">
-      <div class="ios-step-num">3</div>
-      <div class="ios-step-text">
-        Tap <span>"Add"</span> in the top right corner —<br>
-        the TAKMIL icon will appear on your home screen!
+      <div class="ios-step">
+        <div class="ios-step-num">3</div>
+        <div class="ios-step-text">
+          Tap <span>"Add"</span> to confirm —<br>
+          the TAKMIL icon appears on your home screen!
+        </div>
       </div>
     </div>
 
-    <button class="ios-modal-close" onclick="closeIOSModal()">Got it ✓</button>
+    <!-- iPhone instructions (shown on iOS) -->
+    <div id="iphone-steps" style="display:none">
+      <p>Follow these steps in <strong>Safari</strong><br>
+      to install the TAKMIL app on your iPhone</p>
+      <div class="ios-step">
+        <div class="ios-step-num">1</div>
+        <div class="ios-step-text">
+          Tap the <span>Share button ⬆️</span><br>
+          at the bottom of Safari
+        </div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">2</div>
+        <div class="ios-step-text">
+          Scroll down and tap<br>
+          <span>"Add to Home Screen"</span>
+        </div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">3</div>
+        <div class="ios-step-text">
+          Tap <span>"Add"</span> in the top right —<br>
+          the TAKMIL icon appears on your home screen!
+        </div>
+      </div>
+    </div>
+
+    <button class="ios-modal-close" onclick="closeIOSModal()">OK, Got it ✓</button>
   </div>
 </div>
 <div class="ios-arrow" id="ios-arrow">👇</div>
@@ -942,20 +973,20 @@ function isIOS() {
 }
 function isInStandaloneMode() {
   return window.matchMedia('(display-mode: standalone)').matches
-    || window.navigator.standalone === true;
+      || window.navigator.standalone === true;
 }
-function isAndroidChrome() {
-  return /android/i.test(navigator.userAgent) && /chrome/i.test(navigator.userAgent);
+function isMobile() {
+  return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 }
 
-// Android: intercept the browser's native install prompt
+// Android Chrome: capture native install prompt when it fires
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
-  deferredInstallPrompt = e;
+  deferredInstallPrompt = e;          // save it — tap uses it for 1-tap install
   showInstallButton();
 });
 
-// If installed successfully — hide the button
+// Hide button once successfully installed
 window.addEventListener('appinstalled', () => {
   hideInstallButton();
   showToast('✅ App installed! Open it from your home screen.');
@@ -963,7 +994,7 @@ window.addEventListener('appinstalled', () => {
 });
 
 function showInstallButton() {
-  if (isInStandaloneMode()) return; // already installed
+  if (isInStandaloneMode()) return;   // already running as installed app — hide
   const btn = document.getElementById('btn-install');
   if (btn) btn.classList.add('visible');
 }
@@ -975,7 +1006,7 @@ function hideInstallButton() {
 
 function triggerInstall() {
   if (deferredInstallPrompt) {
-    // Android Chrome — native prompt
+    // Android Chrome — one-tap native install dialog
     deferredInstallPrompt.prompt();
     deferredInstallPrompt.userChoice.then(choice => {
       if (choice.outcome === 'accepted') {
@@ -984,12 +1015,18 @@ function triggerInstall() {
       }
       deferredInstallPrompt = null;
     });
-  } else if (isIOS()) {
-    // iOS Safari — show manual instructions modal
-    document.getElementById('ios-modal').classList.add('open');
   } else {
-    // Fallback for other browsers
-    showToast('Use your browser menu → "Add to Home Screen"');
+    // Show correct steps for this device
+    const androidSteps = document.getElementById('android-steps');
+    const iphoneSteps  = document.getElementById('iphone-steps');
+    if (isIOS()) {
+      androidSteps.style.display = 'none';
+      iphoneSteps.style.display  = 'block';
+    } else {
+      androidSteps.style.display = 'block';
+      iphoneSteps.style.display  = 'none';
+    }
+    document.getElementById('ios-modal').classList.add('open');
   }
 }
 
@@ -999,11 +1036,11 @@ function closeIOSModal(e) {
   }
 }
 
-// Show install button on iOS if not already installed
-window.addEventListener('load', () => {
-  if (isIOS() && !isInStandaloneMode()) {
-    // Small delay so page renders first
-    setTimeout(showInstallButton, 1000);
+// Show install button immediately on ANY mobile device that hasn't installed yet
+// Don't wait for beforeinstallprompt — show right away so teachers see it
+document.addEventListener('DOMContentLoaded', () => {
+  if (isMobile() && !isInStandaloneMode()) {
+    showInstallButton();
   }
 });
 
