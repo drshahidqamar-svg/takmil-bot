@@ -541,6 +541,82 @@
     .section-card { padding: 16px; }
   }
 
+  /* ── Numeric keypad ── */
+  .keypad-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 200;
+    align-items: flex-end; justify-content: center;
+  }
+  .keypad-backdrop.open { display: flex; }
+  .keypad-sheet {
+    background: #fff; width: 100%; max-width: 480px;
+    border-radius: 20px 20px 0 0;
+    padding: 0 0 env(safe-area-inset-bottom,12px);
+    animation: slideUp 0.22s ease-out;
+    box-shadow: 0 -4px 32px rgba(15,61,34,.18);
+  }
+  .keypad-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .keypad-label { font-size: 14px; font-weight: 800; color: var(--text-muted); }
+  .keypad-value {
+    font-size: 32px; font-weight: 900; color: var(--green-deep);
+    font-family: 'IBM Plex Mono', monospace;
+    min-width: 80px; text-align: right;
+    letter-spacing: 2px;
+  }
+  .keypad-value.empty { color: var(--border); }
+  .keypad-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--border);
+    border-top: 1px solid var(--border);
+  }
+  .kbtn {
+    background: #fff; border: none; padding: 18px 0;
+    font-size: 26px; font-weight: 700; font-family: 'Nunito', sans-serif;
+    color: var(--text); cursor: pointer;
+    transition: background 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .kbtn:active { background: var(--green-light); }
+  .kbtn.kbtn-done {
+    background: var(--green-mid); color: #fff; font-size: 20px;
+    border-radius: 0 0 0 0;
+  }
+  .kbtn.kbtn-done:active { background: var(--green-bright); }
+  .kbtn.kbtn-back { font-size: 22px; color: var(--text-muted); }
+  .kbtn.kbtn-zero { font-size: 24px; }
+  .kbtn.kbtn-clear { font-size: 15px; color: var(--red); font-weight: 800; }
+
+  /* Readonly look for auto-calculated fields */
+  input.auto-calc {
+    background: var(--green-tint);
+    color: var(--green-deep);
+    font-weight: 800;
+    border-color: var(--green-bright) !important;
+  }
+  input.mismatch {
+    background: var(--red-light) !important;
+    border-color: var(--red) !important;
+    color: var(--red) !important;
+  }
+
+  /* Balance status bar */
+  .balance-bar {
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13px; font-weight: 700;
+    margin-top: 10px;
+    display: none;
+    line-height: 1.5;
+  }
+  .balance-bar.show { display: block; }
+  .balance-bar.ok   { background: var(--green-light); color: var(--green-deep); border: 1.5px solid var(--green-bright); }
+  .balance-bar.err  { background: var(--red-light);   color: var(--red);        border: 1.5px solid var(--red); }
+
   /* ── Install banner ── */
   #install-banner {
     background: var(--gold);
@@ -676,6 +752,31 @@
   </div>
 </div>
 
+<!-- ── Numeric Keypad ── -->
+<div class="keypad-backdrop" id="keypad-backdrop" onclick="closeKeypadBackdrop(event)">
+  <div class="keypad-sheet" onclick="event.stopPropagation()">
+    <div class="keypad-header">
+      <span class="keypad-label" id="keypad-label">Value</span>
+      <span class="keypad-value empty" id="keypad-display">—</span>
+    </div>
+    <div class="keypad-grid">
+      <button class="kbtn" onclick="kbtnTap('1')">1</button>
+      <button class="kbtn" onclick="kbtnTap('2')">2</button>
+      <button class="kbtn" onclick="kbtnTap('3')">3</button>
+      <button class="kbtn" onclick="kbtnTap('4')">4</button>
+      <button class="kbtn" onclick="kbtnTap('5')">5</button>
+      <button class="kbtn" onclick="kbtnTap('6')">6</button>
+      <button class="kbtn" onclick="kbtnTap('7')">7</button>
+      <button class="kbtn" onclick="kbtnTap('8')">8</button>
+      <button class="kbtn" onclick="kbtnTap('9')">9</button>
+      <button class="kbtn kbtn-clear" onclick="kbtnClear()">CLEAR</button>
+      <button class="kbtn kbtn-zero" onclick="kbtnTap('0')">0</button>
+      <button class="kbtn kbtn-back" onclick="kbtnBack()">⌫</button>
+      <button class="kbtn kbtn-done" style="grid-column:span 3" onclick="closeKeypad()">✓  Done</button>
+    </div>
+  </div>
+</div>
+
 <!-- Install Instructions Modal -->
 <div class="ios-modal-backdrop" id="ios-modal">
   <div class="ios-modal" id="ios-modal-inner" onclick="event.stopPropagation()">
@@ -786,35 +887,52 @@
       <div class="section-title">👥 Attendance</div>
 
       <div class="field">
-        <label>Total Strength <span class="req">*</span></label>
-        <input type="number" id="f-strength" placeholder="e.g. 25" min="0">
+        <label>Total Strength <span class="req">*</span>
+          <span style="font-size:10px;color:var(--text-muted);font-weight:400;margin-left:4px">auto-fills from Boys + Girls</span>
+        </label>
+        <input type="text" inputmode="none" readonly id="f-strength"
+          placeholder="Tap Boys &amp; Girls to auto-fill"
+          onclick="openKeypad('f-strength','Total Strength')"
+          style="cursor:pointer">
       </div>
 
       <div class="row-3">
         <div class="field">
           <label>Boys</label>
-          <input type="number" id="f-boys" placeholder="0" min="0">
+          <input type="text" inputmode="none" readonly id="f-boys"
+            placeholder="0" onclick="openKeypad('f-boys','Boys')" style="cursor:pointer">
         </div>
         <div class="field">
           <label>Girls</label>
-          <input type="number" id="f-girls" placeholder="0" min="0">
+          <input type="text" inputmode="none" readonly id="f-girls"
+            placeholder="0" onclick="openKeypad('f-girls','Girls')" style="cursor:pointer">
         </div>
         <div class="field">
           <label>Leave</label>
-          <input type="number" id="f-leave" placeholder="0" min="0">
+          <input type="text" inputmode="none" readonly id="f-leave"
+            placeholder="0" onclick="openKeypad('f-leave','Leave')" style="cursor:pointer">
         </div>
       </div>
+
+      <!-- Balance row 1 -->
+      <div id="balance-gender" class="balance-bar"></div>
 
       <div class="row-2">
         <div class="field">
           <label>Present <span class="req">*</span></label>
-          <input type="number" id="f-present" placeholder="0" min="0">
+          <input type="text" inputmode="none" readonly id="f-present"
+            placeholder="0" onclick="openKeypad('f-present','Present')" style="cursor:pointer">
         </div>
         <div class="field">
           <label>Absent</label>
-          <input type="number" id="f-absent" placeholder="0" min="0">
+          <input type="text" inputmode="none" readonly id="f-absent"
+            placeholder="0" onclick="openKeypad('f-absent','Absent')" style="cursor:pointer">
         </div>
       </div>
+
+      <!-- Balance row 2 -->
+      <div id="balance-attendance" class="balance-bar"></div>
+
       <div class="field">
         <label>Absence Reason</label>
         <input type="text" id="f-absence-reason" placeholder="e.g. sick, bad weather (optional)">
@@ -1571,12 +1689,42 @@ function loadDraft() {
 async function submitFeedback() {
   const data = getFormData();
 
-  // Validation
-  if (!data.date) { showToast('⚠️ Please set the feedback date'); return; }
+  // Basic required fields
+  if (!data.date)       { showToast('⚠️ Please set the feedback date'); return; }
   if (!data.schoolType) { showToast('⚠️ Select Primary or Elementary'); return; }
-  if (!data.grade) { showToast('⚠️ Select a grade'); return; }
-  if (!data.level) { showToast('⚠️ Select a level'); return; }
-  if (!data.present) { showToast('⚠️ Enter present count'); return; }
+  if (!data.grade)      { showToast('⚠️ Select a grade'); return; }
+  if (!data.level)      { showToast('⚠️ Select a level'); return; }
+  if (!data.present && data.present !== '0') { showToast('⚠️ Enter Present count'); return; }
+
+  // Attendance balance validation
+  const str  = parseInt(data.strength) || 0;
+  const boys = parseInt(data.boys)     || 0;
+  const girls= parseInt(data.girls)    || 0;
+  const pres = parseInt(data.present)  || 0;
+  const abs  = parseInt(data.absent)   || 0;
+  const lv   = parseInt(data.leave)    || 0;
+
+  // Rule 1: Total Strength = Boys + Girls (only if both entered)
+  if (boys > 0 || girls > 0) {
+    if (str !== boys + girls) {
+      showToast(`⚠️ Total Strength (${str}) must equal Boys + Girls (${boys}+${girls}=${boys+girls})`);
+      document.getElementById('f-strength').classList.add('mismatch');
+      document.getElementById('f-boys').classList.add('mismatch');
+      document.getElementById('f-girls').classList.add('mismatch');
+      return;
+    }
+  }
+
+  // Rule 2: Total Strength = Present + Absent + Leave
+  if (str > 0) {
+    if (str !== pres + abs + lv) {
+      showToast(`⚠️ Total Strength (${str}) must equal Present+Absent+Leave (${pres}+${abs}+${lv}=${pres+abs+lv})`);
+      document.getElementById('f-present').classList.add('mismatch');
+      document.getElementById('f-absent').classList.add('mismatch');
+      document.getElementById('f-leave').classList.add('mismatch');
+      return;
+    }
+  }
 
   const payload = {
     phone: currentPhone,
@@ -1762,6 +1910,121 @@ setInterval(() => {
 setInterval(() => {
   if (navigator.onLine && submissionQueue.length > 0) flushQueue();
 }, 60000);
+
+// ══════════════════════════════════════════════
+//   NUMERIC KEYPAD
+// ══════════════════════════════════════════════
+let keypadTarget = null;   // id of the input being edited
+let keypadBuffer = '';     // current digits
+
+function openKeypad(inputId, label) {
+  keypadTarget = inputId;
+  keypadBuffer = document.getElementById(inputId).value || '';
+  document.getElementById('keypad-label').textContent = label;
+  updateKeypadDisplay();
+  document.getElementById('keypad-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeKeypad() {
+  const input = document.getElementById(keypadTarget);
+  if (input) {
+    input.value = keypadBuffer === '' ? '' : String(parseInt(keypadBuffer) || 0);
+    input.classList.remove('mismatch');
+  }
+  document.getElementById('keypad-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+  recalcAndCheck();
+}
+
+function closeKeypadBackdrop(e) {
+  if (e.target.id === 'keypad-backdrop') closeKeypad();
+}
+
+function updateKeypadDisplay() {
+  const el = document.getElementById('keypad-display');
+  if (keypadBuffer === '') {
+    el.textContent = '—';
+    el.classList.add('empty');
+  } else {
+    el.textContent = keypadBuffer;
+    el.classList.remove('empty');
+  }
+}
+
+function kbtnTap(digit) {
+  if (keypadBuffer === '0') keypadBuffer = digit;
+  else if (keypadBuffer.length >= 4) return;  // max 9999
+  else keypadBuffer += digit;
+  updateKeypadDisplay();
+}
+
+function kbtnBack() {
+  keypadBuffer = keypadBuffer.slice(0, -1);
+  updateKeypadDisplay();
+}
+
+function kbtnClear() {
+  keypadBuffer = '';
+  updateKeypadDisplay();
+}
+
+// ══════════════════════════════════════════════
+//   BALANCE LOGIC (live feedback while typing)
+// ══════════════════════════════════════════════
+function getNum(id) { return parseInt(document.getElementById(id).value) || 0; }
+
+function recalcAndCheck() {
+  const boys  = getNum('f-boys');
+  const girls = getNum('f-girls');
+  const pres  = getNum('f-present');
+  const abs   = getNum('f-absent');
+  const lv    = getNum('f-leave');
+
+  // AUTO-FILL Total Strength = Boys + Girls (when at least one is set)
+  if (boys > 0 || girls > 0) {
+    const autoStr = boys + girls;
+    const strInput = document.getElementById('f-strength');
+    strInput.value = autoStr;
+    strInput.classList.add('auto-calc');
+  }
+
+  const str = getNum('f-strength');
+
+  // Balance bar 1: Boys + Girls vs Total Strength
+  const gBar = document.getElementById('balance-gender');
+  if (boys > 0 || girls > 0) {
+    const gSum = boys + girls;
+    gBar.classList.add('show');
+    if (gSum === str) {
+      gBar.className = 'balance-bar show ok';
+      gBar.textContent = `✅ Boys (${boys}) + Girls (${girls}) = Total Strength (${str})`;
+      ['f-boys','f-girls','f-strength'].forEach(id => document.getElementById(id).classList.remove('mismatch'));
+    } else {
+      gBar.className = 'balance-bar show err';
+      gBar.textContent = `⚠️ Boys (${boys}) + Girls (${girls}) = ${gSum} — doesn't match Total Strength (${str})`;
+    }
+  } else {
+    gBar.classList.remove('show');
+  }
+
+  // Balance bar 2: Present + Absent + Leave vs Total Strength
+  const aBar = document.getElementById('balance-attendance');
+  if (str > 0 && (pres > 0 || abs > 0 || lv > 0)) {
+    const aSum = pres + abs + lv;
+    aBar.classList.add('show');
+    if (aSum === str) {
+      aBar.className = 'balance-bar show ok';
+      aBar.textContent = `✅ Present (${pres}) + Absent (${abs}) + Leave (${lv}) = Total Strength (${str})`;
+      ['f-present','f-absent','f-leave'].forEach(id => document.getElementById(id).classList.remove('mismatch'));
+    } else {
+      aBar.className = 'balance-bar show err';
+      aBar.textContent = `⚠️ Present (${pres}) + Absent (${abs}) + Leave (${lv}) = ${aSum} — must equal Total Strength (${str})`;
+    }
+  } else {
+    aBar.classList.remove('show');
+  }
+}
 </script>
 </body>
 </html>
