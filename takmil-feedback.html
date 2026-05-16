@@ -540,6 +540,86 @@
     .row-3 { grid-template-columns: 1fr 1fr; }
     .section-card { padding: 16px; }
   }
+
+  /* ── Install button ── */
+  .btn-install {
+    width: 100%;
+    display: none;               /* shown only when installable */
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--gold);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 13px;
+    font-size: 15px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-install:active { transform: scale(0.98); }
+  .btn-install.visible { display: flex; }
+  .btn-install svg { width:20px; height:20px; fill:#fff; flex-shrink:0; }
+
+  /* ── iOS install modal ── */
+  .ios-modal-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 1000;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 0;
+  }
+  .ios-modal-backdrop.open { display: flex; }
+  .ios-modal {
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    padding: 28px 24px 40px;
+    width: 100%;
+    max-width: 480px;
+    animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    text-align: center;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .ios-modal h3 { font-size: 18px; font-weight: 900; color: var(--green-deep); margin-bottom: 6px; }
+  .ios-modal p  { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+  .ios-step {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--green-tint); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px; text-align: left;
+  }
+  .ios-step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--green-mid); color: #fff;
+    font-size: 13px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ios-step-text { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; }
+  .ios-step-text span { color: var(--green-bright); }
+  .ios-share-icon { font-size: 22px; vertical-align: middle; }
+  .ios-modal-close {
+    margin-top: 18px; width: 100%;
+    background: var(--green-light); color: var(--green-deep);
+    border: none; border-radius: var(--radius-sm);
+    padding: 12px; font-size: 15px; font-weight: 800;
+    font-family: 'Nunito', sans-serif; cursor: pointer;
+  }
+  /* Arrow pointing down toward Safari share bar */
+  .ios-arrow {
+    position: fixed; bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 32px;
+    animation: bounce 1s infinite;
+    z-index: 1001;
+    display: none;
+  }
+  .ios-modal-backdrop.open ~ .ios-arrow { display: block; }
+  @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(6px)} }
 </style>
 </head>
 <body>
@@ -579,9 +659,48 @@
         Verify & Continue
       </button>
       <div class="error-msg" id="login-error">Phone not found. Check with your admin.</div>
+
+      <!-- Install / Add to Home Screen button -->
+      <button class="btn-install" id="btn-install" onclick="triggerInstall()">
+        <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+        Save App to Home Screen
+      </button>
     </div>
   </div>
 </div>
+
+<!-- iOS Install Instructions Modal -->
+<div class="ios-modal-backdrop" id="ios-modal" onclick="closeIOSModal(event)">
+  <div class="ios-modal">
+    <h3>📲 Save to Home Screen</h3>
+    <p>Follow these 3 quick steps in Safari<br>to install the TAKMIL app on your phone</p>
+
+    <div class="ios-step">
+      <div class="ios-step-num">1</div>
+      <div class="ios-step-text">
+        Tap the <span>Share button</span> <span class="ios-share-icon">⬆️</span><br>
+        at the bottom of your Safari screen
+      </div>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">2</div>
+      <div class="ios-step-text">
+        Scroll down and tap<br>
+        <span>"Add to Home Screen"</span>
+      </div>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">3</div>
+      <div class="ios-step-text">
+        Tap <span>"Add"</span> in the top right corner —<br>
+        the TAKMIL icon will appear on your home screen!
+      </div>
+    </div>
+
+    <button class="ios-modal-close" onclick="closeIOSModal()">Got it ✓</button>
+  </div>
+</div>
+<div class="ios-arrow" id="ios-arrow">👇</div>
 
 <!-- ──────── FEEDBACK FORM ──────── -->
 <div id="screen-form" class="screen">
@@ -813,7 +932,82 @@ window.addEventListener('load', () => {
   document.getElementById('f-date').value =
     `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
-  // ── Service Worker registration ──────────────────────────────────────────
+  // ══════════════════════════════════════════════
+//   INSTALL / ADD TO HOME SCREEN
+// ══════════════════════════════════════════════
+let deferredInstallPrompt = null;
+
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+}
+function isInStandaloneMode() {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+}
+function isAndroidChrome() {
+  return /android/i.test(navigator.userAgent) && /chrome/i.test(navigator.userAgent);
+}
+
+// Android: intercept the browser's native install prompt
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  showInstallButton();
+});
+
+// If installed successfully — hide the button
+window.addEventListener('appinstalled', () => {
+  hideInstallButton();
+  showToast('✅ App installed! Open it from your home screen.');
+  deferredInstallPrompt = null;
+});
+
+function showInstallButton() {
+  if (isInStandaloneMode()) return; // already installed
+  const btn = document.getElementById('btn-install');
+  if (btn) btn.classList.add('visible');
+}
+
+function hideInstallButton() {
+  const btn = document.getElementById('btn-install');
+  if (btn) btn.classList.remove('visible');
+}
+
+function triggerInstall() {
+  if (deferredInstallPrompt) {
+    // Android Chrome — native prompt
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(choice => {
+      if (choice.outcome === 'accepted') {
+        hideInstallButton();
+        showToast('✅ Installing…');
+      }
+      deferredInstallPrompt = null;
+    });
+  } else if (isIOS()) {
+    // iOS Safari — show manual instructions modal
+    document.getElementById('ios-modal').classList.add('open');
+  } else {
+    // Fallback for other browsers
+    showToast('Use your browser menu → "Add to Home Screen"');
+  }
+}
+
+function closeIOSModal(e) {
+  if (!e || e.target === document.getElementById('ios-modal')) {
+    document.getElementById('ios-modal').classList.remove('open');
+  }
+}
+
+// Show install button on iOS if not already installed
+window.addEventListener('load', () => {
+  if (isIOS() && !isInStandaloneMode()) {
+    // Small delay so page renders first
+    setTimeout(showInstallButton, 1000);
+  }
+});
+
+// ── Service Worker registration ──────────────────────────────────────────
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(reg => {
