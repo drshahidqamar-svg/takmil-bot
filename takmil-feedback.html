@@ -1019,23 +1019,41 @@
         Take a clear photo showing students' heads/faces. If a projector is on, include it in the frame.
       </p>
 
-      <!-- Drop zone -->
-      <div class="photo-drop-zone" id="photo-drop-zone" onclick="document.getElementById('photo-file').click()"
+      <!-- Two hidden file inputs: one forces camera, one opens gallery -->
+      <input type="file" id="photo-file-camera"  accept="image/*" capture="environment" onchange="handlePhotoSelect(event)" style="display:none">
+      <input type="file" id="photo-file-gallery" accept="image/*" onchange="handlePhotoSelect(event)" style="display:none">
+
+      <!-- Drop zone (desktop drag-drop + fallback tap) -->
+      <div class="photo-drop-zone" id="photo-drop-zone"
         ondragover="e=event;e.preventDefault();this.classList.add('drag-over')"
         ondragleave="this.classList.remove('drag-over')"
         ondrop="handlePhotoDrop(event)">
-        <input type="file" id="photo-file" accept="image/*" capture="environment" onchange="handlePhotoSelect(event)">
         <div class="drop-icon">📷</div>
-        <div class="drop-text">Tap to take or upload photo</div>
-        <div class="drop-hint">JPEG / PNG · max 10 MB</div>
+        <div class="drop-text">Choose how to add photo</div>
+        <div style="display:flex;gap:10px;margin-top:14px;justify-content:center;flex-wrap:wrap">
+          <button type="button" class="btn-photo btn-replace"
+            style="flex:1;min-width:120px;padding:11px 8px;font-size:14px"
+            onclick="document.getElementById('photo-file-camera').click()">
+            📸 Take Photo
+          </button>
+          <button type="button" class="btn-photo btn-replace"
+            style="flex:1;min-width:120px;padding:11px 8px;font-size:14px"
+            onclick="document.getElementById('photo-file-gallery').click()">
+            🖼️ From Gallery
+          </button>
+        </div>
+        <div class="drop-hint" style="margin-top:10px">JPEG / PNG · max 10 MB</div>
       </div>
 
       <!-- Preview -->
       <div class="photo-preview" id="photo-preview">
         <img id="photo-img" src="" alt="Classroom photo">
         <div class="photo-actions">
-          <button class="btn-photo btn-replace" onclick="document.getElementById('photo-file').click()">
-            🔄 Replace Photo
+          <button class="btn-photo btn-replace" onclick="document.getElementById('photo-file-camera').click()">
+            📸 Replace (Camera)
+          </button>
+          <button class="btn-photo btn-replace" onclick="document.getElementById('photo-file-gallery').click()">
+            🖼️ Replace (Gallery)
           </button>
           <button class="btn-photo btn-delete" onclick="deletePhoto()">
             🗑 Remove
@@ -1574,7 +1592,8 @@ function loadPhoto(file) {
 function deletePhoto() {
   photoBase64 = null;
   photoFile = null;
-  document.getElementById('photo-file').value = '';
+  document.getElementById('photo-file-camera').value  = '';
+  document.getElementById('photo-file-gallery').value = '';
   document.getElementById('photo-img').src = '';
   document.getElementById('photo-preview').classList.remove('show');
   document.getElementById('photo-drop-zone').style.display = '';
