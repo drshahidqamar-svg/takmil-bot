@@ -682,6 +682,46 @@ router.post('/api/verify-phone', async (req, res) => {
   }
 });
 
+// ── Web Feedback: Verify PIN ─────────────────────────────────────────────────
+// POST /api/verify-pin
+// Body: { phone, pin }
+// Returns: { success, school }
+router.post('/api/verify-pin', async (req, res) => {
+  const { phone, pin } = req.body || {};
+  if (!phone || !pin) return res.status(400).json({ success: false, message: 'Phone and PIN required.' });
+
+  const normalised = normalisePhone(phone);
+  if (!normalised) return res.status(400).json({ success: false, message: 'Invalid phone.' });
+
+  try {
+    const r = await db.pool.query(
+      `SELECT name, identifier, region, school_pin
+       FROM schools WHERE teacher_phone = $1 LIMIT 1`,
+      [normalised]
+    );
+    if (!r.rows.length) return res.status(404).json({ success: false, message: 'Phone not registered.' });
+
+    const school = r.rows[0];
+
+    // If no PIN set yet in DB — accept any 4-digit input and set it (first-time setup)
+    if (!school.school_pin) {
+      if (!/^\d{4}$/.test(pin)) return res.status(400).json({ success: false, message: 'PIN must be 4 digits.' });
+      await db.pool.query(`UPDATE schools SET school_pin = $1 WHERE teacher_phone = $2`, [pin, normalised]);
+      return res.json({ success: true, school: school.name, firstTime: true });
+    }
+
+    // Verify PIN
+    if (String(school.school_pin).trim() !== String(pin).trim()) {
+      return res.status(403).json({ success: false, message: 'Incorrect PIN.' });
+    }
+    return res.json({ success: true, school: school.name });
+
+  } catch (err) {
+    console.error('[verify-pin] error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 // ── Web Feedback: Submit ──────────────────────────────────────────────────────
 // POST /api/web-feedback
 // Body: full JSON payload from takmil-feedback.html
@@ -708,6 +748,13 @@ router.post('/api/web-feedback', async (req, res) => {
 
   if (!body.date || !body.present) {
     return res.status(400).json({ saved: false, error: 'Date and Present count are required.' });
+  }
+
+  // Block future dates (server-side double-check)
+  const submittedDate = new Date(body.date);
+  const todayStart    = new Date(); todayStart.setHours(0,0,0,0);
+  if (submittedDate > todayStart) {
+    return res.status(400).json({ saved: false, error: 'Future date submissions are not allowed.' });
   }
 
   // Grade string e.g. "Elementary-8" or "Primary-4"
@@ -763,11 +810,15 @@ router.post('/api/web-feedback', async (req, res) => {
     body.techMedia === 'Yes',
     body.lms       === 'Yes',
     JSON.stringify(subjects),
-    `web_form | ${body.schoolType||''} | tech:${techTypes.join(',')||'none'} | ${new Date().toISOString()}`,
+    `web_form | ${body.schoolType||''} | tech:${techTypes.join(',')||'none'} | mode:${body.submissionMode||'unknown'} | ${new Date().toISOString()}`,
     null,        // projector_shown — set by AI after photo analysis
     photoData,
     photoMime,
     photoExpires,
+    body.submissionMode   || 'unknown',   // 'online' | 'offline'
+    body.gpsLat           || null,         // GPS latitude
+    body.gpsLng           || null,         // GPS longitude
+    body.gpsAccuracy      || null,         // GPS accuracy in metres
   ];
 
   try {
@@ -780,7 +831,8 @@ router.post('/api/web-feedback', async (req, res) => {
         assembly_conducted, technology_used, technology_reason,
         cr_media_shared, tech_media_shared, lms_upload,
         subjects, raw_message, projector_shown,
-        photo_data, photo_mime_type, photo_expires_at
+        photo_data, photo_mime_type, photo_expires_at,
+        submission_mode, gps_lat, gps_lng, gps_accuracy_m
       )
       VALUES (
         $1,$2,$3,$4::date,
@@ -789,7 +841,8 @@ router.post('/api/web-feedback', async (req, res) => {
         $13,$14,$15,
         $16,$17,$18,
         $19,$20,$21,
-        $22,$23,$24
+        $22,$23,$24,
+        $25,$26,$27,$28
       )
       ON CONFLICT DO NOTHING
       RETURNING id`,
@@ -820,9 +873,13 @@ router.post('/api/web-feedback', async (req, res) => {
           raw_message        = $16,
           photo_data         = COALESCE($17, photo_data),
           photo_mime_type    = COALESCE($18, photo_mime_type),
-          photo_expires_at   = COALESCE($19, photo_expires_at)
-        WHERE school_name = $20
-          AND report_date::date = $21::date
+          photo_expires_at   = COALESCE($19, photo_expires_at),
+          submission_mode    = $20,
+          gps_lat            = COALESCE($21, gps_lat),
+          gps_lng            = COALESCE($22, gps_lng),
+          gps_accuracy_m     = COALESCE($23, gps_accuracy_m)
+        WHERE school_name = $24
+          AND report_date::date = $25::date
         RETURNING id`,
         [
           parseInt(body.present) || 0,
@@ -840,10 +897,14 @@ router.post('/api/web-feedback', async (req, res) => {
           JSON.stringify(subjects),
           gradeStr,
           level,
-          `web_form | ${body.schoolType || ''} | ${new Date().toISOString()}`,
+          `web_form | ${body.schoolType || ''} | mode:${body.submissionMode||'unknown'} | ${new Date().toISOString()}`,
           photoData,
           photoMime,
           photoExpires,
+          body.submissionMode || 'unknown',
+          body.gpsLat    || null,
+          body.gpsLng    || null,
+          body.gpsAccuracy || null,
           school.name,
           body.date,
         ]
