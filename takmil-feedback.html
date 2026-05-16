@@ -886,15 +886,13 @@
     <div class="section-card">
       <div class="section-title">👥 Attendance</div>
 
-      <div class="field">
-        <label>Total Strength <span class="req">*</span></label>
-        <input type="text" inputmode="none" readonly id="f-strength"
-          placeholder="0"
-          onclick="openKeypad('f-strength','Total Strength')"
-          style="cursor:pointer">
-      </div>
-
+      <!-- Row 1: Total Strength | Boys | Girls -->
       <div class="row-3">
+        <div class="field">
+          <label>Total <span class="req">*</span></label>
+          <input type="text" inputmode="none" readonly id="f-strength"
+            placeholder="0" onclick="openKeypad('f-strength','Total Strength')" style="cursor:pointer">
+        </div>
         <div class="field">
           <label>Boys</label>
           <input type="text" inputmode="none" readonly id="f-boys"
@@ -905,17 +903,13 @@
           <input type="text" inputmode="none" readonly id="f-girls"
             placeholder="0" onclick="openKeypad('f-girls','Girls')" style="cursor:pointer">
         </div>
-        <div class="field">
-          <label>Leave</label>
-          <input type="text" inputmode="none" readonly id="f-leave"
-            placeholder="0" onclick="openKeypad('f-leave','Leave')" style="cursor:pointer">
-        </div>
       </div>
 
-      <!-- Balance row 1 -->
+      <!-- Balance: Total = Boys + Girls -->
       <div id="balance-gender" class="balance-bar"></div>
 
-      <div class="row-2">
+      <!-- Row 2: Present | Absent | Leave -->
+      <div class="row-3">
         <div class="field">
           <label>Present <span class="req">*</span></label>
           <input type="text" inputmode="none" readonly id="f-present"
@@ -926,9 +920,14 @@
           <input type="text" inputmode="none" readonly id="f-absent"
             placeholder="0" onclick="openKeypad('f-absent','Absent')" style="cursor:pointer">
         </div>
+        <div class="field">
+          <label>Leave</label>
+          <input type="text" inputmode="none" readonly id="f-leave"
+            placeholder="0" onclick="openKeypad('f-leave','Leave')" style="cursor:pointer">
+        </div>
       </div>
 
-      <!-- Balance row 2 -->
+      <!-- Balance: Total = Present + Absent + Leave -->
       <div id="balance-attendance" class="balance-bar"></div>
 
       <div class="field">
