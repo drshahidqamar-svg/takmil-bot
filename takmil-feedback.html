@@ -541,28 +541,31 @@
     .section-card { padding: 16px; }
   }
 
-  /* ── Install button ── */
-  .btn-install {
+  /* ── Install banner ── */
+  #install-banner {
+    background: var(--gold);
+    padding: 0;
+    display: none;
+  }
+  #install-banner.show { display: block; }
+  #btn-install {
     width: 100%;
-    display: none;               /* shown only when installable */
+    display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
     background: var(--gold);
     color: #fff;
     border: none;
-    border-radius: var(--radius-sm);
-    padding: 13px;
+    padding: 13px 20px;
     font-size: 15px;
     font-family: 'Nunito', sans-serif;
     font-weight: 800;
     cursor: pointer;
-    margin-top: 10px;
-    transition: background 0.2s, transform 0.1s;
+    letter-spacing: 0.2px;
   }
-  .btn-install:active { transform: scale(0.98); }
-  .btn-install.visible { display: flex; }
-  .btn-install svg { width:20px; height:20px; fill:#fff; flex-shrink:0; }
+  #btn-install:active { opacity: 0.85; }
+  #btn-install svg { width:20px; height:20px; fill:#fff; flex-shrink:0; }
 
   /* ── iOS install modal ── */
   .ios-modal-backdrop {
@@ -624,6 +627,14 @@
 </head>
 <body>
 
+<!-- Install banner — visible on all screens until app is installed -->
+<div id="install-banner" style="display:none">
+  <button id="btn-install" onclick="triggerInstall()">
+    <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+    📲 Save App to Home Screen
+  </button>
+</div>
+
 <div id="offline-banner">
   <span id="offline-text">⚡ You're offline — your submission will be saved and sent when reconnected</span>
   <span id="queue-count" style="display:none;margin-left:8px;background:rgba(255,255,255,0.3);padding:2px 8px;border-radius:10px;font-size:12px"></span>
@@ -660,11 +671,7 @@
       </button>
       <div class="error-msg" id="login-error">Phone not found. Check with your admin.</div>
 
-      <!-- Install / Add to Home Screen button -->
-      <button class="btn-install" id="btn-install" onclick="triggerInstall()">
-        <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
-        Save App to Home Screen
-      </button>
+
     </div>
   </div>
 </div>
@@ -995,13 +1002,13 @@ window.addEventListener('appinstalled', () => {
 
 function showInstallButton() {
   if (isInStandaloneMode()) return;   // already running as installed app — hide
-  const btn = document.getElementById('btn-install');
-  if (btn) btn.classList.add('visible');
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.style.display = 'block';
 }
 
 function hideInstallButton() {
-  const btn = document.getElementById('btn-install');
-  if (btn) btn.classList.remove('visible');
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.style.display = 'none';
 }
 
 function triggerInstall() {
@@ -1038,11 +1045,10 @@ function closeIOSModal(e) {
 
 // Show install button immediately on ANY mobile device that hasn't installed yet
 // Don't wait for beforeinstallprompt — show right away so teachers see it
-document.addEventListener('DOMContentLoaded', () => {
-  if (isMobile() && !isInStandaloneMode()) {
-    showInstallButton();
-  }
-});
+// Script runs after DOM is ready (bottom of body) — call directly, no event wrapper needed
+if (isMobile() && !isInStandaloneMode()) {
+  showInstallButton();
+}
 
 // ── Service Worker registration ──────────────────────────────────────────
   if ('serviceWorker' in navigator) {
