@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#1a5c38">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TAKMIL Feedback">
+<link rel="manifest" href="/manifest.json">
 <title>TAKMIL · Daily Feedback</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -80,8 +83,12 @@
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.3px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
-  #offline-banner.show { display: block; }
+  #offline-banner.show { display: flex; }
+  #offline-banner.syncing { background: var(--green-bright); }
 
   /* ── SCREENS ── */
   .screen { display: none; }
@@ -535,7 +542,10 @@
 </head>
 <body>
 
-<div id="offline-banner">⚡ You're offline — your submission will be saved and sent when reconnected</div>
+<div id="offline-banner">
+  <span id="offline-text">⚡ You're offline — your submission will be saved and sent when reconnected</span>
+  <span id="queue-count" style="display:none;margin-left:8px;background:rgba(255,255,255,0.3);padding:2px 8px;border-radius:10px;font-size:12px"></span>
+</div>
 
 <!-- HEADER -->
 <header class="app-header">
@@ -790,6 +800,7 @@ let photoBase64 = null;
 let photoFile = null;
 let schoolType = null;
 let submissionQueue = [];
+let swRegistration  = null;
 
 // ══════════════════════════════════════════════
 //   INIT
@@ -797,32 +808,72 @@ let submissionQueue = [];
 window.addEventListener('load', () => {
   // Set today's date
   const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth()+1).padStart(2,'0');
-  const dd = String(today.getDate()).padStart(2,'0');
-  document.getElementById('f-date').value = `${yyyy}-${mm}-${dd}`;
+  document.getElementById('f-date').value =
+    `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
-  // Check saved session
+  // ── Service Worker registration ──────────────────────────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(reg => {
+        swRegistration = reg;
+        console.log('[App] Service Worker registered, scope:', reg.scope);
+
+        // Listen for SW messages (flush queue, update available)
+        navigator.serviceWorker.addEventListener('message', e => {
+          if (e.data?.type === 'FLUSH_QUEUE') flushQueue();
+        });
+
+        // If a new SW is waiting, activate it on next navigation
+        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          newSW?.addEventListener('statechange', () => {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              showToast('🔄 App updated — refresh for the latest version');
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('[App] SW registration failed:', err));
+  }
+
+  // ── Offline / online detection ───────────────────────────────────────────
+  updateOnlineStatus();
+  window.addEventListener('online',  handleOnline);
+  window.addEventListener('offline', handleOffline);
+
+  // ── Load session + queue ─────────────────────────────────────────────────
   const saved = localStorage.getItem('takmil_session');
   if (saved) {
     try {
       const s = JSON.parse(saved);
-      currentPhone = s.phone;
+      currentPhone  = s.phone;
       currentSchool = s.school;
       activateFormScreen();
       loadDraft();
     } catch(e) { localStorage.removeItem('takmil_session'); }
   }
 
-  // Offline detection
-  updateOnlineStatus();
-  window.addEventListener('online', () => { updateOnlineStatus(); flushQueue(); });
-  window.addEventListener('offline', updateOnlineStatus);
-
-  // Load queue
   const q = localStorage.getItem('takmil_queue');
   if (q) try { submissionQueue = JSON.parse(q); } catch(e) {}
+  updateQueueBadge();
 });
+
+function handleOnline() {
+  updateOnlineStatus();
+  showToast('✅ Back online — syncing…');
+  flushQueue();
+}
+
+function handleOffline() {
+  updateOnlineStatus();
+  // Register Background Sync so submissions fire even if app is closed
+  if (swRegistration?.sync) {
+    swRegistration.sync.register('sync-takmil-feedback')
+      .then(() => console.log('[App] Background sync registered'))
+      .catch(e => console.warn('[App] Background sync registration failed:', e));
+  }
+}
 
 function updateOnlineStatus() {
   const banner = document.getElementById('offline-banner');
@@ -830,6 +881,19 @@ function updateOnlineStatus() {
     banner.classList.remove('show');
   } else {
     banner.classList.add('show');
+    updateQueueBadge();
+  }
+}
+
+function updateQueueBadge() {
+  const el = document.getElementById('queue-count');
+  if (!el) return;
+  const count = submissionQueue.length;
+  if (count > 0) {
+    el.style.display = 'inline';
+    el.textContent = `${count} pending`;
+  } else {
+    el.style.display = 'none';
   }
 }
 
@@ -1299,28 +1363,72 @@ async function submitFeedback() {
 
 function queueSubmission(payload) {
   submissionQueue.push(payload);
+  saveQueue();
+  updateQueueBadge();
+  showToast('📥 Saved offline — will send when signal returns');
+
+  // Register background sync so submissions go even if app is closed
+  if (swRegistration?.sync) {
+    swRegistration.sync.register('sync-takmil-feedback')
+      .catch(e => console.warn('[App] BG sync register failed:', e));
+  }
+}
+
+function saveQueue() {
   localStorage.setItem('takmil_queue', JSON.stringify(submissionQueue));
-  showToast('📥 Saved — will send when online');
+
+  // Also persist to Cache Storage so SW can access when app is closed
+  if ('caches' in window) {
+    caches.open('takmil-queue-store').then(cache => {
+      cache.put('pending-submissions', new Response(JSON.stringify(submissionQueue), {
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }).catch(() => {});
+  }
 }
 
 async function flushQueue() {
   if (submissionQueue.length === 0) return;
+  if (!navigator.onLine) return;
+
+  const banner = document.getElementById('offline-banner');
+  banner.classList.add('syncing');
+  document.getElementById('offline-text').textContent = '🔄 Syncing saved submissions…';
+
   const pending = [...submissionQueue];
   submissionQueue = [];
-  localStorage.setItem('takmil_queue', JSON.stringify(submissionQueue));
+  saveQueue();
+
+  let sent = 0;
   for (const payload of pending) {
     try {
-      await fetch(`${API_BASE}/api/web-feedback`, {
+      const res = await fetch(`${API_BASE}/api/web-feedback`, {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload)
       });
+      const result = await res.json();
+      if (result.saved) {
+        sent++;
+      } else {
+        submissionQueue.push(payload); // re-queue if server rejected
+      }
     } catch(e) {
-      submissionQueue.push(payload);
+      submissionQueue.push(payload); // re-queue on network error
     }
   }
-  localStorage.setItem('takmil_queue', JSON.stringify(submissionQueue));
-  if (submissionQueue.length === 0) showToast('✅ Queued submissions sent!');
+
+  saveQueue();
+  updateQueueBadge();
+  banner.classList.remove('syncing');
+  document.getElementById('offline-text').textContent =
+    "⚡ You're offline — your submission will be saved and sent when reconnected";
+
+  if (!navigator.onLine) banner.classList.add('show');
+  else banner.classList.remove('show');
+
+  if (sent > 0) showToast(`✅ ${sent} submission${sent > 1 ? 's' : ''} sent successfully!`);
+  if (submissionQueue.length > 0) showToast(`⚠️ ${submissionQueue.length} submission(s) still pending`);
 }
 
 function showSuccessScreen(data, queued) {
@@ -1373,6 +1481,11 @@ setInterval(() => {
     localStorage.setItem('takmil_draft_' + currentPhone, JSON.stringify(data));
   }
 }, 30000);
+
+// Periodic queue flush attempt every 60s (catches cases where online event missed)
+setInterval(() => {
+  if (navigator.onLine && submissionQueue.length > 0) flushQueue();
+}, 60000);
 </script>
 </body>
 </html>
