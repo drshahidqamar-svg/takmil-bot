@@ -1970,9 +1970,14 @@ function updateKeypadDisplay() {
 }
 
 function kbtnTap(digit) {
-  if (keypadBuffer === '0') keypadBuffer = digit;
-  else if (keypadBuffer.length >= 4) return;  // max 9999
-  else keypadBuffer += digit;
+  if (keypadBuffer.length >= 4) return;        // max 9999
+  if (keypadBuffer === '' && digit === '0') {  // leading zero: allow single 0
+    keypadBuffer = '0';
+  } else if (keypadBuffer === '0') {           // already just '0': replace with new digit
+    keypadBuffer = digit;
+  } else {
+    keypadBuffer += digit;                     // normal append
+  }
   updateKeypadDisplay();
 }
 
