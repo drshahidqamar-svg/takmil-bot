@@ -27,6 +27,10 @@ const PHOTOS_DIR = path.join(__dirname, 'public', 'photos');
 if (!fs.existsSync(PHOTOS_DIR)) fs.mkdirSync(PHOTOS_DIR, { recursive: true });
 app.use('/photos', express.static(path.join(__dirname, 'public', 'photos')));
 
+const ICONS_DIR = path.join(__dirname, 'public', 'icons');
+if (!fs.existsSync(ICONS_DIR)) fs.mkdirSync(ICONS_DIR, { recursive: true });
+app.use('/icons', express.static(path.join(__dirname, 'public', 'icons'), { maxAge: '30d' }));
+
 // ── Service Worker & Manifest (must be served from root with correct headers) ─
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
