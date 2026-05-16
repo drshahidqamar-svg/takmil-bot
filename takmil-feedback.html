@@ -678,7 +678,7 @@
 
 <!-- iOS Install Instructions Modal -->
 <div class="ios-modal-backdrop" id="ios-modal" onclick="closeIOSModal(event)">
-  <div class="ios-modal" id="ios-modal-inner">
+  <div class="ios-modal" id="ios-modal-inner" onclick="event.stopPropagation()">
     <h3>📲 Save App to Phone</h3>
 
     <!-- Android instructions (shown by default) -->
@@ -735,7 +735,7 @@
       </div>
     </div>
 
-    <button class="ios-modal-close" onclick="closeIOSModal()">OK, Got it ✓</button>
+    <button class="ios-modal-close" onclick="document.getElementById('ios-modal').classList.remove('open')">✓ OK, Got it</button>
   </div>
 </div>
 <div class="ios-arrow" id="ios-arrow">👇</div>
@@ -1012,33 +1012,51 @@ function hideInstallButton() {
 }
 
 function triggerInstall() {
-  if (deferredInstallPrompt) {
-    // Android Chrome — one-tap native install dialog
-    deferredInstallPrompt.prompt();
-    deferredInstallPrompt.userChoice.then(choice => {
-      if (choice.outcome === 'accepted') {
-        hideInstallButton();
-        showToast('✅ Installing…');
-      }
-      deferredInstallPrompt = null;
-    });
-  } else {
-    // Show correct steps for this device
+  try {
+    if (deferredInstallPrompt) {
+      // Android Chrome — native 1-tap install dialog is ready
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then(choice => {
+        if (choice.outcome === 'accepted') {
+          hideInstallButton();
+          showToast('✅ App installed!');
+        }
+        deferredInstallPrompt = null;
+      });
+      return;
+    }
+
+    // Native prompt not ready yet — show manual instructions modal
+    // Switch between Android/iPhone steps safely
     const androidSteps = document.getElementById('android-steps');
     const iphoneSteps  = document.getElementById('iphone-steps');
-    if (isIOS()) {
-      androidSteps.style.display = 'none';
-      iphoneSteps.style.display  = 'block';
-    } else {
-      androidSteps.style.display = 'block';
-      iphoneSteps.style.display  = 'none';
+    if (androidSteps && iphoneSteps) {
+      if (isIOS()) {
+        androidSteps.style.display = 'none';
+        iphoneSteps.style.display  = 'block';
+      } else {
+        androidSteps.style.display = 'block';
+        iphoneSteps.style.display  = 'none';
+      }
     }
-    document.getElementById('ios-modal').classList.add('open');
+
+    const modal = document.getElementById('ios-modal');
+    if (modal) modal.classList.add('open');
+
+  } catch (err) {
+    // Last resort fallback — plain alert with instructions
+    console.error('[Install] triggerInstall error:', err);
+    if (isIOS()) {
+      alert('To install:\n1. Tap the Share button (⬆️) at the bottom\n2. Tap "Add to Home Screen"\n3. Tap "Add"');
+    } else {
+      alert('To install:\n1. Tap the 3-dot menu (⋮) in Chrome\n2. Tap "Add to Home screen"\n3. Tap "Add"');
+    }
   }
 }
 
 function closeIOSModal(e) {
-  if (!e || e.target === document.getElementById('ios-modal')) {
+  // Only close if tapping the dark backdrop, not the white card inside
+  if (!e || e.target.id === 'ios-modal') {
     document.getElementById('ios-modal').classList.remove('open');
   }
 }
