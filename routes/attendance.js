@@ -660,9 +660,12 @@ router.post('/api/verify-phone', async (req, res) => {
   phone = normalisePhone(phone);
   if (!phone) return res.status(400).json({ success: false, message: 'Invalid phone format.' });
 
+  // Auto-create school_pin column if not yet migrated
+  try { await db.pool.query(`ALTER TABLE schools ADD COLUMN IF NOT EXISTS school_pin VARCHAR(4)`); } catch(e) {}
+
   try {
     const r = await db.pool.query(
-      `SELECT name, identifier, region, province
+      `SELECT name, identifier, region, province, school_pin
        FROM schools
        WHERE teacher_phone = $1
        LIMIT 1`,
@@ -675,10 +678,10 @@ router.post('/api/verify-phone', async (req, res) => {
       });
     }
     const s = r.rows[0];
-    return res.json({ success: true, school: s.name, identifier: s.identifier, region: s.region, province: s.province });
+    return res.json({ success: true, school: s.name, identifier: s.identifier, region: s.region, province: s.province, noPinSet: !s.school_pin });
   } catch (err) {
     console.error('[verify-phone] error:', err.message);
-    return res.status(500).json({ success: false, message: 'Server error. Try again.' });
+    return res.status(500).json({ success: false, message: 'Server error: ' + err.message });
   }
 });
 
@@ -693,32 +696,47 @@ router.post('/api/verify-pin', async (req, res) => {
   const normalised = normalisePhone(phone);
   if (!normalised) return res.status(400).json({ success: false, message: 'Invalid phone.' });
 
+  // Ensure school_pin column exists (auto-create if migration not run yet)
+  try {
+    await db.pool.query(`ALTER TABLE schools ADD COLUMN IF NOT EXISTS school_pin VARCHAR(4)`);
+  } catch(e) { /* already exists — ignore */ }
+
   try {
     const r = await db.pool.query(
       `SELECT name, identifier, region, school_pin
        FROM schools WHERE teacher_phone = $1 LIMIT 1`,
       [normalised]
     );
-    if (!r.rows.length) return res.status(404).json({ success: false, message: 'Phone not registered.' });
+    if (!r.rows.length) {
+      return res.status(404).json({ success: false, message: 'Phone not registered.' });
+    }
 
     const school = r.rows[0];
 
-    // If no PIN set yet in DB — accept any 4-digit input and set it (first-time setup)
-    if (!school.school_pin) {
-      if (!/^\d{4}$/.test(pin)) return res.status(400).json({ success: false, message: 'PIN must be 4 digits.' });
-      await db.pool.query(`UPDATE schools SET school_pin = $1 WHERE teacher_phone = $2`, [pin, normalised]);
+    // First-time setup: no PIN stored yet — accept any 4 digits and save
+    if (!school.school_pin || school.school_pin.trim() === '') {
+      if (String(pin).length !== 4 || isNaN(Number(pin))) {
+        return res.status(400).json({ success: false, message: 'PIN must be exactly 4 digits.' });
+      }
+      await db.pool.query(
+        `UPDATE schools SET school_pin = $1 WHERE teacher_phone = $2`,
+        [String(pin), normalised]
+      );
+      console.log(`[verify-pin] First-time PIN set for ${school.name}`);
       return res.json({ success: true, school: school.name, firstTime: true });
     }
 
-    // Verify PIN
+    // Returning user: check PIN
     if (String(school.school_pin).trim() !== String(pin).trim()) {
-      return res.status(403).json({ success: false, message: 'Incorrect PIN.' });
+      console.log(`[verify-pin] Wrong PIN for ${school.name}`);
+      return res.status(403).json({ success: false, message: 'Incorrect PIN. Try again.' });
     }
+
     return res.json({ success: true, school: school.name });
 
   } catch (err) {
-    console.error('[verify-pin] error:', err.message);
-    return res.status(500).json({ success: false, message: 'Server error.' });
+    console.error('[verify-pin] DB error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error: ' + err.message });
   }
 });
 
