@@ -116,6 +116,14 @@ tbody tr:hover td{background:#eff6ff}
 
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:#93c5fd;border-radius:3px}
+.mode-online{background:#dcfce7;color:#15803d;font-size:10px;font-weight:800;padding:2px 8px;border-radius:12px;white-space:nowrap}
+.mode-offline{background:#fef3c7;color:#92400e;font-size:10px;font-weight:800;padding:2px 8px;border-radius:12px;white-space:nowrap}
+.mode-unknown{background:#f1f5f9;color:#94a3b8;font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;white-space:nowrap}
+.loc-cell{max-width:160px}
+.loc-name{font-size:10px;font-weight:700;color:#1e3a5f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.loc-coords{font-size:9px;color:#94a3b8;font-family:'DM Mono',monospace;margin-top:1px}
+.loc-map{font-size:9px;color:#2563eb;text-decoration:none;font-weight:700}
+.loc-loading{font-size:9px;color:#94a3b8;font-style:italic}
 </style>
 </head>
 <body>
@@ -172,6 +180,8 @@ tbody tr:hover td{background:#eff6ff}
       <div class="sc-icon">🏛️</div><div class="sc-n" id="s-asm">—</div><div class="sc-l">Assembly Held</div></div>
     <div class="sc" style="background:linear-gradient(135deg,#b91c1c,#dc2626)">
       <div class="sc-icon">📚</div><div class="sc-n" id="s-subj">—</div><div class="sc-l">Avg Subjects/Day</div></div>
+    <div class="sc" style="background:linear-gradient(135deg,#b45309,#f59e0b)">
+      <div class="sc-icon">📵</div><div class="sc-n" id="s-offline">—</div><div class="sc-l">Offline Submissions</div></div>
   </div>
 
   <!-- Table -->
@@ -271,6 +281,7 @@ function renderStats(rows){
     return a+cnt;
   },0)/n*10)/10:0;
   document.getElementById('s-subj').textContent=avgSubj;
+  document.getElementById('s-offline').textContent=rows.filter(r=>r.submission_mode==='offline').length;
 }
 
 function yn(val,reason){
@@ -297,6 +308,75 @@ function subj(row, key){
   const actLabel = (a||'').toLowerCase()==='yes'?'✅ Activity':'❌ No act';
   if(a) lines.push(`<span style="font-size:9px;font-weight:700;color:${actColor}">${actLabel}</span>`);
   return `<div style="display:flex;flex-direction:column;gap:2px">${lines.join('')}</div>`;
+}
+
+// ── Geocoding cache: lat,lng → location name ──────────────────────────────────
+const geocodeCache = {};
+
+function modeCell(mode) {
+  if (!mode || mode === 'unknown') return '<span class="mode-unknown">—</span>';
+  if (mode === 'online')  return '<span class="mode-online">🟢 Online</span>';
+  if (mode === 'offline') return '<span class="mode-offline">🟡 Offline</span>';
+  return `<span class="mode-unknown">${mode}</span>`;
+}
+
+function locationCell(r) {
+  if (!r.gps_lat || !r.gps_lng) return '<span style="font-size:9px;color:#94a3b8">No GPS</span>';
+  const lat = parseFloat(r.gps_lat).toFixed(5);
+  const lng = parseFloat(r.gps_lng).toFixed(5);
+  const key = `${lat},${lng}`;
+  const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+
+  if (geocodeCache[key]) {
+    return `<div class="loc-name" title="${geocodeCache[key]}">${geocodeCache[key]}</div>
+            <div class="loc-coords">${lat}, ${lng}</div>
+            <a class="loc-map" href="${mapUrl}" target="_blank">📍 Maps</a>`;
+  }
+
+  // Trigger async reverse geocode and update cell when done
+  const cellId = `loc-${r.id || key.replace(/[^0-9]/g,'_')}`;
+  reverseGeocode(lat, lng, key, cellId);
+
+  return `<div id="${cellId}">
+    <span class="loc-loading">Locating...</span>
+    <div class="loc-coords">${lat}, ${lng}</div>
+    <a class="loc-map" href="${mapUrl}" target="_blank">📍 Maps</a>
+  </div>`;
+}
+
+async function reverseGeocode(lat, lng, key, cellId) {
+  // Respect Nominatim usage policy: 1 request/second, add small delay
+  await new Promise(r => setTimeout(r, Object.keys(geocodeCache).length * 300));
+  try {
+    const res  = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14`,
+      { headers: { 'Accept-Language': 'en', 'User-Agent': 'TAKMIL-Dashboard/1.0' } }
+    );
+    const data = await res.json();
+    const addr = data.address || {};
+    // Build a concise name: village/town/city + district/state
+    const place = addr.village || addr.town || addr.suburb || addr.city || addr.county || '';
+    const dist  = addr.state_district || addr.county || addr.state || '';
+    const name  = [place, dist].filter(Boolean).join(', ') || data.display_name?.split(',')[0] || 'Unknown';
+    geocodeCache[key] = name;
+
+    const cell = document.getElementById(cellId);
+    if (cell) {
+      cell.querySelector('.loc-loading').textContent = '';
+      const nameEl = document.createElement('div');
+      nameEl.className = 'loc-name';
+      nameEl.title = name;
+      nameEl.textContent = name;
+      cell.insertBefore(nameEl, cell.firstChild);
+    }
+  } catch(e) {
+    geocodeCache[key] = 'Location unavailable';
+    const cell = document.getElementById(cellId);
+    if (cell) {
+      const el = cell.querySelector('.loc-loading');
+      if (el) el.textContent = 'Unavailable';
+    }
+  }
 }
 
 function renderTable(rows){
@@ -374,6 +454,8 @@ function renderTable(rows){
             ? '<span style="font-size:9px;color:#94a3b8">Expired</span>'
             : '—'
       }</td>
+      <td class="c-center">${modeCell(r.submission_mode)}</td>
+      <td class="loc-cell">${locationCell(r)}</td>
     </tr>`;
   }).join('');
 
@@ -395,6 +477,7 @@ function renderTable(rows){
         <th colspan="3" class="cg-hdr cg-subj6">Skill Dev</th>
         <th colspan="1" class="cg-hdr cg-basic">Teacher</th>
         <th colspan="4" class="cg-hdr" style="background:#fce7f3;color:#be185d">📸 Photo Verification</th>
+        <th colspan="2" class="cg-hdr" style="background:#ecfdf5;color:#065f46">📍 Location & Mode</th>
       </tr>
       <tr>
         <th class="col">#</th>
@@ -430,6 +513,8 @@ function renderTable(rows){
         <th class="col">AI Count</th>
         <th class="col">Result</th>
         <th class="col">Photo</th>
+        <th class="col">Mode</th>
+        <th class="col">Location</th>
       </tr>
     </thead>
     <tbody>${tbody}</tbody>
@@ -445,7 +530,7 @@ function exportCSV(){
     'Grade','Level','Strength','Boys','Girls','Present','Absent','Leave','Att %',
     'Assembly','Tech Used','Tech Reason','CR Media','Tech Media','Projector','LMS Upload',
     ...subjNames.flatMap(s=>[`${s} Unit Name`,`${s} Unit`,`${s} Lesson`,`${s} Topic`,`${s} Page`,`${s} Activity`]),
-    'Teacher Phone','Present','AI Head Count','Photo Result','Mismatch Detail'
+    'Teacher Phone','Present','AI Head Count','Photo Result','Mismatch Detail','Submission Mode','GPS Lat','GPS Lng'
   ];
   const csvRows=allRows.map((r,i)=>[
     i+1,
@@ -468,7 +553,10 @@ function exportCSV(){
     r.present||'',
     r.photo_head_count??'',
     r.photo_head_count==null?'No photo':r.photo_flag?'Mismatch':'Match',
-    r.photo_flag||''
+    r.photo_flag||'',
+    r.submission_mode||'',
+    r.gps_lat||'',
+    r.gps_lng||''
   ]);
   const csv=[headers,...csvRows].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');
