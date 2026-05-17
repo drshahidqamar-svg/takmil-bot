@@ -1378,7 +1378,7 @@ function showPinStep(schoolName, isFirstTime = false) {
   document.getElementById('login-btn').style.display = 'none';
   document.getElementById('pin-school-label').textContent = '🏫 ' + schoolName;
   document.getElementById('pin-hint').textContent = isFirstTime
-    ? '🔐 First time? Create your 4-digit PIN — you'll use it every login'
+    ? "🔐 First time? Create your 4-digit PIN — you'll use it every login"
     : 'Enter your 4-digit PIN to continue';
   document.getElementById('pin-hint').style.color = isFirstTime ? 'var(--gold)' : '';
   document.getElementById('pin-screen').classList.add('active');
@@ -1483,12 +1483,13 @@ async function doLogin() {
       showError(data.message || 'Phone not registered. Contact your admin.');
     }
   } catch(e) {
+    console.error('[doLogin] error:', e.message);
     const cached = localStorage.getItem('takmil_known_' + phone);
     if (cached) {
       pendingPhone = phone;
       showPinStep(JSON.parse(cached).school);
     } else {
-      showError('Could not connect. Please try again.');
+      showError('Could not connect. Please try again. (' + e.message + ')');
     }
   } finally {
     btn.disabled = false;
