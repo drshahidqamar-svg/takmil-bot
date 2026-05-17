@@ -774,7 +774,7 @@
       <!-- ── PIN Screen (shown after phone verified) ── -->
       <div class="pin-screen" id="pin-screen">
         <div class="pin-school-name" id="pin-school-label"></div>
-        <div class="pin-hint">Enter your 4-digit PIN to continue</div>
+        <div class="pin-hint" id="pin-hint">Enter your 4-digit PIN to continue</div>
         <div class="pin-row">
           <div class="pin-dot" id="pd0"></div>
           <div class="pin-dot" id="pd1"></div>
@@ -1373,10 +1373,14 @@ function showPhoneStep() {
   pendingPhone = null;
 }
 
-function showPinStep(schoolName) {
+function showPinStep(schoolName, isFirstTime = false) {
   document.getElementById('phone-input').closest('.phone-row').style.display = 'none';
   document.getElementById('login-btn').style.display = 'none';
   document.getElementById('pin-school-label').textContent = '🏫 ' + schoolName;
+  document.getElementById('pin-hint').textContent = isFirstTime
+    ? '🔐 First time? Create your 4-digit PIN — you'll use it every login'
+    : 'Enter your 4-digit PIN to continue';
+  document.getElementById('pin-hint').style.color = isFirstTime ? 'var(--gold)' : '';
   document.getElementById('pin-screen').classList.add('active');
   pinBuffer = '';
   updatePinDots();
@@ -1474,7 +1478,7 @@ async function doLogin() {
     if (data.success && data.school) {
       pendingPhone = phone;
       localStorage.setItem('takmil_known_' + phone, JSON.stringify({ school: data.school }));
-      showPinStep(data.school);
+      showPinStep(data.school, data.noPinSet === true);
     } else {
       showError(data.message || 'Phone not registered. Contact your admin.');
     }
