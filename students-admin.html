@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Student Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#16a34a;--green2:#166534;--green-l:#dcfce7;--green-b:#86efac;
+  --blue:#2563eb;--blue-l:#dbeafe;--blue-b:#93c5fd;
+  --red:#dc2626;--red-l:#fee2e2;--red-b:#fca5a5;
+  --amber:#d97706;--amber-l:#fef3c7;--amber-b:#fcd34d;
+  --bg:#f8fafc;--white:#fff;--border:#e2e8f0;--text:#1e293b;--text2:#475569;--text3:#94a3b8;
+  --r:12px;--r2:8px;--shadow:0 2px 12px rgba(0,0,0,.07);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px}
+
+/* NAV */
+.nav-bar{background:var(--green2);padding:8px 24px;display:flex;
+  align-items:center;gap:12px;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.nav-logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;
+  color:#fff;letter-spacing:1px}
+.nav-logo span{color:#fcd34d}
+.nav-links{display:flex;gap:8px;margin-left:auto}
+.nav-link{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;
+  text-decoration:none;color:rgba(255,255,255,.8);transition:all .2s;
+  border:1.5px solid rgba(255,255,255,.2)}
+.nav-link:hover{background:rgba(255,255,255,.15);color:#fff}
+.nav-link.active{background:rgba(255,255,255,.2);color:#fff}
+
+/* LAYOUT */
+.container{display:grid;grid-template-columns:320px 1fr;gap:0;min-height:calc(100vh - 44px)}
+@media(max-width:900px){.container{grid-template-columns:1fr;}}
+
+/* LEFT PANEL */
+.left-panel{background:var(--white);border-right:1px solid var(--border);
+  overflow-y:auto;max-height:calc(100vh - 44px);position:sticky;top:44px}
+.panel-hdr{padding:16px 20px;border-bottom:1px solid var(--border);
+  background:var(--bg);position:sticky;top:0;z-index:5}
+.panel-hdr h3{font-size:13px;font-weight:800;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.search-inp{width:100%;padding:8px 12px;border:1.5px solid var(--border);
+  border-radius:var(--r2);font-size:13px;font-family:'DM Sans',sans-serif;
+  outline:none;color:var(--text);transition:border-color .2s}
+.search-inp:focus{border-color:var(--green)}
+.school-item{padding:12px 20px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .15s;display:flex;
+  align-items:center;justify-content:space-between;gap:8px}
+.school-item:hover{background:var(--green-l)}
+.school-item.active{background:var(--green-l);border-left:3px solid var(--green)}
+.si-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
+.si-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.si-badges{display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex-shrink:0}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.b-ok{background:var(--green-l);color:var(--green2)}
+.b-warn{background:var(--amber-l);color:var(--amber)}
+.b-none{background:var(--red-l);color:var(--red)}
+
+/* RIGHT PANEL */
+.right-panel{padding:24px;overflow-y:auto}
+.no-select{display:flex;align-items:center;justify-content:center;
+  min-height:300px;flex-direction:column;gap:12px;color:var(--text3)}
+.no-select-icon{font-size:48px}
+
+/* School header */
+.school-hdr{margin-bottom:20px}
+.sh-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;
+  color:var(--text);margin-bottom:4px}
+.sh-meta{font-size:12px;color:var(--text3);margin-bottom:14px}
+.sh-stats{display:flex;gap:10px;flex-wrap:wrap}
+.sh-stat{background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r2);padding:10px 16px;text-align:center}
+.sh-n{font-size:22px;font-weight:900}
+.sh-l{font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px}
+.tab{padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;
+  border-bottom:3px solid transparent;margin-bottom:-2px;
+  color:var(--text3);transition:all .15s}
+.tab:hover{color:var(--green)}
+.tab.on{color:var(--green);border-bottom-color:var(--green)}
+.tab-pane{display:none}
+.tab-pane.on{display:block}
+
+/* Sync section */
+.sync-card{background:var(--blue-l);border:1.5px solid var(--blue-b);
+  border-radius:var(--r);padding:18px 20px;margin-bottom:16px}
+.sync-title{font-size:14px;font-weight:800;color:var(--blue);margin-bottom:6px}
+.sync-sub{font-size:12px;color:#1d4ed8;line-height:1.5;margin-bottom:14px}
+.source-student{display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid var(--blue-b)}
+.source-student:last-child{border-bottom:none}
+.ss-name{flex:1;font-size:13px;font-weight:700;color:var(--text)}
+.ss-meta{font-size:11px;color:var(--text3)}
+.btn-sync-all{background:var(--blue);color:#fff;border:none;border-radius:var(--r2);
+  padding:10px 20px;font-size:13px;font-weight:800;font-family:'DM Sans',sans-serif;
+  cursor:pointer;transition:background .2s;display:flex;align-items:center;gap:8px}
+.btn-sync-all:hover{background:#1d4ed8}
+.btn-sync-all:disabled{background:#93c5fd;cursor:not-allowed}
+
+/* Add student form */
+.add-form{background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:20px;margin-bottom:16px}
+.add-form h4{font-size:13px;font-weight:800;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-row-3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.field input,.field select{width:100%;padding:9px 12px;border:1.5px solid var(--border);
+  border-radius:var(--r2);font-size:13px;font-family:'DM Sans',sans-serif;
+  color:var(--text);outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus{border-color:var(--green)}
+.btn-add{background:var(--green);color:#fff;border:none;border-radius:var(--r2);
+  padding:10px 20px;font-size:13px;font-weight:800;font-family:'DM Sans',sans-serif;
+  cursor:pointer;transition:background .2s}
+.btn-add:hover{background:var(--green2)}
+.btn-add:disabled{background:#86efac;cursor:not-allowed}
+
+/* Bulk import */
+.bulk-area{width:100%;min-height:120px;border:1.5px solid var(--border);
+  border-radius:var(--r2);padding:12px;font-size:13px;font-family:'DM Sans',sans-serif;
+  color:var(--text);outline:none;resize:vertical;transition:border-color .2s;
+  line-height:1.6}
+.bulk-area:focus{border-color:var(--green)}
+.bulk-hint{font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5}
+
+/* Student table */
+.students-table-wrap{background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r);overflow:hidden}
+.st-filters{padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.students-table{width:100%;border-collapse:collapse;font-size:13px}
+.students-table th{text-align:left;padding:10px 14px;color:var(--text3);
+  font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+  background:var(--bg);border-bottom:2px solid var(--border)}
+.students-table td{padding:10px 14px;border-bottom:1px solid var(--border)}
+.students-table tr:last-child td{border-bottom:none}
+.students-table tr:hover td{background:var(--bg)}
+.student-name{font-weight:700;color:var(--text)}
+.roll-badge{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);
+  background:var(--bg);padding:2px 6px;border-radius:4px}
+.gender-m{color:var(--blue)}
+.gender-f{color:#db2777}
+.status-active{background:var(--green-l);color:var(--green2);
+  font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px}
+.status-inactive{background:var(--red-l);color:var(--red);
+  font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px}
+.btn-deactivate{background:var(--amber-l);border:1px solid var(--amber-b);
+  color:var(--amber);border-radius:var(--r2);padding:4px 10px;
+  font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-activate{background:var(--green-l);border:1px solid var(--green-b);
+  color:var(--green2);border-radius:var(--r2);padding:4px 10px;
+  font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-del{background:var(--red-l);border:1px solid var(--red-b);
+  color:var(--red);border-radius:var(--r2);padding:4px 10px;
+  font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.empty-row{text-align:center;padding:40px;color:var(--text3)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--text);color:#fff;padding:10px 20px;border-radius:20px;
+  font-size:13px;font-weight:700;opacity:0;transition:all .3s;z-index:9999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Spinner */
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
+  display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.page-spin{width:32px;height:32px;border:3px solid var(--border);
+  border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;
+  margin:60px auto;display:block}
+</style>
+</head>
+<body>
+
+<div class="nav-bar">
+  <span class="nav-logo">TAK<span>MIL</span></span>
+  <span style="color:rgba(255,255,255,.6);font-size:13px">Student Management</span>
+  <div class="nav-links">
+    <a href="/" class="nav-link">⌂ Home</a>
+    <a href="/teacher-attendance" class="nav-link">📋 Attendance</a>
+    <a href="/feedback-table" class="nav-link">📊 Dashboard</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- LEFT: School list -->
+  <div class="left-panel">
+    <div class="panel-hdr">
+      <h3>Schools</h3>
+      <input type="text" class="search-inp" id="school-search"
+        placeholder="Search school..." oninput="filterSchools()">
+    </div>
+    <div id="school-list">
+      <div class="page-spin"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: School detail -->
+  <div class="right-panel" id="right-panel">
+    <div class="no-select">
+      <div class="no-select-icon">🏫</div>
+      <div style="font-size:14px;font-weight:700">Select a school to manage students</div>
+      <div style="font-size:12px">Choose a school from the left panel</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allSchools = [];
+let selectedSchool = null;
+let currentTab = 'enrolled';
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res  = await fetch('/api/admin/schools');
+    const data = await res.json();
+    allSchools = data.schools || [];
+    renderSchoolList(allSchools);
+  } catch(e) {
+    document.getElementById('school-list').innerHTML =
+      `<div style="padding:20px;color:var(--red);font-size:13px">Error: ${e.message}</div>`;
+  }
+}
+
+function filterSchools() {
+  const q = document.getElementById('school-search').value.toLowerCase();
+  renderSchoolList(q ? allSchools.filter(s =>
+    s.name.toLowerCase().includes(q) || (s.region||'').toLowerCase().includes(q)
+  ) : allSchools);
+}
+
+function renderSchoolList(schools) {
+  const el = document.getElementById('school-list');
+  if (!schools.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">No schools found</div>';
+    return;
+  }
+  el.innerHTML = schools.map(s => {
+    const rc  = parseInt(s.register_count);
+    const src = parseInt(s.students_count);
+    const badgeClass = rc > 0 ? 'b-ok' : (src > 0 ? 'b-warn' : 'b-none');
+    const badgeText  = rc > 0 ? `✓ ${rc} enrolled` : (src > 0 ? `⚠ ${src} unsynced` : '✗ None');
+    const active = selectedSchool?.identifier === s.identifier;
+    return `<div class="school-item ${active ? 'active' : ''}"
+      data-id="${s.school_id}" onclick="selectSchool(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+      <div>
+        <div class="si-name">${s.name.replace(/_/g,' ')}</div>
+        <div class="si-meta">${s.region||''} ${s.province ? '· '+s.province : ''}</div>
+      </div>
+      <div class="si-badges">
+        <span class="badge ${badgeClass}">${badgeText}</span>
+        ${src > 0 ? `<span class="badge" style="background:#ede9fe;color:#6d28d9">${src} in DB</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── SELECT SCHOOL ─────────────────────────────────────────────────────────────
+async function selectSchool(school) {
+  selectedSchool = school;
+  // Update active state in list
+  document.querySelectorAll('.school-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id == school.school_id);
+  });
+  renderSchoolDetail(school);
+}
+
+function renderSchoolDetail(school) {
+  const rc  = parseInt(school.register_count);
+  const src = parseInt(school.students_count);
+
+  document.getElementById('right-panel').innerHTML = `
+    <div class="school-hdr">
+      <div class="sh-name">${school.name.replace(/_/g,' ')}</div>
+      <div class="sh-meta">
+        ${school.identifier} &nbsp;·&nbsp; ${school.region||''}
+        ${school.regional_coordinator ? ' · RC: '+school.regional_coordinator : ''}
+        ${school.teacher_phone ? ' · 📱 '+school.teacher_phone : ''}
+      </div>
+      <div class="sh-stats">
+        <div class="sh-stat">
+          <div class="sh-n" style="color:var(--green)">${rc}</div>
+          <div class="sh-l">Enrolled (Attendance)</div>
+        </div>
+        <div class="sh-stat">
+          <div class="sh-n" style="color:var(--blue)">${src}</div>
+          <div class="sh-l">In Students DB</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab on" onclick="switchTab('enrolled')">📋 Enrolled Students</div>
+      <div class="tab" onclick="switchTab('sync')">🔄 Sync from DB (${src})</div>
+      <div class="tab" onclick="switchTab('add')">➕ Add Student</div>
+      <div class="tab" onclick="switchTab('bulk')">📥 Bulk Import</div>
+    </div>
+
+    <!-- Tab: Enrolled -->
+    <div class="tab-pane on" id="tab-enrolled">
+      <div id="enrolled-content">
+        <div class="page-spin"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Sync -->
+    <div class="tab-pane" id="tab-sync">
+      <div id="sync-content">
+        <div class="page-spin"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Add single -->
+    <div class="tab-pane" id="tab-add">
+      <div class="add-form">
+        <h4>Add New Student</h4>
+        <div class="form-row-3">
+          <div class="field">
+            <label>Full Name <span style="color:var(--red)">*</span></label>
+            <input type="text" id="add-name" placeholder="Student full name">
+          </div>
+          <div class="field">
+            <label>Gender</label>
+            <select id="add-gender">
+              <option value="">— Select —</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Level</label>
+            <input type="number" id="add-level" placeholder="1" min="1" max="12">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn-add" id="add-btn" onclick="addStudent()">➕ Add Student</button>
+          <span style="font-size:12px;color:var(--text3)">Roll number auto-generated</span>
+        </div>
+        <div id="add-result" style="margin-top:10px;font-size:13px;font-weight:700"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Bulk -->
+    <div class="tab-pane" id="tab-bulk">
+      <div class="add-form">
+        <h4>Bulk Import Students</h4>
+        <div class="field" style="margin-bottom:10px">
+          <label>Paste student names — one per line</label>
+          <textarea class="bulk-area" id="bulk-text"
+            placeholder="Ahmed Ali&#10;Sara Khan&#10;Fatima Bibi&#10;Muhammad Umar&#10;..."></textarea>
+          <div class="bulk-hint">
+            Supported formats: <code>Name</code> · <code>Name, Male</code> · <code>Name, Female, Level 3</code><br>
+            Each line = one student. Roll numbers are auto-generated.
+          </div>
+        </div>
+        <div class="form-row" style="max-width:360px;margin-bottom:12px">
+          <div class="field">
+            <label>Default Gender</label>
+            <select id="bulk-gender">
+              <option value="">Mixed / Unknown</option>
+              <option value="Male">All Male</option>
+              <option value="Female">All Female</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Default Level</label>
+            <input type="number" id="bulk-level" placeholder="e.g. 1" min="1" max="12">
+          </div>
+        </div>
+        <button class="btn-add" id="bulk-btn" onclick="bulkImport()">📥 Import Students</button>
+        <div id="bulk-result" style="margin-top:10px;font-size:13px;font-weight:700"></div>
+      </div>
+    </div>
+  `;
+
+  loadEnrolledStudents();
+  loadSourceStudents();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const tabs = ['enrolled','sync','add','bulk'];
+    t.classList.toggle('on', tabs[i] === tab);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('on'));
+  document.getElementById('tab-' + tab).classList.add('on');
+}
+
+// ── ENROLLED STUDENTS ─────────────────────────────────────────────────────────
+async function loadEnrolledStudents() {
+  const el = document.getElementById('enrolled-content');
+  if (!el || !selectedSchool) return;
+  try {
+    const res  = await fetch(`/api/admin/school-students/${encodeURIComponent(selectedSchool.identifier)}`);
+    const data = await res.json();
+    renderEnrolled(data.students || []);
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);padding:20px">Error: ${e.message}</div>`;
+  }
+}
+
+function renderEnrolled(students) {
+  const el = document.getElementById('enrolled-content');
+  if (!el) return;
+  const active   = students.filter(s => s.active !== false);
+  const inactive = students.filter(s => s.active === false);
+
+  if (!students.length) {
+    el.innerHTML = `
+      <div class="students-table-wrap">
+        <div class="empty-row">
+          No students enrolled yet.<br>
+          <span style="font-size:12px;color:var(--text3)">Use "Sync from DB" or "Add Student" to enroll students.</span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="students-table-wrap">
+      <div class="st-filters">
+        <span style="font-size:13px;font-weight:700;color:var(--green)">
+          ✅ ${active.length} active
+        </span>
+        ${inactive.length ? `<span style="font-size:13px;font-weight:700;color:var(--red)">
+          · ${inactive.length} inactive</span>` : ''}
+        <input type="text" class="search-inp" style="max-width:200px;margin-left:auto"
+          placeholder="Search student..." oninput="filterStudentTable(this.value,'${selectedSchool.identifier}')">
+      </div>
+      <table class="students-table" id="students-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Roll</th>
+            <th>Gender</th>
+            <th>Level</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${students.map((s, i) => `
+          <tr id="row-${s.roll_number}" data-name="${(s.student_name||'').toLowerCase()}">
+            <td style="color:var(--text3)">${i+1}</td>
+            <td class="student-name">${s.student_name}</td>
+            <td><span class="roll-badge">${s.roll_number}</span></td>
+            <td class="${s.gender==='Male'?'gender-m':'gender-f'}">${s.gender||'—'}</td>
+            <td>${s.level ? 'L'+s.level : '—'}</td>
+            <td>
+              <span class="${s.active!==false?'status-active':'status-inactive'}">
+                ${s.active!==false?'Active':'Inactive'}
+              </span>
+            </td>
+            <td style="display:flex;gap:6px">
+              ${s.active!==false
+                ? `<button class="btn-deactivate" onclick="toggleActive('${s.roll_number}',false)">Deactivate</button>`
+                : `<button class="btn-activate"   onclick="toggleActive('${s.roll_number}',true)">Activate</button>`
+              }
+              <button class="btn-del" onclick="deleteStudent('${s.roll_number}','${s.student_name}')">Delete</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function filterStudentTable(q) {
+  const rows = document.querySelectorAll('#students-table tbody tr');
+  rows.forEach(r => {
+    r.style.display = !q || (r.dataset.name||'').includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+// ── SYNC FROM students TABLE ──────────────────────────────────────────────────
+async function loadSourceStudents() {
+  const el = document.getElementById('sync-content');
+  if (!el || !selectedSchool?.school_id) return;
+  try {
+    const res  = await fetch(`/api/admin/source-students/${selectedSchool.school_id}`);
+    const data = await res.json();
+    renderSyncTab(data.students || []);
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);padding:20px">Error: ${e.message}</div>`;
+  }
+}
+
+function renderSyncTab(students) {
+  const el = document.getElementById('sync-content');
+  if (!el) return;
+  if (!students.length) {
+    el.innerHTML = `
+      <div class="sync-card">
+        <div class="sync-title">No students in Students database for this school</div>
+        <div class="sync-sub">
+          There are no students linked to this school in the <code>students</code> table.<br>
+          Use "Add Student" or "Bulk Import" tabs to enroll students directly.
+        </div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="sync-card">
+      <div class="sync-title">🔄 Sync ${students.length} students from Students database</div>
+      <div class="sync-sub">
+        These students are in the <strong>students</strong> table linked to this school.<br>
+        Click "Sync All" to copy them to the attendance register. Existing roll numbers are preserved.
+      </div>
+      <div style="max-height:220px;overflow-y:auto;margin-bottom:14px;
+        border:1px solid var(--blue-b);border-radius:var(--r2);padding:4px 12px;
+        background:rgba(255,255,255,.5)">
+        ${students.map(s => `
+        <div class="source-student">
+          <div>
+            <div class="ss-name">${s.name}</div>
+            <div class="ss-meta">${s.gender||''} ${s.level?'· Level '+s.level:''} ${s.age?'· Age '+s.age:''}</div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <button class="btn-sync-all" id="sync-btn" onclick="syncAll()">
+        🔄 Sync All ${students.length} Students
+      </button>
+      <div id="sync-result" style="margin-top:10px;font-size:13px;font-weight:700"></div>
+    </div>`;
+}
+
+async function syncAll() {
+  const btn = document.getElementById('sync-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Syncing...';
+
+  try {
+    const res  = await fetch('/api/admin/sync-students', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        school_id:         selectedSchool.school_id,
+        school_identifier: selectedSchool.identifier,
+        school_name:       selectedSchool.name,
+      })
+    });
+    const data = await res.json();
+    document.getElementById('sync-result').innerHTML =
+      `<span style="color:var(--green)">✅ Synced: ${data.synced} students</span>
+       ${data.skipped ? `<span style="color:var(--amber);margin-left:10px">Skipped: ${data.skipped}</span>` : ''}`;
+
+    showToast(`✅ ${data.synced} students synced to attendance register`);
+    // Refresh enrolled list
+    await loadEnrolledStudents();
+    // Refresh school list to update counts
+    await init();
+  } catch(e) {
+    document.getElementById('sync-result').innerHTML =
+      `<span style="color:var(--red)">Error: ${e.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `🔄 Sync All Students`;
+  }
+}
+
+// ── ADD SINGLE STUDENT ────────────────────────────────────────────────────────
+async function addStudent() {
+  const name   = document.getElementById('add-name').value.trim();
+  const gender = document.getElementById('add-gender').value;
+  const level  = document.getElementById('add-level').value;
+  const result = document.getElementById('add-result');
+
+  if (!name) { result.innerHTML = '<span style="color:var(--red)">Enter student name</span>'; return; }
+
+  const btn = document.getElementById('add-btn');
+  btn.disabled = true; btn.textContent = 'Adding...';
+
+  try {
+    const res  = await fetch('/api/admin/add-student', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ school_identifier: selectedSchool.identifier, student_name: name, gender, level })
+    });
+    const data = await res.json();
+    if (data.saved) {
+      result.innerHTML = `<span style="color:var(--green)">✅ Added: ${name} (Roll: ${data.roll_number})</span>`;
+      document.getElementById('add-name').value = '';
+      showToast(`✅ ${name} added`);
+      await loadEnrolledStudents();
+      await init();
+    } else {
+      result.innerHTML = `<span style="color:var(--red)">Error: ${data.error}</span>`;
+    }
+  } catch(e) {
+    result.innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '➕ Add Student';
+  }
+}
+
+// ── BULK IMPORT ───────────────────────────────────────────────────────────────
+async function bulkImport() {
+  const text    = document.getElementById('bulk-text').value.trim();
+  const defGen  = document.getElementById('bulk-gender').value;
+  const defLvl  = document.getElementById('bulk-level').value;
+  const result  = document.getElementById('bulk-result');
+  if (!text) { result.innerHTML = '<span style="color:var(--red)">Paste student names first</span>'; return; }
+
+  // Parse lines
+  const students = text.split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const parts = line.split(',').map(p => p.trim());
+      const name  = parts[0];
+      let gender  = defGen || null;
+      let level   = defLvl ? parseInt(defLvl) : null;
+      for (let i = 1; i < parts.length; i++) {
+        if (/^(male|m)$/i.test(parts[i]))   gender = 'Male';
+        if (/^(female|f)$/i.test(parts[i])) gender = 'Female';
+        const lvlMatch = parts[i].match(/(?:level\s*)?(\d+)/i);
+        if (lvlMatch) level = parseInt(lvlMatch[1]);
+      }
+      return { name, gender, level };
+    })
+    .filter(s => s.name);
+
+  if (!students.length) { result.innerHTML = '<span style="color:var(--red)">No valid names found</span>'; return; }
+
+  const btn = document.getElementById('bulk-btn');
+  btn.disabled = true; btn.textContent = `Importing ${students.length}...`;
+
+  try {
+    const res  = await fetch('/api/admin/bulk-add-students', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ school_identifier: selectedSchool.identifier, students })
+    });
+    const data = await res.json();
+    result.innerHTML = `
+      <span style="color:var(--green)">✅ Added: ${data.added}</span>
+      ${data.skipped ? `<span style="color:var(--amber);margin-left:10px">Skipped: ${data.skipped}</span>` : ''}`;
+    if (data.added > 0) {
+      document.getElementById('bulk-text').value = '';
+      showToast(`✅ ${data.added} students imported`);
+      await loadEnrolledStudents();
+      await init();
+    }
+  } catch(e) {
+    result.innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '📥 Import Students';
+  }
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+async function toggleActive(roll, active) {
+  try {
+    await fetch(`/api/admin/student/${encodeURIComponent(roll)}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active })
+    });
+    showToast(active ? '✅ Student activated' : '⚠ Student deactivated');
+    await loadEnrolledStudents();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function deleteStudent(roll, name) {
+  if (!confirm(`Permanently delete "${name}" (${roll})?\nThis cannot be undone.`)) return;
+  try {
+    await fetch(`/api/admin/student/${encodeURIComponent(roll)}`, { method: 'DELETE' });
+    showToast(`🗑 ${name} deleted`);
+    await loadEnrolledStudents();
+    await init();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+init();
+</script>
+</body>
+</html>

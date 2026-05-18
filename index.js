@@ -135,6 +135,7 @@ app.get('/image-portal',         (req, res) => res.sendFile(path.join(__dirname,
 app.get('/picture-questions',    (req, res) => res.sendFile(path.join(__dirname, 'picture-questions.html')));
 app.get('/teacher-feedback',     (req, res) => res.sendFile(path.join(__dirname, 'takmil-feedback.html')));
 app.get('/teacher-attendance',   (req, res) => res.sendFile(path.join(__dirname, 'teacher-attendance.html')));
+app.get('/students-admin',       (req, res) => res.sendFile(path.join(__dirname, 'students-admin.html')));
 app.get('/takmil-classroom',     (req, res) => res.sendFile(path.join(__dirname, 'takmil-classroom.html')));
 
 

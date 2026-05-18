@@ -962,4 +962,207 @@ function normalisePhone(raw) {
   return p;
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ADMIN — Student Management APIs
+// ══════════════════════════════════════════════════════════════════════════════
+
+// GET /api/admin/schools — list all schools with student counts in both tables
+router.get('/api/admin/schools', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT
+        s.id AS school_id, s.name, s.identifier,
+        s.region, s.province, s.teacher_phone,
+        rc.name AS regional_coordinator,
+        sc2.name AS school_coordinator,
+        -- Count from students table (linked by school_id)
+        (SELECT COUNT(*) FROM students st WHERE st.school_id = s.id) AS students_count,
+        -- Count from students_register (what attendance uses)
+        (SELECT COUNT(*) FROM students_register sr
+         WHERE LOWER(sr.school_identifier) = LOWER(s.identifier) AND sr.active = TRUE
+        ) AS register_count
+      FROM schools s
+      LEFT JOIN regional_coordinators rc  ON rc.id  = s.regional_coordinator_id
+      LEFT JOIN school_coordinators   sc2 ON sc2.id = s.school_coordinator_id
+      WHERE s.identifier IS NOT NULL
+      ORDER BY s.region, s.name
+    `);
+    res.json({ schools: r.rows });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/school-students/:identifier — students in students_register for a school
+router.get('/api/admin/school-students/:identifier', async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const r = await db.pool.query(`
+      SELECT id, roll_number, student_name, gender, level,
+             teacher_name, active, created_at
+      FROM students_register
+      WHERE LOWER(school_identifier) = LOWER($1)
+      ORDER BY roll_number
+    `, [identifier]);
+    res.json({ students: r.rows, total: r.rows.length });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/source-students/:school_id — students in students table for a school
+router.get('/api/admin/source-students/:school_id', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT id, name, gender, level, age, created_at
+      FROM students
+      WHERE school_id = $1
+      ORDER BY name
+    `, [parseInt(req.params.school_id)]);
+    res.json({ students: r.rows });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/sync-students — copy students table → students_register for a school
+router.post('/api/admin/sync-students', async (req, res) => {
+  try {
+    const { school_id, school_identifier, school_name } = req.body;
+    if (!school_id || !school_identifier) {
+      return res.status(400).json({ error: 'school_id and school_identifier required' });
+    }
+
+    // Get students from students table
+    const src = await db.pool.query(
+      `SELECT id, name, gender, level, age FROM students WHERE school_id = $1 ORDER BY id`,
+      [parseInt(school_id)]
+    );
+
+    if (!src.rows.length) {
+      return res.json({ synced: 0, message: 'No students found in students table for this school.' });
+    }
+
+    // Get current max roll number for this school to continue sequencing
+    const maxRoll = await db.pool.query(`
+      SELECT MAX(CAST(REGEXP_REPLACE(roll_number, '[^0-9]', '', 'g') AS INTEGER)) AS max_num
+      FROM students_register
+      WHERE school_identifier ILIKE $1
+    `, [school_identifier]);
+    let rollSeq = (maxRoll.rows[0]?.max_num || 0);
+
+    let synced = 0, skipped = 0;
+    for (const s of src.rows) {
+      rollSeq++;
+      const roll = `${school_identifier.substring(0,6).toUpperCase()}-${String(rollSeq).padStart(3,'0')}`;
+      try {
+        await db.pool.query(`
+          INSERT INTO students_register
+            (school_identifier, roll_number, student_name, gender, level, active, created_at)
+          VALUES ($1, $2, $3, $4, $5, TRUE, NOW())
+          ON CONFLICT (roll_number) DO NOTHING
+        `, [school_identifier, roll, s.name, s.gender || null, s.level || null]);
+        synced++;
+      } catch(e) { skipped++; }
+    }
+    res.json({ synced, skipped, total: src.rows.length });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/add-student — add a single student to students_register
+router.post('/api/admin/add-student', async (req, res) => {
+  try {
+    const { school_identifier, student_name, gender, level, roll_number } = req.body;
+    if (!school_identifier || !student_name) {
+      return res.status(400).json({ error: 'school_identifier and student_name required' });
+    }
+
+    // Auto-generate roll number if not provided
+    let roll = roll_number;
+    if (!roll) {
+      const maxRoll = await db.pool.query(`
+        SELECT MAX(CAST(REGEXP_REPLACE(roll_number, '[^0-9]', '', 'g') AS INTEGER)) AS max_num
+        FROM students_register WHERE school_identifier ILIKE $1
+      `, [school_identifier]);
+      const seq = (maxRoll.rows[0]?.max_num || 0) + 1;
+      roll = `${school_identifier.substring(0,6).toUpperCase()}-${String(seq).padStart(3,'0')}`;
+    }
+
+    await db.pool.query(`
+      INSERT INTO students_register
+        (school_identifier, roll_number, student_name, gender, level, active, created_at)
+      VALUES ($1, $2, $3, $4, $5, TRUE, NOW())
+    `, [school_identifier, roll, student_name.trim(), gender || null, parseInt(level) || null]);
+
+    res.json({ saved: true, roll_number: roll });
+  } catch(err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'Roll number already exists.' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/bulk-add-students — add multiple students at once
+router.post('/api/admin/bulk-add-students', async (req, res) => {
+  try {
+    const { school_identifier, students } = req.body;
+    if (!school_identifier || !Array.isArray(students) || !students.length) {
+      return res.status(400).json({ error: 'school_identifier and students[] required' });
+    }
+
+    const maxRoll = await db.pool.query(`
+      SELECT MAX(CAST(REGEXP_REPLACE(roll_number, '[^0-9]', '', 'g') AS INTEGER)) AS max_num
+      FROM students_register WHERE school_identifier ILIKE $1
+    `, [school_identifier]);
+    let seq = maxRoll.rows[0]?.max_num || 0;
+
+    let added = 0, skipped = 0;
+    for (const s of students) {
+      if (!s.name || !s.name.trim()) { skipped++; continue; }
+      seq++;
+      const roll = `${school_identifier.substring(0,6).toUpperCase()}-${String(seq).padStart(3,'0')}`;
+      try {
+        await db.pool.query(`
+          INSERT INTO students_register
+            (school_identifier, roll_number, student_name, gender, level, active, created_at)
+          VALUES ($1, $2, $3, $4, $5, TRUE, NOW())
+          ON CONFLICT (roll_number) DO NOTHING
+        `, [school_identifier, roll, s.name.trim(), s.gender || null, parseInt(s.level) || null]);
+        added++;
+      } catch(e) { skipped++; }
+    }
+    res.json({ added, skipped, total: students.length });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/student/:roll — toggle active/inactive
+router.patch('/api/admin/student/:roll', async (req, res) => {
+  try {
+    const { active } = req.body;
+    await db.pool.query(
+      `UPDATE students_register SET active = $1 WHERE roll_number = $2`,
+      [!!active, req.params.roll]
+    );
+    res.json({ saved: true });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/admin/student/:roll — permanently delete a student
+router.delete('/api/admin/student/:roll', async (req, res) => {
+  try {
+    await db.pool.query(
+      `DELETE FROM students_register WHERE roll_number = $1`,
+      [req.params.roll]
+    );
+    res.json({ deleted: true });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 module.exports = { router, isFeedbackMessage, parseFeedback, saveFeedback };
