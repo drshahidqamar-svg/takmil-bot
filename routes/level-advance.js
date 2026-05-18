@@ -843,6 +843,95 @@ router.get('/api/assessment-dashboard', async (req, res) => {
   }
 });
 
+// ── /portal/offline/submit — save result from offline portal assessment ────────
+router.post('/portal/offline/submit', async (req, res) => {
+  try {
+    const {
+      pin, student_name, student_id,
+      subject, level, score, total, pct, passed,
+      overall_pct, overall_passed,
+      timestamp, submission_mode,
+      gps_lat, gps_lng, gps_accuracy,
+    } = req.body;
+
+    if (!pin || !student_name) {
+      return res.status(400).json({ error: 'pin and student_name required' });
+    }
+
+    // Look up PIN to get school + session info
+    let pinRecord = null;
+    try {
+      const pinRes = await db.pool.query(
+        `SELECT * FROM pins WHERE pin_code = $1 LIMIT 1`,
+        [pin.toUpperCase()]
+      );
+      if (pinRes.rows.length) pinRecord = pinRes.rows[0];
+    } catch(e) {
+      // Try tablet_sessions as fallback
+      try {
+        const sessRes = await db.pool.query(
+          `SELECT * FROM tablet_sessions WHERE pin_code = $1 LIMIT 1`, [pin]
+        );
+        if (sessRes.rows.length) pinRecord = { school_id: null, school_identifier: sessRes.rows[0].school_identifier, level };
+      } catch(e2) {}
+    }
+
+    // Auto-create student_assessments table if needed
+    await db.pool.query(`
+      CREATE TABLE IF NOT EXISTS student_assessments (
+        id SERIAL PRIMARY KEY,
+        pin_id INTEGER, school_id INTEGER,
+        teacher_phone VARCHAR(20), student_name VARCHAR(100),
+        student_id VARCHAR(50),
+        level INTEGER, subject VARCHAR(30),
+        total_questions INTEGER DEFAULT 0,
+        correct_answers INTEGER DEFAULT 0,
+        score_pct NUMERIC(5,2) DEFAULT 0,
+        passed BOOLEAN DEFAULT FALSE,
+        overall_pct NUMERIC(5,2),
+        overall_passed BOOLEAN,
+        answers_detail JSONB,
+        recommendation TEXT,
+        submission_mode TEXT DEFAULT 'offline',
+        gps_lat NUMERIC(10,7), gps_lng NUMERIC(10,7), gps_accuracy INTEGER,
+        completed_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await db.pool.query(`
+      INSERT INTO student_assessments
+        (pin_id, school_id, student_name, student_id, level, subject,
+         total_questions, correct_answers, score_pct, passed,
+         overall_pct, overall_passed,
+         submission_mode, gps_lat, gps_lng, gps_accuracy, completed_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+    `, [
+      pinRecord?.id     || null,
+      pinRecord?.school_id || null,
+      student_name,
+      student_id || null,
+      parseInt(level) || 1,
+      subject || 'Unknown',
+      parseInt(total)  || 0,
+      parseInt(score)  || 0,
+      parseFloat(pct)  || 0,
+      passed || false,
+      parseFloat(overall_pct)  || null,
+      overall_passed || null,
+      submission_mode || 'offline',
+      gps_lat     || null,
+      gps_lng     || null,
+      gps_accuracy ? parseInt(gps_accuracy) : null,
+      timestamp ? new Date(timestamp) : new Date(),
+    ]);
+
+    return res.json({ saved: true });
+  } catch (err) {
+    console.error('[portal/offline/submit] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // ── /api/assess/bundle/:pin — returns session + questions in one call for offline caching ──
 router.get('/api/assess/bundle/:pin', async (req, res) => {
   try {
