@@ -1,5 +1,5 @@
 // TAKMIL Attendance — Service Worker
-const CACHE_NAME = 'takmil-attend-v1';
+const CACHE_NAME = 'takmil-attend-v2';
 const SYNC_TAG   = 'sync-takmil-attend';
 const API_BASE   = 'https://takmil-bot-production-0f51.up.railway.app';
 
@@ -65,7 +65,14 @@ async function flushFromSW() {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p),
         });
         const d = await r.json().catch(() => ({}));
-        if (!d.saved) remaining.push(p);
+        if (d.saved) {
+          // success — don't add to remaining
+        } else if (d.permanent) {
+          // permanently rejected — drop it, don't re-queue
+          console.warn('[SW] Dropped permanent rejection:', p.school_code, p.date, d.error);
+        } else {
+          remaining.push(p); // transient error — retry later
+        }
       } catch(e) { remaining.push(p); }
     }
     remaining.length

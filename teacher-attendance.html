@@ -485,7 +485,7 @@ async function flushQueue() {
   pendingQueue = [];
   saveQueueToStorage();
 
-  let sent = 0;
+  let sent = 0, dropped = 0;
   for (const payload of batch) {
     try {
       const res  = await fetch(`${API}/api/register/submit`, {
@@ -497,21 +497,29 @@ async function flushQueue() {
       if (data.saved) {
         sent++;
         console.log(`[Attendance] Synced: ${payload.school_code} / ${payload.date}`);
+      } else if (data.permanent) {
+        // Server permanently rejected (future date, too old, no data) — don't re-queue
+        dropped++;
+        console.warn(`[Attendance] Dropped (permanent rejection): ${payload.school_code} / ${payload.date} — ${data.error}`);
       } else {
-        console.error('[Attendance] Server rejected:', data.error);
-        pendingQueue.push(payload); // re-queue
+        console.error('[Attendance] Server rejected (will retry):', data.error);
+        pendingQueue.push(payload); // transient error — re-queue
       }
     } catch(e) {
       console.error('[Attendance] Network error during sync:', e.message);
-      pendingQueue.push(payload); // re-queue
+      pendingQueue.push(payload); // network error — re-queue
     }
   }
 
   saveQueueToStorage();
   updatePendingBadge();
 
-  if (sent > 0) {
+  if (sent > 0 && dropped === 0) {
     showToast(`✅ ${sent} attendance record${sent > 1 ? 's' : ''} synced!`);
+  } else if (sent > 0 && dropped > 0) {
+    showToast(`✅ ${sent} synced, ⚠️ ${dropped} too old to submit`);
+  } else if (dropped > 0) {
+    showToast(`⚠️ ${dropped} record${dropped > 1 ? 's' : ''} could not sync (too old)`);
   } else if (batch.length > 0) {
     showToast('⚠️ Sync failed — will retry automatically');
   }
@@ -900,6 +908,7 @@ async function submitAttendance() {
   const l = attendanceArr.filter(s => s.status === 'L').length;
 
   let savedOnline = false;
+  let permanentError = null;
 
   if (navigator.onLine) {
     try {
@@ -908,11 +917,25 @@ async function submitAttendance() {
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
-      savedOnline = data.saved === true;
-      if (!savedOnline) console.error('[submit] Server error:', data.error);
+      if (data.saved === true) {
+        savedOnline = true;
+      } else if (data.permanent) {
+        // Server permanently rejected — don't queue, show error
+        permanentError = data.error || 'Submission rejected by server.';
+        console.error('[submit] Permanent rejection:', permanentError);
+      } else {
+        console.error('[submit] Server error (will queue):', data.error);
+      }
     } catch(e) {
-      console.error('[submit] Network error:', e.message);
+      console.error('[submit] Network error (will queue):', e.message);
     }
+  }
+
+  if (permanentError) {
+    btn.disabled = false;
+    btn.innerHTML = 'Submit Attendance';
+    showToast(`⚠️ ${permanentError}`);
+    return;
   }
 
   if (!savedOnline) {

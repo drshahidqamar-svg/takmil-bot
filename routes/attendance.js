@@ -582,15 +582,18 @@ router.get('/api/register/students', async (req, res) => {
 
 router.post('/api/register/submit', async (req, res) => {
   try {
-    const { school_code, date, attendance, submitted_by } = req.body;
+    const { school_code, date, attendance, submitted_by, submission_mode } = req.body;
     if (date) {
       const submitted = new Date(date); submitted.setHours(0,0,0,0);
       const today     = new Date();     today.setHours(0,0,0,0);
-      const yesterday = new Date(today); yesterday.setDate(today.getDate()-1);
-      if (submitted > today)     return res.status(400).json({ error: 'Future dates are not allowed.' });
-      if (submitted < yesterday) return res.status(400).json({ error: 'Attendance can only be submitted for today or yesterday.' });
+      // Future dates always rejected (permanent)
+      if (submitted > today) return res.json({ saved: false, permanent: true, error: 'Future dates are not allowed.' });
+      // Allow up to 7 days back for offline submissions, 2 days for online
+      const maxDaysBack = submission_mode === 'offline' ? 7 : 2;
+      const earliest = new Date(today); earliest.setDate(today.getDate() - maxDaysBack);
+      if (submitted < earliest) return res.json({ saved: false, permanent: true, error: `Attendance date is too old (max ${maxDaysBack} days back).` });
     }
-    if (!attendance?.length) return res.status(400).json({ error: 'No attendance data' });
+    if (!attendance?.length) return res.json({ saved: false, permanent: true, error: 'No attendance data' });
     const attDate = date || new Date().toISOString().split('T')[0];
 
     for (const s of attendance) {
