@@ -148,6 +148,7 @@ app.get('/teacher-attendance',   (req, res) => res.sendFile(path.join(__dirname,
 app.get('/students-admin',       (req, res) => res.sendFile(path.join(__dirname, 'students-admin.html')));
 app.get('/attendance-results',   (req, res) => res.sendFile(path.join(__dirname, 'attendance-results.html')));
 app.get('/teacher-lessons',      (req, res) => res.sendFile(path.join(__dirname, 'teacher-lessons.html')));
+app.get('/video-lessons-dashboard', (req, res) => res.sendFile(path.join(__dirname, 'video-lessons-dashboard.html')));
 app.get('/takmil-classroom',     (req, res) => res.sendFile(path.join(__dirname, 'takmil-classroom.html')));
 
 

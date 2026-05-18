@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Video Lessons Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1a2e7a;--navy2:#0f1d54;--navy-l:#dbeafe;--navy-b:#93c5fd;
+  --green:#15803d;--green-l:#dcfce7;--green-b:#86efac;
+  --amber:#d97706;--amber-l:#fef3c7;--amber-b:#fcd34d;
+  --red:#dc2626;--red-l:#fee2e2;
+  --bg:#f0f4ff;--white:#fff;--border:#c7d2fe;
+  --text:#1e1b4b;--text2:#4338ca;--text3:#6b7280;
+  --r:12px;--r2:8px;--shadow:0 2px 12px rgba(26,46,122,.1);
+}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;
+  font-size:14px;min-height:100vh}
+
+.nav{background:linear-gradient(135deg,var(--navy2),var(--navy));
+  padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(26,46,122,.3)}
+.logo{font-size:18px;font-weight:900;color:#fff;letter-spacing:1px}
+.logo span{color:#fcd34d}
+.nav-sub{font-size:12px;color:rgba(255,255,255,.6)}
+.nav-right{margin-left:auto;display:flex;gap:8px}
+.nav-link{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;
+  text-decoration:none;color:rgba(255,255,255,.8);
+  border:1.5px solid rgba(255,255,255,.2)}
+.nav-link:hover{background:rgba(255,255,255,.15);color:#fff}
+
+/* FILTERS */
+.filter-bar{background:var(--white);border-bottom:2px solid var(--border);
+  padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:10px;font-weight:800;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.5px}
+.fi,.fs{padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r2);
+  font-size:13px;font-family:'Nunito',sans-serif;color:var(--text);
+  outline:none;background:var(--white);transition:border-color .2s}
+.fi:focus,.fs:focus{border-color:var(--navy)}
+.btn-load{background:var(--navy);color:#fff;border:none;border-radius:var(--r2);
+  padding:9px 22px;font-size:13px;font-weight:800;
+  font-family:'Nunito',sans-serif;cursor:pointer;align-self:flex-end}
+.btn-load:hover{background:var(--navy2)}
+.btn-csv{background:var(--navy-l);color:var(--navy);border:1.5px solid var(--navy-b);
+  border-radius:var(--r2);padding:8px 16px;font-size:12px;font-weight:800;
+  font-family:'Nunito',sans-serif;cursor:pointer;align-self:flex-end}
+
+/* SUMMARY CARDS */
+.cards{display:flex;gap:12px;padding:16px 20px;flex-wrap:wrap}
+.card{background:var(--white);border-radius:var(--r);padding:14px 18px;
+  box-shadow:var(--shadow);flex:1;min-width:120px}
+.card-n{font-size:28px;font-weight:900}
+.card-l{font-size:10px;font-weight:800;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.card-s{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* TABLE */
+.table-wrap{padding:0 20px 40px}
+.tw-card{background:var(--white);border-radius:var(--r);
+  overflow:hidden;box-shadow:var(--shadow);border:1.5px solid var(--border)}
+.tw-hdr{padding:12px 16px;border-bottom:1px solid var(--border);
+  background:var(--bg);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.tw-title{font-size:14px;font-weight:900;color:var(--navy)}
+.search-inp{padding:7px 12px;border:1.5px solid var(--border);
+  border-radius:var(--r2);font-size:13px;font-family:'Nunito',sans-serif;
+  outline:none;color:var(--text);transition:border-color .2s;min-width:180px}
+.search-inp:focus{border-color:var(--navy)}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 14px;color:var(--text3);font-weight:700;
+  font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+  background:var(--bg);border-bottom:2px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg)}
+.overflow-x{overflow-x:auto}
+
+/* Badges */
+.b-done{background:var(--green-l);color:var(--green);font-size:11px;
+  font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.b-partial{background:var(--amber-l);color:var(--amber);font-size:11px;
+  font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.b-none{background:var(--red-l);color:var(--red);font-size:11px;
+  font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.b-online{background:var(--green-l);color:var(--green);font-size:10px;
+  font-weight:800;padding:2px 7px;border-radius:10px}
+.b-offline{background:var(--amber-l);color:var(--amber);font-size:10px;
+  font-weight:800;padding:2px 7px;border-radius:10px}
+
+/* Progress bar */
+.pbar{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;min-width:80px}
+.pbar-fill{height:100%;border-radius:3px;transition:width .3s}
+
+.maps-link{color:var(--navy);font-weight:700;font-size:11px;text-decoration:none}
+.maps-link:hover{text-decoration:underline}
+
+/* Empty / loading */
+.center-msg{text-align:center;padding:60px 20px;color:var(--text3)}
+.spin{width:36px;height:36px;border:3px solid var(--border);
+  border-top-color:var(--navy);border-radius:50%;
+  animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--navy);color:#fff;padding:10px 20px;border-radius:20px;
+  font-size:13px;font-weight:700;opacity:0;transition:all .3s;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.mono{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)}
+
+@media(max-width:600px){
+  .filter-bar{flex-direction:column}
+  .fi,.fs,.btn-load,.btn-csv{width:100%}
+  .cards{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <span class="logo">TAK<span>MIL</span></span>
+  <span class="nav-sub">Video Lessons Dashboard</span>
+  <div class="nav-right">
+    <a href="/teacher-lessons" class="nav-link">🎬 Play Lessons</a>
+    <a href="/feedback-table"  class="nav-link">📊 Feedback</a>
+    <a href="/"                class="nav-link">⌂ Home</a>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <div class="fg">
+    <label>From Date</label>
+    <input type="date" class="fi" id="f-from">
+  </div>
+  <div class="fg">
+    <label>To Date</label>
+    <input type="date" class="fi" id="f-to">
+  </div>
+  <div class="fg">
+    <label>School</label>
+    <select class="fs" id="f-school" style="min-width:200px">
+      <option value="">— All Schools —</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label>Subject</label>
+    <select class="fs" id="f-subject">
+      <option value="">— All Subjects —</option>
+      <option>English</option><option>Math</option><option>Urdu</option>
+      <option>Science</option><option>Social Studies</option><option>Islamiat</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label>Status</label>
+    <select class="fs" id="f-status">
+      <option value="">— All —</option>
+      <option value="completed">✅ Completed only</option>
+      <option value="partial">⚠ Partial only</option>
+    </select>
+  </div>
+  <button class="btn-load" onclick="loadData()">🔍 Load</button>
+  <button class="btn-csv"  onclick="exportCSV()">⬇ CSV</button>
+</div>
+
+<!-- SUMMARY -->
+<div class="cards" id="cards" style="display:none">
+  <div class="card">
+    <div class="card-n" id="c-sessions" style="color:var(--navy)">—</div>
+    <div class="card-l">Sessions</div>
+    <div class="card-s" id="c-range">—</div>
+  </div>
+  <div class="card">
+    <div class="card-n" id="c-complete" style="color:var(--green)">—</div>
+    <div class="card-l">✅ Completed</div>
+    <div class="card-s" id="c-pct">—</div>
+  </div>
+  <div class="card">
+    <div class="card-n" id="c-partial" style="color:var(--amber)">—</div>
+    <div class="card-l">⚠ Partial</div>
+    <div class="card-s">Less than 100% watched</div>
+  </div>
+  <div class="card">
+    <div class="card-n" id="c-schools" style="color:var(--navy)">—</div>
+    <div class="card-l">Schools Active</div>
+  </div>
+  <div class="card">
+    <div class="card-n" id="c-avg" style="color:var(--amber)">—</div>
+    <div class="card-l">Avg Watch %</div>
+    <div class="card-s">Across all sessions</div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <div class="tw-card">
+    <div class="tw-hdr">
+      <div class="tw-title">📹 Video Session Records</div>
+      <input type="text" class="search-inp" id="search-inp"
+        placeholder="Search school, video, subject..."
+        oninput="filterTable(this.value)">
+    </div>
+    <div class="overflow-x">
+      <div id="table-wrap">
+        <div class="center-msg">
+          Select a date range and click <strong>Load</strong> to view records.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allRows = [];
+const geocodeCache = {};
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  const today = new Date();
+  const from  = new Date(today); from.setDate(today.getDate() - 6);
+  document.getElementById('f-to').value   = fmt(today);
+  document.getElementById('f-from').value = fmt(from);
+
+  try {
+    const res  = await fetch('/api/admin/schools');
+    const data = await res.json();
+    const sel  = document.getElementById('f-school');
+    (data.schools || []).forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.identifier;
+      o.textContent = s.name.replace(/_/g,' ') + (s.region ? ' ('+s.region+')' : '');
+      sel.appendChild(o);
+    });
+  } catch(e) {}
+
+  loadData();
+}
+
+function fmt(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────────────────────
+async function loadData() {
+  const from    = document.getElementById('f-from').value;
+  const to      = document.getElementById('f-to').value;
+  const school  = document.getElementById('f-school').value;
+  const subject = document.getElementById('f-subject').value;
+  const status  = document.getElementById('f-status').value;
+
+  if (!from || !to) { showToast('Select a date range'); return; }
+
+  document.getElementById('table-wrap').innerHTML =
+    '<div class="center-msg"><div class="spin"></div>Loading...</div>';
+  document.getElementById('cards').style.display = 'none';
+
+  try {
+    let url = `/api/video-log?date_from=${from}&date_to=${to}`;
+    if (school) url += `&school=${encodeURIComponent(school)}`;
+
+    const res  = await fetch(url);
+    const data = await res.json();
+    let rows   = data.logs || [];
+
+    // Client-side filters
+    if (subject) rows = rows.filter(r => (r.subject||'').toLowerCase() === subject.toLowerCase());
+    if (status === 'completed') rows = rows.filter(r => r.completed);
+    if (status === 'partial')   rows = rows.filter(r => !r.completed && parseFloat(r.max_pct||0) > 0);
+
+    allRows = rows;
+    renderSummary(rows, from, to);
+    renderTable(rows);
+  } catch(e) {
+    document.getElementById('table-wrap').innerHTML =
+      `<div class="center-msg" style="color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────────────────────
+function renderSummary(rows, from, to) {
+  if (!rows.length) {
+    document.getElementById('cards').style.display = 'none';
+    return;
+  }
+  const complete  = rows.filter(r => r.completed).length;
+  const partial   = rows.filter(r => !r.completed && parseFloat(r.max_pct||0) > 0).length;
+  const schools   = new Set(rows.map(r => r.school_identifier)).size;
+  const avgWatch  = rows.length ? Math.round(rows.reduce((s,r) => s+parseFloat(r.max_pct||0),0) / rows.length) : 0;
+
+  document.getElementById('c-sessions').textContent = rows.length;
+  document.getElementById('c-range').textContent    = from + ' → ' + to;
+  document.getElementById('c-complete').textContent = complete;
+  document.getElementById('c-pct').textContent      = rows.length ? Math.round(complete/rows.length*100)+'% completion rate' : '';
+  document.getElementById('c-partial').textContent  = partial;
+  document.getElementById('c-schools').textContent  = schools;
+  document.getElementById('c-avg').textContent      = avgWatch + '%';
+  document.getElementById('cards').style.display    = 'flex';
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────────────────
+function renderTable(rows) {
+  const wrap = document.getElementById('table-wrap');
+
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="center-msg">No video sessions found for this range.</div>';
+    return;
+  }
+
+  wrap.innerHTML = `
+    <table id="data-table">
+      <thead><tr>
+        <th>Date</th>
+        <th>School</th>
+        <th>Teacher</th>
+        <th>Video</th>
+        <th>Subject</th>
+        <th>Level / Unit</th>
+        <th>Watch %</th>
+        <th>Status</th>
+        <th>Started At</th>
+        <th>Location</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map((r, i) => {
+          const pct   = Math.round(parseFloat(r.max_pct || 0));
+          const done  = r.completed || pct >= 99;
+          const pColor= done ? '#15803d' : pct >= 50 ? '#d97706' : '#dc2626';
+          const dateStr = r.log_date ? new Date(r.log_date).toLocaleDateString('en-GB',
+            { weekday:'short', day:'numeric', month:'short' }) : '—';
+          const timeStr = r.started_at
+            ? new Date(r.started_at).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })
+            : '—';
+          const hasGps  = r.gps_lat && r.gps_lng;
+          const lat     = hasGps ? parseFloat(r.gps_lat).toFixed(5) : null;
+          const lng     = hasGps ? parseFloat(r.gps_lng).toFixed(5) : null;
+
+          return `<tr data-search="${[
+            r.school_identifier, r.video_title, r.subject,
+            r.teacher_phone, r.level, r.unit
+          ].join(' ').toLowerCase()}">
+            <td><span class="mono">${dateStr}</span></td>
+            <td style="font-weight:700;max-width:160px;overflow:hidden;
+              text-overflow:ellipsis;white-space:nowrap"
+              title="${r.school_identifier||''}">
+              ${(r.school_identifier||'').replace(/_/g,' ')}
+            </td>
+            <td><span class="mono">${r.teacher_phone||'—'}</span></td>
+            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;
+              white-space:nowrap;font-weight:700" title="${r.video_title||''}">
+              ${r.video_title || r.video_name || '—'}
+            </td>
+            <td>${r.subject||'—'}</td>
+            <td>
+              ${r.level ? 'L'+r.level : ''}
+              ${r.unit  ? ' U'+r.unit  : ''}
+              ${!r.level && !r.unit ? '—' : ''}
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="pbar" style="min-width:70px">
+                  <div class="pbar-fill" style="width:${pct}%;background:${pColor}"></div>
+                </div>
+                <span style="font-weight:800;color:${pColor}">${pct}%</span>
+              </div>
+            </td>
+            <td>
+              <span class="${done?'b-done':pct>0?'b-partial':'b-none'}">
+                ${done ? '✅ Complete' : pct > 0 ? '⚠ '+pct+'%' : '○ Not watched'}
+              </span>
+            </td>
+            <td><span class="mono">${timeStr}</span></td>
+            <td id="loc-${i}">
+              ${hasGps
+                ? `<a class="maps-link" href="https://www.google.com/maps?q=${lat},${lng}"
+                    target="_blank">📍 Maps</a>
+                   <span class="mono" id="loc-name-${i}" style="display:block;font-size:10px;color:var(--text3)">Locating...</span>`
+                : '<span style="font-size:11px;color:var(--text3)">No GPS</span>'}
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  // Kick off geocoding
+  rows.forEach((r, i) => {
+    if (r.gps_lat && r.gps_lng) {
+      reverseGeocode(
+        parseFloat(r.gps_lat).toFixed(5),
+        parseFloat(r.gps_lng).toFixed(5),
+        i
+      );
+    }
+  });
+}
+
+function filterTable(q) {
+  const rows = document.querySelectorAll('#data-table tbody tr');
+  const lq   = q.toLowerCase();
+  rows.forEach(r => {
+    r.style.display = !q || (r.dataset.search||'').includes(lq) ? '' : 'none';
+  });
+}
+
+// ── GEOCODING ─────────────────────────────────────────────────────────────────
+async function reverseGeocode(lat, lng, idx) {
+  const key = `${lat},${lng}`;
+  await new Promise(r => setTimeout(r, idx * 350));
+  try {
+    if (geocodeCache[key]) {
+      updateGeoLabel(idx, geocodeCache[key]); return;
+    }
+    const res  = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14`,
+      { headers: { 'Accept-Language':'en', 'User-Agent':'TAKMIL-Dashboard/1.0' } }
+    );
+    const data = await res.json();
+    const addr = data.address || {};
+    const place = addr.village||addr.town||addr.suburb||addr.city||addr.county||'';
+    const dist  = addr.state_district||addr.county||addr.state||'';
+    const name  = [place,dist].filter(Boolean).join(', ') || data.display_name?.split(',')[0] || `${lat},${lng}`;
+    geocodeCache[key] = name;
+    updateGeoLabel(idx, name);
+  } catch(e) {
+    updateGeoLabel(idx, `${lat}, ${lng}`);
+  }
+}
+
+function updateGeoLabel(i, name) {
+  const el = document.getElementById(`loc-name-${i}`);
+  if (el) el.textContent = name;
+}
+
+// ── CSV EXPORT ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!allRows.length) { showToast('Load data first'); return; }
+  const from = document.getElementById('f-from').value;
+  const to   = document.getElementById('f-to').value;
+  const hdrs = ['Date','School','Teacher Phone','Video Title','Subject','Level','Unit',
+                'Watch %','Completed','Started At','GPS Lat','GPS Lng'];
+  const rows = allRows.map(r => [
+    r.log_date ? new Date(r.log_date).toLocaleDateString('en-GB') : '',
+    (r.school_identifier||'').replace(/,/g,' '),
+    r.teacher_phone||'',
+    (r.video_title||r.video_name||'').replace(/,/g,' '),
+    r.subject||'', r.level||'', r.unit||'',
+    Math.round(parseFloat(r.max_pct||0)),
+    r.completed ? 'Yes' : 'No',
+    r.started_at ? new Date(r.started_at).toLocaleString('en-GB') : '',
+    r.gps_lat ? parseFloat(r.gps_lat).toFixed(6) : '',
+    r.gps_lng ? parseFloat(r.gps_lng).toFixed(6) : '',
+  ]);
+
+  const csv = [hdrs,...rows]
+    .map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','))
+    .join('\n');
+
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = `takmil-video-lessons-${from}-to-${to}.csv`;
+  a.click();
+  showToast(`✅ Exported ${allRows.length} records`);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let tt;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+init();
+</script>
+</body>
+</html>
