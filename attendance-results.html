@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Attendance Results</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#15803d;--green2:#166534;--green-l:#dcfce7;--green-b:#86efac;
+  --red:#dc2626;--red-l:#fee2e2;--red-b:#fca5a5;
+  --amber:#d97706;--amber-l:#fef3c7;--amber-b:#fcd34d;
+  --blue:#2563eb;--blue-l:#dbeafe;
+  --bg:#f0fdf4;--white:#fff;--border:#d1fae5;
+  --text:#14532d;--text2:#166534;--text3:#6b7280;
+  --r:12px;--r2:8px;--shadow:0 2px 12px rgba(21,128,61,.1);
+}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;
+  font-size:14px;min-height:100vh}
+
+/* NAV */
+.nav{background:var(--green2);padding:0 20px;height:52px;display:flex;
+  align-items:center;gap:12px;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.logo{font-size:18px;font-weight:900;color:#fff;letter-spacing:1px}
+.logo span{color:#fcd34d}
+.nav-link{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;
+  text-decoration:none;color:rgba(255,255,255,.8);border:1.5px solid rgba(255,255,255,.2)}
+.nav-link:hover{background:rgba(255,255,255,.15);color:#fff}
+.nav-right{margin-left:auto;display:flex;gap:8px}
+
+/* FILTERS */
+.filter-bar{background:var(--white);border-bottom:2px solid var(--border);
+  padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-label{font-size:10px;font-weight:800;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.5px}
+.filter-inp,.filter-sel{padding:8px 12px;border:1.5px solid var(--border);
+  border-radius:var(--r2);font-size:13px;font-family:'Nunito',sans-serif;
+  color:var(--text);outline:none;background:var(--white);transition:border-color .2s}
+.filter-inp:focus,.filter-sel:focus{border-color:var(--green)}
+.btn-load{background:var(--green);color:#fff;border:none;border-radius:var(--r2);
+  padding:9px 22px;font-size:13px;font-weight:800;font-family:'Nunito',sans-serif;
+  cursor:pointer;align-self:flex-end;transition:background .2s}
+.btn-load:hover{background:var(--green2)}
+.btn-export{background:var(--blue-l);color:var(--blue);border:1.5px solid #93c5fd;
+  border-radius:var(--r2);padding:8px 16px;font-size:12px;font-weight:800;
+  font-family:'Nunito',sans-serif;cursor:pointer;align-self:flex-end}
+
+/* SUMMARY CARDS */
+.summary-row{display:flex;gap:12px;padding:16px 20px;flex-wrap:wrap}
+.sum-card{background:var(--white);border-radius:var(--r);padding:14px 18px;
+  box-shadow:var(--shadow);min-width:120px;flex:1}
+.sum-n{font-size:28px;font-weight:900}
+.sum-l{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.5px;margin-top:2px}
+.sum-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* RECORDS */
+.records-wrap{padding:0 20px 40px}
+.rec-card{background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r);margin-bottom:12px;overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.rec-header{display:flex;align-items:center;gap:12px;padding:14px 16px;
+  cursor:pointer;user-select:none;transition:background .15s}
+.rec-header:hover{background:var(--green-l)}
+.rec-header.expanded{background:var(--green-l);border-bottom:1px solid var(--border)}
+.rh-date{font-size:13px;font-weight:900;color:var(--text2);white-space:nowrap}
+.rh-school{flex:1;font-size:14px;font-weight:800;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rh-stats{display:flex;gap:8px;flex-shrink:0;align-items:center}
+.stat-pill{font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px}
+.sp-p{background:var(--green-l);color:var(--green2)}
+.sp-a{background:var(--red-l);color:var(--red)}
+.sp-l{background:var(--amber-l);color:var(--amber)}
+.sp-pct{font-size:16px;font-weight:900;min-width:44px;text-align:right}
+.expand-icon{font-size:12px;color:var(--text3);flex-shrink:0}
+
+/* Record detail */
+.rec-detail{display:none;padding:14px 16px;border-top:1px solid var(--border)}
+.rec-detail.show{display:block}
+.meta-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.meta-chip{display:flex;align-items:center;gap:5px;background:var(--bg);
+  border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--text2)}
+.meta-chip a{color:var(--green);text-decoration:none;font-weight:800}
+.mode-online{background:var(--green-l);color:var(--green2)}
+.mode-offline{background:var(--amber-l);color:var(--amber)}
+.mode-unknown{background:#f1f5f9;color:#475569}
+
+/* Student list inside detail */
+.student-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px}
+.sg-item{padding:8px 12px;border-radius:var(--r2);display:flex;align-items:center;gap:8px;
+  font-size:13px;border:1.5px solid var(--border)}
+.sg-item.P{background:var(--green-l);border-color:var(--green-b)}
+.sg-item.A{background:var(--red-l);border-color:var(--red-b)}
+.sg-item.L{background:var(--amber-l);border-color:var(--amber-b)}
+.sg-status{font-size:11px;font-weight:900;width:20px;flex-shrink:0}
+.sg-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-roll{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace}
+
+/* Loading / empty */
+.center-msg{text-align:center;padding:60px 20px;color:var(--text3)}
+.big-spin{width:36px;height:36px;border:3px solid var(--border);
+  border-top-color:var(--green);border-radius:50%;
+  animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:#1e293b;color:#fff;padding:10px 20px;border-radius:20px;
+  font-size:13px;font-weight:700;opacity:0;transition:all .3s;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:600px){
+  .filter-bar{flex-direction:column}
+  .filter-inp,.filter-sel,.btn-load,.btn-export{width:100%}
+  .rh-stats{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <span class="logo">TAK<span>MIL</span></span>
+  <span style="color:rgba(255,255,255,.6);font-size:13px">Attendance Results</span>
+  <div class="nav-right">
+    <a href="/teacher-attendance" class="nav-link">📋 Mark Attendance</a>
+    <a href="/students-admin" class="nav-link">👥 Students</a>
+    <a href="/" class="nav-link">⌂ Home</a>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <span class="filter-label">From Date</span>
+    <input type="date" class="filter-inp" id="f-from">
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">To Date</span>
+    <input type="date" class="filter-inp" id="f-to">
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">School (optional)</span>
+    <select class="filter-sel" id="f-school" style="min-width:200px">
+      <option value="">— All Schools —</option>
+    </select>
+  </div>
+  <button class="btn-load" onclick="loadData()">🔍 Load</button>
+  <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
+</div>
+
+<!-- SUMMARY -->
+<div class="summary-row" id="summary-row" style="display:none">
+  <div class="sum-card">
+    <div class="sum-n" id="sum-days" style="color:var(--green2)">—</div>
+    <div class="sum-l">Records</div>
+    <div class="sum-sub" id="sum-range">—</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-n" id="sum-present" style="color:var(--green)">—</div>
+    <div class="sum-l">Total Present</div>
+    <div class="sum-sub" id="sum-pct">—</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-n" id="sum-absent" style="color:var(--red)">—</div>
+    <div class="sum-l">Total Absent</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-n" id="sum-leave" style="color:var(--amber)">—</div>
+    <div class="sum-l">Total Leave</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-n" id="sum-offline" style="color:var(--amber)">—</div>
+    <div class="sum-l">Offline Submissions</div>
+  </div>
+</div>
+
+<!-- RECORDS -->
+<div class="records-wrap" id="records-wrap">
+  <div class="center-msg">
+    Select a date range and click <strong>Load</strong> to view attendance records.
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allRecords = [];
+const geocodeCache = {};
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  // Set default date range: last 7 days
+  const today = new Date();
+  const from  = new Date(today); from.setDate(today.getDate() - 6);
+  document.getElementById('f-to').value   = fmt(today);
+  document.getElementById('f-from').value = fmt(from);
+
+  // Load school list
+  try {
+    const res  = await fetch('/api/admin/schools');
+    const data = await res.json();
+    const sel  = document.getElementById('f-school');
+    (data.schools || []).forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.identifier;
+      o.textContent = s.name.replace(/_/g,' ') + (s.region ? ' ('+s.region+')' : '');
+      sel.appendChild(o);
+    });
+  } catch(e) {}
+
+  loadData();
+}
+
+function fmt(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────────────────────
+async function loadData() {
+  const from   = document.getElementById('f-from').value;
+  const to     = document.getElementById('f-to').value;
+  const school = document.getElementById('f-school').value;
+  if (!from || !to) { showToast('Select a date range first'); return; }
+  if (from > to)    { showToast('From date must be before To date'); return; }
+
+  const wrap = document.getElementById('records-wrap');
+  wrap.innerHTML = '<div class="center-msg"><div class="big-spin"></div>Loading...</div>';
+  document.getElementById('summary-row').style.display = 'none';
+
+  try {
+    let url = `/api/register/history?date_from=${from}&date_to=${to}`;
+    if (school) url += `&school_code=${encodeURIComponent(school)}`;
+
+    const res  = await fetch(url);
+    const data = await res.json();
+    allRecords = data.records || [];
+    renderRecords(allRecords, from, to);
+  } catch(e) {
+    wrap.innerHTML = `<div class="center-msg" style="color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderRecords(records, from, to) {
+  const wrap = document.getElementById('records-wrap');
+  const sumRow = document.getElementById('summary-row');
+
+  if (!records.length) {
+    wrap.innerHTML = '<div class="center-msg">No attendance records found for this range.</div>';
+    sumRow.style.display = 'none';
+    return;
+  }
+
+  // Summary totals
+  const totP   = records.reduce((s,r) => s + parseInt(r.present||0), 0);
+  const totA   = records.reduce((s,r) => s + parseInt(r.absent||0), 0);
+  const totL   = records.reduce((s,r) => s + parseInt(r.leave_count||0), 0);
+  const totAll = totP + totA + totL;
+  const offCount = records.filter(r => r.submission_mode === 'offline').length;
+
+  document.getElementById('sum-days').textContent    = records.length;
+  document.getElementById('sum-range').textContent   = from + ' → ' + to;
+  document.getElementById('sum-present').textContent = totP;
+  document.getElementById('sum-pct').textContent     = totAll ? Math.round(totP/totAll*100)+'% avg attendance' : '';
+  document.getElementById('sum-absent').textContent  = totA;
+  document.getElementById('sum-leave').textContent   = totL;
+  document.getElementById('sum-offline').textContent = offCount;
+  sumRow.style.display = 'flex';
+
+  wrap.innerHTML = records.map((r, i) => {
+    const pct      = parseFloat(r.attendance_pct || 0);
+    const pctColor = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--amber)' : 'var(--red)';
+    const dateStr  = r.attendance_date ? new Date(r.attendance_date).toLocaleDateString('en-GB',
+      { weekday:'short', day:'numeric', month:'short', year:'numeric' }) : '—';
+
+    return `<div class="rec-card" id="card-${i}">
+      <div class="rec-header" onclick="toggleDetail(${i})">
+        <div class="rh-date">${dateStr}</div>
+        <div class="rh-school">${(r.school_name||r.school_identifier||'').replace(/_/g,' ')}</div>
+        <div class="rh-stats">
+          <span class="stat-pill sp-p">P: ${r.present}</span>
+          <span class="stat-pill sp-a">A: ${r.absent}</span>
+          <span class="stat-pill sp-l">L: ${r.leave_count}</span>
+          <span class="sp-pct" style="color:${pctColor}">${pct}%</span>
+        </div>
+        <span class="expand-icon" id="icon-${i}">▼</span>
+      </div>
+      <div class="rec-detail" id="detail-${i}">
+        ${renderDetail(r, i)}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Kick off geocoding for records with GPS
+  records.forEach((r, i) => {
+    if (r.gps_lat && r.gps_lng) {
+      reverseGeocode(parseFloat(r.gps_lat).toFixed(5), parseFloat(r.gps_lng).toFixed(5), i);
+    }
+  });
+}
+
+function renderDetail(r, i) {
+  // Submission time
+  const submittedAt = r.submitted_at || r.created_at;
+  const timeStr = submittedAt
+    ? new Date(submittedAt).toLocaleString('en-GB', {
+        day:'2-digit', month:'short', year:'numeric',
+        hour:'2-digit', minute:'2-digit', hour12:false
+      })
+    : 'Unknown';
+
+  // Mode badge
+  const mode = r.submission_mode || 'unknown';
+  const modeClass = mode === 'online' ? 'mode-online' : mode === 'offline' ? 'mode-offline' : 'mode-unknown';
+  const modeLabel = mode === 'online' ? '🟢 Online' : mode === 'offline' ? '🟡 Offline' : '— Unknown';
+
+  // GPS
+  const hasGps = r.gps_lat && r.gps_lng;
+  const lat = hasGps ? parseFloat(r.gps_lat).toFixed(5) : null;
+  const lng = hasGps ? parseFloat(r.gps_lng).toFixed(5) : null;
+  const mapUrl = hasGps ? `https://www.google.com/maps?q=${lat},${lng}` : null;
+
+  // Students
+  const students = Array.isArray(r.students) ? r.students : [];
+
+  return `
+    <div class="meta-row">
+      <div class="meta-chip">🕐 ${timeStr}</div>
+      <div class="meta-chip ${modeClass}">${modeLabel}</div>
+      ${hasGps
+        ? `<div class="meta-chip">
+            <span id="loc-${i}" style="color:var(--text3);font-size:11px">📍 Locating...</span>
+            <a href="${mapUrl}" target="_blank" style="font-size:11px;font-weight:800;
+              color:var(--green);margin-left:4px;text-decoration:none">Open Maps ↗</a>
+           </div>`
+        : `<div class="meta-chip" style="color:var(--text3)">📵 No GPS</div>`
+      }
+      <div class="meta-chip">👥 ${r.total} students · ${r.school_identifier||''}</div>
+    </div>
+    <div class="student-grid">
+      ${students.map(s => `
+        <div class="sg-item ${s.status}">
+          <span class="sg-status">${s.status === 'P' ? '✓' : s.status === 'A' ? '✗' : '○'}</span>
+          <div>
+            <div class="sg-name">${s.name||'—'}</div>
+            <div class="sg-roll">${s.roll||''}</div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function toggleDetail(i) {
+  const detail = document.getElementById(`detail-${i}`);
+  const icon   = document.getElementById(`icon-${i}`);
+  const header = document.getElementById(`card-${i}`).querySelector('.rec-header');
+  const isOpen = detail.classList.contains('show');
+  detail.classList.toggle('show', !isOpen);
+  header.classList.toggle('expanded', !isOpen);
+  icon.textContent = isOpen ? '▼' : '▲';
+}
+
+// ── REVERSE GEOCODE ───────────────────────────────────────────────────────────
+async function reverseGeocode(lat, lng, recordIdx) {
+  const key = `${lat},${lng}`;
+  if (geocodeCache[key]) {
+    updateLocLabel(recordIdx, geocodeCache[key]);
+    return;
+  }
+  // Stagger requests to respect Nominatim 1 req/sec policy
+  await new Promise(r => setTimeout(r, recordIdx * 400));
+  try {
+    const res  = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14`,
+      { headers: { 'Accept-Language': 'en', 'User-Agent': 'TAKMIL-Attendance/1.0' } }
+    );
+    const data = await res.json();
+    const addr = data.address || {};
+    const place = addr.village || addr.town || addr.suburb || addr.city || addr.county || '';
+    const dist  = addr.state_district || addr.county || addr.state || '';
+    const name  = [place, dist].filter(Boolean).join(', ') || data.display_name?.split(',')[0] || 'Unknown';
+    geocodeCache[key] = name;
+    updateLocLabel(recordIdx, name);
+  } catch(e) {
+    updateLocLabel(recordIdx, `${lat}, ${lng}`);
+  }
+}
+
+function updateLocLabel(i, name) {
+  const el = document.getElementById(`loc-${i}`);
+  if (el) { el.textContent = '📍 ' + name; el.style.color = 'var(--text2)'; }
+}
+
+// ── CSV EXPORT ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!allRecords.length) { showToast('Load data first'); return; }
+  const from = document.getElementById('f-from').value;
+  const to   = document.getElementById('f-to').value;
+
+  const headers = ['Date','School','Identifier','Present','Absent','Leave','Att %',
+                   'Submitted At','Mode','GPS Lat','GPS Lng'];
+  const rows = allRecords.map(r => [
+    r.attendance_date ? new Date(r.attendance_date).toLocaleDateString('en-GB') : '',
+    (r.school_name||'').replace(/,/g,' '),
+    r.school_identifier||'',
+    r.present||0, r.absent||0, r.leave_count||0,
+    r.attendance_pct||0,
+    r.submitted_at ? new Date(r.submitted_at).toLocaleString('en-GB') : '',
+    r.submission_mode||'',
+    r.gps_lat ? parseFloat(r.gps_lat).toFixed(6) : '',
+    r.gps_lng ? parseFloat(r.gps_lng).toFixed(6) : '',
+  ]);
+
+  const csv = [headers, ...rows]
+    .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
+    .join('\n');
+
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF' + csv);
+  a.download = `takmil-attendance-${from}-to-${to}.csv`;
+  a.click();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let tt;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+init();
+</script>
+</body>
+</html>

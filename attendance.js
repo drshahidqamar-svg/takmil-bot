@@ -5,6 +5,7 @@
 const router = require('express').Router();
 const db     = require('../database');
 const path   = require('path');
+const { analyzeAndSave } = require('./photo-verify');
 
 // ── Feedback message detection ────────────────────────────────────────────────
 function isFeedbackMessage(text) {
@@ -69,20 +70,42 @@ function parseFeedback(text, teacherPhone) {
     if (/^assembly.?conducted/i.test(line))    { fb.assembly_conducted = bool(val(line)); continue; }
     if (/^projector.?shown/i.test(line))       { fb.projector_shown    = bool(val(line)); continue; }
     if (/^name.?child/i.test(line))            { fb.child_of_day       = val(line); continue; }
+    if (/^lms/i.test(line))                    { fb.lms_upload         = bool(val(line)); continue; }
     if (/^technology.?used/i.test(line))       { fb.technology_used    = bool(val(line)); continue; }
-    if (/^if.?no.?reason/i.test(line))         { fb.technology_reason  = lines[i+1] || val(line); continue; }
+    // Capture reason — look ahead up to 3 lines for non-empty content
+    if (/^if.?no.?reason/i.test(line)) {
+      const inline = val(line);
+      if (inline && inline.length > 2) {
+        fb.technology_reason = inline;
+      } else {
+        for (let j = i+1; j <= i+3 && j < lines.length; j++) {
+          const next = lines[j].replace(/^[_\-\s]+|[_\-\s]+$/g,'').trim();
+          if (next && !/^subject|^unit|^lesson|^topic|^activity/i.test(next)) {
+            fb.technology_reason = next; break;
+          }
+        }
+      }
+      continue;
+    }
     if (/^class.?room.*media/i.test(line))     { fb.cr_media_shared    = bool(val(line)); continue; }
-    if (/^technology.*tech.*media/i.test(line)){ fb.tech_media_shared  = bool(val(line)); continue; }
+    // Match "Technology Media", "Tech Media", "Technology (Tech) Media"
+    if (/^tech(nology)?.*(media)/i.test(line)) { fb.tech_media_shared  = bool(val(line)); continue; }
     if (/^subject\s*:/i.test(line)) {
       if (currentSubject) fb.subjects.push(currentSubject);
-      currentSubject = { subject: val(line), unit: null, lesson_no: null, topic: null, activity: null };
+      currentSubject = { subject: val(line), unit_name: null, unit: null, lesson_no: null, topic: null, page_no: null, activity: null };
       continue;
     }
     if (currentSubject) {
-      if (/^unit/i.test(line))       { currentSubject.unit      = val(line); continue; }
-      if (/^lesson.?no/i.test(line)) { currentSubject.lesson_no = val(line); continue; }
-      if (/^topic/i.test(line))      { currentSubject.topic     = val(line); continue; }
-      if (/^activity/i.test(line))   { currentSubject.activity  = val(line); continue; }
+      // Unit Name must come before generic Unit to avoid overwrite
+      if (/^unit\s*name/i.test(line))           { currentSubject.unit_name = val(line); continue; }
+      if (/^unit\s*(no|number)\s*:/i.test(line)) { currentSubject.unit      = val(line); continue; }
+      if (/^unit\s*:/i.test(line))               { currentSubject.unit      = val(line); continue; }
+      if (/^unit\s+\S/i.test(line))              { currentSubject.unit      = val(line); continue; }
+      if (/^lesson.?no/i.test(line))             { currentSubject.lesson_no = val(line); continue; }
+      if (/^lesson\s*:/i.test(line))             { currentSubject.lesson_no = val(line); continue; }
+      if (/^topic/i.test(line))                  { currentSubject.topic     = val(line); continue; }
+      if (/^page.?no/i.test(line))               { currentSubject.page_no   = val(line); continue; }
+      if (/^activity/i.test(line))               { currentSubject.activity  = val(line); continue; }
     }
   }
   if (currentSubject) fb.subjects.push(currentSubject);
@@ -132,8 +155,8 @@ async function saveFeedback(fb) {
        check_in, check_out, grade, level, total_strength,
        boys, girls, present, absent, leave_count,
        assembly_conducted, child_of_day, technology_used, technology_reason,
-       cr_media_shared, tech_media_shared, subjects, raw_message, projector_shown)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+       cr_media_shared, tech_media_shared, lms_upload, subjects, raw_message, projector_shown)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
     ON CONFLICT DO NOTHING`,
     [fb.teacher_phone, fb.school_name||null, fb.school_identifier||null,
      fb.report_date, fb.check_in, fb.check_out,
@@ -141,7 +164,7 @@ async function saveFeedback(fb) {
      fb.boys, fb.girls, fb.present, fb.absent, fb.leave_count,
      fb.assembly_conducted, fb.child_of_day,
      fb.technology_used, fb.technology_reason,
-     fb.cr_media_shared, fb.tech_media_shared,
+     fb.cr_media_shared, fb.tech_media_shared, fb.lms_upload ?? null,
      JSON.stringify(fb.subjects), fb.raw_message, fb.projector_shown ?? null]
   );
 }
@@ -149,6 +172,16 @@ async function saveFeedback(fb) {
 // ── HTML pages ────────────────────────────────────────────────────────────────
 router.get('/analytics',  (req, res) => res.sendFile(path.join(__dirname, '../analytics.html')));
 router.get('/feedback',   (req, res) => res.sendFile(path.join(__dirname, '../feedback.html')));
+
+// ── Ensure new columns exist ──────────────────────────────────────────────────
+(async () => {
+  try {
+    await db.pool.query(`
+      ALTER TABLE daily_feedback
+        ADD COLUMN IF NOT EXISTS lms_upload BOOLEAN
+    `);
+  } catch(e) {}
+})();
 router.get('/register',   (req, res) => res.sendFile(path.join(__dirname, '../register.html')));
 router.get('/register-sw.js', (req, res) => res.sendFile(path.join(__dirname, '../register-sw.js')));
 router.get('/attendance', (req, res) => res.sendFile(path.join(__dirname, '../attendance-dashboard.html')));
@@ -308,10 +341,13 @@ router.get('/api/feedback/table', async (req, res) => {
         f.technology_used, f.technology_reason,
         f.cr_media_shared, f.tech_media_shared,
         f.check_in, f.check_out,
-        f.projector_shown, f.lesson_verified,
+        f.projector_shown, f.projector_visible, f.lesson_verified,
+        f.lms_upload,
         f.photo_url, f.photo_head_count, f.head_count_diff,
         f.photo_verified, f.photo_flag,
         (f.photo_data IS NOT NULL) AS photo_available,
+        f.submission_mode,
+        f.gps_lat, f.gps_lng, f.gps_accuracy_m,
         f.subjects, f.raw_message
       FROM daily_feedback f
       LEFT JOIN schools s ON (s.identifier = f.school_identifier OR s.name ILIKE f.school_name)
@@ -339,9 +375,12 @@ router.get('/api/feedback/table', async (req, res) => {
       for (const name of subjects) {
         const key = name.replace(' ','_').toLowerCase();
         const s   = subMap[name] || {};
-        subFields[`${key}_unit`]     = s.unit     || '';
-        subFields[`${key}_lesson`]   = s.lesson_no || '';
-        subFields[`${key}_activity`] = s.activity  || '';
+        subFields[`${key}_unit_name`] = s.unit_name || '';
+        subFields[`${key}_unit`]      = s.unit      || '';
+        subFields[`${key}_lesson`]    = s.lesson_no  || '';
+        subFields[`${key}_topic`]     = s.topic      || '';
+        subFields[`${key}_page`]      = s.page_no    || '';
+        subFields[`${key}_activity`]  = s.activity   || '';
       }
       const att_pct = row.total_strength > 0
         ? Math.round(row.present * 100 / row.total_strength) : null;
@@ -364,7 +403,7 @@ router.get('/api/feedback/table', async (req, res) => {
   }
 });
 
-// ── Offline Attendance Submit API ────────────────────────────────────────────
+// ── Offline Attendance / Feedback Submit ─────────────────────────────────────
 router.post('/api/attendance/submit', async (req, res) => {
   try {
     const {
@@ -372,23 +411,39 @@ router.post('/api/attendance/submit', async (req, res) => {
       grade, level, total_strength, boys, girls,
       present, absent, leave_count,
       assembly_conducted, technology_used, technology_reason,
-      cr_media_shared, subjects
+      cr_media_shared, tech_media_shared, lms_upload,
+      subjects,
+      // Photo verification fields from offline portal
+      photo_head_count, photo_data, photo_mime_type,
+      projector_visible, photo_verified, head_count_diff,
+      photo_flag,
     } = req.body;
 
     if (!school_name || !report_date) {
       return res.json({ saved: false, error: 'Missing school or date' });
     }
 
+    // Build photo_url if photo data provided
     const subjectsJson = JSON.stringify(subjects || []);
 
-    await db.pool.query(`
+    // Insert or update
+    const result = await db.pool.query(`
       INSERT INTO daily_feedback (
         teacher_phone, school_name, school_identifier, report_date,
         grade, level, total_strength, boys, girls,
         present, absent, leave_count,
         assembly_conducted, technology_used, technology_reason,
-        cr_media_shared, subjects
-      ) VALUES ($1,$2,$3,$4::date,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+        cr_media_shared, tech_media_shared, lms_upload,
+        subjects,
+        photo_head_count, head_count_diff,
+        photo_verified, photo_flag,
+        projector_visible,
+        photo_data, photo_mime_type, photo_expires_at
+      ) VALUES (
+        $1,$2,$3,$4::date,$5,$6,$7,$8,$9,$10,$11,$12,
+        $13,$14,$15,$16,$17,$18,$19,
+        $20,$21,$22,$23,$24,$25,$26,$27
+      )
       ON CONFLICT (school_name, report_date) DO UPDATE SET
         present            = EXCLUDED.present,
         absent             = EXCLUDED.absent,
@@ -400,17 +455,44 @@ router.post('/api/attendance/submit', async (req, res) => {
         technology_used    = EXCLUDED.technology_used,
         technology_reason  = EXCLUDED.technology_reason,
         cr_media_shared    = EXCLUDED.cr_media_shared,
+        tech_media_shared  = EXCLUDED.tech_media_shared,
+        lms_upload         = EXCLUDED.lms_upload,
         subjects           = EXCLUDED.subjects,
         grade              = EXCLUDED.grade,
-        level              = EXCLUDED.level
+        level              = EXCLUDED.level,
+        photo_head_count   = COALESCE(EXCLUDED.photo_head_count, daily_feedback.photo_head_count),
+        head_count_diff    = COALESCE(EXCLUDED.head_count_diff,  daily_feedback.head_count_diff),
+        photo_verified     = COALESCE(EXCLUDED.photo_verified,   daily_feedback.photo_verified),
+        photo_flag         = COALESCE(EXCLUDED.photo_flag,       daily_feedback.photo_flag),
+        projector_visible  = COALESCE(EXCLUDED.projector_visible,daily_feedback.projector_visible),
+        photo_data         = COALESCE(EXCLUDED.photo_data,       daily_feedback.photo_data),
+        photo_mime_type    = COALESCE(EXCLUDED.photo_mime_type,  daily_feedback.photo_mime_type),
+        photo_expires_at   = COALESCE(EXCLUDED.photo_expires_at, daily_feedback.photo_expires_at)
+      RETURNING id
     `, [
       teacher_phone, school_name, school_identifier || school_name,
       report_date, grade, parseInt(level)||null,
       parseInt(total_strength)||0, parseInt(boys)||0, parseInt(girls)||0,
       parseInt(present)||0, parseInt(absent)||0, parseInt(leave_count)||0,
       !!assembly_conducted, !!technology_used, technology_reason||null,
-      !!cr_media_shared, subjectsJson
+      !!cr_media_shared, !!tech_media_shared, lms_upload!=null?!!lms_upload:null,
+      subjectsJson,
+      photo_head_count!=null?parseInt(photo_head_count):null,
+      head_count_diff!=null?parseInt(head_count_diff):null,
+      photo_verified!=null?!!photo_verified:null,
+      photo_flag||null,
+      projector_visible!=null?!!projector_visible:null,
+      photo_data||null, photo_mime_type||null,
+      photo_data ? new Date(Date.now() + 48*60*60*1000) : null,
     ]);
+
+    // Update photo_url to point to the new record id
+    if (photo_data && result.rows[0]) {
+      await db.pool.query(
+        `UPDATE daily_feedback SET photo_url=$1 WHERE id=$2`,
+        [`/api/photo/${result.rows[0].id}`, result.rows[0].id]
+      );
+    }
 
     res.json({ saved: true });
   } catch(err) {
@@ -423,15 +505,11 @@ router.post('/api/attendance/submit', async (req, res) => {
 router.get('/api/schools/list', async (req, res) => {
   try {
     const r = await db.pool.query(`
-      SELECT identifier, name, region, province
-      FROM schools
-      WHERE identifier IS NOT NULL
-      ORDER BY region, name
+      SELECT identifier, name, region, province, teacher_phone
+      FROM schools WHERE identifier IS NOT NULL ORDER BY region, name
     `);
     res.json({ schools: r.rows });
-  } catch(err) {
-    res.status(500).json({ schools: [], error: err.message });
-  }
+  } catch(err) { res.status(500).json({ schools: [], error: err.message }); }
 });
 
 // ── Student Register API ──────────────────────────────────────────────────────
@@ -504,24 +582,60 @@ router.get('/api/register/students', async (req, res) => {
 
 router.post('/api/register/submit', async (req, res) => {
   try {
-    const { school_code, date, attendance, submitted_by } = req.body;
+    const {
+      school_code, date, attendance, submitted_by,
+      submission_mode, submitted_at,
+      gps_lat, gps_lng, gps_accuracy
+    } = req.body;
+
     if (date) {
       const submitted = new Date(date); submitted.setHours(0,0,0,0);
       const today     = new Date();     today.setHours(0,0,0,0);
-      const yesterday = new Date(today); yesterday.setDate(today.getDate()-1);
-      if (submitted > today)     return res.status(400).json({ error: 'Future dates are not allowed.' });
-      if (submitted < yesterday) return res.status(400).json({ error: 'Attendance can only be submitted for today or yesterday.' });
+      if (submitted > today) return res.json({ saved: false, permanent: true, error: 'Future dates are not allowed.' });
+      const maxDaysBack = submission_mode === 'offline' ? 7 : 2;
+      const earliest = new Date(today); earliest.setDate(today.getDate() - maxDaysBack);
+      if (submitted < earliest) return res.json({ saved: false, permanent: true, error: `Attendance date is too old (max ${maxDaysBack} days back).` });
     }
-    if (!attendance?.length) return res.status(400).json({ error: 'No attendance data' });
+    if (!attendance?.length) return res.json({ saved: false, permanent: true, error: 'No attendance data' });
     const attDate = date || new Date().toISOString().split('T')[0];
+
+    // Ensure new columns exist (safe to run every time)
+    const alterCmds = [
+      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS submission_mode TEXT DEFAULT 'online'`,
+      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ`,
+      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_lat NUMERIC(10,7)`,
+      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_lng NUMERIC(10,7)`,
+      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_accuracy INTEGER`,
+    ];
+    for (const cmd of alterCmds) {
+      try { await db.pool.query(cmd); } catch(e) { /* already exists */ }
+    }
+
+    const submittedAt = submitted_at ? new Date(submitted_at) : new Date();
+    const mode        = submission_mode || 'online';
+    const lat         = gps_lat    ? parseFloat(gps_lat)    : null;
+    const lng         = gps_lng    ? parseFloat(gps_lng)    : null;
+    const acc         = gps_accuracy ? parseInt(gps_accuracy) : null;
 
     for (const s of attendance) {
       await db.pool.query(`
-        INSERT INTO student_attendance (roll_number, student_name, school_identifier, attendance_date, status, submitted_by)
-        VALUES ($1,$2,$3,$4,$5,$6)
+        INSERT INTO student_attendance
+          (roll_number, student_name, school_identifier, attendance_date,
+           status, submitted_by, submission_mode, submitted_at,
+           gps_lat, gps_lng, gps_accuracy)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
         ON CONFLICT (roll_number, attendance_date)
-        DO UPDATE SET status=EXCLUDED.status, submitted_by=EXCLUDED.submitted_by
-      `, [s.roll_number, s.student_name, school_code, attDate, s.status, submitted_by || school_code]);
+        DO UPDATE SET
+          status          = EXCLUDED.status,
+          submitted_by    = EXCLUDED.submitted_by,
+          submission_mode = EXCLUDED.submission_mode,
+          submitted_at    = EXCLUDED.submitted_at,
+          gps_lat         = COALESCE(EXCLUDED.gps_lat,  student_attendance.gps_lat),
+          gps_lng         = COALESCE(EXCLUDED.gps_lng,  student_attendance.gps_lng),
+          gps_accuracy    = COALESCE(EXCLUDED.gps_accuracy, student_attendance.gps_accuracy)
+      `, [s.roll_number, s.student_name, school_code, attDate,
+          s.status, submitted_by || school_code, mode, submittedAt,
+          lat, lng, acc]);
     }
 
     const present = attendance.filter(s => s.status === 'P').length;
@@ -533,28 +647,57 @@ router.post('/api/register/submit', async (req, res) => {
 
 router.get('/api/register/history', async (req, res) => {
   try {
-    const { school_code, date } = req.query;
-    const attDate = date || new Date().toISOString().split('T')[0];
-    let whereClause = 'WHERE sa.attendance_date=$1::date';
-    const params = [attDate];
-    if (school_code) { params.push(school_code); whereClause += ` AND sa.school_identifier ILIKE $${params.length}`; }
+    const { school_code, date, date_from, date_to } = req.query;
+    const params = [];
+    let whereClause = '';
+
+    if (date_from && date_to) {
+      // Date range query
+      params.push(date_from, date_to);
+      whereClause = 'WHERE sa.attendance_date BETWEEN $1::date AND $2::date';
+    } else {
+      // Single date (default today)
+      const attDate = date || new Date().toISOString().split('T')[0];
+      params.push(attDate);
+      whereClause = 'WHERE sa.attendance_date=$1::date';
+    }
+
+    if (school_code) {
+      params.push(school_code);
+      whereClause += ` AND sa.school_identifier ILIKE $${params.length}`;
+    }
 
     const r = await db.pool.query(`
-      SELECT sa.school_identifier, s.name AS school_name,
-        COUNT(*) AS total,
-        SUM(CASE WHEN sa.status='P' THEN 1 ELSE 0 END) AS present,
-        SUM(CASE WHEN sa.status='A' THEN 1 ELSE 0 END) AS absent,
-        SUM(CASE WHEN sa.status='L' THEN 1 ELSE 0 END) AS leave_count,
+      SELECT
+        sa.school_identifier,
+        s.name AS school_name,
+        sa.attendance_date,
+        COUNT(*)                                                              AS total,
+        SUM(CASE WHEN sa.status='P' THEN 1 ELSE 0 END)                       AS present,
+        SUM(CASE WHEN sa.status='A' THEN 1 ELSE 0 END)                       AS absent,
+        SUM(CASE WHEN sa.status='L' THEN 1 ELSE 0 END)                       AS leave_count,
         ROUND(SUM(CASE WHEN sa.status='P' THEN 1 ELSE 0 END)*100.0/COUNT(*),1) AS attendance_pct,
-        MAX(sa.created_at) AS submitted_at,
-        json_agg(json_build_object('name',sa.student_name,'roll',sa.roll_number,'status',sa.status) ORDER BY sa.roll_number) AS students
+        MAX(sa.submitted_at)  AS submitted_at,
+        MAX(sa.created_at)    AS created_at,
+        MAX(sa.submission_mode)                                               AS submission_mode,
+        AVG(sa.gps_lat)                                                       AS gps_lat,
+        AVG(sa.gps_lng)                                                       AS gps_lng,
+        json_agg(
+          json_build_object(
+            'name',  sa.student_name,
+            'roll',  sa.roll_number,
+            'status',sa.status
+          ) ORDER BY sa.roll_number
+        ) AS students
       FROM student_attendance sa
       LEFT JOIN schools s ON s.identifier ILIKE sa.school_identifier
       ${whereClause}
-      GROUP BY sa.school_identifier, s.name
-      ORDER BY sa.school_identifier
+      GROUP BY sa.school_identifier, s.name, sa.attendance_date
+      ORDER BY sa.attendance_date DESC, sa.school_identifier
     `, params);
-    res.json({ date: attDate, records: r.rows });
+
+    const attDate = date || (date_from && date_to ? \`\${date_from} to \${date_to}\` : new Date().toISOString().split('T')[0]);
+    res.json({ date: attDate, date_from, date_to, records: r.rows });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -573,4 +716,518 @@ router.get('/api/register/absent', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Web Feedback: Verify Phone ────────────────────────────────────────────────
+// POST /api/verify-phone
+// Body:    { phone: "+923001234567" }
+// Returns: { success, school, identifier, region }
+router.post('/api/verify-phone', async (req, res) => {
+  let { phone } = req.body || {};
+  if (!phone) return res.status(400).json({ success: false, message: 'Phone is required.' });
+
+  phone = normalisePhone(phone);
+  if (!phone) return res.status(400).json({ success: false, message: 'Invalid phone format.' });
+
+  // Auto-create school_pin column if not yet migrated
+  try { await db.pool.query(`ALTER TABLE schools ADD COLUMN IF NOT EXISTS school_pin VARCHAR(4)`); } catch(e) {}
+
+  try {
+    const r = await db.pool.query(
+      `SELECT name, identifier, region, province, school_pin
+       FROM schools
+       WHERE teacher_phone = $1
+       LIMIT 1`,
+      [phone]
+    );
+    if (!r.rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: 'Phone not registered. Ask your admin to link this number to a school.',
+      });
+    }
+    const s = r.rows[0];
+    return res.json({ success: true, school: s.name, identifier: s.identifier, region: s.region, province: s.province, noPinSet: !s.school_pin });
+  } catch (err) {
+    console.error('[verify-phone] error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error: ' + err.message });
+  }
+});
+
+// ── Web Feedback: Verify PIN ─────────────────────────────────────────────────
+// POST /api/verify-pin
+// Body: { phone, pin }
+// Returns: { success, school }
+router.post('/api/verify-pin', async (req, res) => {
+  const { phone, pin } = req.body || {};
+  if (!phone || !pin) return res.status(400).json({ success: false, message: 'Phone and PIN required.' });
+
+  const normalised = normalisePhone(phone);
+  if (!normalised) return res.status(400).json({ success: false, message: 'Invalid phone.' });
+
+  // Ensure school_pin column exists (auto-create if migration not run yet)
+  try {
+    await db.pool.query(`ALTER TABLE schools ADD COLUMN IF NOT EXISTS school_pin VARCHAR(4)`);
+  } catch(e) { /* already exists — ignore */ }
+
+  try {
+    const r = await db.pool.query(
+      `SELECT name, identifier, region, school_pin
+       FROM schools WHERE teacher_phone = $1 LIMIT 1`,
+      [normalised]
+    );
+    if (!r.rows.length) {
+      return res.status(404).json({ success: false, message: 'Phone not registered.' });
+    }
+
+    const school = r.rows[0];
+
+    // First-time setup: no PIN stored yet — accept any 4 digits and save
+    if (!school.school_pin || school.school_pin.trim() === '') {
+      if (String(pin).length !== 4 || isNaN(Number(pin))) {
+        return res.status(400).json({ success: false, message: 'PIN must be exactly 4 digits.' });
+      }
+      await db.pool.query(
+        `UPDATE schools SET school_pin = $1 WHERE teacher_phone = $2`,
+        [String(pin), normalised]
+      );
+      console.log(`[verify-pin] First-time PIN set for ${school.name}`);
+      return res.json({ success: true, school: school.name, firstTime: true });
+    }
+
+    // Returning user: check PIN
+    if (String(school.school_pin).trim() !== String(pin).trim()) {
+      console.log(`[verify-pin] Wrong PIN for ${school.name}`);
+      return res.status(403).json({ success: false, message: 'Incorrect PIN. Try again.' });
+    }
+
+    return res.json({ success: true, school: school.name });
+
+  } catch (err) {
+    console.error('[verify-pin] DB error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error: ' + err.message });
+  }
+});
+
+// ── Web Feedback: Submit ──────────────────────────────────────────────────────
+// POST /api/web-feedback
+// Body: full JSON payload from takmil-feedback.html
+// Returns: { saved, school, date, present }
+router.post('/api/web-feedback', async (req, res) => {
+  const body = req.body || {};
+
+  // Re-verify phone on every submit
+  let phone = normalisePhone(body.phone);
+  if (!phone) return res.status(400).json({ saved: false, error: 'Invalid phone number.' });
+
+  let school;
+  try {
+    const r = await db.pool.query(
+      `SELECT name, identifier, region FROM schools WHERE teacher_phone = $1 LIMIT 1`,
+      [phone]
+    );
+    if (!r.rows.length) return res.status(403).json({ saved: false, error: 'Phone not registered.' });
+    school = r.rows[0];
+  } catch (err) {
+    console.error('[web-feedback] school lookup:', err.message);
+    return res.status(500).json({ saved: false, error: 'DB error during school lookup.' });
+  }
+
+  if (!body.date || !body.present) {
+    return res.status(400).json({ saved: false, error: 'Date and Present count are required.' });
+  }
+
+  // Block future dates (server-side double-check)
+  const submittedDate = new Date(body.date);
+  const todayStart    = new Date(); todayStart.setHours(0,0,0,0);
+  if (submittedDate > todayStart) {
+    return res.status(400).json({ saved: false, error: 'Future date submissions are not allowed.' });
+  }
+
+  // Grade string e.g. "Elementary-8" or "Primary-4"
+  const gradeStr = body.grade || null;
+  const level    = parseInt(body.level) || null;
+
+  // Subjects: web form sends a pre-built array, use it directly
+  // Each entry: { subject, unit_name, unit, lesson_no, topic, activity, note }
+  const subjects = Array.isArray(body.subjects)
+    ? body.subjects.filter(s => s && s.subject)
+    : [];
+
+  // Tech types: array of selected types e.g. ['Projector', 'Laptop']
+  const techTypes   = Array.isArray(body.techTypes) ? body.techTypes : [];
+  const techReason  = body.techReason  || null;
+  const lmsReason   = body.lmsReason   || null;
+  const absenceReason = body.absenceReason || null;
+
+  // Store photo as base64 text — photo_data column is type TEXT not bytea
+  let photoData    = null;
+  let photoMime    = null;
+  let photoExpires = null;
+  if (body.photo && body.photo.startsWith('data:image/')) {
+    try {
+      const match = body.photo.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (match) {
+        photoMime    = match[1];
+        photoData    = match[2];   // store raw base64 string directly
+        photoExpires = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      }
+    } catch (e) {
+      console.warn('[web-feedback] Photo decode failed:', e.message);
+    }
+  }
+
+  const values = [
+    phone,
+    school.name,
+    school.identifier,
+    body.date,
+    gradeStr,
+    level,
+    parseInt(body.strength)  || null,
+    parseInt(body.boys)      || null,
+    parseInt(body.girls)     || null,
+    parseInt(body.present)   || 0,
+    parseInt(body.absent)    || null,
+    parseInt(body.leave)     || null,
+    body.assembly  === 'Yes',
+    body.tech      === 'Yes',
+    body.techReason || null,
+    body.crMedia   === 'Yes',
+    body.techMedia === 'Yes',
+    body.lms       === 'Yes',
+    JSON.stringify(subjects),
+    `web_form | ${body.schoolType||''} | tech:${techTypes.join(',')||'none'} | mode:${body.submissionMode||'unknown'} | ${new Date().toISOString()}`,
+    null,        // projector_shown — set by AI after photo analysis
+    photoData,
+    photoMime,
+    photoExpires,
+    body.submissionMode   || 'unknown',   // 'online' | 'offline'
+    body.gpsLat           || null,         // GPS latitude
+    body.gpsLng           || null,         // GPS longitude
+    body.gpsAccuracy      || null,         // GPS accuracy in metres
+  ];
+
+  try {
+    // Step 1: Try INSERT — use ON CONFLICT DO NOTHING (same approach as WhatsApp bot)
+    const insertResult = await db.pool.query(`
+      INSERT INTO daily_feedback (
+        teacher_phone, school_name, school_identifier, report_date,
+        grade, level, total_strength, boys, girls,
+        present, absent, leave_count,
+        assembly_conducted, technology_used, technology_reason,
+        cr_media_shared, tech_media_shared, lms_upload,
+        subjects, raw_message, projector_shown,
+        photo_data, photo_mime_type, photo_expires_at,
+        submission_mode, gps_lat, gps_lng, gps_accuracy_m
+      )
+      VALUES (
+        $1,$2,$3,$4::date,
+        $5,$6,$7,$8,$9,
+        $10,$11,$12,
+        $13,$14,$15,
+        $16,$17,$18,
+        $19,$20,$21,
+        $22,$23,$24,
+        $25,$26,$27,$28
+      )
+      ON CONFLICT DO NOTHING
+      RETURNING id`,
+      values
+    );
+
+    let feedbackId = insertResult.rows[0]?.id;
+
+    // Step 2: If conflict (row already exists for this school+date), UPDATE it
+    if (!feedbackId) {
+      const updateResult = await db.pool.query(`
+        UPDATE daily_feedback SET
+          present            = $1,
+          absent             = $2,
+          leave_count        = $3,
+          total_strength     = $4,
+          boys               = $5,
+          girls              = $6,
+          assembly_conducted = $7,
+          technology_used    = $8,
+          technology_reason  = COALESCE($9, daily_feedback.technology_reason),
+          cr_media_shared    = $10,
+          tech_media_shared  = $11,
+          lms_upload         = $12,
+          subjects           = $13,
+          grade              = $14,
+          level              = $15,
+          raw_message        = $16,
+          photo_data         = COALESCE($17, photo_data),
+          photo_mime_type    = COALESCE($18, photo_mime_type),
+          photo_expires_at   = COALESCE($19, photo_expires_at),
+          submission_mode    = $20,
+          gps_lat            = COALESCE($21, gps_lat),
+          gps_lng            = COALESCE($22, gps_lng),
+          gps_accuracy_m     = COALESCE($23, gps_accuracy_m)
+        WHERE school_name = $24
+          AND report_date::date = $25::date
+        RETURNING id`,
+        [
+          parseInt(body.present) || 0,
+          parseInt(body.absent)  || null,
+          parseInt(body.leave)   || null,
+          parseInt(body.strength) || null,
+          parseInt(body.boys)    || null,
+          parseInt(body.girls)   || null,
+          body.assembly  === 'Yes',
+          body.tech      === 'Yes',
+          body.techReason || null,
+          body.crMedia   === 'Yes',
+          body.techMedia === 'Yes',
+          body.lms       === 'Yes',
+          JSON.stringify(subjects),
+          gradeStr,
+          level,
+          `web_form | ${body.schoolType || ''} | mode:${body.submissionMode||'unknown'} | ${new Date().toISOString()}`,
+          photoData,
+          photoMime,
+          photoExpires,
+          body.submissionMode || 'unknown',
+          body.gpsLat    || null,
+          body.gpsLng    || null,
+          body.gpsAccuracy || null,
+          school.name,
+          body.date,
+        ]
+      );
+      feedbackId = updateResult.rows[0]?.id;
+    }
+
+    // Step 3: Run AI photo analysis (async — does not block response)
+    // analyzeAndSave handles: head count, projector detection, mismatch flag,
+    // photo_url, photo_data, photo_expires_at — all written back to daily_feedback
+    if (photoData && feedbackId) {
+      analyzeAndSave(photoData, photoMime, body.present, feedbackId)
+        .then(r => console.log(`📸 [web-feedback] AI done — heads:${r.headCount} projector:${r.projector_visible} flagged:${r.flagged}`))
+        .catch(e => console.error('[web-feedback] photo AI error:', e.message));
+    }
+
+    return res.json({ saved: true, school: school.name, date: body.date, present: parseInt(body.present) });
+
+  } catch (err) {
+    console.error('[web-feedback] insert error:', err.message);
+    return res.status(500).json({ saved: false, error: 'Failed to save: ' + err.message });
+  }
+});
+
+// ── Helper: normalise phone to E.164 (Pakistani + international) ─────────────
+function normalisePhone(raw) {
+  if (!raw) return null;
+  let p = String(raw).replace(/[\s\-().]/g, "");
+  // Pakistani shorthand: leading 0 → +92
+  if (p.startsWith("0") && !p.startsWith("00")) p = "+92" + p.slice(1);
+  // Ensure + prefix
+  if (!p.startsWith("+")) p = "+" + p;
+  // Must be + followed by 7–15 digits (ITU E.164)
+  if (!/^\+\d{7,15}$/.test(p)) return null;
+  return p;
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ADMIN — Student Management APIs
+// ══════════════════════════════════════════════════════════════════════════════
+
+// GET /api/admin/schools — list all schools with student counts in both tables
+router.get('/api/admin/schools', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT
+        s.id AS school_id, s.name, s.identifier,
+        s.region, s.province, s.teacher_phone,
+        rc.name AS regional_coordinator,
+        sc2.name AS school_coordinator,
+        -- Count from students table (linked by school_id)
+        (SELECT COUNT(*) FROM students st WHERE st.school_id = s.id) AS students_count,
+        -- Count from students_register (what attendance uses)
+        (SELECT COUNT(*) FROM students_register sr
+         WHERE LOWER(sr.school_identifier) = LOWER(s.identifier) AND sr.active = TRUE
+        ) AS register_count
+      FROM schools s
+      LEFT JOIN regional_coordinators rc  ON rc.id  = s.regional_coordinator_id
+      LEFT JOIN school_coordinators   sc2 ON sc2.id = s.school_coordinator_id
+      WHERE s.identifier IS NOT NULL
+      ORDER BY s.region, s.name
+    `);
+    res.json({ schools: r.rows });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/school-students/:identifier — students in students_register for a school
+router.get('/api/admin/school-students/:identifier', async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const r = await db.pool.query(`
+      SELECT id, roll_number, student_name, gender, level,
+             teacher_name, active, created_at
+      FROM students_register
+      WHERE LOWER(school_identifier) = LOWER($1)
+      ORDER BY roll_number
+    `, [identifier]);
+    res.json({ students: r.rows, total: r.rows.length });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/source-students/:school_id — students in students table for a school
+router.get('/api/admin/source-students/:school_id', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT id, name, gender, level, age, created_at
+      FROM students
+      WHERE school_id = $1
+      ORDER BY name
+    `, [parseInt(req.params.school_id)]);
+    res.json({ students: r.rows });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/sync-students — copy students table → students_register for a school
+router.post('/api/admin/sync-students', async (req, res) => {
+  try {
+    const { school_id, school_identifier, school_name } = req.body;
+    if (!school_id || !school_identifier) {
+      return res.status(400).json({ error: 'school_id and school_identifier required' });
+    }
+
+    // Get students from students table
+    const src = await db.pool.query(
+      `SELECT id, name, gender, level, age FROM students WHERE school_id = $1 ORDER BY id`,
+      [parseInt(school_id)]
+    );
+
+    if (!src.rows.length) {
+      return res.json({ synced: 0, message: 'No students found in students table for this school.' });
+    }
+
+    // Get current max roll number for this school to continue sequencing
+    const maxRoll = await db.pool.query(`
+      SELECT MAX(CAST(REGEXP_REPLACE(roll_number, '[^0-9]', '', 'g') AS INTEGER)) AS max_num
+      FROM students_register
+      WHERE school_identifier ILIKE $1
+    `, [school_identifier]);
+    let rollSeq = (maxRoll.rows[0]?.max_num || 0);
+
+    let synced = 0, skipped = 0;
+    for (const s of src.rows) {
+      rollSeq++;
+      const roll = `${school_identifier.substring(0,6).toUpperCase()}-${String(rollSeq).padStart(3,'0')}`;
+      try {
+        await db.pool.query(`
+          INSERT INTO students_register
+            (school_identifier, roll_number, student_name, gender, level, active, created_at)
+          VALUES ($1, $2, $3, $4, $5, TRUE, NOW())
+          ON CONFLICT (roll_number) DO NOTHING
+        `, [school_identifier, roll, s.name, s.gender || null, s.level || null]);
+        synced++;
+      } catch(e) { skipped++; }
+    }
+    res.json({ synced, skipped, total: src.rows.length });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/add-student — add a single student to students_register
+router.post('/api/admin/add-student', async (req, res) => {
+  try {
+    const { school_identifier, student_name, gender, level, roll_number } = req.body;
+    if (!school_identifier || !student_name) {
+      return res.status(400).json({ error: 'school_identifier and student_name required' });
+    }
+
+    // Auto-generate roll number if not provided
+    let roll = roll_number;
+    if (!roll) {
+      const maxRoll = await db.pool.query(`
+        SELECT MAX(CAST(REGEXP_REPLACE(roll_number, '[^0-9]', '', 'g') AS INTEGER)) AS max_num
+        FROM students_register WHERE school_identifier ILIKE $1
+      `, [school_identifier]);
+      const seq = (maxRoll.rows[0]?.max_num || 0) + 1;
+      roll = `${school_identifier.substring(0,6).toUpperCase()}-${String(seq).padStart(3,'0')}`;
+    }
+
+    await db.pool.query(`
+      INSERT INTO students_register
+        (school_identifier, roll_number, student_name, gender, level, active, created_at)
+      VALUES ($1, $2, $3, $4, $5, TRUE, NOW())
+    `, [school_identifier, roll, student_name.trim(), gender || null, parseInt(level) || null]);
+
+    res.json({ saved: true, roll_number: roll });
+  } catch(err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'Roll number already exists.' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/bulk-add-students — add multiple students at once
+router.post('/api/admin/bulk-add-students', async (req, res) => {
+  try {
+    const { school_identifier, students } = req.body;
+    if (!school_identifier || !Array.isArray(students) || !students.length) {
+      return res.status(400).json({ error: 'school_identifier and students[] required' });
+    }
+
+    const maxRoll = await db.pool.query(`
+      SELECT MAX(CAST(REGEXP_REPLACE(roll_number, '[^0-9]', '', 'g') AS INTEGER)) AS max_num
+      FROM students_register WHERE school_identifier ILIKE $1
+    `, [school_identifier]);
+    let seq = maxRoll.rows[0]?.max_num || 0;
+
+    let added = 0, skipped = 0;
+    for (const s of students) {
+      if (!s.name || !s.name.trim()) { skipped++; continue; }
+      seq++;
+      const roll = `${school_identifier.substring(0,6).toUpperCase()}-${String(seq).padStart(3,'0')}`;
+      try {
+        await db.pool.query(`
+          INSERT INTO students_register
+            (school_identifier, roll_number, student_name, gender, level, active, created_at)
+          VALUES ($1, $2, $3, $4, $5, TRUE, NOW())
+          ON CONFLICT (roll_number) DO NOTHING
+        `, [school_identifier, roll, s.name.trim(), s.gender || null, parseInt(s.level) || null]);
+        added++;
+      } catch(e) { skipped++; }
+    }
+    res.json({ added, skipped, total: students.length });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/student/:roll — toggle active/inactive
+router.patch('/api/admin/student/:roll', async (req, res) => {
+  try {
+    const { active } = req.body;
+    await db.pool.query(
+      `UPDATE students_register SET active = $1 WHERE roll_number = $2`,
+      [!!active, req.params.roll]
+    );
+    res.json({ saved: true });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/admin/student/:roll — permanently delete a student
+router.delete('/api/admin/student/:roll', async (req, res) => {
+  try {
+    await db.pool.query(
+      `DELETE FROM students_register WHERE roll_number = $1`,
+      [req.params.roll]
+    );
+    res.json({ deleted: true });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 module.exports = { router, isFeedbackMessage, parseFeedback, saveFeedback };

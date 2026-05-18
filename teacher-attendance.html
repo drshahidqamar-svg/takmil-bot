@@ -373,6 +373,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
     <div class="success-icon">✅</div>
     <h2 id="suc-title">Attendance Saved!</h2>
     <p id="suc-sub">Attendance recorded for today.</p>
+    <p id="suc-meta" style="font-size:12px;color:var(--text3);margin-bottom:16px;
+      line-height:1.6;padding:8px 12px;background:var(--bg);border-radius:var(--r2)"></p>
     <div class="success-grid">
       <div class="sg-cell">
         <div class="sg-n" id="suc-present" style="color:var(--green)">—</div>
@@ -887,16 +889,34 @@ async function submitAttendance() {
   const attendanceArr = students.map(s => ({
     roll_number:  s.roll_number,
     student_name: s.student_name,
-    status:       attendance[s.roll_number] || 'A',  // default absent if unmarked
+    status:       attendance[s.roll_number] || 'A',
   }));
 
+  // Capture GPS coordinates
+  let gps_lat = null, gps_lng = null, gps_accuracy = null;
+  try {
+    const pos = await new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true, timeout: 6000, maximumAge: 0
+      })
+    );
+    gps_lat      = pos.coords.latitude;
+    gps_lng      = pos.coords.longitude;
+    gps_accuracy = Math.round(pos.coords.accuracy);
+  } catch(e) {
+    console.warn('[Attendance] GPS not available:', e.message);
+  }
+
   const payload = {
-    school_code:  currentSchool.identifier,
+    school_code:     currentSchool.identifier,
     date,
-    attendance:   attendanceArr,
-    submitted_by: currentPhone,
+    attendance:      attendanceArr,
+    submitted_by:    currentPhone,
     submission_mode: navigator.onLine ? 'online' : 'offline',
-    submitted_at: new Date().toISOString(),
+    submitted_at:    new Date().toISOString(),
+    gps_lat,
+    gps_lng,
+    gps_accuracy,
   };
 
   const btn = document.getElementById('submit-btn');
@@ -953,8 +973,24 @@ async function submitAttendance() {
   document.getElementById('suc-absent').textContent  = a;
   document.getElementById('suc-leave').textContent   = l;
   document.getElementById('suc-title').textContent   = savedOnline ? 'Attendance Saved!' : 'Saved Offline!';
-  document.getElementById('suc-sub').textContent     =
+
+  // Format time
+  const now  = new Date();
+  const time = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const mode = navigator.onLine ? '🟢 Online' : '🟡 Offline';
+  document.getElementById('suc-sub').textContent =
     `${currentSchool.name} · ${date} · ${students.length} students`;
+
+  // Show metadata line
+  const metaEl = document.getElementById('suc-meta');
+  if (metaEl) {
+    metaEl.innerHTML =
+      `🕐 Submitted at ${time} &nbsp;·&nbsp; ${mode}` +
+      (gps_lat ? ` &nbsp;·&nbsp; <a href="https://www.google.com/maps?q=${gps_lat},${gps_lng}"
+        target="_blank" style="color:var(--green);font-weight:700;text-decoration:none">
+        📍 View Location</a>` : ' &nbsp;·&nbsp; 📵 No GPS');
+  }
+
   const syncEl = document.getElementById('suc-sync');
   syncEl.classList.toggle('show', !savedOnline);
 
