@@ -696,7 +696,7 @@ router.get('/api/register/history', async (req, res) => {
       ORDER BY sa.attendance_date DESC, sa.school_identifier
     `, params);
 
-    const attDate = date || (date_from && date_to ? \`\${date_from} to \${date_to}\` : new Date().toISOString().split('T')[0]);
+    const attDate = date || (date_from && date_to ? (date_from + ' to ' + date_to) : new Date().toISOString().split('T')[0]);
     res.json({ date: attDate, date_from, date_to, records: r.rows });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
