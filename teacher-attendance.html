@@ -388,7 +388,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
       </div>
     </div>
     <div class="sync-notice" id="suc-sync">
-      ⏳ Saved offline — will sync automatically when connected
+      ⏳ Saved offline — will sync automatically when connected.<br>
+      <button onclick="flushQueue()" style="margin-top:10px;background:var(--amber);
+        color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;
+        font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;width:100%">
+        🔄 Sync Now
+      </button>
     </div>
     <button class="btn-new-day" onclick="newDay()">Take Attendance for Another Day</button>
     <button class="btn-logout" onclick="doLogout()">Log Out</button>
@@ -467,28 +472,54 @@ function updatePendingBadge() {
 }
 
 async function flushQueue() {
-  if (!navigator.onLine || !pendingQueue.length) return;
+  if (!navigator.onLine) return;
+
+  // Always re-read from localStorage — covers page reloads and stale memory state
+  try { pendingQueue = JSON.parse(localStorage.getItem('attend_queue') || '[]'); } catch(e) { pendingQueue = []; }
+
+  if (!pendingQueue.length) return;
+
+  console.log(`[Attendance] Flushing ${pendingQueue.length} queued submission(s)...`);
+
   const batch = [...pendingQueue];
   pendingQueue = [];
   saveQueueToStorage();
+
   let sent = 0;
   for (const payload of batch) {
     try {
       const res  = await fetch(`${API}/api/register/submit`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
-      if (data.saved) sent++;
-      else pendingQueue.push(payload);
-    } catch(e) { pendingQueue.push(payload); }
+      if (data.saved) {
+        sent++;
+        console.log(`[Attendance] Synced: ${payload.school_code} / ${payload.date}`);
+      } else {
+        console.error('[Attendance] Server rejected:', data.error);
+        pendingQueue.push(payload); // re-queue
+      }
+    } catch(e) {
+      console.error('[Attendance] Network error during sync:', e.message);
+      pendingQueue.push(payload); // re-queue
+    }
   }
+
   saveQueueToStorage();
-  if (sent > 0) showToast(`✅ ${sent} submission${sent > 1 ? 's' : ''} synced!`);
+  updatePendingBadge();
+
+  if (sent > 0) {
+    showToast(`✅ ${sent} attendance record${sent > 1 ? 's' : ''} synced!`);
+  } else if (batch.length > 0) {
+    showToast('⚠️ Sync failed — will retry automatically');
+  }
 }
 
 // Periodic sync
-setInterval(() => { if (navigator.onLine && pendingQueue.length > 0) flushQueue(); }, 60000);
+// Retry every 20 seconds — also re-reads localStorage so works after page reload
+setInterval(() => { if (navigator.onLine) flushQueue(); }, 20000);
 
 // ══════════════════════════════════════════════════════════
 //  SCREEN MANAGEMENT
@@ -982,8 +1013,8 @@ function showToast(msg, ms = 2800) {
 updateOnlineStatus();
 loadQueueFromStorage();
 
-// Auto-sync on load
-if (navigator.onLine && pendingQueue.length > 0) flushQueue();
+// Auto-sync on load — always call flushQueue (it re-reads localStorage internally)
+if (navigator.onLine) flushQueue();
 
 // Restore session
 const savedSession = localStorage.getItem('attend_session');
