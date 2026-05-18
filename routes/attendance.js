@@ -582,13 +582,16 @@ router.get('/api/register/students', async (req, res) => {
 
 router.post('/api/register/submit', async (req, res) => {
   try {
-    const { school_code, date, attendance, submitted_by, submission_mode } = req.body;
+    const {
+      school_code, date, attendance, submitted_by,
+      submission_mode, submitted_at,
+      gps_lat, gps_lng, gps_accuracy
+    } = req.body;
+
     if (date) {
       const submitted = new Date(date); submitted.setHours(0,0,0,0);
       const today     = new Date();     today.setHours(0,0,0,0);
-      // Future dates always rejected (permanent)
       if (submitted > today) return res.json({ saved: false, permanent: true, error: 'Future dates are not allowed.' });
-      // Allow up to 7 days back for offline submissions, 2 days for online
       const maxDaysBack = submission_mode === 'offline' ? 7 : 2;
       const earliest = new Date(today); earliest.setDate(today.getDate() - maxDaysBack);
       if (submitted < earliest) return res.json({ saved: false, permanent: true, error: `Attendance date is too old (max ${maxDaysBack} days back).` });
@@ -596,13 +599,43 @@ router.post('/api/register/submit', async (req, res) => {
     if (!attendance?.length) return res.json({ saved: false, permanent: true, error: 'No attendance data' });
     const attDate = date || new Date().toISOString().split('T')[0];
 
+    // Ensure new columns exist (safe to run every time)
+    const alterCmds = [
+      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS submission_mode TEXT DEFAULT 'online'`,
+      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ`,
+      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_lat NUMERIC(10,7)`,
+      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_lng NUMERIC(10,7)`,
+      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_accuracy INTEGER`,
+    ];
+    for (const cmd of alterCmds) {
+      try { await db.pool.query(cmd); } catch(e) { /* already exists */ }
+    }
+
+    const submittedAt = submitted_at ? new Date(submitted_at) : new Date();
+    const mode        = submission_mode || 'online';
+    const lat         = gps_lat    ? parseFloat(gps_lat)    : null;
+    const lng         = gps_lng    ? parseFloat(gps_lng)    : null;
+    const acc         = gps_accuracy ? parseInt(gps_accuracy) : null;
+
     for (const s of attendance) {
       await db.pool.query(`
-        INSERT INTO student_attendance (roll_number, student_name, school_identifier, attendance_date, status, submitted_by)
-        VALUES ($1,$2,$3,$4,$5,$6)
+        INSERT INTO student_attendance
+          (roll_number, student_name, school_identifier, attendance_date,
+           status, submitted_by, submission_mode, submitted_at,
+           gps_lat, gps_lng, gps_accuracy)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
         ON CONFLICT (roll_number, attendance_date)
-        DO UPDATE SET status=EXCLUDED.status, submitted_by=EXCLUDED.submitted_by
-      `, [s.roll_number, s.student_name, school_code, attDate, s.status, submitted_by || school_code]);
+        DO UPDATE SET
+          status          = EXCLUDED.status,
+          submitted_by    = EXCLUDED.submitted_by,
+          submission_mode = EXCLUDED.submission_mode,
+          submitted_at    = EXCLUDED.submitted_at,
+          gps_lat         = COALESCE(EXCLUDED.gps_lat,  student_attendance.gps_lat),
+          gps_lng         = COALESCE(EXCLUDED.gps_lng,  student_attendance.gps_lng),
+          gps_accuracy    = COALESCE(EXCLUDED.gps_accuracy, student_attendance.gps_accuracy)
+      `, [s.roll_number, s.student_name, school_code, attDate,
+          s.status, submitted_by || school_code, mode, submittedAt,
+          lat, lng, acc]);
     }
 
     const present = attendance.filter(s => s.status === 'P').length;
@@ -614,28 +647,57 @@ router.post('/api/register/submit', async (req, res) => {
 
 router.get('/api/register/history', async (req, res) => {
   try {
-    const { school_code, date } = req.query;
-    const attDate = date || new Date().toISOString().split('T')[0];
-    let whereClause = 'WHERE sa.attendance_date=$1::date';
-    const params = [attDate];
-    if (school_code) { params.push(school_code); whereClause += ` AND sa.school_identifier ILIKE $${params.length}`; }
+    const { school_code, date, date_from, date_to } = req.query;
+    const params = [];
+    let whereClause = '';
+
+    if (date_from && date_to) {
+      // Date range query
+      params.push(date_from, date_to);
+      whereClause = 'WHERE sa.attendance_date BETWEEN $1::date AND $2::date';
+    } else {
+      // Single date (default today)
+      const attDate = date || new Date().toISOString().split('T')[0];
+      params.push(attDate);
+      whereClause = 'WHERE sa.attendance_date=$1::date';
+    }
+
+    if (school_code) {
+      params.push(school_code);
+      whereClause += ` AND sa.school_identifier ILIKE $${params.length}`;
+    }
 
     const r = await db.pool.query(`
-      SELECT sa.school_identifier, s.name AS school_name,
-        COUNT(*) AS total,
-        SUM(CASE WHEN sa.status='P' THEN 1 ELSE 0 END) AS present,
-        SUM(CASE WHEN sa.status='A' THEN 1 ELSE 0 END) AS absent,
-        SUM(CASE WHEN sa.status='L' THEN 1 ELSE 0 END) AS leave_count,
+      SELECT
+        sa.school_identifier,
+        s.name AS school_name,
+        sa.attendance_date,
+        COUNT(*)                                                              AS total,
+        SUM(CASE WHEN sa.status='P' THEN 1 ELSE 0 END)                       AS present,
+        SUM(CASE WHEN sa.status='A' THEN 1 ELSE 0 END)                       AS absent,
+        SUM(CASE WHEN sa.status='L' THEN 1 ELSE 0 END)                       AS leave_count,
         ROUND(SUM(CASE WHEN sa.status='P' THEN 1 ELSE 0 END)*100.0/COUNT(*),1) AS attendance_pct,
-        MAX(sa.created_at) AS submitted_at,
-        json_agg(json_build_object('name',sa.student_name,'roll',sa.roll_number,'status',sa.status) ORDER BY sa.roll_number) AS students
+        MAX(sa.submitted_at)  AS submitted_at,
+        MAX(sa.created_at)    AS created_at,
+        MAX(sa.submission_mode)                                               AS submission_mode,
+        AVG(sa.gps_lat)                                                       AS gps_lat,
+        AVG(sa.gps_lng)                                                       AS gps_lng,
+        json_agg(
+          json_build_object(
+            'name',  sa.student_name,
+            'roll',  sa.roll_number,
+            'status',sa.status
+          ) ORDER BY sa.roll_number
+        ) AS students
       FROM student_attendance sa
       LEFT JOIN schools s ON s.identifier ILIKE sa.school_identifier
       ${whereClause}
-      GROUP BY sa.school_identifier, s.name
-      ORDER BY sa.school_identifier
+      GROUP BY sa.school_identifier, s.name, sa.attendance_date
+      ORDER BY sa.attendance_date DESC, sa.school_identifier
     `, params);
-    res.json({ date: attDate, records: r.rows });
+
+    const attDate = date || (date_from && date_to ? \`\${date_from} to \${date_to}\` : new Date().toISOString().split('T')[0]);
+    res.json({ date: attDate, date_from, date_to, records: r.rows });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
