@@ -44,6 +44,12 @@ app.get('/assess-sw.js', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(path.join(__dirname, 'assess-sw.js'));
 });
+app.get('/attendance-sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/teacher-attendance');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(__dirname, 'attendance-sw.js'));
+});
 app.get('/register-sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.setHeader('Service-Worker-Allowed', '/');
@@ -57,6 +63,10 @@ app.get('/manifest.json', (req, res) => {
 app.get('/manifest-portal.json', (req, res) => {
   res.setHeader('Content-Type', 'application/manifest+json');
   res.sendFile(path.join(__dirname, 'manifest-portal.json'));
+});
+app.get('/manifest-attendance.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.sendFile(path.join(__dirname, 'manifest-attendance.json'));
 });
 app.get('/offline-portal', (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=86400');
@@ -124,6 +134,7 @@ app.get('/level-advancement',    (req, res) => res.sendFile(path.join(__dirname,
 app.get('/image-portal',         (req, res) => res.sendFile(path.join(__dirname, 'image-portal.html')));
 app.get('/picture-questions',    (req, res) => res.sendFile(path.join(__dirname, 'picture-questions.html')));
 app.get('/teacher-feedback',     (req, res) => res.sendFile(path.join(__dirname, 'takmil-feedback.html')));
+app.get('/teacher-attendance',   (req, res) => res.sendFile(path.join(__dirname, 'teacher-attendance.html')));
 app.get('/takmil-classroom',     (req, res) => res.sendFile(path.join(__dirname, 'takmil-classroom.html')));
 
 
