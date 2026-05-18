@@ -691,28 +691,33 @@ async function syncResult(record) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pin:          record.pin,
-          student_name: record.student_name,
-          student_id:   record.student_id,
-          subject:      subj.subject,
-          level:        record.level,
-          score:        subj.score,
-          total:        subj.total,
-          pct:          subj.pct,
-          passed:       subj.pct >= 80,
-          overall_pct:  record.overall_pct,
+          pin:            record.pin,
+          student_name:   record.student_name,
+          student_id:     record.student_id,
+          subject:        subj.subject,
+          level:          record.level,
+          score:          subj.score,
+          total:          subj.total,
+          pct:            subj.pct,
+          passed:         subj.pct >= 80,
+          overall_pct:    record.overall_pct,
           overall_passed: record.passed,
-          timestamp:    record.timestamp,
+          timestamp:      record.timestamp,
           submission_mode: record.submission_mode || 'offline',
-          gps_lat:      record.gps?.lat  || null,
-          gps_lng:      record.gps?.lng  || null,
-          gps_accuracy: record.gps?.acc  || null,
+          gps_lat:        record.gps?.lat || null,
+          gps_lng:        record.gps?.lng || null,
+          gps_accuracy:   record.gps?.acc || null,
         })
       });
-      if (!resp.ok) return false;
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || data.saved === false) {
+        console.error('[syncResult] Server error:', data.error || resp.status);
+        return false;
+      }
     }
     return true;
   } catch(e) {
+    console.error('[syncResult] Network error:', e.message);
     return false;
   }
 }
