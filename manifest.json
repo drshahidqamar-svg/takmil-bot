@@ -3,7 +3,7 @@
   "short_name": "TAKMIL",
   "description": "Daily classroom feedback for TAKMIL Foundation teachers",
   "start_url": "/teacher-feedback",
-  "scope": "/",
+  "scope": "/teacher-feedback",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f3d22",
@@ -28,6 +28,8 @@
       "type": "image/png"
     }
   ],
-  "screenshots": [],
-  "categories": ["education", "productivity"]
+  "categories": [
+    "education",
+    "productivity"
+  ]
 }

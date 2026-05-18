@@ -52,9 +52,8 @@ self.addEventListener('fetch', event => {
 
   if (isPage || isAsset) {
     event.respondWith(cacheFirstWithUpdate(request));
-  } else if (isOurHost) {
-    event.respondWith(networkWithCacheFallback(request));
   }
+  // Don't intercept other routes — each app has its own SW with its own scope
 });
 
 // ── BACKGROUND SYNC ───────────────────────────────────────────────────────────

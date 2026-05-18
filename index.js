@@ -34,7 +34,7 @@ app.use('/icons', express.static(path.join(__dirname, 'public', 'icons'), { maxA
 // ── Service Worker & Manifest (must be served from root with correct headers) ─
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.setHeader('Service-Worker-Allowed', '/');
+  res.setHeader('Service-Worker-Allowed', '/teacher-feedback');
   res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(path.join(__dirname, 'sw.js'));
 });

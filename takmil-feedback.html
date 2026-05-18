@@ -1274,7 +1274,7 @@ if (isMobile() && !isAlreadyInstalled()) {
 
 // ── Service Worker registration ──────────────────────────────────────────
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    navigator.serviceWorker.register('/sw.js', { scope: '/teacher-feedback' })
       .then(reg => {
         swRegistration = reg;
         console.log('[App] Service Worker registered, scope:', reg.scope);
