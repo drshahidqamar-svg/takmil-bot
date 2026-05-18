@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a2e7a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TAKMIL Assess">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>TAKMIL Assessment</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
 <style>
@@ -12,12 +17,29 @@
   --green:#16a34a;--green2:#dcfce7;--red:#ef4444;--red2:#fee2e2;
   --bg:#f8f9ff;--bg2:#ffffff;--border:#e0e4f5;
   --text:#1a1f3a;--text2:#4a5080;--text3:#8a90b8;
+  --gold:#c9952a;--gold-light:#fdf4e3;
   --r:16px;--r2:12px;
 }
 html,body{min-height:100%;background:var(--bg);color:var(--text);
   font-family:'DM Sans',sans-serif;font-size:16px;overflow-x:hidden}
 
-/* SCREENS */
+/* ── OFFLINE / SYNC BANNERS ── */
+#offline-banner{
+  display:none;background:var(--gold);color:#fff;
+  text-align:center;padding:8px 16px;font-size:13px;font-weight:700;
+  position:sticky;top:0;z-index:9999;
+}
+#offline-banner.show{display:flex;align-items:center;justify-content:center;gap:8px}
+#sync-banner{
+  display:none;background:#16a34a;color:#fff;
+  text-align:center;padding:8px 16px;font-size:13px;font-weight:700;
+  position:sticky;top:0;z-index:9999;
+}
+#sync-banner.show{display:block}
+#pending-count{background:rgba(255,255,255,0.3);padding:1px 8px;
+  border-radius:10px;font-size:11px;margin-left:6px}
+
+/* ── SCREENS ── */
 .scr{display:none;min-height:100vh}
 .scr.on{display:flex;flex-direction:column}
 
@@ -38,10 +60,14 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
   color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
   box-shadow:0 4px 20px rgba(26,46,122,0.3);transition:all 0.2s}
 .pin-btn:active{transform:scale(0.98)}
-.pin-err{color:var(--red);font-size:13px;text-align:center;margin-top:12px;font-weight:600}
-.pin-info{background:var(--bg);border-radius:var(--r2);padding:14px;margin-top:16px;text-align:center}
+.pin-btn:disabled{opacity:0.6;cursor:not-allowed}
+.pin-err{color:var(--red);font-size:13px;text-align:center;margin-top:12px;font-weight:600;min-height:20px}
+.pin-info{background:var(--bg);border-radius:var(--r2);padding:14px;margin-top:16px;text-align:center;display:none}
 .pi-school{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:4px}
 .pi-level{font-size:13px;color:var(--text3)}
+.offline-session{background:var(--gold-light);border:1.5px solid var(--gold);
+  border-radius:var(--r2);padding:12px 14px;margin-top:12px;font-size:13px;
+  color:#856404;font-weight:600;display:none}
 
 /* ── NAME SCREEN ── */
 #s-name{align-items:center;justify-content:center;padding:24px;
@@ -68,58 +94,44 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 
 /* ── ASSESSMENT SCREEN ── */
 #s-assess{background:var(--bg2)}
-.assess-hdr{
-  background:var(--navy);padding:14px 20px;
+.assess-hdr{background:var(--navy);padding:14px 20px;
   display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:10;
-}
+  position:sticky;top:0;z-index:10}
 .ah-name{font-size:15px;font-weight:800;color:white}
 .ah-progress{font-size:12px;color:rgba(255,255,255,0.7)}
+.q-timer{margin-left:auto;font-size:13px;font-weight:700;color:var(--orange)}
 .progress-bar{height:4px;background:rgba(255,255,255,0.2)}
 .progress-fill{height:100%;background:var(--orange);transition:width 0.3s}
-
 .question-area{padding:20px;flex:1}
 .q-meta{display:flex;gap:8px;margin-bottom:16px;align-items:center}
 .q-num{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
   color:white;background:var(--navy);padding:4px 12px;border-radius:20px}
 .q-subj{font-size:12px;font-weight:700;color:var(--text3);
   background:var(--bg);padding:4px 10px;border-radius:20px}
-.q-timer{margin-left:auto;font-size:13px;font-weight:700;color:var(--orange)}
-
 .q-image{width:100%;max-height:200px;object-fit:contain;
   border-radius:var(--r2);margin-bottom:16px;border:1px solid var(--border)}
-.q-text{font-size:18px;font-weight:700;color:var(--text);
-  line-height:1.5;margin-bottom:24px}
+.q-text{font-size:18px;font-weight:700;color:var(--text);line-height:1.5;margin-bottom:24px}
 .q-text.urdu{font-family:'Noto Nastaliq Urdu',serif;direction:rtl;text-align:right;font-size:20px}
-
 .options{display:flex;flex-direction:column;gap:10px}
-.opt{
-  padding:16px 18px;background:var(--bg);border:2.5px solid var(--border);
+.opt{padding:16px 18px;background:var(--bg);border:2.5px solid var(--border);
   border-radius:var(--r2);cursor:pointer;transition:all 0.15s;
-  display:flex;align-items:center;gap:12px;
-}
+  display:flex;align-items:center;gap:12px}
 .opt:active{transform:scale(0.98)}
 .opt.selected{background:#ede9fe;border-color:#7c3aed}
 .opt.correct{background:var(--green2);border-color:var(--green)}
 .opt.wrong{background:var(--red2);border-color:var(--red)}
-.opt-label{
-  width:36px;height:36px;border-radius:50%;
-  background:var(--border);display:flex;align-items:center;
-  justify-content:center;font-size:14px;font-weight:800;
-  color:var(--text2);flex-shrink:0;transition:all 0.15s;
-}
+.opt-label{width:36px;height:36px;border-radius:50%;background:var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+  font-weight:800;color:var(--text2);flex-shrink:0;transition:all 0.15s}
 .opt.selected .opt-label{background:#7c3aed;color:white}
 .opt.correct .opt-label{background:var(--green);color:white}
 .opt.wrong .opt-label{background:var(--red);color:white}
 .opt-text{font-size:16px;font-weight:600;color:var(--text);line-height:1.4}
 .opt-text.urdu{font-family:'Noto Nastaliq Urdu',serif;direction:rtl;text-align:right}
-
-.next-btn{
-  margin:20px;padding:18px;background:linear-gradient(135deg,var(--navy),var(--navy2));
+.next-btn{margin:20px;padding:18px;background:linear-gradient(135deg,var(--navy),var(--navy2));
   border:none;border-radius:var(--r2);font-size:16px;font-weight:800;
   color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
-  width:calc(100% - 40px);display:none;box-shadow:0 4px 16px rgba(26,46,122,0.25);
-}
+  width:calc(100% - 40px);display:none;box-shadow:0 4px 16px rgba(26,46,122,0.25)}
 .next-btn.show{display:block}
 .next-btn:active{transform:scale(0.98)}
 
@@ -138,18 +150,17 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 .result-status{padding:14px;border-radius:var(--r2);font-size:14px;font-weight:700;margin-bottom:20px}
 .status-pass{background:var(--green2);color:var(--green)}
 .status-fail{background:var(--red2);color:var(--red)}
-.next-student-btn{
-  width:100%;padding:16px;background:linear-gradient(135deg,var(--green),#0d5c29);
+.result-sync{background:var(--gold-light);border:1.5px solid var(--gold);
+  border-radius:var(--r2);padding:10px;font-size:12px;font-weight:700;
+  color:#856404;margin-bottom:16px;display:none}
+.next-student-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--green),#0d5c29);
   border:none;border-radius:var(--r2);font-size:16px;font-weight:800;
-  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px;
-}
-.end-btn{
-  width:100%;padding:14px;background:var(--bg);border:2px solid var(--border);
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px}
+.end-btn{width:100%;padding:14px;background:var(--bg);border:2px solid var(--border);
   border-radius:var(--r2);font-size:14px;font-weight:700;
-  color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;
-}
+  color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif}
 
-/* ── SESSION RESULTS (Teacher View) ── */
+/* ── SESSION RESULTS ── */
 #s-session{background:var(--bg2);padding-bottom:40px}
 .sess-hdr{background:var(--navy);padding:16px 20px;color:white}
 .sess-title{font-size:18px;font-weight:900}
@@ -165,78 +176,67 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 .sr-name{flex:1;font-size:15px;font-weight:700;color:var(--text)}
 .sr-score{font-size:20px;font-weight:900}
 .sr-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px}
+.sr-mode{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700}
 .b-pass{background:var(--green2);color:var(--green)}
 .b-fail{background:var(--red2);color:var(--red)}
-.flag-section{margin-top:20px}
-.flag-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px}
-.flag-item{background:#fef9c3;border:1px solid #fde047;border-radius:var(--r2);
-  padding:12px 14px;margin-bottom:8px;font-size:13px}
-.flag-rate{font-weight:800;color:#92400e}
-.new-session-btn{
-  width:100%;padding:16px;margin-top:16px;
+.b-offline{background:var(--gold-light);color:#92400e}
+.b-online{background:#dbeafe;color:#1d4ed8}
+.new-session-btn{width:100%;padding:16px;margin-top:16px;
   background:linear-gradient(135deg,var(--navy),var(--navy2));
   border:none;border-radius:var(--r2);font-size:15px;font-weight:800;
-  color:white;cursor:pointer;font-family:'DM Sans',sans-serif;
-}
+  color:white;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* Spinner */
+.spinner{width:20px;height:20px;border:3px solid rgba(255,255,255,0.3);
+  border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;
+  display:inline-block;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
-  <!-- Home Button Top Bar -->
-  <div style="
-    width:100%;
-    background:#15803D;
-    padding:8px 20px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    position:sticky;
-    top:0;
-    z-index:9999;
-    box-shadow:0 2px 8px rgba(0,0,0,0.15);
-  ">
-    <a href="/" style="
-      display:inline-flex;
-      align-items:center;
-      gap:7px;
-      background:rgba(255,255,255,0.18);
-      color:#ffffff;
-      text-decoration:none;
-      font-family:'Segoe UI',sans-serif;
-      font-size:13px;
-      font-weight:700;
-      padding:5px 16px;
-      border-radius:20px;
-      border:1.5px solid rgba(255,255,255,0.35);
-      transition:background 0.15s;
-    " onmouseover="this.style.background='rgba(255,255,255,0.28)'"
-       onmouseout="this.style.background='rgba(255,255,255,0.18)'">
-      ⌂ Home
-    </a>
-    <span style="color:rgba(255,255,255,0.6);font-size:12px;font-family:'Segoe UI',sans-serif;">
-      TAKMIL Monitoring Hub
-    </span>
-  </div>
+<!-- Offline banner -->
+<div id="offline-banner">
+  <span>⚡ Offline — assessment works from cache. Results will sync when online</span>
+  <span id="pending-count" style="display:none"></span>
+</div>
+<!-- Sync success banner -->
+<div id="sync-banner"></div>
 
-<!-- PIN ENTRY -->
+<!-- Navigation bar -->
+<div style="width:100%;background:#15803D;padding:8px 20px;display:flex;
+  align-items:center;gap:10px;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
+  <a href="/" style="display:inline-flex;align-items:center;gap:7px;
+    background:rgba(255,255,255,0.18);color:#fff;text-decoration:none;
+    font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+    padding:5px 16px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.35)">
+    ⌂ Home
+  </a>
+  <span style="color:rgba(255,255,255,0.7);font-size:12px">TAKMIL · Student Assessment</span>
+</div>
+
+<!-- ════════════════════ PIN SCREEN ════════════════════ -->
 <div class="scr on" id="s-pin">
   <div class="pin-logo">TAKMIL</div>
   <div class="pin-sub">Student Assessment</div>
   <div class="pin-card">
     <label class="pin-label">Enter PIN from board</label>
     <input class="pin-inp" id="pin-inp" type="number" placeholder="______"
-      maxlength="6" oninput="if(this.value.length===6)validatePin()">
-    <button class="pin-btn" onclick="validatePin()">Continue →</button>
+      maxlength="6" oninput="if(this.value.length>=4 && this.value.length<=6) tryAutoValidate()">
+    <button class="pin-btn" id="pin-btn" onclick="validatePin()">Continue →</button>
     <div class="pin-err" id="pin-err"></div>
-    <div class="pin-info" id="pin-info" style="display:none">
+    <div class="pin-info" id="pin-info">
       <div class="pi-school" id="pi-school"></div>
       <div class="pi-level" id="pi-level"></div>
       <div class="pi-level" id="pi-subject" style="color:#01796F;font-weight:700;margin-top:2px"></div>
     </div>
+    <div class="offline-session" id="offline-session">
+      📵 Loaded from cache — works offline
+    </div>
   </div>
 </div>
 
-<!-- STUDENT NAME -->
+<!-- ════════════════════ NAME SCREEN ════════════════════ -->
 <div class="scr" id="s-name">
   <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
   <div class="name-card">
@@ -255,7 +255,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
   </div>
 </div>
 
-<!-- ASSESSMENT -->
+<!-- ════════════════════ ASSESSMENT SCREEN ════════════════════ -->
 <div class="scr" id="s-assess">
   <div class="assess-hdr">
     <div>
@@ -271,7 +271,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
   <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next →</button>
 </div>
 
-<!-- STUDENT RESULT -->
+<!-- ════════════════════ RESULT SCREEN ════════════════════ -->
 <div class="scr" id="s-result">
   <div class="result-card">
     <div class="result-emoji" id="r-emoji">🎉</div>
@@ -283,12 +283,13 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
       <div class="rg-cell"><div class="rg-n" id="r-wrong"></div><div class="rg-l">Wrong</div></div>
     </div>
     <div class="result-status" id="r-status"></div>
+    <div class="result-sync" id="r-sync">⏳ Result saved offline — will sync when connected</div>
     <button class="next-student-btn" onclick="nextStudent()">Next Student →</button>
     <button class="end-btn" onclick="showSessionResults()">View All Results</button>
   </div>
 </div>
 
-<!-- SESSION RESULTS -->
+<!-- ════════════════════ SESSION RESULTS ════════════════════ -->
 <div class="scr" id="s-session">
   <div class="sess-hdr">
     <div class="sess-title">Session Results</div>
@@ -298,87 +299,241 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 </div>
 
 <script>
-let currentPin = '';
-let sessionData = null;
-let questions = [];
-let currentQIndex = 0;
-let answers = [];
-let startTime = null;
-let qStartTime = null;
-let timerInterval = null;
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let currentPin     = '';
+let sessionData    = null;
+let questions      = [];
+let currentQIndex  = 0;
+let answers        = [];
+let startTime      = null;
+let qStartTime     = null;
+let timerInterval  = null;
 let assessedStudents = [];
 let currentStudent = '';
+let submissionMode = 'online'; // 'online' | 'offline'
+let pendingQueue   = [];
+let swReg          = null;
 
-function showScr(id){
-  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
-  document.getElementById(id).classList.add('on');
+const API_BASE = ''; // same origin
+
+// ═══════════════════════════════════════════════════════
+//  SERVICE WORKER + OFFLINE DETECTION
+// ═══════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/assess-sw.js', { scope: '/assess' })
+    .then(reg => {
+      swReg = reg;
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data?.type === 'FLUSH_ASSESS_QUEUE') flushQueue();
+      });
+    })
+    .catch(err => console.warn('[AssessSW] registration failed:', err));
 }
 
-// ── PIN VALIDATION ─────────────────────────────────────────────
-async function validatePin(){
-  const pin = document.getElementById('pin-inp').value.trim();
-  if(pin.length < 4){ return; }
-  const err = document.getElementById('pin-err');
-  err.textContent = 'Checking...';
-  try{
-    const resp = await fetch(`/api/assess/session/${pin}`);
-    const data = await resp.json();
-    if(!resp.ok) throw new Error(data.error||'Invalid PIN');
-
-    currentPin = pin;
-    sessionData = data;
-
-    // Show school info
-    document.getElementById('pin-info').style.display='block';
-    document.getElementById('pi-school').textContent = data.school_name || data.school_identifier;
-    document.getElementById('pi-level').textContent = data.level === 12
-      ? '🏆 Grand Assessment — All Levels'
-      : `📚 Level ${data.level} Assessment`;
-    const subjDisplay = data.subject === 'All' ? '📖 All Subjects' : `📖 ${data.subject}`;
-    document.getElementById('pi-subject').textContent = subjDisplay;
-    err.textContent = '';
-
-    setTimeout(()=>{
-      document.getElementById('name-school').textContent = data.school_name || data.school_identifier;
-      const subjLabel = data.subject === 'All' ? 'All Subjects' : data.subject;
-      document.getElementById('name-level').textContent  = data.level === 12
-        ? 'Grand Assessment — All Levels'
-        : `Level ${data.level} · ${subjLabel} · 5 Questions`;
-      showScr('s-name');
-      document.getElementById('name-inp').focus();
-    }, 800);
-  }catch(e){
-    err.textContent = e.message;
+function updateOnlineStatus() {
+  const banner = document.getElementById('offline-banner');
+  if (navigator.onLine) {
+    banner.classList.remove('show');
+  } else {
+    banner.classList.add('show');
+    updatePendingBadge();
   }
 }
 
-// ── START ASSESSMENT ───────────────────────────────────────────
-async function startAssessment(){
+window.addEventListener('online', () => {
+  updateOnlineStatus();
+  flushQueue();
+  showSyncBanner('✅ Back online — syncing results...');
+});
+window.addEventListener('offline', () => {
+  updateOnlineStatus();
+  if (swReg?.sync) swReg.sync.register('sync-takmil-assess').catch(() => {});
+});
+
+// Load pending queue from localStorage
+function loadQueue() {
+  try { pendingQueue = JSON.parse(localStorage.getItem('assess_queue') || '[]'); } catch(e) { pendingQueue = []; }
+  updatePendingBadge();
+}
+
+function saveQueue() {
+  localStorage.setItem('assess_queue', JSON.stringify(pendingQueue));
+  // Also persist to Cache Storage for SW access when app closed
+  if ('caches' in window) {
+    caches.open('takmil-assess-queue').then(c =>
+      c.put('pending-results', new Response(JSON.stringify(pendingQueue), {
+        headers: { 'Content-Type': 'application/json' }
+      }))
+    ).catch(() => {});
+  }
+  updatePendingBadge();
+}
+
+function updatePendingBadge() {
+  const el = document.getElementById('pending-count');
+  if (!el) return;
+  if (pendingQueue.length > 0) {
+    el.style.display = 'inline';
+    el.textContent = pendingQueue.length + ' pending';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+async function flushQueue() {
+  if (!navigator.onLine || pendingQueue.length === 0) return;
+  const batch = [...pendingQueue];
+  pendingQueue = [];
+  saveQueue();
+
+  let sent = 0;
+  for (const payload of batch) {
+    try {
+      const res  = await fetch('/api/assess/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.saved) sent++;
+      else pendingQueue.push(payload);
+    } catch (e) {
+      pendingQueue.push(payload);
+    }
+  }
+  saveQueue();
+  if (sent > 0) showSyncBanner(`✅ ${sent} result${sent>1?'s':''} synced to server!`);
+}
+
+function showSyncBanner(msg) {
+  const b = document.getElementById('sync-banner');
+  b.textContent = msg;
+  b.classList.add('show');
+  setTimeout(() => b.classList.remove('show'), 3500);
+}
+
+// Periodic flush every 60s
+setInterval(() => { if (navigator.onLine && pendingQueue.length > 0) flushQueue(); }, 60000);
+
+// ═══════════════════════════════════════════════════════
+//  SCREEN MANAGEMENT
+// ═══════════════════════════════════════════════════════
+function showScr(id) {
+  document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+
+// ═══════════════════════════════════════════════════════
+//  PIN VALIDATION + QUESTION CACHING
+// ═══════════════════════════════════════════════════════
+let autoValidateTimer = null;
+function tryAutoValidate() {
+  clearTimeout(autoValidateTimer);
+  const val = document.getElementById('pin-inp').value.trim();
+  if (val.length === 6) { autoValidateTimer = setTimeout(validatePin, 400); }
+}
+
+async function validatePin() {
+  const pin = document.getElementById('pin-inp').value.trim();
+  if (pin.length < 4) return;
+
+  const btn = document.getElementById('pin-btn');
+  const err = document.getElementById('pin-err');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Checking...';
+  err.textContent = '';
+
+  // 1. Try live server
+  if (navigator.onLine) {
+    try {
+      const res  = await fetch(`/api/assess/bundle/${pin}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Invalid PIN');
+      // Cache session + questions locally
+      localStorage.setItem(`assess_session_${pin}`, JSON.stringify(data.session));
+      localStorage.setItem(`assess_questions_${pin}`, JSON.stringify(data.questions));
+      localStorage.setItem(`assess_cached_at_${pin}`, Date.now().toString());
+      setupSession(data.session, data.questions, false);
+      btn.disabled = false;
+      btn.innerHTML = 'Continue →';
+      return;
+    } catch (e) {
+      err.textContent = e.message;
+      btn.disabled = false;
+      btn.innerHTML = 'Continue →';
+      return;
+    }
+  }
+
+  // 2. Offline — try local cache
+  const cachedSession   = localStorage.getItem(`assess_session_${pin}`);
+  const cachedQuestions = localStorage.getItem(`assess_questions_${pin}`);
+  if (cachedSession && cachedQuestions) {
+    try {
+      const session   = JSON.parse(cachedSession);
+      const questions = JSON.parse(cachedQuestions);
+      setupSession(session, questions, true);
+      btn.disabled = false;
+      btn.innerHTML = 'Continue →';
+      return;
+    } catch(e) {}
+  }
+
+  err.textContent = 'Offline — this PIN has not been loaded yet. Please connect to load it first.';
+  btn.disabled = false;
+  btn.innerHTML = 'Continue →';
+}
+
+function setupSession(session, qs, isOffline) {
+  currentPin  = session.pin_code;
+  sessionData = session;
+  questions   = qs;
+  submissionMode = isOffline ? 'offline' : 'online';
+
+  document.getElementById('pin-info').style.display = 'block';
+  document.getElementById('pi-school').textContent = session.school_name || session.school_identifier;
+  document.getElementById('pi-level').textContent  = session.level === 12
+    ? '🏆 Grand Assessment — All Levels'
+    : `📚 Level ${session.level} Assessment`;
+  const subj = session.subject === 'All' ? '📖 All Subjects' : `📖 ${session.subject}`;
+  document.getElementById('pi-subject').textContent = subj;
+
+  if (isOffline) {
+    document.getElementById('offline-session').style.display = 'block';
+  }
+
+  setTimeout(() => {
+    document.getElementById('name-school').textContent = session.school_name || session.school_identifier;
+    const subjLabel = session.subject === 'All' ? 'All Subjects' : session.subject;
+    document.getElementById('name-level').textContent  = session.level === 12
+      ? 'Grand Assessment — All Levels'
+      : `Level ${session.level} · ${subjLabel} · ${qs.length} Questions`;
+    showScr('s-name');
+    document.getElementById('name-inp').focus();
+  }, 600);
+}
+
+// ═══════════════════════════════════════════════════════
+//  ASSESSMENT FLOW
+// ═══════════════════════════════════════════════════════
+function startAssessment() {
   const name = document.getElementById('name-inp').value.trim();
-  if(name.length < 2){ alert('Please enter your full name'); return; }
-  currentStudent = name;
-
-  // Load questions
-  const resp = await fetch(`/api/assess/questions/${currentPin}`);
-  const data = await resp.json();
-  if(!resp.ok){ alert(data.error||'Could not load questions'); return; }
-
-  questions = data.questions;
-  console.log('First question correct_option from server:', questions[0]?.correct_option);
-  console.log('First question options:', questions[0]?.option_a, questions[0]?.option_b, questions[0]?.option_c, questions[0]?.option_d);
-  answers   = [];
-  currentQIndex = 0;
-  startTime = Date.now();
+  if (name.length < 2) { alert('Please enter your full name'); return; }
+  currentStudent  = name;
+  answers         = [];
+  currentQIndex   = 0;
+  startTime       = Date.now();
 
   document.getElementById('ah-name').textContent = name;
   showScr('s-assess');
   renderQuestion();
 }
 
-// ── RENDER QUESTION ────────────────────────────────────────────
-function renderQuestion(){
-  const q = questions[currentQIndex];
-  const n = currentQIndex + 1;
+function renderQuestion() {
+  const q     = questions[currentQIndex];
+  const n     = currentQIndex + 1;
   const total = questions.length;
 
   document.getElementById('ah-progress').textContent = `Question ${n} of ${total}`;
@@ -388,28 +543,26 @@ function renderQuestion(){
   qStartTime = Date.now();
   startTimer();
 
-  const isUrdu = q.subject?.toLowerCase()==='urdu';
+  const isUrdu = q.subject?.toLowerCase() === 'urdu';
+  const urduText    = q.q_text_urdu    || (isUrdu ? q.question_text : '');
+  const englishText = q.q_text_english || (!isUrdu ? q.question_text : '');
 
   let html = '';
-  if(q.image_url) html += `<img class="q-image" src="${q.image_url}" alt="Question image">`;
-  
-  // Show both Urdu and English if available
-  const urduText   = q.q_text_urdu    || (isUrdu ? q.question_text : '');
-  const englishText= q.q_text_english || (!isUrdu ? q.question_text : '');
+  if (q.image_url) html += `<img class="q-image" src="${q.image_url}" alt="Question image">`;
 
   html += `
     <div class="q-meta">
       <span class="q-num">${n}</span>
       <span class="q-subj">${q.subject||''} · L${q.level}</span>
     </div>
-    ${urduText ? `<div class="q-text urdu">${urduText}</div>` : ''}
-    ${englishText ? `<div class="q-text">${englishText}</div>` : ''}
-    <div class="options" id="opts-wrap" data-correct="${q.correct_option}" data-qid="${q.id||''}">
+    ${urduText    ? `<div class="q-text urdu">${urduText}</div>`    : ''}
+    ${englishText ? `<div class="q-text">${englishText}</div>`       : ''}
+    <div class="options" id="opts-wrap"
+      data-correct="${q.correct_option}" data-qid="${q.id||''}">
       ${['A','B','C','D'].map(label => {
         const text = q['option_'+label.toLowerCase()];
-        if(!text) return '';
-        return `<div class="opt" id="opt-${label}" 
-          data-label="${label}"
+        if (!text) return '';
+        return `<div class="opt" id="opt-${label}" data-label="${label}"
           onclick="handleOptClick(this)">
           <div class="opt-label">${label}</div>
           <div class="opt-text ${isUrdu?'urdu':''}">${text}</div>
@@ -419,136 +572,163 @@ function renderQuestion(){
   document.getElementById('question-area').innerHTML = html;
 }
 
-function startTimer(){
+function startTimer() {
   clearInterval(timerInterval);
   let secs = 0;
-  timerInterval = setInterval(()=>{
+  timerInterval = setInterval(() => {
     secs++;
     const m = Math.floor(secs/60), s = secs%60;
     document.getElementById('q-timer').textContent = `${m}:${s<10?'0':''}${s}`;
   }, 1000);
 }
 
-function handleOptClick(el){
+function handleOptClick(el) {
   const label   = el.dataset.label;
   const wrap    = document.getElementById('opts-wrap');
   const correct = wrap.dataset.correct;
   const qId     = wrap.dataset.qid;
-  console.log('Selected:', label, '| Correct:', correct, '| Match:', label===correct);
   selectOption(label, correct, qId);
 }
 
-function selectOption(selected, correct, qId){
+function selectOption(selected, correct, qId) {
   clearInterval(timerInterval);
   const timeTaken = Math.floor((Date.now() - qStartTime) / 1000);
-
-  // Disable all options
   document.querySelectorAll('.opt').forEach(o => o.onclick = null);
-
-  // Show correct/wrong
   document.querySelectorAll('.opt').forEach(o => {
     const label = o.id.replace('opt-','');
-    if(label === correct) o.classList.add('correct');
-    else if(label === selected && selected !== correct) o.classList.add('wrong');
+    if (label === correct) o.classList.add('correct');
+    else if (label === selected && selected !== correct) o.classList.add('wrong');
   });
-
-  answers.push({ question_id: qId, selected_option: selected, correct_option: correct, time_taken_secs: timeTaken });
-  document.getElementById('next-btn').classList.add('show');
-
+  answers.push({
+    question_id: qId, selected_option: selected,
+    correct_option: correct, time_taken_secs: timeTaken,
+  });
   const btn = document.getElementById('next-btn');
-  btn.textContent = currentQIndex < questions.length-1 ? 'Next →' : 'Submit →';
+  btn.classList.add('show');
+  btn.textContent = currentQIndex < questions.length - 1 ? 'Next →' : 'Submit →';
 }
 
-function nextQuestion(){
+function nextQuestion() {
   currentQIndex++;
-  if(currentQIndex < questions.length){
+  if (currentQIndex < questions.length) {
     renderQuestion();
   } else {
     submitAnswers();
   }
 }
 
-// ── SUBMIT ─────────────────────────────────────────────────────
-async function submitAnswers(){
-  document.getElementById('next-btn').textContent = 'Saving...';
-  document.getElementById('next-btn').disabled = true;
+// ═══════════════════════════════════════════════════════
+//  SUBMIT — online or queue offline
+// ═══════════════════════════════════════════════════════
+async function submitAnswers() {
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.textContent = 'Saving...';
+  nextBtn.disabled = true;
 
-  try{
-    const resp = await fetch('/api/assess/submit', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ pin: currentPin, student_name: currentStudent, answers })
-    });
-    const data = await resp.json();
-
-
-
-    // Show result
-    // Handle both field name variants from API
-    const pct     = parseFloat(data.score_pct ?? data.scorePct ?? 0);
-    const correct = parseInt(data.correct ?? data.correctAnswers ?? 0);
-    const total   = parseInt(data.total ?? data.totalQuestions ?? answers.length);
-    const wrong   = total - correct;
-
-    document.getElementById('r-emoji').textContent   = pct>=80?'🎉':pct>=60?'👍':'📚';
-    document.getElementById('r-name').textContent    = currentStudent;
-    document.getElementById('r-score').textContent   = pct.toFixed(0)+'%';
-    document.getElementById('r-score').style.color   = pct>=80?'#16a34a':pct>=60?'#f59e0b':'#ef4444';
-    document.getElementById('r-correct').textContent = correct;
-    document.getElementById('r-wrong').textContent   = wrong;
-    
-    // Store for session view
-    assessedStudents.push({ name: currentStudent, score: pct, passed: data.passed, correct, total });
-
-    const statusEl = document.getElementById('r-status');
-    if(data.passed){
-      statusEl.textContent = '✅ Passed! Well done!';
-      statusEl.className   = 'result-status status-pass';
-    } else {
-      statusEl.textContent = '📚 Keep studying. You can do it!';
-      statusEl.className   = 'result-status status-fail';
-    }
-
-    showScr('s-result');
-  }catch(e){
-    alert('Error saving: '+e.message);
-    document.getElementById('next-btn').disabled = false;
-    document.getElementById('next-btn').textContent = 'Retry →';
+  // Calculate score locally — no server needed for result display
+  let correct = 0;
+  for (const a of answers) {
+    if ((a.selected_option||'').toUpperCase().trim() === (a.correct_option||'').toUpperCase().trim()) correct++;
   }
+  const total    = answers.length;
+  const scorePct = Math.round(correct / total * 100);
+  const passed   = scorePct >= 60;
+
+  const payload = {
+    pin:          currentPin,
+    student_name: currentStudent,
+    answers,
+    score_pct:    scorePct,
+    correct,
+    total,
+    passed,
+    submission_mode: navigator.onLine ? 'online' : 'offline',
+    submitted_at:    new Date().toISOString(),
+  };
+
+  let savedOnline = false;
+
+  if (navigator.onLine) {
+    try {
+      const res  = await fetch('/api/assess/sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      savedOnline = data.saved === true;
+    } catch(e) {}
+  }
+
+  if (!savedOnline) {
+    // Queue for later sync
+    pendingQueue.push(payload);
+    saveQueue();
+    if (swReg?.sync) swReg.sync.register('sync-takmil-assess').catch(() => {});
+  }
+
+  // Show result immediately (no server roundtrip needed)
+  assessedStudents.push({
+    name: currentStudent, score: scorePct, passed, correct, total,
+    mode: navigator.onLine && savedOnline ? 'online' : 'offline',
+  });
+
+  document.getElementById('r-emoji').textContent  = scorePct>=80?'🎉':scorePct>=60?'👍':'📚';
+  document.getElementById('r-name').textContent   = currentStudent;
+  document.getElementById('r-score').textContent  = scorePct+'%';
+  document.getElementById('r-score').style.color  = scorePct>=80?'#16a34a':scorePct>=60?'#f59e0b':'#ef4444';
+  document.getElementById('r-correct').textContent = correct;
+  document.getElementById('r-wrong').textContent   = total - correct;
+
+  const statusEl = document.getElementById('r-status');
+  if (passed) {
+    statusEl.textContent = '✅ Passed! Well done!';
+    statusEl.className   = 'result-status status-pass';
+  } else {
+    statusEl.textContent = '📚 Keep studying. You can do it!';
+    statusEl.className   = 'result-status status-fail';
+  }
+
+  // Show sync notice if offline
+  const syncEl = document.getElementById('r-sync');
+  syncEl.style.display = savedOnline ? 'none' : 'block';
+
+  showScr('s-result');
+  nextBtn.disabled = false;
+  nextBtn.textContent = 'Next →';
 }
 
-function nextStudent(){
-  // Update previous students list
+function nextStudent() {
   const list = document.getElementById('prev-list');
-  list.innerHTML = assessedStudents.map(s=>
+  list.innerHTML = assessedStudents.map(s =>
     `<div class="prev-item">✅ ${s.name} — ${s.score}%</div>`
   ).join('');
-  document.getElementById('prev-students').style.display='block';
+  document.getElementById('prev-students').style.display = 'block';
   document.getElementById('name-inp').value = '';
   showScr('s-name');
   document.getElementById('name-inp').focus();
 }
 
-async function showSessionResults(){
-  // Use local assessedStudents array — no DB dependency
+function showSessionResults() {
   const students   = assessedStudents;
   const total      = students.length;
   const passed     = students.filter(s => s.passed).length;
-  const avgScore   = total ? Math.round(students.reduce((a,s) => a + s.score, 0) / total) : 0;
+  const avgScore   = total ? Math.round(students.reduce((a,s) => a+s.score, 0)/total) : 0;
   const cohortPass = avgScore >= 60;
-  const school     = sessionData?.school_identifier || sessionData?.school_name || '';
+  const school     = sessionData?.school_name || sessionData?.school_identifier || '';
   const level      = sessionData?.level || '';
+  const offlineCount = students.filter(s => s.mode==='offline').length;
 
   document.getElementById('sess-sub').textContent =
     `${school} · Level ${level} · ${total} student${total!==1?'s':''}`;
 
-  const passClass = cohortPass ? 'cc-pass' : 'cc-fail';
-
   let html = `
-    <div class="cohort-card ${passClass}">
+    <div class="cohort-card ${cohortPass?'cc-pass':'cc-fail'}">
       <div class="cc-n" style="color:${cohortPass?'#16a34a':'#ef4444'}">${avgScore}%</div>
       <div class="cc-l">Class Average · ${passed}/${total} students passed</div>
+      ${offlineCount > 0 ? `<div style="margin-top:8px;font-size:12px;font-weight:700;color:#92400e">
+        ⚡ ${offlineCount} result${offlineCount>1?'s':''} queued offline — will sync automatically</div>` : ''}
       <div style="margin-top:10px;font-size:13px;font-weight:700;color:${cohortPass?'#15803d':'#991b1b'}">
-        ${cohortPass?'✅ Cohort passed threshold — Advancement requested!':'📚 Below 80% threshold — Re-assessment needed'}
+        ${cohortPass?'✅ Cohort passed threshold!':'📚 Below threshold — re-assessment needed'}
       </div>
     </div>
     <div>${students.map(s=>`
@@ -556,22 +736,25 @@ async function showSessionResults(){
         <div class="sr-name">${s.name}</div>
         <div class="sr-score" style="color:${s.score>=80?'#16a34a':s.score>=60?'#f59e0b':'#ef4444'}">${s.score}%</div>
         <span class="sr-badge ${s.passed?'b-pass':'b-fail'}">${s.passed?'✅ Pass':'📚 Retry'}</span>
+        <span class="sr-mode ${s.mode==='offline'?'b-offline':'b-online'}">${s.mode==='offline'?'⚡ Offline':'🟢 Online'}</span>
       </div>`).join('')}
     </div>`;
 
-  if(!total){
-    html = '<div style="text-align:center;padding:40px;color:#8a90b8">No students assessed yet</div>';
-  }
-
+  if (!total) html = '<div style="text-align:center;padding:40px;color:#8a90b8">No students assessed yet</div>';
   html += `<button class="new-session-btn" onclick="location.reload()">Start New Session</button>`;
+
   document.getElementById('sess-body').innerHTML = html;
   showScr('s-session');
 }
 
 // Enter key on PIN input
-document.getElementById('pin-inp').addEventListener('keypress', e=>{
-  if(e.key==='Enter') validatePin();
+document.getElementById('pin-inp').addEventListener('keypress', e => {
+  if (e.key === 'Enter') validatePin();
 });
+
+// Init
+updateOnlineStatus();
+loadQueue();
 </script>
 </body>
 </html>

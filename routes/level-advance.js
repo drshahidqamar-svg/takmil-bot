@@ -843,4 +843,188 @@ router.get('/api/assessment-dashboard', async (req, res) => {
   }
 });
 
+// ── /api/assess/bundle/:pin — returns session + questions in one call for offline caching ──
+router.get('/api/assess/bundle/:pin', async (req, res) => {
+  try {
+    // 1. Validate session
+    const sessResult = await db.pool.query(`
+      SELECT ts.*, s.name AS school_name
+      FROM tablet_sessions ts
+      LEFT JOIN schools s ON s.identifier ILIKE ts.school_identifier
+      WHERE ts.pin_code=$1 AND ts.active=TRUE AND ts.expires_at>NOW()
+    `, [req.params.pin]);
+
+    if (!sessResult.rows.length) {
+      return res.status(404).json({ error: 'Invalid or expired PIN' });
+    }
+    const session = sessResult.rows[0];
+
+    // 2. Load questions (same logic as /api/assess/questions/:pin)
+    const subjectList = session.subject && session.subject !== 'All'
+      ? session.subject.split(',').map(x => x.trim())
+      : ['Math', 'English', 'Urdu'];
+
+    let allQuestions = [];
+    if (parseInt(session.level) === 12) {
+      const qs = await db.pool.query(`
+        SELECT question_id AS id, COALESCE(q_text_english,q_text_urdu) AS question_text,
+               q_text_urdu, q_text_english, option_a,option_b,option_c,option_d,
+               correct_option, subject, level, image_url
+        FROM questions WHERE active=1 AND level BETWEEN 1 AND 11
+        ORDER BY RANDOM() LIMIT $1
+      `, [QUESTIONS_PER_SESSION * subjectList.length]);
+      allQuestions = qs.rows;
+    } else {
+      for (const subj of subjectList) {
+        const qs = await db.pool.query(`
+          SELECT question_id AS id, COALESCE(q_text_english,q_text_urdu) AS question_text,
+                 q_text_urdu, q_text_english, option_a,option_b,option_c,option_d,
+                 correct_option, subject, level, image_url
+          FROM questions WHERE active=1 AND level=$1::integer AND subject ILIKE $2
+          ORDER BY RANDOM() LIMIT $3
+        `, [parseInt(session.level), subj, QUESTIONS_PER_SESSION]);
+
+        if (qs.rows.length === 0) {
+          const fallback = await db.pool.query(`
+            SELECT question_id AS id, COALESCE(q_text_english,q_text_urdu) AS question_text,
+                   q_text_urdu, q_text_english, option_a,option_b,option_c,option_d,
+                   correct_option, subject, level, image_url
+            FROM questions WHERE active=1 AND subject ILIKE $1
+            ORDER BY RANDOM() LIMIT $2
+          `, [subj, QUESTIONS_PER_SESSION]);
+          allQuestions = allQuestions.concat(fallback.rows);
+        } else {
+          allQuestions = allQuestions.concat(qs.rows);
+        }
+      }
+    }
+
+    if (allQuestions.length < 1) {
+      return res.status(400).json({ error: 'No questions available for this level/subject.' });
+    }
+
+    const questions = allQuestions.map(q => ({
+      id:             q.id,
+      question_text:  q.question_text,
+      q_text_urdu:    q.q_text_urdu,
+      q_text_english: q.q_text_english,
+      subject:        q.subject,
+      level:          q.level,
+      image_url:      q.image_url || null,
+      option_a:       q.option_a,
+      option_b:       q.option_b,
+      option_c:       q.option_c,
+      option_d:       q.option_d,
+      correct_option: (q.correct_option || 'A').toUpperCase(),
+    }));
+
+    // Return session + questions together — client caches this for offline use
+    res.json({ session, questions, subjects: subjectList, cachedAt: new Date().toISOString() });
+
+  } catch (err) {
+    console.error('[assess/bundle] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── /api/assess/sync — accept single or batched offline results ───────────────
+router.post('/api/assess/sync', async (req, res) => {
+  try {
+    const payload = req.body;
+    if (!payload || !payload.pin || !payload.student_name) {
+      return res.status(400).json({ saved: false, error: 'pin and student_name required' });
+    }
+
+    const { pin, student_name, answers, score_pct, correct, total, passed, submission_mode, submitted_at } = payload;
+
+    // Validate PIN exists (even expired — offline submissions may arrive late)
+    const sess = await db.pool.query(
+      `SELECT * FROM tablet_sessions WHERE pin_code=$1 LIMIT 1`, [pin]
+    );
+    if (!sess.rows.length) {
+      return res.status(404).json({ saved: false, error: 'Session PIN not found' });
+    }
+    const s = sess.rows[0];
+
+    // Recalculate score from answers if provided, otherwise use pre-calculated values
+    let finalCorrect = correct || 0;
+    let finalTotal   = total || (answers?.length || 0);
+    let finalScore   = score_pct || 0;
+    let finalPassed  = passed || false;
+
+    if (answers && answers.length > 0) {
+      finalCorrect = 0;
+      for (const a of answers) {
+        if ((a.selected_option || '').toUpperCase().trim() === (a.correct_option || '').toUpperCase().trim()) {
+          finalCorrect++;
+        }
+      }
+      finalTotal  = answers.length;
+      finalScore  = Math.round(finalCorrect / finalTotal * 100);
+      finalPassed = finalScore >= (PASS_THRESHOLD || 60);
+    }
+
+    // Save to tablet_results
+    try {
+      await db.pool.query(`
+        INSERT INTO tablet_results
+          (session_id, student_name, school_identifier, level,
+           total_questions, correct_answers, score_pct, passed,
+           submission_mode, completed_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        ON CONFLICT DO NOTHING
+      `, [
+        s.id, student_name, s.school_identifier, s.level,
+        finalTotal, finalCorrect, finalScore, finalPassed,
+        submission_mode || 'offline',
+        submitted_at ? new Date(submitted_at) : new Date(),
+      ]);
+    } catch(e) {
+      // Add submission_mode column if missing
+      try {
+        await db.pool.query(`ALTER TABLE tablet_results ADD COLUMN IF NOT EXISTS submission_mode TEXT DEFAULT 'online'`);
+        await db.pool.query(`
+          INSERT INTO tablet_results
+            (session_id, student_name, school_identifier, level,
+             total_questions, correct_answers, score_pct, passed, completed_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+          ON CONFLICT DO NOTHING
+        `, [s.id, student_name, s.school_identifier, s.level, finalTotal, finalCorrect, finalScore, finalPassed,
+            submitted_at ? new Date(submitted_at) : new Date()]);
+      } catch(e2) {
+        console.log('[assess/sync] tablet_results save note:', e2.message);
+      }
+    }
+
+    // Save individual answers to tablet_responses
+    if (answers && answers.length > 0) {
+      for (const a of answers) {
+        try {
+          const isCorrect = (a.selected_option || '').toUpperCase().trim() === (a.correct_option || '').toUpperCase().trim();
+          await db.pool.query(`
+            INSERT INTO tablet_responses
+              (session_id, student_name, school_identifier, level,
+               question_id, selected_option, correct_option, is_correct, time_taken_secs)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+          `, [s.id, student_name, s.school_identifier, s.level,
+              a.question_id, a.selected_option, a.correct_option, isCorrect, a.time_taken_secs || 0]);
+        } catch(e) { /* non-fatal */ }
+      }
+    }
+
+    res.json({
+      saved:   true,
+      score_pct: finalScore,
+      correct:   finalCorrect,
+      total:     finalTotal,
+      passed:    finalPassed,
+      submission_mode: submission_mode || 'offline',
+    });
+
+  } catch (err) {
+    console.error('[assess/sync] error:', err.message);
+    res.status(500).json({ saved: false, error: err.message });
+  }
+});
+
 module.exports = { router };
