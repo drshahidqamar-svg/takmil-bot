@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a2e7a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TAKMIL Lessons">
+<link rel="manifest" href="/manifest-lessons.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<title>TAKMIL — Video Lessons</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#1a2e7a;--navy2:#0f1d54;--navy-l:#dbeafe;
+  --green:#15803d;--green2:#166534;--green-l:#dcfce7;
+  --amber:#d97706;--amber-l:#fef3c7;
+  --red:#dc2626;--red-l:#fee2e2;
+  --gold:#c9952a;--gold-l:#fdf4e3;
+  --bg:#f0f4ff;--white:#fff;--border:#c7d2fe;
+  --text:#1e1b4b;--text2:#4338ca;--text3:#6366f1;
+  --r:14px;--r2:10px;--shadow:0 2px 16px rgba(26,46,122,.12);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);
+  font-family:'Nunito',sans-serif;font-size:15px}
+
+/* ── HEADER ── */
+.app-header{
+  background:linear-gradient(135deg,var(--navy2),var(--navy));
+  padding:0 16px;height:56px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(26,46,122,.3)
+}
+.logo{font-size:20px;font-weight:900;color:#fff;letter-spacing:1px}
+.logo span{color:#fcd34d}
+.user-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);
+  border-radius:20px;padding:5px 12px;color:#fff;font-size:12px;font-weight:700;
+  cursor:pointer}
+
+/* ── OFFLINE BANNER ── */
+#offline-banner{display:none;background:var(--amber);color:#fff;
+  padding:7px 16px;font-size:13px;font-weight:700;text-align:center;
+  position:sticky;top:56px;z-index:99}
+#offline-banner.show{display:block}
+
+/* ── SCREENS ── */
+.scr{display:none;min-height:calc(100vh - 56px)}
+.scr.on{display:flex;flex-direction:column}
+
+/* ══ LOGIN ══ */
+#s-login{align-items:center;justify-content:center;padding:32px 20px}
+.login-card{background:var(--white);border-radius:20px;padding:32px 24px;
+  width:100%;max-width:400px;box-shadow:var(--shadow)}
+.login-icon{font-size:48px;text-align:center;margin-bottom:16px}
+.login-card h2{font-size:22px;font-weight:900;color:var(--navy);
+  text-align:center;margin-bottom:6px}
+.login-card p{font-size:13px;color:#6b7280;text-align:center;
+  margin-bottom:24px;line-height:1.5}
+.phone-row{display:flex;border:2px solid var(--border);border-radius:var(--r2);
+  overflow:hidden;margin-bottom:12px;transition:border-color .2s}
+.phone-row:focus-within{border-color:var(--navy)}
+.phone-prefix{background:var(--navy-l);padding:0 14px;font-size:13px;
+  font-weight:800;color:var(--navy);display:flex;align-items:center;
+  border-right:2px solid var(--border);font-family:'IBM Plex Mono',monospace}
+.phone-row input{flex:1;border:none;outline:none;padding:13px 14px;
+  font-size:15px;font-family:'IBM Plex Mono',monospace;font-weight:600;
+  color:var(--text);background:transparent}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin:10px 0 6px}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);
+  background:var(--white);transition:all .15s}
+.pin-dot.filled{background:var(--navy);border-color:var(--navy)}
+.pin-dot.err{background:var(--red);border-color:var(--red)}
+#pin-section{display:none}
+.pin-school{font-size:14px;font-weight:800;color:var(--navy);
+  text-align:center;margin-bottom:4px}
+.pin-hint{font-size:12px;color:#6b7280;text-align:center;margin-bottom:10px}
+.pkgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--border);border:1.5px solid var(--border);
+  border-radius:var(--r2);overflow:hidden;margin-bottom:6px}
+.pk{background:var(--white);border:none;padding:14px 0;font-size:22px;
+  font-weight:700;font-family:'Nunito',sans-serif;color:var(--text);
+  cursor:pointer;transition:background .1s}
+.pk:active{background:var(--navy-l)}
+.pk.pk-done{background:var(--navy);color:#fff;font-size:16px;grid-column:span 3}
+.pk.pk-back{font-size:18px;color:#9ca3af}
+.pk.pk-clr{font-size:12px;font-weight:900;color:var(--red)}
+.pin-err{color:var(--red);font-size:12px;text-align:center;
+  font-weight:700;min-height:18px;margin-top:4px}
+.btn-verify{width:100%;background:linear-gradient(135deg,var(--navy),var(--navy2));
+  color:#fff;border:none;border-radius:var(--r2);padding:14px;font-size:15px;
+  font-weight:900;font-family:'Nunito',sans-serif;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-verify:disabled{opacity:.6;cursor:not-allowed}
+.login-err{color:var(--red);font-size:13px;font-weight:700;
+  text-align:center;display:none;margin-top:8px}
+.login-err.show{display:block}
+.offline-hint{background:var(--amber-l);border:1.5px solid #fcd34d;
+  border-radius:var(--r2);padding:10px;font-size:12px;font-weight:700;
+  color:#92400e;text-align:center;margin-top:10px;display:none}
+.offline-hint.show{display:block}
+.back-link{display:block;text-align:center;color:#9ca3af;font-size:12px;
+  font-weight:700;cursor:pointer;margin-top:10px;text-decoration:underline}
+
+/* ══ PICKER ══ */
+#s-picker{background:var(--bg)}
+.picker-top{background:var(--white);padding:12px 16px;
+  border-bottom:2px solid var(--border);display:flex;
+  align-items:center;gap:10px;flex-wrap:wrap}
+.picker-school{font-size:14px;font-weight:900;color:var(--navy)}
+.picker-sub{font-size:12px;color:#6b7280;margin-left:4px}
+.sel-row{display:flex;gap:8px;width:100%;flex-wrap:wrap}
+.sel-item{flex:1;min-width:120px}
+.sel-item label{display:block;font-size:10px;font-weight:800;color:#6b7280;
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.sel-item select{width:100%;padding:8px 10px;border:1.5px solid var(--border);
+  border-radius:var(--r2);font-size:13px;font-family:'Nunito',sans-serif;
+  color:var(--text);outline:none;background:var(--white);
+  transition:border-color .2s}
+.sel-item select:focus{border-color:var(--navy)}
+
+/* Video list */
+.video-list{padding:12px 16px;flex:1;overflow-y:auto}
+.vid-card{background:var(--white);border:2px solid var(--border);
+  border-radius:var(--r);margin-bottom:10px;overflow:hidden;
+  display:flex;align-items:center;gap:0;cursor:pointer;
+  transition:all .15s;box-shadow:0 1px 4px rgba(26,46,122,.06)}
+.vid-card:hover{border-color:var(--navy);box-shadow:var(--shadow)}
+.vid-card.completed{border-color:var(--green);background:var(--green-l)}
+.vid-thumb{width:80px;height:60px;background:linear-gradient(135deg,var(--navy2),var(--navy));
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:28px}
+.vid-card.completed .vid-thumb{background:linear-gradient(135deg,var(--green2),var(--green))}
+.vid-info{flex:1;padding:10px 14px}
+.vid-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px}
+.vid-meta{font-size:11px;color:#6b7280;display:flex;gap:8px;flex-wrap:wrap}
+.vid-dur{font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;
+  color:#6b7280}
+.vid-status{flex-shrink:0;padding:10px 14px;text-align:center}
+.vstatus-done{font-size:20px}
+.vstatus-pct{font-size:12px;font-weight:800;color:var(--navy)}
+.no-videos{text-align:center;padding:60px 20px;color:#9ca3af}
+
+/* File upload zone */
+.upload-zone{background:var(--navy-l);border:2px dashed var(--border);
+  border-radius:var(--r);padding:24px;margin:12px 16px;
+  text-align:center;cursor:pointer;transition:all .2s}
+.upload-zone:hover{border-color:var(--navy);background:var(--navy-l)}
+.upload-zone input{display:none}
+.uz-icon{font-size:36px;margin-bottom:8px}
+.uz-text{font-size:14px;font-weight:700;color:var(--navy)}
+.uz-hint{font-size:12px;color:#6b7280;margin-top:4px}
+
+/* ══ PLAYER ══ */
+#s-player{background:#000;position:relative}
+.player-top{background:rgba(0,0,0,.8);padding:10px 16px;
+  display:flex;align-items:center;gap:10px;position:absolute;
+  top:0;left:0;right:0;z-index:10}
+.player-title{font-size:13px;font-weight:800;color:#fff;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-back-player{background:rgba(255,255,255,.15);border:none;color:#fff;
+  border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:'Nunito',sans-serif;flex-shrink:0}
+.video-container{width:100%;height:calc(100vw * 9/16);max-height:70vh;
+  background:#000;display:flex;align-items:center;justify-content:center;
+  margin-top:44px;position:relative}
+video{width:100%;height:100%;object-fit:contain;background:#000}
+/* Block right-click and drag on video */
+video{pointer-events:none}
+.video-overlay{position:absolute;inset:0;z-index:5;cursor:default}
+
+/* Controls bar */
+.ctrl-bar{background:#111;padding:12px 16px}
+.progress-track{height:6px;background:#333;border-radius:3px;margin-bottom:12px;
+  cursor:default;overflow:hidden}
+.progress-watched{height:100%;background:var(--gold);border-radius:3px;
+  transition:width .5s linear;pointer-events:none}
+.ctrl-row{display:flex;align-items:center;gap:12px}
+.btn-play{width:44px;height:44px;border-radius:50%;background:var(--navy);
+  border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.btn-play:hover{background:var(--text3)}
+.time-display{font-size:13px;font-weight:700;color:#fff;
+  font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.vol-btn{background:rgba(255,255,255,.1);border:none;color:#fff;
+  border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-weight:700;flex-shrink:0}
+.fullscreen-btn{background:rgba(255,255,255,.1);border:none;color:#fff;
+  border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;
+  flex-shrink:0}
+.lock-badge{background:rgba(220,38,38,.8);color:#fff;font-size:11px;
+  font-weight:800;padding:3px 10px;border-radius:20px;margin-left:auto;
+  display:flex;align-items:center;gap:4px}
+
+/* Completion overlay */
+.completion-overlay{position:absolute;inset:0;background:rgba(0,0,0,.85);
+  display:none;align-items:center;justify-content:center;z-index:20;
+  flex-direction:column;gap:16px;text-align:center;padding:24px}
+.completion-overlay.show{display:flex}
+.co-icon{font-size:72px;animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.co-title{font-size:24px;font-weight:900;color:#fff}
+.co-sub{font-size:14px;color:#ccc;line-height:1.5;max-width:280px}
+.co-btn{background:var(--green);color:#fff;border:none;border-radius:var(--r2);
+  padding:14px 28px;font-size:15px;font-weight:800;font-family:'Nunito',sans-serif;
+  cursor:pointer;margin-top:8px}
+.co-btn-outline{background:transparent;border:2px solid rgba(255,255,255,.4);
+  color:#fff;border-radius:var(--r2);padding:12px 24px;font-size:13px;
+  font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer}
+
+/* Sync blocked overlay */
+.blocked-overlay{position:absolute;inset:0;background:rgba(0,0,0,.92);
+  display:none;align-items:center;justify-content:center;z-index:25;
+  flex-direction:column;gap:12px;text-align:center;padding:24px}
+.blocked-overlay.show{display:flex}
+
+/* Progress info below player */
+.progress-info{background:var(--white);padding:14px 16px;
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.pi-item{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#374151}
+.pi-dot{width:10px;height:10px;border-radius:50%}
+
+/* ══ SESSION LOG ══ */
+#s-log{background:var(--bg)}
+.log-header{background:var(--white);padding:14px 16px;
+  border-bottom:2px solid var(--border)}
+.log-title{font-size:16px;font-weight:900;color:var(--navy)}
+.log-body{padding:16px;flex:1;overflow-y:auto}
+.log-card{background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:14px 16px;margin-bottom:10px}
+.lc-title{font-size:14px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.lc-meta{font-size:12px;color:#6b7280;display:flex;flex-wrap:wrap;gap:8px}
+.lc-status{font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px}
+.ls-done{background:var(--green-l);color:var(--green2)}
+.ls-partial{background:var(--amber-l);color:var(--amber)}
+.ls-sync{background:var(--navy-l);color:var(--navy)}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--navy);color:#fff;padding:10px 20px;
+  border-radius:20px;font-size:13px;font-weight:700;
+  opacity:0;transition:all .3s;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Spinner */
+.spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
+  display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="offline-banner">⚡ Offline — video logs will sync when connected</div>
+
+<header class="app-header">
+  <div class="logo">TAK<span>MIL</span> <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,.6)">Lessons</span></div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div id="user-chip" class="user-chip" onclick="doLogout()" style="display:none">
+      👤 <span id="user-label">—</span>
+    </div>
+    <button onclick="showScr('s-log')" id="log-btn"
+      style="display:none;background:rgba(255,255,255,.15);border:none;color:#fff;
+      border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">
+      📋 Log
+    </button>
+  </div>
+</header>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div class="scr on" id="s-login">
+  <div class="login-card">
+    <div class="login-icon">🎬</div>
+    <h2>TAKMIL Lessons</h2>
+    <p>Log in to access video lessons for your class</p>
+
+    <div class="phone-row" id="phone-row">
+      <div class="phone-prefix">+</div>
+      <input type="tel" id="phone-inp" inputmode="numeric" placeholder="923001234567"
+        maxlength="15" oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+        onkeydown="if(event.key==='Enter') doVerifyPhone()">
+    </div>
+    <button class="btn-verify" id="verify-btn" onclick="doVerifyPhone()">
+      Verify & Continue →
+    </button>
+
+    <div id="pin-section">
+      <div class="pin-school" id="pin-school-lbl"></div>
+      <div class="pin-hint" id="pin-hint-lbl">Enter your 4-digit PIN</div>
+      <div class="pin-dots">
+        <div class="pin-dot" id="pd0"></div>
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+      </div>
+      <div class="pkgrid">
+        <button class="pk" onclick="pinTap('1')">1</button>
+        <button class="pk" onclick="pinTap('2')">2</button>
+        <button class="pk" onclick="pinTap('3')">3</button>
+        <button class="pk" onclick="pinTap('4')">4</button>
+        <button class="pk" onclick="pinTap('5')">5</button>
+        <button class="pk" onclick="pinTap('6')">6</button>
+        <button class="pk" onclick="pinTap('7')">7</button>
+        <button class="pk" onclick="pinTap('8')">8</button>
+        <button class="pk" onclick="pinTap('9')">9</button>
+        <button class="pk pk-clr" onclick="pinClear()">CLR</button>
+        <button class="pk" onclick="pinTap('0')">0</button>
+        <button class="pk pk-back" onclick="pinBack()">⌫</button>
+      </div>
+      <div class="pin-err" id="pin-err"></div>
+      <span class="back-link" onclick="resetToPhone()">← Different number</span>
+    </div>
+
+    <div class="login-err" id="login-err"></div>
+    <div class="offline-hint" id="offline-hint">📵 Offline — loaded from cache</div>
+  </div>
+</div>
+
+<!-- ══════════ VIDEO PICKER ══════════ -->
+<div class="scr" id="s-picker">
+  <div class="picker-top">
+    <div>
+      <div class="picker-school" id="picker-school">School</div>
+      <div class="picker-sub" id="picker-date"></div>
+    </div>
+    <div class="sel-row">
+      <div class="sel-item">
+        <label>Subject</label>
+        <select id="sel-subject" onchange="onFilterChange()">
+          <option value="">All Subjects</option>
+          <option>English</option>
+          <option>Math</option>
+          <option>Urdu</option>
+          <option>Science</option>
+          <option>Social Studies</option>
+          <option>Islamiat</option>
+        </select>
+      </div>
+      <div class="sel-item">
+        <label>Level</label>
+        <select id="sel-level" onchange="onFilterChange()">
+          <option value="">All Levels</option>
+          <option>1</option><option>2</option><option>3</option>
+          <option>4</option><option>5</option><option>6</option>
+          <option>7</option><option>8</option><option>9</option>
+          <option>10</option><option>11</option><option>12</option>
+        </select>
+      </div>
+      <div class="sel-item">
+        <label>Unit</label>
+        <select id="sel-unit" onchange="onFilterChange()">
+          <option value="">All Units</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- USB/local file loader -->
+  <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-inp').click()">
+    <input type="file" id="file-inp" accept="video/*" multiple onchange="handleFiles(event)">
+    <div class="uz-icon">📁</div>
+    <div class="uz-text">Tap to load videos from USB / Laptop</div>
+    <div class="uz-hint">MP4, WebM, MOV — select one or multiple files</div>
+  </div>
+
+  <div class="video-list" id="video-list">
+    <div class="no-videos">
+      Load videos from USB or laptop, then select a video to begin.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PLAYER ══════════ -->
+<div class="scr" id="s-player">
+  <div class="player-top">
+    <button class="btn-back-player" onclick="confirmBack()">← Back</button>
+    <div class="player-title" id="player-title">Video Title</div>
+    <div class="lock-badge">🔒 Locked</div>
+  </div>
+
+  <div class="video-container" id="video-container">
+    <video id="video-el" playsinline preload="auto"
+      oncontextmenu="return false"
+      ondragstart="return false">
+    </video>
+    <!-- Transparent overlay blocks right-click / direct seek -->
+    <div class="video-overlay" id="video-overlay" ondblclick="togglePlayPause()"></div>
+
+    <div class="completion-overlay" id="completion-overlay">
+      <div class="co-icon">✅</div>
+      <div class="co-title">Lesson Complete!</div>
+      <div class="co-sub" id="co-sub">100% of the video was watched. This session has been logged.</div>
+      <button class="co-btn" onclick="afterCompletion()">✓ Done — Back to Lessons</button>
+      <button class="co-btn-outline" onclick="replayVideo()">↺ Watch Again</button>
+    </div>
+
+    <div class="blocked-overlay" id="blocked-overlay">
+      <div style="font-size:48px">⏩🚫</div>
+      <div style="font-size:18px;font-weight:900;color:#fff">Fast-forward Not Allowed</div>
+      <div style="font-size:13px;color:#ccc;max-width:260px;line-height:1.5">
+        The video must be watched in full. Please watch from the current position.
+      </div>
+      <button onclick="document.getElementById('blocked-overlay').classList.remove('show');resumeVideo()"
+        style="margin-top:12px;background:var(--navy);color:#fff;border:none;
+        border-radius:10px;padding:12px 24px;font-size:14px;font-weight:800;cursor:pointer">
+        OK, Continue Watching
+      </button>
+    </div>
+  </div>
+
+  <div class="ctrl-bar">
+    <div class="progress-track" id="progress-track">
+      <div class="progress-watched" id="progress-watched" style="width:0%"></div>
+    </div>
+    <div class="ctrl-row">
+      <button class="btn-play" id="btn-play" onclick="togglePlayPause()">▶</button>
+      <span class="time-display" id="time-display">0:00 / 0:00</span>
+      <span class="lock-badge" style="margin-left:0">🔒 No Skip</span>
+      <button class="vol-btn" onclick="toggleMute()">🔊</button>
+      <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶</button>
+    </div>
+  </div>
+
+  <div class="progress-info" id="progress-info">
+    <div class="pi-item">
+      <div class="pi-dot" style="background:var(--gold)"></div>
+      <span id="pi-watched">Watched: 0%</span>
+    </div>
+    <div class="pi-item">
+      <div class="pi-dot" style="background:var(--green)"></div>
+      <span id="pi-status">Not started</span>
+    </div>
+    <div class="pi-item" id="pi-gps-wrap" style="display:none">
+      <div class="pi-dot" style="background:var(--navy)"></div>
+      <span id="pi-gps">📍 Getting location...</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SESSION LOG ══════════ -->
+<div class="scr" id="s-log">
+  <div class="log-header">
+    <div class="log-title">📋 Today's Video Log</div>
+    <div style="font-size:12px;color:#6b7280;margin-top:2px" id="log-sub"></div>
+  </div>
+  <div class="log-body" id="log-body"></div>
+  <div style="padding:16px">
+    <button onclick="showScr('s-picker')" style="width:100%;background:var(--navy);
+      color:#fff;border:none;border-radius:var(--r2);padding:13px;font-size:15px;
+      font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer">
+      ← Back to Lessons
+    </button>
+    <button onclick="syncLogs()" style="margin-top:8px;width:100%;
+      background:var(--green-l);color:var(--green2);border:1.5px solid var(--green);
+      border-radius:var(--r2);padding:12px;font-size:13px;
+      font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer">
+      🔄 Sync Pending Logs
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════
+const API         = '';
+let currentPhone  = null;
+let currentSchool = null;
+let pendingPhone  = null;
+let pinBuffer     = '';
+let swReg         = null;
+
+// Video state
+let allVideos     = [];      // all loaded video files
+let filteredVideos= [];
+let currentVideo  = null;    // { file, title, subject, level, unit, objectUrl }
+let videoLog      = [];      // today's session log (persisted in localStorage)
+let maxWatched    = 0;       // furthest second reached (0..duration)
+let watchStart    = null;    // Date when play started
+let gpsCoords     = null;
+let logSyncQueue  = [];
+
+// ══════════════════════════════════════════════════════════
+//  SERVICE WORKER
+// ══════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/lessons-sw.js', { scope: '/teacher-lessons' })
+    .then(r => { swReg = r; })
+    .catch(() => {});
+}
+
+// ══════════════════════════════════════════════════════════
+//  ONLINE / OFFLINE
+// ══════════════════════════════════════════════════════════
+function updateOnlineStatus() {
+  document.getElementById('offline-banner').classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online',  () => { updateOnlineStatus(); syncLogs(); showToast('🟢 Online — syncing logs...'); });
+window.addEventListener('offline', () => { updateOnlineStatus(); });
+updateOnlineStatus();
+
+// ══════════════════════════════════════════════════════════
+//  SCREEN MANAGEMENT
+// ══════════════════════════════════════════════════════════
+function showScr(id) {
+  document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  window.scrollTo(0, 0);
+  if (id === 's-log') renderLog();
+}
+
+// ══════════════════════════════════════════════════════════
+//  LOGIN — phone + PIN (reuses same /api/verify-phone and /api/verify-pin)
+// ══════════════════════════════════════════════════════════
+async function doVerifyPhone() {
+  const raw = document.getElementById('phone-inp').value.trim().replace(/[^0-9]/g,'');
+  if (raw.length < 7) { showLoginErr('Enter phone with country code'); return; }
+  const phone = '+' + raw;
+  const btn = document.getElementById('verify-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Verifying...';
+  hideLoginErr();
+
+  if (!navigator.onLine) {
+    const cached = localStorage.getItem('lessons_known_' + phone);
+    if (cached) {
+      pendingPhone = phone;
+      const c = JSON.parse(cached);
+      showPinStep(c.school, !c.pin);
+    } else {
+      showLoginErr('Offline — first login must be online.');
+    }
+    btn.disabled = false; btn.innerHTML = 'Verify & Continue →';
+    return;
+  }
+
+  try {
+    const res  = await fetch(`${API}/api/verify-phone`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone })
+    });
+    const data = await res.json();
+    if (data.success) {
+      pendingPhone = phone;
+      localStorage.setItem('lessons_known_' + phone, JSON.stringify({
+        school: data.school, identifier: data.identifier, pin: !data.noPinSet
+      }));
+      showPinStep(data.school, data.noPinSet);
+    } else {
+      showLoginErr(data.message || 'Phone not registered.');
+    }
+  } catch(e) {
+    const cached = localStorage.getItem('lessons_known_' + phone);
+    if (cached) {
+      pendingPhone = phone;
+      const c = JSON.parse(cached);
+      showPinStep(c.school, !c.pin);
+      document.getElementById('offline-hint').classList.add('show');
+    } else {
+      showLoginErr('Could not connect. Try again.');
+    }
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'Verify & Continue →';
+  }
+}
+
+function showPinStep(schoolName, isFirstTime) {
+  document.getElementById('phone-row').style.display   = 'none';
+  document.getElementById('verify-btn').style.display  = 'none';
+  document.getElementById('pin-section').style.display = 'block';
+  document.getElementById('pin-school-lbl').textContent = '🏫 ' + schoolName;
+  document.getElementById('pin-hint-lbl').textContent   = isFirstTime
+    ? '🔐 First time? Create your 4-digit PIN' : 'Enter your 4-digit PIN';
+  document.getElementById('pin-hint-lbl').style.color   = isFirstTime ? 'var(--amber)' : '';
+  pinBuffer = '';
+  updatePinDots();
+}
+
+function resetToPhone() {
+  document.getElementById('phone-row').style.display   = 'flex';
+  document.getElementById('verify-btn').style.display  = 'flex';
+  document.getElementById('pin-section').style.display = 'none';
+  pendingPhone = null; pinBuffer = '';
+}
+
+function updatePinDots() {
+  for (let i=0;i<4;i++) {
+    const d = document.getElementById('pd'+i);
+    d.classList.toggle('filled', i < pinBuffer.length);
+    d.classList.remove('err');
+  }
+  document.getElementById('pin-err').textContent = '';
+}
+function pinTap(d) {
+  if (pinBuffer.length>=4) return;
+  pinBuffer += d; updatePinDots();
+  if (pinBuffer.length===4) setTimeout(doVerifyPin, 80);
+}
+function pinBack()  { pinBuffer = pinBuffer.slice(0,-1); updatePinDots(); }
+function pinClear() { pinBuffer = ''; updatePinDots(); }
+
+async function doVerifyPin() {
+  if (!pendingPhone || pinBuffer.length!==4) return;
+  try {
+    let ok=false, school='', identifier='';
+    if (navigator.onLine) {
+      const res  = await fetch(`${API}/api/verify-pin`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ phone: pendingPhone, pin: pinBuffer })
+      });
+      const data = await res.json();
+      if (data.success) {
+        ok = true; school = data.school;
+        const c = JSON.parse(localStorage.getItem('lessons_known_' + pendingPhone) || '{}');
+        c.pin = true; localStorage.setItem('lessons_known_' + pendingPhone, JSON.stringify(c));
+        localStorage.setItem('lessons_pin_' + pendingPhone, pinBuffer);
+        identifier = c.identifier || '';
+      } else {
+        pinFail(data.message || 'Incorrect PIN'); return;
+      }
+    } else {
+      const cachedPin = localStorage.getItem('lessons_pin_' + pendingPhone);
+      if (cachedPin === pinBuffer) {
+        ok = true;
+        const c = JSON.parse(localStorage.getItem('lessons_known_' + pendingPhone) || '{}');
+        school = c.school || ''; identifier = c.identifier || '';
+      } else {
+        pinFail('Incorrect PIN'); return;
+      }
+    }
+    if (ok) {
+      currentPhone  = pendingPhone;
+      currentSchool = { name: school, identifier };
+      localStorage.setItem('lessons_session', JSON.stringify({ phone: currentPhone, school: currentSchool }));
+      activateApp();
+    }
+  } catch(e) { pinFail('Error. Try again.'); }
+}
+
+function pinFail(msg) {
+  for (let i=0;i<4;i++) document.getElementById('pd'+i).classList.add('err');
+  document.getElementById('pin-err').textContent = msg;
+  setTimeout(() => { pinBuffer=''; updatePinDots(); }, 1200);
+}
+function showLoginErr(msg) {
+  const el = document.getElementById('login-err');
+  el.textContent = msg; el.classList.add('show');
+}
+function hideLoginErr() {
+  document.getElementById('login-err').classList.remove('show');
+}
+
+function activateApp() {
+  document.getElementById('user-chip').style.display = 'flex';
+  document.getElementById('user-label').textContent  = currentSchool.name.substring(0,14);
+  document.getElementById('log-btn').style.display   = 'block';
+  document.getElementById('picker-school').textContent = currentSchool.name.replace(/_/g,' ');
+  document.getElementById('picker-date').textContent   = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+  loadVideoLog();
+  getGPS();
+  showScr('s-picker');
+}
+
+function doLogout() {
+  if (!confirm('Log out?')) return;
+  currentPhone = null; currentSchool = null;
+  localStorage.removeItem('lessons_session');
+  document.getElementById('user-chip').style.display = 'none';
+  document.getElementById('log-btn').style.display   = 'none';
+  document.getElementById('phone-row').style.display = 'flex';
+  document.getElementById('verify-btn').style.display= 'flex';
+  document.getElementById('pin-section').style.display = 'none';
+  document.getElementById('phone-inp').value = '';
+  pinBuffer = ''; pendingPhone = null;
+  showScr('s-login');
+}
+
+// ══════════════════════════════════════════════════════════
+//  GPS
+// ══════════════════════════════════════════════════════════
+function getGPS() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    gpsCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+    document.getElementById('pi-gps-wrap').style.display = 'flex';
+    document.getElementById('pi-gps').textContent = `📍 ${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lng.toFixed(4)}`;
+  }, () => {}, { enableHighAccuracy: true, timeout: 8000 });
+}
+
+// ══════════════════════════════════════════════════════════
+//  VIDEO FILE HANDLING
+// ══════════════════════════════════════════════════════════
+function handleFiles(event) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+
+  files.forEach(file => {
+    // Parse title from filename: "English_L3_U2_The_Water_Cycle.mp4" → subject/level/unit/title
+    const parsed = parseFilename(file.name);
+    const existing = allVideos.findIndex(v => v.name === file.name);
+    const entry = {
+      name:      file.name,
+      title:     parsed.title || file.name.replace(/\.[^.]+$/, '').replace(/[_-]/g,' '),
+      subject:   parsed.subject || 'General',
+      level:     parsed.level  || '',
+      unit:      parsed.unit   || '',
+      file,
+      objectUrl: URL.createObjectURL(file),
+      size:      file.size,
+    };
+    if (existing >= 0) allVideos[existing] = entry;
+    else allVideos.push(entry);
+  });
+
+  populateUnitFilter();
+  applyFilter();
+  document.getElementById('upload-zone').style.display = 'none';
+  showToast(`✅ ${files.length} video${files.length>1?'s':''} loaded`);
+  event.target.value = '';
+}
+
+function parseFilename(name) {
+  // Patterns: "English_L3_U2_Title.mp4" or "Math-Level5-Unit1-Lesson.mp4"
+  const base = name.replace(/\.[^.]+$/, '').replace(/[-_]/g,' ');
+  const subjects = ['English','Math','Urdu','Science','Social Studies','Islamiat','STEAM','Art','PE'];
+  const subject  = subjects.find(s => base.toLowerCase().includes(s.toLowerCase())) || '';
+  const levelMatch = base.match(/\b[Ll](?:evel\s*)?(\d+)\b/) || base.match(/\bL(\d+)\b/);
+  const unitMatch  = base.match(/\b[Uu](?:nit\s*)?(\d+)\b/)  || base.match(/\bU(\d+)\b/);
+  const level = levelMatch ? levelMatch[1] : '';
+  const unit  = unitMatch  ? unitMatch[1]  : '';
+  let title = base;
+  if (subject) title = title.replace(new RegExp(subject,'i'),'').trim();
+  if (levelMatch) title = title.replace(levelMatch[0],'').trim();
+  if (unitMatch)  title = title.replace(unitMatch[0],'').trim();
+  title = title.replace(/\s+/g,' ').trim() || name.replace(/\.[^.]+$/,'');
+  return { subject, level, unit, title };
+}
+
+function populateUnitFilter() {
+  const units = [...new Set(allVideos.map(v => v.unit).filter(Boolean))].sort((a,b)=>parseInt(a)-parseInt(b));
+  const sel = document.getElementById('sel-unit');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All Units</option>';
+  units.forEach(u => { const o=document.createElement('option'); o.value=u; o.textContent='Unit '+u; sel.appendChild(o); });
+  if (cur) sel.value = cur;
+}
+
+function onFilterChange() { applyFilter(); }
+
+function applyFilter() {
+  const subj = document.getElementById('sel-subject').value;
+  const lvl  = document.getElementById('sel-level').value;
+  const unit = document.getElementById('sel-unit').value;
+  filteredVideos = allVideos.filter(v =>
+    (!subj || v.subject === subj) &&
+    (!lvl  || v.level === lvl)    &&
+    (!unit || v.unit  === unit)
+  );
+  renderVideoList();
+}
+
+function renderVideoList() {
+  const el = document.getElementById('video-list');
+  if (!filteredVideos.length) {
+    el.innerHTML = allVideos.length
+      ? '<div class="no-videos">No videos match the filter.</div>'
+      : '<div class="no-videos">No videos loaded yet.<br><span style="font-size:12px">Tap the folder above to load from USB or laptop.</span></div>';
+    return;
+  }
+
+  el.innerHTML = filteredVideos.map((v, i) => {
+    const logEntry = getTodayLog(v.name);
+    const pct      = logEntry ? Math.round(logEntry.max_pct) : 0;
+    const done     = pct >= 99;
+    return `
+    <div class="vid-card ${done?'completed':''}" onclick="openVideo(${i})">
+      <div class="vid-thumb">${done ? '✅' : '🎬'}</div>
+      <div class="vid-info">
+        <div class="vid-title">${v.title}</div>
+        <div class="vid-meta">
+          ${v.subject ? `<span>📚 ${v.subject}</span>` : ''}
+          ${v.level   ? `<span>Level ${v.level}</span>` : ''}
+          ${v.unit    ? `<span>Unit ${v.unit}</span>`   : ''}
+        </div>
+      </div>
+      <div class="vid-status">
+        ${done
+          ? '<div class="vstatus-done">✅</div>'
+          : pct > 0
+            ? `<div class="vstatus-pct">${pct}%</div>`
+            : '<div style="font-size:18px">▶</div>'
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  VIDEO PLAYER — locked (no seek/fast-forward)
+// ══════════════════════════════════════════════════════════
+function openVideo(index) {
+  const v = filteredVideos[index];
+  currentVideo = v;
+  maxWatched   = 0;
+
+  const videoEl = document.getElementById('video-el');
+  videoEl.src = v.objectUrl;
+  videoEl.load();
+
+  // Restore progress if previously watched
+  const log = getTodayLog(v.name);
+  if (log) maxWatched = (log.max_pct / 100) * (videoEl.duration || 0);
+
+  document.getElementById('player-title').textContent = v.title;
+  document.getElementById('completion-overlay').classList.remove('show');
+  document.getElementById('blocked-overlay').classList.remove('show');
+  document.getElementById('pi-watched').textContent = 'Watched: 0%';
+  document.getElementById('pi-status').textContent  = 'Ready';
+  document.getElementById('pi-gps-wrap').style.display = gpsCoords ? 'flex' : 'none';
+
+  setupVideoEvents(videoEl);
+  showScr('s-player');
+
+  // Log the start event
+  logVideoEvent('start', 0);
+}
+
+function setupVideoEvents(videoEl) {
+  videoEl.onloadedmetadata = () => {
+    // Restore to safe position if partially watched before
+    const log = getTodayLog(currentVideo.name);
+    if (log && log.max_pct > 0 && log.max_pct < 99) {
+      const resumeAt = (log.max_pct / 100) * videoEl.duration;
+      videoEl.currentTime = resumeAt;
+      maxWatched = resumeAt;
+    }
+    updateTimeDisplay();
+    document.getElementById('progress-watched').style.width = '0%';
+  };
+
+  videoEl.ontimeupdate = () => {
+    const cur = videoEl.currentTime;
+    const dur = videoEl.duration || 1;
+
+    // ANTI-SKIP: if teacher tries to seek ahead, snap back
+    if (cur > maxWatched + 2.5) {
+      videoEl.currentTime = maxWatched;
+      document.getElementById('blocked-overlay').classList.add('show');
+      videoEl.pause();
+      document.getElementById('btn-play').textContent = '▶';
+      return;
+    }
+
+    // Update max watched position
+    if (cur > maxWatched) maxWatched = cur;
+
+    const pct = Math.min(100, (maxWatched / dur) * 100);
+    document.getElementById('progress-watched').style.width = pct + '%';
+    document.getElementById('pi-watched').textContent = 'Watched: ' + Math.round(pct) + '%';
+    document.getElementById('pi-status').textContent  = videoEl.paused ? 'Paused' : 'Playing ▶';
+    updateTimeDisplay();
+
+    // Auto-save progress every 10 seconds
+    if (Math.round(cur) % 10 === 0) saveVideoProgress(pct);
+  };
+
+  videoEl.onended = () => {
+    maxWatched = videoEl.duration;
+    document.getElementById('progress-watched').style.width = '100%';
+    document.getElementById('pi-watched').textContent = 'Watched: 100%';
+    document.getElementById('btn-play').textContent = '▶';
+    saveVideoProgress(100);
+    logVideoEvent('complete', 100);
+    document.getElementById('completion-overlay').classList.add('show');
+  };
+
+  videoEl.onplay  = () => { document.getElementById('btn-play').textContent = '⏸'; if (!watchStart) watchStart = new Date(); };
+  videoEl.onpause = () => { document.getElementById('btn-play').textContent = '▶'; };
+}
+
+function updateTimeDisplay() {
+  const v = document.getElementById('video-el');
+  const fmt = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+  document.getElementById('time-display').textContent =
+    `${fmt(v.currentTime)} / ${fmt(v.duration||0)}`;
+}
+
+function togglePlayPause() {
+  const v = document.getElementById('video-el');
+  if (v.paused) v.play().catch(() => {});
+  else v.pause();
+}
+
+function resumeVideo() {
+  document.getElementById('video-el').play().catch(() => {});
+}
+
+function replayVideo() {
+  const v = document.getElementById('video-el');
+  maxWatched = 0;
+  v.currentTime = 0;
+  document.getElementById('completion-overlay').classList.remove('show');
+  v.play().catch(() => {});
+}
+
+function toggleMute() {
+  const v = document.getElementById('video-el');
+  v.muted = !v.muted;
+  document.querySelector('.vol-btn').textContent = v.muted ? '🔇' : '🔊';
+}
+
+function toggleFullscreen() {
+  const container = document.getElementById('video-container');
+  if (!document.fullscreenElement) {
+    container.requestFullscreen?.() || container.webkitRequestFullscreen?.();
+  } else {
+    document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+  }
+}
+
+function confirmBack() {
+  if (maxWatched > 0 && !document.getElementById('completion-overlay').classList.contains('show')) {
+    const dur = document.getElementById('video-el').duration || 1;
+    const pct = Math.round((maxWatched / dur) * 100);
+    if (!confirm(`Leave video? You have watched ${pct}%. Progress is saved.`)) return;
+    saveVideoProgress(pct);
+  }
+  document.getElementById('video-el').pause();
+  document.getElementById('video-el').src = '';
+  showScr('s-picker');
+  renderVideoList();
+}
+
+function afterCompletion() {
+  document.getElementById('video-el').pause();
+  document.getElementById('video-el').src = '';
+  showScr('s-picker');
+  renderVideoList();
+}
+
+// ══════════════════════════════════════════════════════════
+//  VIDEO LOG — save progress + GPS + time per video
+// ══════════════════════════════════════════════════════════
+const TODAY = new Date().toISOString().split('T')[0];
+
+function getLogKey() {
+  return `vlog_${currentSchool?.identifier}_${TODAY}`;
+}
+
+function loadVideoLog() {
+  try { videoLog = JSON.parse(localStorage.getItem(getLogKey()) || '[]'); } catch(e) { videoLog = []; }
+  loadSyncQueue();
+}
+
+function loadSyncQueue() {
+  try { logSyncQueue = JSON.parse(localStorage.getItem('vlog_sync_queue') || '[]'); } catch(e) { logSyncQueue = []; }
+}
+
+function getTodayLog(videoName) {
+  return videoLog.find(l => l.video_name === videoName && l.date === TODAY) || null;
+}
+
+function saveVideoProgress(pct) {
+  const existing = videoLog.findIndex(l => l.video_name === currentVideo?.name && l.date === TODAY);
+  const entry = {
+    date:          TODAY,
+    video_name:    currentVideo?.name,
+    title:         currentVideo?.title,
+    subject:       currentVideo?.subject,
+    level:         currentVideo?.level,
+    unit:          currentVideo?.unit,
+    max_pct:       pct,
+    completed:     pct >= 99,
+    school:        currentSchool?.identifier,
+    teacher_phone: currentPhone,
+    gps_lat:       gpsCoords?.lat || null,
+    gps_lng:       gpsCoords?.lng || null,
+    gps_accuracy:  gpsCoords?.acc || null,
+    started_at:    watchStart?.toISOString() || new Date().toISOString(),
+    last_update:   new Date().toISOString(),
+    synced:        false,
+  };
+  if (existing >= 0) {
+    if (pct > videoLog[existing].max_pct) videoLog[existing] = { ...videoLog[existing], ...entry };
+  } else {
+    videoLog.push(entry);
+  }
+  localStorage.setItem(getLogKey(), JSON.stringify(videoLog));
+}
+
+function logVideoEvent(type, pct) {
+  const event = {
+    type,
+    date:          TODAY,
+    time:          new Date().toISOString(),
+    video_name:    currentVideo?.name,
+    title:         currentVideo?.title,
+    subject:       currentVideo?.subject,
+    level:         currentVideo?.level,
+    unit:          currentVideo?.unit,
+    pct,
+    completed:     pct >= 99,
+    school:        currentSchool?.identifier,
+    teacher_phone: currentPhone,
+    gps_lat:       gpsCoords?.lat || null,
+    gps_lng:       gpsCoords?.lng || null,
+    gps_accuracy:  gpsCoords?.acc || null,
+    synced:        false,
+  };
+
+  logSyncQueue.push(event);
+  localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
+  saveVideoProgress(pct);
+
+  if (navigator.onLine) syncLogs();
+}
+
+async function syncLogs() {
+  if (!navigator.onLine) return;
+  try { logSyncQueue = JSON.parse(localStorage.getItem('vlog_sync_queue') || '[]'); } catch(e) { return; }
+  const pending = logSyncQueue.filter(e => !e.synced);
+  if (!pending.length) return;
+
+  let sent = 0;
+  for (const event of pending) {
+    try {
+      const res  = await fetch(`${API}/api/video-log`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(event),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.saved) { event.synced = true; sent++; }
+    } catch(e) { break; }
+  }
+
+  if (sent > 0) {
+    localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
+    showToast(`✅ ${sent} video log${sent>1?'s':''} synced`);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER LOG
+// ══════════════════════════════════════════════════════════
+function renderLog() {
+  const body   = document.getElementById('log-body');
+  const sub    = document.getElementById('log-sub');
+  const school = currentSchool?.name?.replace(/_/g,' ') || '';
+  sub.textContent = `${school} · ${TODAY}`;
+
+  const allLogs = videoLog.filter(l => l.date === TODAY);
+  const pending = logSyncQueue.filter(l => !l.synced).length;
+
+  if (!allLogs.length) {
+    body.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af">No videos watched today yet.</div>';
+    return;
+  }
+
+  body.innerHTML = `
+    ${pending > 0 ? `<div style="background:var(--amber-l);border:1.5px solid #fcd34d;border-radius:var(--r2);padding:10px 14px;margin-bottom:14px;font-size:13px;font-weight:700;color:#92400e">⏳ ${pending} event${pending>1?'s':''} pending sync</div>` : ''}
+    ${allLogs.map(l => `
+    <div class="log-card">
+      <div class="lc-title">
+        ${l.completed ? '✅' : '▶'} ${l.title}
+        <span class="lc-status ${l.completed?'ls-done':l.max_pct>0?'ls-partial':''}">
+          ${l.completed ? '100% Complete' : Math.round(l.max_pct)+'% watched'}
+        </span>
+        ${!l.synced ? '<span class="lc-status ls-sync">Pending sync</span>' : ''}
+      </div>
+      <div class="lc-meta">
+        ${l.subject ? `<span>📚 ${l.subject}</span>` : ''}
+        ${l.level   ? `<span>Level ${l.level}</span>` : ''}
+        ${l.unit    ? `<span>Unit ${l.unit}</span>`   : ''}
+        <span>🕐 ${l.started_at ? new Date(l.started_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—'}</span>
+        ${l.gps_lat ? `<span>📍 ${parseFloat(l.gps_lat).toFixed(4)}, ${parseFloat(l.gps_lng).toFixed(4)}</span>` : '<span>📵 No GPS</span>'}
+      </div>
+    </div>`).join('')}`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  TOAST + UTILS
+// ══════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, ms=2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ══════════════════════════════════════════════════════════
+//  INIT — restore session
+// ══════════════════════════════════════════════════════════
+const saved = localStorage.getItem('lessons_session');
+if (saved) {
+  try {
+    const s = JSON.parse(saved);
+    currentPhone  = s.phone;
+    currentSchool = s.school;
+    activateApp();
+  } catch(e) { localStorage.removeItem('lessons_session'); }
+}
+
+// Auto-sync on load
+if (navigator.onLine) syncLogs();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "TAKMIL Video Lessons",
+  "short_name": "Lessons",
+  "description": "Daily video lessons for TAKMIL Foundation teachers",
+  "start_url": "/teacher-lessons",
+  "scope": "/teacher-lessons",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0f1d54",
+  "theme_color": "#1a2e7a",
+  "lang": "en",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

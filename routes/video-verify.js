@@ -412,4 +412,106 @@ router.get('/admin/session-status', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  VIDEO LESSON LOG — POST /api/video-log
+//  Receives play/complete events from the teacher-lessons app
+// ══════════════════════════════════════════════════════════════════════════════
+router.post('/api/video-log', async (req, res) => {
+  try {
+    const {
+      type, date, time, video_name, title, subject, level, unit,
+      pct, completed, school, teacher_phone,
+      gps_lat, gps_lng, gps_accuracy,
+    } = req.body;
+
+    if (!video_name || !school) {
+      return res.status(400).json({ saved: false, error: 'video_name and school required' });
+    }
+
+    // Auto-create table if not exists
+    await db.pool.query(`
+      CREATE TABLE IF NOT EXISTS video_lesson_logs (
+        id              SERIAL PRIMARY KEY,
+        event_type      TEXT,
+        log_date        DATE DEFAULT CURRENT_DATE,
+        log_time        TIMESTAMPTZ,
+        school_identifier TEXT,
+        teacher_phone   TEXT,
+        video_name      TEXT,
+        video_title     TEXT,
+        subject         TEXT,
+        level           TEXT,
+        unit            TEXT,
+        watch_pct       NUMERIC(5,2) DEFAULT 0,
+        completed       BOOLEAN DEFAULT FALSE,
+        gps_lat         NUMERIC(10,7),
+        gps_lng         NUMERIC(10,7),
+        gps_accuracy    INTEGER,
+        created_at      TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    await db.pool.query(`
+      INSERT INTO video_lesson_logs
+        (event_type, log_date, log_time, school_identifier, teacher_phone,
+         video_name, video_title, subject, level, unit,
+         watch_pct, completed, gps_lat, gps_lng, gps_accuracy)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+    `, [
+      type || 'update',
+      date || new Date().toISOString().split('T')[0],
+      time ? new Date(time) : new Date(),
+      school, teacher_phone || null,
+      video_name, title || video_name,
+      subject || null, level || null, unit || null,
+      parseFloat(pct) || 0,
+      completed || false,
+      gps_lat     ? parseFloat(gps_lat)    : null,
+      gps_lng     ? parseFloat(gps_lng)    : null,
+      gps_accuracy ? parseInt(gps_accuracy) : null,
+    ]);
+
+    return res.json({ saved: true });
+  } catch (err) {
+    console.error('[video-log] error:', err.message);
+    return res.status(500).json({ saved: false, error: err.message });
+  }
+});
+
+// GET /api/video-log — query logs by school/date
+router.get('/api/video-log', async (req, res) => {
+  try {
+    const { school, date_from, date_to, date } = req.query;
+    const params = [];
+    let where = 'WHERE 1=1';
+
+    if (school)    { params.push(school);    where += ` AND school_identifier ILIKE $${params.length}`; }
+    if (date)      { params.push(date);      where += ` AND log_date = $${params.length}::date`; }
+    if (date_from) { params.push(date_from); where += ` AND log_date >= $${params.length}::date`; }
+    if (date_to)   { params.push(date_to);   where += ` AND log_date <= $${params.length}::date`; }
+
+    const r = await db.pool.query(`
+      SELECT
+        school_identifier, teacher_phone, log_date,
+        video_name, video_title, subject, level, unit,
+        MAX(watch_pct)  AS max_pct,
+        BOOL_OR(completed) AS completed,
+        MIN(log_time)   AS started_at,
+        MAX(log_time)   AS last_event,
+        AVG(gps_lat)    AS gps_lat,
+        AVG(gps_lng)    AS gps_lng,
+        COUNT(*)        AS event_count
+      FROM video_lesson_logs
+      ${where}
+      GROUP BY school_identifier, teacher_phone, log_date,
+               video_name, video_title, subject, level, unit
+      ORDER BY log_date DESC, started_at DESC
+    `, params);
+
+    res.json({ logs: r.rows, total: r.rows.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 module.exports = { router, handleVideoCommands };
