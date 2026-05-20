@@ -429,6 +429,18 @@ if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', e => {
         if (e.data?.type === 'FLUSH_ATTEND_QUEUE') flushQueue();
       });
+      // Auto-activate new SW version and reload — teachers always get latest
+      if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        newSW?.addEventListener('statechange', () => {
+          if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+            showToast('🔄 App updated — reloading…');
+            setTimeout(() => newSW.postMessage({ type: 'SKIP_WAITING' }), 800);
+          }
+        });
+      });
+      navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
     })
     .catch(() => {});
 }
@@ -771,6 +783,14 @@ async function loadStudents() {
     }
 
     students   = data.students || [];
+    if (!students.length && data.error) {
+      loadWrap.classList.remove('show');
+      listEl.innerHTML = `<div class="no-students" style="color:var(--red)">
+        ⚠️ ${data.error}<br>
+        <span style="font-size:11px;color:var(--text3)">School code: ${currentSchool.identifier}</span>
+      </div>`;
+      return;
+    }
     attendance = {};
 
     // Restore from existing DB attendance
@@ -897,7 +917,7 @@ async function submitAttendance() {
   try {
     const pos = await new Promise((resolve, reject) =>
       navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true, timeout: 6000, maximumAge: 0
+        enableHighAccuracy: true, timeout: 10000, maximumAge: 60000
       })
     );
     gps_lat      = pos.coords.latitude;

@@ -173,14 +173,21 @@ async function saveFeedback(fb) {
 router.get('/analytics',  (req, res) => res.sendFile(path.join(__dirname, '../analytics.html')));
 router.get('/feedback',   (req, res) => res.sendFile(path.join(__dirname, '../feedback.html')));
 
-// ── Ensure new columns exist ──────────────────────────────────────────────────
+// ── DB migrations — run once at startup ─────────────────────────────────────
 (async () => {
-  try {
-    await db.pool.query(`
-      ALTER TABLE daily_feedback
-        ADD COLUMN IF NOT EXISTS lms_upload BOOLEAN
-    `);
-  } catch(e) {}
+  const migrations = [
+    `ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS lms_upload BOOLEAN`,
+    `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS submission_mode TEXT DEFAULT 'online'`,
+    `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ`,
+    `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_lat NUMERIC(10,7)`,
+    `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_lng NUMERIC(10,7)`,
+    `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_accuracy INTEGER`,
+    `ALTER TABLE schools ADD COLUMN IF NOT EXISTS school_pin VARCHAR(4)`,
+  ];
+  for (const sql of migrations) {
+    try { await db.pool.query(sql); } catch(e) { /* already exists */ }
+  }
+  console.log('[Attendance] DB migrations checked.');
 })();
 router.get('/register',   (req, res) => res.sendFile(path.join(__dirname, '../register.html')));
 router.get('/register-sw.js', (req, res) => res.sendFile(path.join(__dirname, '../register-sw.js')));
@@ -561,7 +568,7 @@ router.get('/api/register/students', async (req, res) => {
       FROM students_register sr
       LEFT JOIN student_attendance sa
         ON sa.roll_number=sr.roll_number AND sa.attendance_date=$2::date
-      WHERE LOWER(sr.school_identifier)=LOWER($1) AND sr.active=TRUE
+      WHERE sr.school_identifier ILIKE $1 AND sr.active=TRUE
       ORDER BY sr.roll_number
     `, [school_code, attDate]);
 
@@ -599,18 +606,7 @@ router.post('/api/register/submit', async (req, res) => {
     if (!attendance?.length) return res.json({ saved: false, permanent: true, error: 'No attendance data' });
     const attDate = date || new Date().toISOString().split('T')[0];
 
-    // Ensure new columns exist (safe to run every time)
-    const alterCmds = [
-      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS submission_mode TEXT DEFAULT 'online'`,
-      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ`,
-      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_lat NUMERIC(10,7)`,
-      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_lng NUMERIC(10,7)`,
-      `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_accuracy INTEGER`,
-    ];
-    for (const cmd of alterCmds) {
-      try { await db.pool.query(cmd); } catch(e) { /* already exists */ }
-    }
-
+    // (Columns ensured by startup migration above)
     const submittedAt = submitted_at ? new Date(submitted_at) : new Date();
     const mode        = submission_mode || 'online';
     const lat         = gps_lat    ? parseFloat(gps_lat)    : null;
