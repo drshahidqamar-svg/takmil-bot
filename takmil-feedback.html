@@ -1290,9 +1290,15 @@ if (isMobile() && !isAlreadyInstalled()) {
           const newSW = reg.installing;
           newSW?.addEventListener('statechange', () => {
             if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-              showToast('🔄 App updated — refresh for the latest version');
+              // Auto-activate new SW and reload so teachers always get latest version
+              showToast('🔄 App updated — reloading…');
+              setTimeout(() => newSW.postMessage({ type: 'SKIP_WAITING' }), 800);
             }
           });
+        });
+        // Reload page once new SW takes control
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
         });
       })
       .catch(err => console.warn('[App] SW registration failed:', err));
@@ -1618,14 +1624,18 @@ function buildSubjectBlock(s) {
       <label>Unit Name</label>
       <input type="text" id="${k}-unit-name" placeholder="Unit name"${dir}>
     </div>
-    <div class="row-2">
+    <div class="row-3">
       <div class="field">
         <label>Unit #</label>
-        <input type="number" id="${k}-unit" placeholder="1" min="1">
+        <input type="number" id="${k}-unit" placeholder="1" min="1" max="30">
       </div>
       <div class="field">
         <label>Lesson No.</label>
         <input type="text" id="${k}-lesson" placeholder="e.g. 1.3"${dir}>
+      </div>
+      <div class="field">
+        <label>Page #</label>
+        <input type="number" id="${k}-page" placeholder="1" min="1" max="999">
       </div>
     </div>
     <div class="field">
@@ -1733,6 +1743,7 @@ function getFormData() {
         entry.unit      = document.getElementById(k + '-unit')?.value      || '';
         entry.lesson_no = document.getElementById(k + '-lesson')?.value    || '';
         entry.topic     = document.getElementById(k + '-topic')?.value     || '';
+        entry.page_no   = document.getElementById(k + '-page')?.value      || '';
       }
       entry.note = document.getElementById(k + '-note')?.value || '';
       subjects.push(entry);
@@ -1810,6 +1821,7 @@ function loadDraft() {
         trySet(k + '-unit',      s.unit);
         trySet(k + '-lesson',    s.lesson_no || s.lesson);
         trySet(k + '-topic',     s.topic);
+        trySet(k + '-page',      s.page_no);
         trySet(k + '-note',      s.note);
       });
     }
@@ -2161,7 +2173,11 @@ function recalcAndCheck() {
 
   // Balance bar 1: Boys + Girls must equal Total Strength (teacher entered Total first)
   const gBar = document.getElementById('balance-gender');
-  if (str > 0 && (boys > 0 || girls > 0)) {
+  if (str === 0 && (boys > 0 || girls > 0 || pres > 0 || abs > 0 || lv > 0)) {
+    gBar.classList.add('show');
+    gBar.className = 'balance-bar show err';
+    gBar.textContent = '⚠️ Enter Total Strength first before filling attendance numbers';
+  } else if (str > 0 && (boys > 0 || girls > 0)) {
     const gSum = boys + girls;
     gBar.classList.add('show');
     if (gSum === str) {
@@ -2172,7 +2188,7 @@ function recalcAndCheck() {
       gBar.className = 'balance-bar show err';
       gBar.textContent = `⚠️ Boys (${boys}) + Girls (${girls}) = ${gSum} — must equal Total Strength (${str})`;
     }
-  } else {
+  } else if (str > 0) {
     gBar.classList.remove('show');
   }
 
