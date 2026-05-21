@@ -1806,12 +1806,12 @@ function loadDraft() {
     if (d.date)          document.getElementById('f-date').value = d.date;
     if (d.schoolType)  { selectType(d.schoolType); }
     if (d.level)       { document.getElementById('f-level').value = d.level; renderSubjects(); }
-    if (d.strength)      document.getElementById('f-strength').value   = d.strength;
-    if (d.boys)          document.getElementById('f-boys').value        = d.boys;
-    if (d.girls)         document.getElementById('f-girls').value       = d.girls;
-    if (d.present)       document.getElementById('f-present').value     = d.present;
-    if (d.absent)        document.getElementById('f-absent').value      = d.absent;
-    if (d.leave)         document.getElementById('f-leave').value       = d.leave;
+    if (d.strength)      {} // attendance fields intentionally NOT restored — must be entered fresh each day
+    if (d.boys)          {}
+    if (d.girls)         {}
+    if (d.present)       {}
+    if (d.absent)        {}
+    if (d.leave)         {}
     if (d.absenceReason) document.getElementById('f-absence-reason').value = d.absenceReason;
     if (d.techReason)    document.getElementById('f-tech-reason').value = d.techReason;
     if (d.lmsReason)     document.getElementById('f-lms-reason').value  = d.lmsReason;
