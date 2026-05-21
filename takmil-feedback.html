@@ -614,6 +614,8 @@
   .kbtn.kbtn-back { font-size: 22px; color: var(--text-muted); }
   .kbtn.kbtn-zero { font-size: 24px; }
   .kbtn.kbtn-clear { font-size: 15px; color: var(--red); font-weight: 800; }
+  .kbtn.kbtn-quick { background: #eff6ff; color: #1d4ed8; font-size: 15px; font-weight: 800; border-top: 1.5px solid #bfdbfe; }
+  .kbtn.kbtn-quick:active { background: #dbeafe; }
 
   /* Readonly look for auto-calculated fields */
   input.auto-calc {
@@ -824,6 +826,7 @@
       <button class="kbtn kbtn-clear" onclick="kbtnClear()">CLEAR</button>
       <button class="kbtn kbtn-zero" onclick="kbtnTap('0')">0</button>
       <button class="kbtn kbtn-back" onclick="kbtnBack()">⌫</button>
+      <button class="kbtn kbtn-quick" style="grid-column:span 3" onclick="kbtnSet(50)">⚡ Quick 50</button>
       <button class="kbtn kbtn-done" style="grid-column:span 3" onclick="closeKeypad()">✓  Done</button>
     </div>
   </div>
@@ -2128,7 +2131,7 @@ let keypadBuffer = '';     // current digits
 
 function openKeypad(inputId, label) {
   keypadTarget = inputId;
-  keypadBuffer = document.getElementById(inputId).value || '';
+  keypadBuffer = '';   // always start blank — auto-clears old value
   document.getElementById('keypad-label').textContent = label;
   updateKeypadDisplay();
   document.getElementById('keypad-backdrop').classList.add('open');
@@ -2170,6 +2173,11 @@ function kbtnTap(digit) {
   } else {
     keypadBuffer += digit;                     // normal append
   }
+  updateKeypadDisplay();
+}
+
+function kbtnSet(val) {
+  keypadBuffer = String(val);
   updateKeypadDisplay();
 }
 
