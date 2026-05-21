@@ -2132,6 +2132,9 @@ let keypadBuffer = '';     // current digits
 function openKeypad(inputId, label) {
   keypadTarget = inputId;
   keypadBuffer = '';   // always start blank — auto-clears old value
+  // Also clear the field visually so teacher sees it's ready for fresh input
+  const input = document.getElementById(inputId);
+  if (input) input.value = '';
   document.getElementById('keypad-label').textContent = label;
   updateKeypadDisplay();
   document.getElementById('keypad-backdrop').classList.add('open');
