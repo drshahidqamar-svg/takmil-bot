@@ -1017,13 +1017,13 @@
         <div class="reason-field" id="tech-type-wrap">
           <label style="margin-top:8px">Technology Type</label>
           <div class="check-group">
-            <label class="check-chip" id="chip-projector" onclick="event.preventDefault();toggleChip('projector',this)">
+            <label class="check-chip" id="chip-projector" onclick="toggleChip('projector',this,event)">
               <input type="checkbox" id="f-tech-projector"> 📽️ Projector
             </label>
-            <label class="check-chip" id="chip-laptop" onclick="event.preventDefault();toggleChip('laptop',this)">
+            <label class="check-chip" id="chip-laptop" onclick="toggleChip('laptop',this,event)">
               <input type="checkbox" id="f-tech-laptop"> 💻 Laptop
             </label>
-            <label class="check-chip" id="chip-tablets" onclick="event.preventDefault();toggleChip('tablets',this)">
+            <label class="check-chip" id="chip-tablets" onclick="toggleChip('tablets',this,event)">
               <input type="checkbox" id="f-tech-tablets"> 📱 Chromebooks / Tablets
             </label>
           </div>
@@ -1067,19 +1067,9 @@
     <!-- CLASSROOM PHOTO -->
     <div class="section-card">
       <div class="section-title">📸 Classroom Photo</div>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.5;">
         Take a clear photo showing students' heads/faces. If a projector is on, include it in the frame.
       </p>
-
-      <!-- Sample photo guide -->
-      <div style="background:var(--green-tint);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.7;color:var(--text-muted);">
-        <div style="font-weight:800;color:var(--green-deep);margin-bottom:6px;">📋 Photo Guide</div>
-        <div>✅ Stand at the back — show the full classroom</div>
-        <div>✅ All students' heads/faces must be visible</div>
-        <div>✅ Include the projector screen if it is on</div>
-        <div>✅ Good lighting — avoid dark or blurry photos</div>
-        <div>❌ Don't zoom in on one area only</div>
-      </div>
 
       <!-- Two hidden file inputs: one forces camera, one opens gallery -->
       <input type="file" id="photo-file-camera"  accept="image/*" capture="environment" onchange="handlePhotoSelect(event)" style="display:none">
@@ -1532,8 +1522,6 @@ function activateFormScreen() {
   document.getElementById('user-pill').style.display = 'flex';
   const label = document.getElementById('user-phone-label');
   label.textContent = currentSchool ? currentSchool.substring(0,18) : currentPhone;
-  // Start GPS capture early so it's cached before teacher hits Submit
-  startGpsWatch();
 }
 
 function showError(msg) {
@@ -1589,21 +1577,12 @@ function selectType(type) {
 
   const lvl = document.getElementById('f-level');
   lvl.innerHTML = '<option value="">— Select level —</option>';
-  if (type === 'Primary') {
-    [1,2,3,4,5,6,7,8,9,10,11,12].forEach(n => {
-      const o = document.createElement('option');
-      o.value = n; o.textContent = `Level ${n}`;
-      lvl.appendChild(o);
-    });
-  } else {
-    // Elementary: Level 1 = Grade 6, Level 2 = Grade 7, Level 3 = Grade 8
-    [{val:1,label:'Grade 6 (Level 1)'},{val:2,label:'Grade 7 (Level 2)'},{val:3,label:'Grade 8 (Level 3)'}]
-    .forEach(({val,label}) => {
-      const o = document.createElement('option');
-      o.value = val; o.textContent = label;
-      lvl.appendChild(o);
-    });
-  }
+  const levels = type === 'Primary' ? [1,2,3,4,5,6,7,8,9,10,11,12] : [1,2,3];
+  levels.forEach(n => {
+    const o = document.createElement('option');
+    o.value = n; o.textContent = `Level ${n}`;
+    lvl.appendChild(o);
+  });
   renderSubjects();
 }
 
@@ -1704,7 +1683,8 @@ function toggleYesNo(field, isYes, btn) {
   }
 }
 
-function toggleChip(type, label) {
+function toggleChip(type, label, e) {
+  if (e) e.preventDefault();
   label.classList.toggle('checked');
   document.getElementById('f-tech-' + type).checked = label.classList.contains('checked');
 }
@@ -1749,37 +1729,8 @@ function deletePhoto() {
 }
 
 // ══════════════════════════════════════════════
-//   GPS CACHE — capture early, use as fallback
+//   DRAFT
 // ══════════════════════════════════════════════
-let cachedGps = null; // { lat, lng, accuracy, ts }
-
-function startGpsWatch() {
-  if (!navigator.geolocation) return;
-  // Try to get a fresh position immediately (best effort, non-blocking)
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      cachedGps = {
-        lat:      pos.coords.latitude,
-        lng:      pos.coords.longitude,
-        accuracy: Math.round(pos.coords.accuracy),
-        ts:       Date.now()
-      };
-      // Also persist to localStorage so it survives page reload
-      try { localStorage.setItem('takmil_gps', JSON.stringify(cachedGps)); } catch(e) {}
-      console.log('[GPS] Cached on form load — accuracy:', cachedGps.accuracy, 'm');
-    },
-    err => console.warn('[GPS] Early capture failed:', err.message),
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-  );
-
-  // Restore last cached GPS from storage as immediate fallback
-  try {
-    const stored = JSON.parse(localStorage.getItem('takmil_gps') || 'null');
-    if (stored && !cachedGps) cachedGps = stored;
-  } catch(e) {}
-}
-
-
 function getFormData() {
   // Collect subjects dynamically from whatever is rendered
   const key = getSubjectSetKey();
@@ -1937,30 +1888,20 @@ async function submitFeedback() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Getting location...';
 
-  // GPS: try live first, fall back to cached position
+  // FEATURE 4: Get GPS coordinates before submitting
   let gpsLat = null, gpsLng = null, gpsAccuracy = null;
   try {
     const pos = await new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true, timeout: 6000, maximumAge: 30000
+        enableHighAccuracy: true, timeout: 8000, maximumAge: 0
       });
     });
     gpsLat      = pos.coords.latitude;
     gpsLng      = pos.coords.longitude;
     gpsAccuracy = Math.round(pos.coords.accuracy);
-    // Update cache with fresh reading
-    cachedGps = { lat: gpsLat, lng: gpsLng, accuracy: gpsAccuracy, ts: Date.now() };
-    try { localStorage.setItem('takmil_gps', JSON.stringify(cachedGps)); } catch(e) {}
   } catch(e) {
-    console.warn('[GPS] Live capture failed:', e.message, '— using cached GPS');
-    // Use cached GPS (captured when form loaded) — max 2 hours old
-    if (cachedGps && (Date.now() - cachedGps.ts) < 2 * 60 * 60 * 1000) {
-      gpsLat      = cachedGps.lat;
-      gpsLng      = cachedGps.lng;
-      gpsAccuracy = cachedGps.accuracy;
-      console.log('[GPS] Using cached position, age:', Math.round((Date.now()-cachedGps.ts)/60000), 'min');
-    }
-    // If no cache either — proceed without GPS rather than blocking submission
+    console.warn('[GPS] Could not get location:', e.message);
+    // Non-blocking — proceed without GPS rather than failing submission
   }
 
   btn.innerHTML = '<div class="spinner"></div> Submitting...';
@@ -2161,7 +2102,7 @@ let keypadBuffer = '';     // current digits
 
 function openKeypad(inputId, label) {
   keypadTarget = inputId;
-  keypadBuffer = '';   // always start fresh — old value is cleared on open
+  keypadBuffer = document.getElementById(inputId).value || '';
   document.getElementById('keypad-label').textContent = label;
   updateKeypadDisplay();
   document.getElementById('keypad-backdrop').classList.add('open');
