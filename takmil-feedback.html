@@ -1889,20 +1889,8 @@ async function submitFeedback() {
   btn.innerHTML = '<div class="spinner"></div> Getting location...';
 
   // FEATURE 4: Get GPS coordinates before submitting
-  let gpsLat = null, gpsLng = null, gpsAccuracy = null;
-  try {
-    const pos = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true, timeout: 8000, maximumAge: 0
-      });
-    });
-    gpsLat      = pos.coords.latitude;
-    gpsLng      = pos.coords.longitude;
-    gpsAccuracy = Math.round(pos.coords.accuracy);
-  } catch(e) {
-    console.warn('[GPS] Could not get location:', e.message);
-    // Non-blocking — proceed without GPS rather than failing submission
-  }
+  const _gps = await captureGPS();
+  let gpsLat = _gps.lat, gpsLng = _gps.lng, gpsAccuracy = _gps.acc;
 
   btn.innerHTML = '<div class="spinner"></div> Submitting...';
 
@@ -1968,6 +1956,28 @@ async function submitFeedback() {
   }
 }
 
+// ── GPS capture with 3-level fallback ─────────────────────────────────────────
+async function captureGPS() {
+  if (!navigator.geolocation) return { lat: null, lng: null, acc: null };
+  const attempts = [
+    { enableHighAccuracy: true,  timeout: 10000, maximumAge: 0      },
+    { enableHighAccuracy: false, timeout: 8000,  maximumAge: 60000  },
+    { enableHighAccuracy: false, timeout: 5000,  maximumAge: 300000 },
+  ];
+  for (const opts of attempts) {
+    try {
+      const pos = await new Promise((res, rej) =>
+        navigator.geolocation.getCurrentPosition(res, rej, opts)
+      );
+      return { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+    } catch(e) {
+      console.warn("[GPS] Attempt failed, trying fallback", e.message);
+    }
+  }
+  console.warn("[GPS] All attempts failed");
+  return { lat: null, lng: null, acc: null };
+}
+
 function queueSubmission(payload) {
   submissionQueue.push(payload);
   saveQueue();
@@ -2008,6 +2018,16 @@ async function flushQueue() {
 
   let sent = 0;
   for (const payload of pending) {
+    // Re-capture GPS if it was null when queued offline — we now have signal
+    if (!payload.gpsLat) {
+      const gps = await captureGPS();
+      if (gps.lat) {
+        payload.gpsLat = gps.lat;
+        payload.gpsLng = gps.lng;
+        payload.gpsAccuracy = gps.acc;
+        payload.gpsCapturedAtSync = true;
+      }
+    }
     try {
       const res = await fetch(`${API_BASE}/api/web-feedback`, {
         method: 'POST',
