@@ -927,7 +927,7 @@
       </div>
 
       <div class="field">
-        <label>Level <span class="req">*</span></label>
+        <label id="level-label">Level <span class="req">*</span></label>
         <select id="f-level" onchange="onLevelChange()">
           <option value="">— Select level —</option>
         </select>
@@ -1575,12 +1575,18 @@ function selectType(type) {
   document.getElementById('type-primary').className    = 'toggle-btn' + (type==='Primary'     ? ' active-type' : '');
   document.getElementById('type-elementary').className = 'toggle-btn' + (type==='Elementary'  ? ' active-type' : '');
 
+  // Update the level field label based on school type
+  const levelLabel = document.getElementById('level-label');
+  if (levelLabel) levelLabel.textContent = type === 'Elementary' ? 'Grade *' : 'Level *';
+
   const lvl = document.getElementById('f-level');
   lvl.innerHTML = '<option value="">— Select level —</option>';
-  const levels = type === 'Primary' ? [1,2,3,4,5,6,7,8,9,10,11,12] : [1,2,3];
-  levels.forEach(n => {
+  const levels = type === 'Primary'
+    ? [1,2,3,4,5,6,7,8,9,10,11,12].map(n => ({ value: n, label: `Level ${n}` }))
+    : [6,7,8].map(n => ({ value: n, label: `Grade ${n}` }));
+  levels.forEach(({ value, label }) => {
     const o = document.createElement('option');
-    o.value = n; o.textContent = `Level ${n}`;
+    o.value = value; o.textContent = label;
     lvl.appendChild(o);
   });
   renderSubjects();
@@ -1593,7 +1599,7 @@ function getSubjectSetKey() {
   const lvl = parseInt(document.getElementById('f-level').value);
   if (!lvl) return null;
   if (schoolType === 'Primary') return lvl <= 6 ? 'Primary-1-6' : 'Primary-7-12';
-  return 'Elementary-1-3';
+  return 'Elementary-1-3'; // grades 6, 7, 8 all use same subject set
 }
 
 function renderSubjects() {
@@ -1608,7 +1614,7 @@ function renderSubjects() {
   const lvl = parseInt(document.getElementById('f-level').value);
   const hintText = schoolType === 'Primary'
     ? (lvl <= 6 ? 'Primary · Levels 1–6' : 'Primary · Levels 7–12')
-    : 'Elementary · Levels 1–3';
+    : `Elementary · Grade ${lvl}`;
 
   container.innerHTML = `<div class="level-hint">${hintText}</div>` +
     subjects.map(s => buildSubjectBlock(s)).join('');
