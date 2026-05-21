@@ -929,7 +929,17 @@
         </div>
       </div>
 
-      <div class="field">
+      <div class="field" id="grade-field" style="display:none">
+        <label>Grade <span class="req">*</span></label>
+        <select id="f-grade" onchange="onGradeChange()">
+          <option value="">— Select grade —</option>
+          <option value="6">Grade 6</option>
+          <option value="7">Grade 7</option>
+          <option value="8">Grade 8</option>
+        </select>
+      </div>
+
+      <div class="field" id="level-field">
         <label id="level-label">Level <span class="req">*</span></label>
         <select id="f-level" onchange="onLevelChange()">
           <option value="">— Select level —</option>
@@ -1575,23 +1585,44 @@ function subjectKey(name) {
 
 function selectType(type) {
   schoolType = type;
-  document.getElementById('type-primary').className    = 'toggle-btn' + (type==='Primary'     ? ' active-type' : '');
-  document.getElementById('type-elementary').className = 'toggle-btn' + (type==='Elementary'  ? ' active-type' : '');
+  document.getElementById('type-primary').className    = 'toggle-btn' + (type==='Primary'    ? ' active-type' : '');
+  document.getElementById('type-elementary').className = 'toggle-btn' + (type==='Elementary' ? ' active-type' : '');
 
-  // Update the level field label based on school type
+  const gradeField = document.getElementById('grade-field');
   const levelLabel = document.getElementById('level-label');
-  if (levelLabel) levelLabel.textContent = type === 'Elementary' ? 'Grade *' : 'Level *';
+  const lvl        = document.getElementById('f-level');
+  const gradeEl    = document.getElementById('f-grade');
 
-  const lvl = document.getElementById('f-level');
   lvl.innerHTML = '<option value="">— Select level —</option>';
-  const levels = type === 'Primary'
-    ? [1,2,3,4,5,6,7,8,9,10,11,12].map(n => ({ value: n, label: `Level ${n}` }))
-    : [6,7,8].map(n => ({ value: n, label: `Grade ${n}` }));
-  levels.forEach(({ value, label }) => {
-    const o = document.createElement('option');
-    o.value = value; o.textContent = label;
-    lvl.appendChild(o);
-  });
+  gradeEl.value = '';
+
+  if (type === 'Elementary') {
+    gradeField.style.display = '';          // show grade dropdown
+    levelLabel.textContent   = 'Level *';   // level label stays "Level"
+    // level dropdown populated after grade is chosen
+  } else {
+    gradeField.style.display = 'none';      // hide grade dropdown for Primary
+    levelLabel.textContent   = 'Level *';
+    [1,2,3,4,5,6,7,8,9,10,11,12].forEach(n => {
+      const o = document.createElement('option');
+      o.value = n; o.textContent = `Level ${n}`;
+      lvl.appendChild(o);
+    });
+  }
+  renderSubjects();
+}
+
+function onGradeChange() {
+  const lvl     = document.getElementById('f-level');
+  const grade   = document.getElementById('f-grade').value;
+  lvl.innerHTML = '<option value="">— Select level —</option>';
+  if (grade) {
+    [1,2,3].forEach(n => {
+      const o = document.createElement('option');
+      o.value = `${grade}-${n}`; o.textContent = `Level ${n}`;
+      lvl.appendChild(o);
+    });
+  }
   renderSubjects();
 }
 
@@ -1599,10 +1630,13 @@ function onLevelChange() { renderSubjects(); }
 
 function getSubjectSetKey() {
   if (!schoolType) return null;
-  const lvl = parseInt(document.getElementById('f-level').value);
-  if (!lvl) return null;
-  if (schoolType === 'Primary') return lvl <= 6 ? 'Primary-1-6' : 'Primary-7-12';
-  return 'Elementary-1-3'; // grades 6, 7, 8 all use same subject set
+  const lvlVal = document.getElementById('f-level').value;
+  if (!lvlVal) return null;
+  if (schoolType === 'Primary') {
+    const lvl = parseInt(lvlVal);
+    return lvl <= 6 ? 'Primary-1-6' : 'Primary-7-12';
+  }
+  return 'Elementary-1-3'; // all elementary grade-levels share same subject set
 }
 
 function renderSubjects() {
@@ -1614,10 +1648,16 @@ function renderSubjects() {
   card.style.display = '';
 
   const subjects = SUBJECT_SETS[key];
-  const lvl = parseInt(document.getElementById('f-level').value);
-  const hintText = schoolType === 'Primary'
-    ? (lvl <= 6 ? 'Primary · Levels 1–6' : 'Primary · Levels 7–12')
-    : `Elementary · Grade ${lvl}`;
+  const lvlVal = document.getElementById('f-level').value;
+  let hintText;
+  if (schoolType === 'Primary') {
+    const lvl = parseInt(lvlVal);
+    hintText = lvl <= 6 ? 'Primary · Levels 1–6' : 'Primary · Levels 7–12';
+  } else {
+    const grade = document.getElementById('f-grade').value;
+    const parts = lvlVal.split('-'); // e.g. "6-2" → grade 6, level 2
+    hintText = `Elementary · Grade ${grade} · Level ${parts[1] || ''}`;
+  }
 
   container.innerHTML = `<div class="level-hint">${hintText}</div>` +
     subjects.map(s => buildSubjectBlock(s)).join('');
@@ -1765,14 +1805,23 @@ function getFormData() {
   if (document.getElementById('f-tech-laptop')?.checked)    techTypes.push('Laptop');
   if (document.getElementById('f-tech-tablets')?.checked)   techTypes.push('Chromebooks/Tablets');
 
-  const lvl = parseInt(document.getElementById('f-level').value) || null;
-  const grade = schoolType && lvl ? `${schoolType}-${lvl}` : '';
+  const lvlVal    = document.getElementById('f-level').value;
+  const gradeVal  = document.getElementById('f-grade')?.value || '';
+  // For Elementary: f-level is "6-2" (grade-level), f-grade is "6"
+  // For Primary:    f-level is "5", f-grade is unused
+  const levelNum  = schoolType === 'Elementary'
+    ? (lvlVal.split('-')[1] || '')
+    : lvlVal;
+  const gradeNum  = schoolType === 'Elementary' ? gradeVal : '';
+  const grade     = schoolType && lvlVal ? `${schoolType}-${lvlVal}` : '';
 
   return {
     date:          document.getElementById('f-date').value,
     schoolType,
     grade,
-    level:         document.getElementById('f-level').value,
+    gradeNum,
+    levelNum,
+    level:         lvlVal,
     strength:      document.getElementById('f-strength').value,
     boys:          document.getElementById('f-boys').value,
     girls:         document.getElementById('f-girls').value,
@@ -1805,7 +1854,13 @@ function loadDraft() {
     const d = JSON.parse(raw);
     if (d.date)          document.getElementById('f-date').value = d.date;
     if (d.schoolType)  { selectType(d.schoolType); }
-    if (d.level)       { document.getElementById('f-level').value = d.level; renderSubjects(); }
+    if (d.schoolType === 'Elementary' && d.gradeNum) {
+      document.getElementById('f-grade').value = d.gradeNum;
+      onGradeChange();
+      if (d.level) { document.getElementById('f-level').value = d.level; renderSubjects(); }
+    } else if (d.level) {
+      document.getElementById('f-level').value = d.level; renderSubjects();
+    }
     if (d.strength)      {} // attendance fields intentionally NOT restored — must be entered fresh each day
     if (d.boys)          {}
     if (d.girls)         {}
