@@ -421,7 +421,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 </div>
 
 <!-- ── SCREEN: ATTENDANCE FORM ── -->
-<div class="screen" id="s-att-form">
+<div class="screen" id="s-att-form-legacy">
   <div class="app-header">
     <div class="logo">TAKMIL</div>
     <button onclick="showScreen('s-att-home')" style="background:none;border:none;color:white;font-size:22px;cursor:pointer">←</button>
@@ -1608,10 +1608,34 @@ function updateAttCounts(){
 }
 
 // ── Submit individual student attendance ─────────────────────────
+// ── GPS capture with 3-level fallback ─────────────────────────────
+async function captureGPS() {
+  if (!navigator.geolocation) return { lat: null, lng: null, acc: null };
+  const attempts = [
+    { enableHighAccuracy: true,  timeout: 10000, maximumAge: 0      },
+    { enableHighAccuracy: false, timeout: 8000,  maximumAge: 60000  },
+    { enableHighAccuracy: false, timeout: 5000,  maximumAge: 300000 },
+  ];
+  for (const opts of attempts) {
+    try {
+      const pos = await new Promise((res, rej) =>
+        navigator.geolocation.getCurrentPosition(res, rej, opts)
+      );
+      return { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+    } catch(e) {
+      console.warn('[GPS] Attempt failed, trying fallback…', e.message);
+    }
+  }
+  console.warn('[GPS] All attempts failed — proceeding without location');
+  return { lat: null, lng: null, acc: null };
+}
+
 async function submitStudentAttendance(){
   const err = document.getElementById('att-form-err');
   err.style.display = 'none';
   if(!attStudents.length){ err.textContent='No students to submit'; err.style.display='block'; return; }
+
+  const gps = await captureGPS();
 
   const record = {
     school_code:  attSchool,
@@ -1623,6 +1647,7 @@ async function submitStudentAttendance(){
       student_name: s.student_name,
       status:       s.status
     })),
+    gps,
     submitted_at: new Date().toISOString(),
     synced:       false,
   };
@@ -1700,6 +1725,11 @@ async function syncAttendance(){
   const pending = all.filter(r=>!r.synced);
   let synced = 0;
   for(const rec of pending){
+    // Re-capture GPS if it was null when saved offline — we now have signal
+    if(!rec.gps?.lat){
+      const gps = await captureGPS();
+      if(gps.lat){ rec.gps = { ...gps, capturedAtSync: true }; }
+    }
     const ok = await syncOneAttendance(rec);
     if(ok){ rec.synced=true; await dbPut('attendance', rec); synced++; }
   }
