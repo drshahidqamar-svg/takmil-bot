@@ -730,8 +730,7 @@ function handleFiles(event) {
     else allVideos.push(entry);
   });
 
-  populateUnitFilter();
-  applyFilter();
+  onFilterChange(); // repopulates unit dropdown filtered by subject+level, then applies filter
   document.getElementById('upload-zone').style.display = 'none';
   showToast(`✅ ${files.length} video${files.length>1?'s':''} loaded`);
   event.target.value = '';
@@ -755,12 +754,19 @@ function parseFilename(name) {
 }
 
 function populateUnitFilter() {
-  const units = [...new Set(allVideos.map(v => v.unit).filter(Boolean))].sort((a,b)=>parseInt(a)-parseInt(b));
+  const subj = document.getElementById('sel-subject').value;
+  const lvl  = document.getElementById('sel-level').value;
+  const relevant = allVideos.filter(v =>
+    (!subj || v.subject.toLowerCase() === subj.toLowerCase()) &&
+    (!lvl  || v.level === lvl)
+  );
+  const units = [...new Set(relevant.map(v => v.unit).filter(Boolean))].sort((a,b)=>parseInt(a)-parseInt(b));
   const sel = document.getElementById('sel-unit');
   const cur = sel.value;
   sel.innerHTML = '<option value="">All Units</option>';
   units.forEach(u => { const o=document.createElement('option'); o.value=u; o.textContent='Unit '+u; sel.appendChild(o); });
-  if (cur) sel.value = cur;
+  if (cur && units.includes(cur)) sel.value = cur;
+  else sel.value = '';
 }
 
 function onFilterChange() {
@@ -801,8 +807,14 @@ function applyFilter() {
 function renderVideoList() {
   const el = document.getElementById('video-list');
   if (!filteredVideos.length) {
+    const subj = document.getElementById('sel-subject').value;
+    const lvl  = document.getElementById('sel-level').value;
+    const filterActive = subj || lvl;
     el.innerHTML = allVideos.length
-      ? '<div class="no-videos">No videos match the filter.</div>'
+      ? `<div class="no-videos">
+          No videos found${subj ? ' for <b>' + subj + '</b>' : ''}${lvl ? ' Level <b>' + lvl + '</b>' : ''}.<br>
+          <span style="font-size:12px;color:#9ca3af">Try changing the subject or level filter.</span>
+         </div>`
       : '<div class="no-videos">No videos loaded yet.<br><span style="font-size:12px">Tap the folder above to load from USB or laptop.</span></div>';
     return;
   }
