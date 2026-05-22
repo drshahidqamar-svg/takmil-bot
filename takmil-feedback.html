@@ -1668,6 +1668,14 @@ function buildSubjectBlock(s) {
   const isUrdu = s.name === 'Urdu';
   const dir = isUrdu ? ' dir="auto"' : '';
 
+  // Placeholder unit options — replace with real curriculum data later
+  const unitOptions = [1,2,3,4,5,6,7,8,9,10]
+    .map(n => `<option value="${n}">Unit ${n}</option>`).join('');
+
+  // Placeholder lesson options — replace with real curriculum data later
+  const lessonOptions = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+    .map(n => `<option value="${n}">${n}</option>`).join('');
+
   const fullFields = s.full ? `
     <div class="field">
       <label>Unit Name</label>
@@ -1676,11 +1684,17 @@ function buildSubjectBlock(s) {
     <div class="row-3">
       <div class="field">
         <label>Unit #</label>
-        <input type="number" id="${k}-unit" placeholder="1" min="1" max="30">
+        <select id="${k}-unit">
+          <option value="">—</option>
+          ${unitOptions}
+        </select>
       </div>
       <div class="field">
         <label>Lesson No.</label>
-        <input type="text" id="${k}-lesson" placeholder="e.g. 1.3"${dir}>
+        <select id="${k}-lesson"${dir}>
+          <option value="">—</option>
+          ${lessonOptions}
+        </select>
       </div>
       <div class="field">
         <label>Page #</label>
