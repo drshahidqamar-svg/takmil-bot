@@ -54,12 +54,20 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 #install-banner.show{display:flex}
 
 /* ── SCREENS ── */
-.scr{display:none;min-height:calc(100vh - 58px)}
+.scr{
+  display:none;
+  position:fixed;
+  top:58px; left:0; right:0; bottom:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  background:var(--bg);
+}
 .scr.on{display:block}
 
 /* ── LOGIN SCREEN ── */
-#s-login{display:flex;align-items:center;justify-content:center;
+#s-login{display:none;align-items:center;justify-content:center;
   padding:40px 20px;background:var(--bg)}
+#s-login.on{display:flex}
 .login-card{background:var(--white);border-radius:20px;padding:32px 24px;
   width:100%;max-width:400px;box-shadow:var(--shadow)}
 .login-icon{width:68px;height:68px;background:var(--green-light);border-radius:50%;
@@ -196,8 +204,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 .btn-submit:disabled{background:#a7f3d0;cursor:not-allowed}
 
 /* ── SUCCESS ── */
-#s-success{display:flex;align-items:center;justify-content:center;
+#s-success{display:none;align-items:center;justify-content:center;
   padding:40px 20px;min-height:calc(100vh - 58px)}
+#s-success.on{display:flex}
 .success-card{background:var(--white);border-radius:20px;padding:36px 24px;
   max-width:400px;width:100%;text-align:center;box-shadow:var(--shadow)}
 .success-icon{font-size:64px;margin-bottom:16px;
