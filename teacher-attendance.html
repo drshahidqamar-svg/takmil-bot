@@ -271,7 +271,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);
 </header>
 
 <!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
-<div class="scr on" id="s-login">
+<div class="scr" id="s-login">
   <div class="login-card">
     <div class="login-icon">🏫</div>
     <h2>Teacher Login</h2>
@@ -1021,6 +1021,9 @@ async function submitAttendance() {
 
 function newDay() {
   attendance = {};
+  // Clear old student list so previous day's data doesn't show
+  document.getElementById('student-list').innerHTML = '';
+  document.getElementById('summary-row').innerHTML  = '';
   showScr('s-main');
   // Advance date by 1 if possible
   const inp  = document.getElementById('att-date');
@@ -1038,7 +1041,10 @@ function doLogout() {
   saveDraft();
   currentPhone = null; currentSchool = null;
   localStorage.removeItem('attend_session');
-  document.getElementById('user-chip').style.display = 'none';
+  document.getElementById('user-chip').style.display    = 'none';
+  // Clear student list and summary so old data never shows on next login
+  document.getElementById('student-list').innerHTML     = '';
+  document.getElementById('summary-row').innerHTML      = '';
   showScr('s-login');
   // Reset login UI
   document.getElementById('phone-row').style.display   = 'flex';
@@ -1095,15 +1101,20 @@ loadQueueFromStorage();
 // Auto-sync on load — always call flushQueue (it re-reads localStorage internally)
 if (navigator.onLine) flushQueue();
 
-// Restore session
+// Restore session — show correct screen after check
 const savedSession = localStorage.getItem('attend_session');
 if (savedSession) {
   try {
     const s = JSON.parse(savedSession);
     currentPhone  = s.phone;
     currentSchool = s.school;
-    activateMainScreen();
-  } catch(e) { localStorage.removeItem('attend_session'); }
+    activateMainScreen(); // shows s-main
+  } catch(e) {
+    localStorage.removeItem('attend_session');
+    showScr('s-login');
+  }
+} else {
+  showScr('s-login'); // no session — show login fresh
 }
 </script>
 </body>
