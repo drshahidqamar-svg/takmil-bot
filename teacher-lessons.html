@@ -381,9 +381,10 @@ video{pointer-events:none}
   <div class="video-container" id="video-container">
     <video id="video-el" playsinline preload="auto"
       oncontextmenu="return false"
-      ondragstart="return false">
+      ondragstart="return false"
+      tabindex="-1">
     </video>
-    <!-- Transparent overlay blocks right-click / direct seek -->
+    <!-- Transparent overlay blocks right-click / direct seek / keyboard focus -->
     <div class="video-overlay" id="video-overlay" ondblclick="togglePlayPause()"></div>
 
     <div class="completion-overlay" id="completion-overlay">
@@ -512,6 +513,18 @@ function updateOnlineStatus() {
 }
 window.addEventListener('online',  () => { updateOnlineStatus(); syncLogs(); showToast('🟢 Online — syncing logs...'); });
 window.addEventListener('offline', () => { updateOnlineStatus(); });
+
+// Block arrow keys / media keys from seeking the video
+document.addEventListener('keydown', (e) => {
+  const videoEl = document.getElementById('video-el');
+  if (!videoEl || videoEl.paused || videoEl.readyState < 2) return;
+  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',
+       'MediaFastForward','MediaTrackNext','MediaTrackPrevious'].includes(e.key)) {
+    e.preventDefault();
+    e.stopPropagation();
+    showToast('⏩ Fast-forward not allowed');
+  }
+});
 
 // Release orientation lock whenever fullscreen exits (back button, swipe, etc.)
 document.addEventListener('fullscreenchange', () => {
@@ -1151,12 +1164,17 @@ async function syncLogs() {
       // Accept any 2xx response as success — don't rely solely on data.saved
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
-        if (data.saved !== false) {           // treat missing field as success
+        if (data.saved !== false) {
           event.synced = true;
           sent++;
-          // Persist immediately after each success so partial syncs are not lost
           localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
+        } else {
+          showToast(`⚠️ Server rejected log: ${data.error || 'unknown reason'}`);
         }
+      } else {
+        const errText = await res.text().catch(() => res.status);
+        showToast(`⚠️ Log sync failed ${res.status}: ${String(errText).slice(0,60)}`);
+        break;
       }
     } catch(e) {
       console.warn('[VideoLog] Sync failed for event, will retry later:', e.message);
