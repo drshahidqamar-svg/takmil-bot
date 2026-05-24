@@ -904,11 +904,23 @@ function setupVideoEvents(videoEl) {
     document.getElementById('progress-watched').style.width = '0%';
   };
 
+  // ANTI-SKIP: hard block on seeked event (catches scrubbing via any method including fullscreen controls)
+  videoEl.onseeked = () => {
+    const cur = videoEl.currentTime;
+    if (cur > maxWatched + 2.5) {
+      videoEl.currentTime = maxWatched;
+      videoEl.pause();
+      document.getElementById('btn-play').textContent = '▶';
+      document.getElementById('blocked-overlay').classList.add('show');
+      showToast('⏩ Fast-forward not allowed');
+    }
+  };
+
   videoEl.ontimeupdate = () => {
     const cur = videoEl.currentTime;
     const dur = videoEl.duration || 1;
 
-    // ANTI-SKIP: if teacher tries to seek ahead, snap back
+    // ANTI-SKIP: if teacher tries to seek ahead, snap back (backup for timeupdate)
     if (cur > maxWatched + 2.5) {
       videoEl.currentTime = maxWatched;
       videoEl.pause();
@@ -977,21 +989,23 @@ function toggleMute() {
 }
 
 function toggleFullscreen() {
-  const container = document.getElementById('video-container');
+  const videoEl    = document.getElementById('video-el');
+  const container  = document.getElementById('video-container');
+  // Request fullscreen on the container — but ensure native controls stay hidden
+  videoEl.removeAttribute('controls'); // always keep native controls off
   if (!document.fullscreenElement) {
-    // Enter fullscreen
-    const req = container.requestFullscreen?.() || container.webkitRequestFullscreen?.();
-    // Lock to landscape on mobile after fullscreen is granted
+    const target = container.requestFullscreen ? container : videoEl;
+    const req = target.requestFullscreen?.() || target.webkitRequestFullscreen?.();
     if (req && req.then) {
       req.then(() => {
+        videoEl.removeAttribute('controls');
         screen.orientation?.lock?.('landscape').catch(() => {});
       }).catch(() => {});
     } else {
-      // Safari / older — try immediately
+      videoEl.removeAttribute('controls');
       screen.orientation?.lock?.('landscape').catch(() => {});
     }
   } else {
-    // Exit fullscreen and release orientation lock
     screen.orientation?.unlock?.();
     document.exitFullscreen?.() || document.webkitExitFullscreen?.();
   }
@@ -1082,7 +1096,8 @@ function saveVideoProgress(pct) {
 function logVideoEvent(type, pct) {
   // Guard — don't log if essential fields are missing (server will reject)
   if (!currentVideo?.name || !currentSchool?.identifier) {
-    console.warn('[VideoLog] Skipping event — missing video or school', { currentVideo, currentSchool });
+    console.warn('[VideoLog] Skipping event — missing video or school identifier', { video: currentVideo?.name, school: currentSchool?.identifier });
+    if (type === 'complete') showToast('⚠️ Log not saved — school not identified. Please log out and back in.');
     return;
   }
   const event = {
