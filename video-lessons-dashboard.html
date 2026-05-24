@@ -332,8 +332,10 @@ function renderTable(rows) {
           const pct   = Math.round(parseFloat(r.max_pct || 0));
           const done  = r.completed || pct >= 99;
           const pColor= done ? '#15803d' : pct >= 50 ? '#d97706' : '#dc2626';
-          const dateStr = r.log_date ? new Date(r.log_date).toLocaleDateString('en-GB',
-            { weekday:'short', day:'numeric', month:'short' }) : '—';
+          const dateStr = r.log_date
+            ? new Date(r.log_date.slice(0,10) + 'T12:00:00').toLocaleDateString('en-GB',
+                { weekday:'short', day:'numeric', month:'short' })
+            : '—';
           const timeStr = r.started_at
             ? new Date(r.started_at).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })
             : '—';
