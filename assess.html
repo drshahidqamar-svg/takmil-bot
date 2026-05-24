@@ -382,29 +382,48 @@ function updatePendingBadge() {
   }
 }
 
+let flushInProgress = false;
+
 async function flushQueue() {
   if (!navigator.onLine || pendingQueue.length === 0) return;
-  const batch = [...pendingQueue];
-  pendingQueue = [];
-  saveQueue();
+  if (flushInProgress) return;
+  flushInProgress = true;
 
-  let sent = 0;
-  for (const payload of batch) {
-    try {
-      const res  = await fetch('/api/assess/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (data.saved) sent++;
-      else pendingQueue.push(payload);
-    } catch (e) {
-      pendingQueue.push(payload);
+  try {
+    // Reload from localStorage to get freshest state
+    try { pendingQueue = JSON.parse(localStorage.getItem('assess_queue') || '[]'); } catch(e) {}
+    if (!pendingQueue.length) return;
+
+    let sent = 0;
+    const failed = [];
+
+    for (const payload of pendingQueue) {
+      try {
+        const res  = await fetch('/api/assess/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        // Accept any 2xx as success — don't require data.saved===true
+        if (res.ok && data.saved !== false) {
+          sent++;
+        } else {
+          failed.push(payload); // server rejected — keep for retry
+        }
+      } catch (e) {
+        failed.push(payload); // network error — keep for retry
+      }
     }
+
+    // Only save back the ones that failed — successfully sent ones are removed
+    pendingQueue = failed;
+    saveQueue();
+
+    if (sent > 0) showSyncBanner(`✅ ${sent} result${sent>1?'s':''} synced to server!`);
+  } finally {
+    flushInProgress = false;
   }
-  saveQueue();
-  if (sent > 0) showSyncBanner(`✅ ${sent} result${sent>1?'s':''} synced to server!`);
 }
 
 function showSyncBanner(msg) {
@@ -655,7 +674,7 @@ async function submitAnswers() {
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
-      savedOnline = data.saved === true;
+      savedOnline = res.ok && data.saved !== false;
     } catch(e) {}
   }
 
