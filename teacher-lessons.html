@@ -1173,9 +1173,18 @@ async function syncLogs() {
             event.synced = true;
             sent++;
             localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
-            const match = videoLog.findIndex(l => l.video_name === event.video_name && l.date === event.date);
-            if (match >= 0) { videoLog[match].synced = true; }
-            localStorage.setItem(getLogKey(), JSON.stringify(videoLog));
+            // Use event's own school/date for key — currentSchool may be null when syncing on page load
+            try {
+              const logKey = `vlog_${event.school}_${event.date}`;
+              const log = JSON.parse(localStorage.getItem(logKey) || '[]');
+              const idx = log.findIndex(l => l.video_name === event.video_name && l.date === event.date);
+              if (idx >= 0) { log[idx].synced = true; localStorage.setItem(logKey, JSON.stringify(log)); }
+              // Also update in-memory videoLog if it's loaded for this key
+              if (getLogKey() === logKey) {
+                const mi = videoLog.findIndex(l => l.video_name === event.video_name && l.date === event.date);
+                if (mi >= 0) videoLog[mi].synced = true;
+              }
+            } catch(e) {}
           } else {
             showToast(`⚠️ Server rejected log: ${data.error || 'unknown'}`);
           }
