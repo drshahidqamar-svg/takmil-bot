@@ -7,29 +7,29 @@
 //  • Background Sync: flushes submission queue when signal returns
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CACHE_NAME = 'takmil-feedback-v3';
+const CACHE_NAME = 'takmil-feedback-v4';
 const SYNC_TAG   = 'sync-takmil-feedback';
 const API_BASE   = 'https://takmil-bot-production-0f51.up.railway.app';
 
-const CACHEABLE_PAGES  = ['/teacher-feedback'];
+const CACHEABLE_PAGES  = ['/teacher-feedback', '/portal'];
 const CACHEABLE_ASSETS = [
   '/icons/icon-192.png', '/icons/icon-512.png',
-  '/icons/apple-touch-icon.png', '/manifest.json',
+  '/icons/apple-touch-icon.png', '/manifest.json', '/manifest-portal.json',
 ];
 
 // ── INSTALL: activate immediately, cache nothing (avoid failing on slow/no network) ──
 self.addEventListener('install', event => {
-  console.log('[SW] v3 installed');
+  console.log('[SW] v4 installed');
   event.waitUntil(self.skipWaiting());
 });
 
 // ── ACTIVATE: clear old caches, take control of all tabs ─────────────────────
 self.addEventListener('activate', event => {
-  console.log('[SW] v3 activated');
+  console.log('[SW] v4 activated');
   event.waitUntil(
     Promise.all([
       caches.keys().then(keys => Promise.all(
-        keys.filter(k => k !== CACHE_NAME && k !== 'takmil-queue-store')
+        keys.filter(k => k !== CACHE_NAME && k !== 'takmil-queue-store' && k !== 'takmil-assess-queue')
             .map(k => caches.delete(k))
       )),
       self.clients.claim(),
