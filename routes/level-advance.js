@@ -1024,18 +1024,21 @@ router.post('/api/assess/sync', async (req, res) => {
       return res.status(400).json({ saved: false, error: 'pin and student_name required' });
     }
 
-    const { pin, student_name, answers, score_pct, correct, total, passed, submission_mode, submitted_at } = payload;
+    const { pin, student_name, answers, score_pct, correct, total, passed,
+            submission_mode, submitted_at } = payload;
 
     // Validate PIN exists (even expired — offline submissions may arrive late)
     const sess = await db.pool.query(
-      `SELECT * FROM tablet_sessions WHERE pin_code=$1 LIMIT 1`, [pin]
+      `SELECT ts.*, s.id AS schools_id FROM tablet_sessions ts
+       LEFT JOIN schools s ON s.identifier ILIKE ts.school_identifier
+       WHERE ts.pin_code=$1 LIMIT 1`, [pin]
     );
     if (!sess.rows.length) {
+      console.error('[assess/sync] PIN not found:', pin);
       return res.status(404).json({ saved: false, error: 'Session PIN not found' });
     }
     const s = sess.rows[0];
 
-    // Recalculate score from answers if provided, otherwise use pre-calculated values
     let finalCorrect = correct || 0;
     let finalTotal   = total || (answers?.length || 0);
     let finalScore   = score_pct || 0;
@@ -1053,7 +1056,9 @@ router.post('/api/assess/sync', async (req, res) => {
       finalPassed = finalScore >= (PASS_THRESHOLD || 60);
     }
 
-    // Save to tablet_results
+    const completedAt = submitted_at ? new Date(submitted_at) : new Date();
+
+    // Save to tablet_results (existing flow)
     try {
       await db.pool.query(`
         INSERT INTO tablet_results
@@ -1062,14 +1067,10 @@ router.post('/api/assess/sync', async (req, res) => {
            submission_mode, completed_at)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         ON CONFLICT DO NOTHING
-      `, [
-        s.id, student_name, s.school_identifier, s.level,
-        finalTotal, finalCorrect, finalScore, finalPassed,
-        submission_mode || 'offline',
-        submitted_at ? new Date(submitted_at) : new Date(),
-      ]);
+      `, [s.id, student_name, s.school_identifier, s.level,
+          finalTotal, finalCorrect, finalScore, finalPassed,
+          submission_mode || 'offline', completedAt]);
     } catch(e) {
-      // Add submission_mode column if missing
       try {
         await db.pool.query(`ALTER TABLE tablet_results ADD COLUMN IF NOT EXISTS submission_mode TEXT DEFAULT 'online'`);
         await db.pool.query(`
@@ -1078,14 +1079,42 @@ router.post('/api/assess/sync', async (req, res) => {
              total_questions, correct_answers, score_pct, passed, completed_at)
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
           ON CONFLICT DO NOTHING
-        `, [s.id, student_name, s.school_identifier, s.level, finalTotal, finalCorrect, finalScore, finalPassed,
-            submitted_at ? new Date(submitted_at) : new Date()]);
+        `, [s.id, student_name, s.school_identifier, s.level,
+            finalTotal, finalCorrect, finalScore, finalPassed, completedAt]);
       } catch(e2) {
-        console.log('[assess/sync] tablet_results save note:', e2.message);
+        console.log('[assess/sync] tablet_results note:', e2.message);
       }
     }
 
-    // Save individual answers to tablet_responses
+    // Also save to student_assessments — this is what the dashboard reads
+    try {
+      const pinRow = await db.pool.query(
+        'SELECT id FROM pins WHERE pin=$1 LIMIT 1', [pin]
+      ).catch(() => ({ rows: [] }));
+      const pinId = pinRow.rows[0]?.id || null;
+
+      await db.pool.query(`
+        INSERT INTO student_assessments
+          (pin_id, school_id, teacher_phone, student_name, level, subject,
+           total_questions, correct_answers, score_pct, passed,
+           submission_mode, completed_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      `, [
+        pinId,
+        s.schools_id || null,
+        s.created_by || null,
+        student_name,
+        s.level,
+        s.subject || 'All',
+        finalTotal, finalCorrect, finalScore, finalPassed,
+        submission_mode || 'offline',
+        completedAt
+      ]);
+    } catch(e) {
+      console.log('[assess/sync] student_assessments note:', e.message);
+    }
+
+    // Save individual answers
     if (answers && answers.length > 0) {
       for (const a of answers) {
         try {
@@ -1097,16 +1126,16 @@ router.post('/api/assess/sync', async (req, res) => {
             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
           `, [s.id, student_name, s.school_identifier, s.level,
               a.question_id, a.selected_option, a.correct_option, isCorrect, a.time_taken_secs || 0]);
-        } catch(e) { /* non-fatal */ }
+        } catch(e) {}
       }
     }
 
     res.json({
-      saved:   true,
+      saved: true,
       score_pct: finalScore,
-      correct:   finalCorrect,
-      total:     finalTotal,
-      passed:    finalPassed,
+      correct: finalCorrect,
+      total: finalTotal,
+      passed: finalPassed,
       submission_mode: submission_mode || 'offline',
     });
 
