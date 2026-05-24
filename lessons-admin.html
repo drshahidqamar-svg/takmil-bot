@@ -127,6 +127,7 @@ async function loadLessons(){
 
     // Map video-log fields to what the table expects
     lessons = lessons.map(l => ({
+      log_date:          l.log_date,
       teacher_name:      l.teacher_phone || '—',
       school_code:       l.school_identifier,
       school_name:       l.school_identifier?.replace(/_/g,' ') || '—',
@@ -161,8 +162,8 @@ async function loadLessons(){
     document.getElementById('s-total').textContent     = lessons.length;
     document.getElementById('s-confirmed').textContent = lessons.filter(l=>l.status==='completed').length;
     document.getElementById('s-flagged').textContent   = lessons.filter(l=>l.flagged).length;
-    document.getElementById('s-today').textContent     = lessons.filter(l=>
-      l.start_time && l.start_time.startsWith(todayStr)
+    document.getElementById('s-today').textContent = lessons.filter(l =>
+      (l.log_date || '').startsWith(todayStr)
     ).length;
 
     if(!lessons.length){ div.innerHTML='<div class="loading">No lessons found</div>'; return; }
