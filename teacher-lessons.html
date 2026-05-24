@@ -1051,18 +1051,19 @@ function getTodayLog(videoName) {
 }
 
 function saveVideoProgress(pct) {
-  const existing = videoLog.findIndex(l => l.video_name === currentVideo?.name && l.date === TODAY);
+  if (!currentVideo?.name || !currentSchool?.identifier) return;
+  const existing = videoLog.findIndex(l => l.video_name === currentVideo.name && l.date === TODAY);
   const entry = {
     date:          TODAY,
-    video_name:    currentVideo?.name,
-    title:         currentVideo?.title,
-    subject:       currentVideo?.subject,
-    level:         currentVideo?.level,
-    unit:          currentVideo?.unit,
+    video_name:    currentVideo.name,
+    title:         currentVideo.title || currentVideo.name,
+    subject:       currentVideo.subject || null,
+    level:         currentVideo.level  || null,
+    unit:          currentVideo.unit   || null,
     max_pct:       pct,
     completed:     pct >= 99,
-    school:        currentSchool?.identifier,
-    teacher_phone: currentPhone,
+    school:        currentSchool.identifier,
+    teacher_phone: currentPhone || null,
     gps_lat:       gpsCoords?.lat || null,
     gps_lng:       gpsCoords?.lng || null,
     gps_accuracy:  gpsCoords?.acc || null,
@@ -1079,19 +1080,24 @@ function saveVideoProgress(pct) {
 }
 
 function logVideoEvent(type, pct) {
+  // Guard — don't log if essential fields are missing (server will reject)
+  if (!currentVideo?.name || !currentSchool?.identifier) {
+    console.warn('[VideoLog] Skipping event — missing video or school', { currentVideo, currentSchool });
+    return;
+  }
   const event = {
     type,
     date:          TODAY,
     time:          new Date().toISOString(),
-    video_name:    currentVideo?.name,
-    title:         currentVideo?.title,
-    subject:       currentVideo?.subject,
-    level:         currentVideo?.level,
-    unit:          currentVideo?.unit,
+    video_name:    currentVideo.name,
+    title:         currentVideo.title || currentVideo.name,
+    subject:       currentVideo.subject || null,
+    level:         currentVideo.level  || null,
+    unit:          currentVideo.unit   || null,
     pct,
     completed:     pct >= 99,
-    school:        currentSchool?.identifier,
-    teacher_phone: currentPhone,
+    school:        currentSchool.identifier,
+    teacher_phone: currentPhone || null,
     gps_lat:       gpsCoords?.lat || null,
     gps_lng:       gpsCoords?.lng || null,
     gps_accuracy:  gpsCoords?.acc || null,
@@ -1107,8 +1113,15 @@ function logVideoEvent(type, pct) {
 
 async function syncLogs() {
   if (!navigator.onLine) return;
-  // Always re-read from localStorage to get latest state
   try { logSyncQueue = JSON.parse(localStorage.getItem('vlog_sync_queue') || '[]'); } catch(e) { return; }
+
+  // Remove invalid entries that server would reject (missing required fields)
+  const before = logSyncQueue.length;
+  logSyncQueue = logSyncQueue.filter(e => e.video_name && e.school);
+  if (logSyncQueue.length < before) {
+    localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
+  }
+
   const pending = logSyncQueue.filter(e => !e.synced);
   if (!pending.length) return;
 
