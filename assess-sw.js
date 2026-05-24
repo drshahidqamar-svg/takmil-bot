@@ -141,7 +141,7 @@ async function flushQueueFromSW() {
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
-      if (!data.saved) remaining.push(payload);
+      if (!res.ok || data.saved === false) remaining.push(payload);
     } catch (e) {
       remaining.push(payload);
     }

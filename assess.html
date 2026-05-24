@@ -654,15 +654,24 @@ async function submitAnswers() {
   const passed   = scorePct >= 60;
 
   const payload = {
-    pin:          currentPin,
-    student_name: currentStudent,
+    pin:               currentPin,
+    student_name:      currentStudent,
     answers,
-    score_pct:    scorePct,
+    score_pct:         scorePct,
     correct,
     total,
     passed,
-    submission_mode: navigator.onLine ? 'online' : 'offline',
-    submitted_at:    new Date().toISOString(),
+    // Session context — needed for dashboard display
+    school_identifier: sessionData?.school_identifier || sessionData?.school_code || null,
+    school_name:       sessionData?.school_name       || null,
+    teacher_phone:     sessionData?.teacher_phone     || null,
+    coordinator:       sessionData?.coordinator       || null,
+    subject:           sessionData?.subject           || null,
+    level:             sessionData?.level             || null,
+    grade:             sessionData?.grade             || null,
+    semester:          sessionData?.semester          || null,
+    submission_mode:   navigator.onLine ? 'online' : 'offline',
+    submitted_at:      new Date().toISOString(),
   };
 
   let savedOnline = false;
