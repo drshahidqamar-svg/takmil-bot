@@ -1140,11 +1140,13 @@ function logVideoEvent(type, pct) {
 }
 
 let syncInProgress = false; // lock — prevents concurrent sync calls
+let syncQueued     = false; // retry flag — if a call was dropped, retry after current finishes
 
 async function syncLogs() {
   if (!navigator.onLine) return;
-  if (syncInProgress) return;
+  if (syncInProgress) { syncQueued = true; return; } // busy — flag for retry
   syncInProgress = true;
+  syncQueued = false;
 
   try {
     try { logSyncQueue = JSON.parse(localStorage.getItem('vlog_sync_queue') || '[]'); } catch(e) { return; }
@@ -1189,6 +1191,7 @@ async function syncLogs() {
     if (sent > 0) { showToast(`✅ ${sent} video log${sent>1?'s':''} synced`); renderLog(); }
   } finally {
     syncInProgress = false;
+    if (syncQueued) { syncQueued = false; setTimeout(syncLogs, 300); } // retry dropped call
   }
 }
 
