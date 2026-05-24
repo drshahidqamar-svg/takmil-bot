@@ -1143,59 +1143,52 @@ let syncInProgress = false; // lock — prevents concurrent sync calls
 
 async function syncLogs() {
   if (!navigator.onLine) return;
-  if (syncInProgress) return; // already syncing — skip this call
+  if (syncInProgress) return;
   syncInProgress = true;
-  try { logSyncQueue = JSON.parse(localStorage.getItem('vlog_sync_queue') || '[]'); } catch(e) { syncInProgress = false; return; }
 
-  // Remove invalid entries that server would reject (missing required fields)
-  const before = logSyncQueue.length;
-  logSyncQueue = logSyncQueue.filter(e => e.video_name && e.school);
-  if (logSyncQueue.length < before) {
-    localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
-  }
+  try {
+    try { logSyncQueue = JSON.parse(localStorage.getItem('vlog_sync_queue') || '[]'); } catch(e) { return; }
 
-  const pending = logSyncQueue.filter(e => !e.synced);
-  if (!pending.length) return;
+    // Remove invalid entries missing required fields
+    const before = logSyncQueue.length;
+    logSyncQueue = logSyncQueue.filter(e => e.video_name && e.school);
+    if (logSyncQueue.length < before) localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
 
-  let sent = 0;
-  for (const event of pending) {
-    try {
-      const res  = await fetch(`${API}/api/video-log`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(event),
-      });
-      // Accept any 2xx response as success — don't rely solely on data.saved
-      if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (data.saved !== false) {
-          event.synced = true;
-          sent++;
-          localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
-          // Also mark the matching videoLog entry as synced so the log screen updates
-          const match = videoLog.findIndex(l => l.video_name === event.video_name && l.date === event.date);
-          if (match >= 0) { videoLog[match].synced = true; }
-          localStorage.setItem(getLogKey(), JSON.stringify(videoLog));
+    const pending = logSyncQueue.filter(e => !e.synced);
+    if (!pending.length) return;
+
+    let sent = 0;
+    for (const event of pending) {
+      try {
+        const res = await fetch(`${API}/api/video-log`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(event),
+        });
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data.saved !== false) {
+            event.synced = true;
+            sent++;
+            localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
+            const match = videoLog.findIndex(l => l.video_name === event.video_name && l.date === event.date);
+            if (match >= 0) { videoLog[match].synced = true; }
+            localStorage.setItem(getLogKey(), JSON.stringify(videoLog));
+          } else {
+            showToast(`⚠️ Server rejected log: ${data.error || 'unknown'}`);
+          }
         } else {
-          showToast(`⚠️ Server rejected log: ${data.error || 'unknown reason'}`);
+          showToast(`⚠️ Sync failed (${res.status})`);
+          break;
         }
-      } else {
-        const errText = await res.text().catch(() => res.status);
-        showToast(`⚠️ Log sync failed ${res.status}: ${String(errText).slice(0,60)}`);
+      } catch(e) {
+        console.warn('[VideoLog] Sync error:', e.message);
         break;
       }
-    } catch(e) {
-      console.warn('[VideoLog] Sync failed for event, will retry later:', e.message);
-      break; // stop on network error, retry next time
     }
-  }
-
-  if (sent > 0) {
-    showToast(`✅ ${sent} video log${sent>1?'s':''} synced`);
-    renderLog();
-  }
+    if (sent > 0) { showToast(`✅ ${sent} video log${sent>1?'s':''} synced`); renderLog(); }
   } finally {
-    syncInProgress = false; // always release lock even if error
+    syncInProgress = false;
   }
 }
 
