@@ -1168,6 +1168,10 @@ async function syncLogs() {
           event.synced = true;
           sent++;
           localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
+          // Also mark the matching videoLog entry as synced so the log screen updates
+          const match = videoLog.findIndex(l => l.video_name === event.video_name && l.date === event.date);
+          if (match >= 0) { videoLog[match].synced = true; }
+          localStorage.setItem(getLogKey(), JSON.stringify(videoLog));
         } else {
           showToast(`⚠️ Server rejected log: ${data.error || 'unknown reason'}`);
         }
