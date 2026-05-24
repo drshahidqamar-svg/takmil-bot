@@ -113,25 +113,57 @@ async function loadLessons(){
   const status  = document.getElementById('f-status').value;
   const school  = document.getElementById('f-school').value;
 
-  let url = '/api/lessons?';
-  if(date)    url += 'date='+date+'&';
-  if(subject) url += 'subject='+subject+'&';
-  if(status)  url += 'status='+status+'&';
-  if(school)  url += 'school_code='+encodeURIComponent(school)+'&';
+  // Use /api/video-log — the actual endpoint that exists on the server
+  let url = '/api/video-log?';
+  if(date)   url += 'date='   + date + '&';
+  if(school) url += 'school=' + encodeURIComponent(school) + '&';
 
   const div = document.getElementById('lessons-table');
   div.innerHTML = '<div class="loading">Loading...</div>';
   try{
     const resp = await fetch(url);
     const data = await resp.json();
-    const lessons = data.lessons || [];
+    let lessons = data.logs || [];
+
+    // Map video-log fields to what the table expects
+    lessons = lessons.map(l => ({
+      teacher_name:      l.teacher_phone || '—',
+      school_code:       l.school_identifier,
+      school_name:       l.school_identifier?.replace(/_/g,' ') || '—',
+      video_name:        l.video_title || l.video_name || '—',
+      subject:           l.subject || 'General',
+      level:             l.level   || '—',
+      unit:              l.unit    || '—',
+      start_time:        l.started_at,
+      actual_duration:   l.started_at && l.last_event
+                           ? Math.round((new Date(l.last_event) - new Date(l.started_at)) / 1000)
+                           : null,
+      coverage_pct:      parseFloat(l.max_pct) || 0,
+      completed:         l.completed,
+      status:            l.completed
+                           ? 'completed'
+                           : parseFloat(l.max_pct) >= 50
+                             ? 'short'
+                             : parseFloat(l.max_pct) > 0
+                               ? 'started'
+                               : 'suspicious',
+      flagged:           !l.completed && parseFloat(l.max_pct) < 50,
+      start_gps_lat:     l.gps_lat,
+      start_gps_lng:     l.gps_lng,
+    }));
+
+    // Client-side filter by subject and status (server doesn't filter these on video-log)
+    if(subject) lessons = lessons.filter(l => l.subject === subject);
+    if(status)  lessons = lessons.filter(l => l.status  === status);
 
     // Stats
-    document.getElementById('s-total').textContent = lessons.length;
+    const todayStr = new Date().toISOString().split('T')[0];
+    document.getElementById('s-total').textContent     = lessons.length;
     document.getElementById('s-confirmed').textContent = lessons.filter(l=>l.status==='completed').length;
     document.getElementById('s-flagged').textContent   = lessons.filter(l=>l.flagged).length;
-    const today = new Date().toDateString();
-    document.getElementById('s-today').textContent = lessons.filter(l=>new Date(l.start_time).toDateString()===today).length;
+    document.getElementById('s-today').textContent     = lessons.filter(l=>
+      l.start_time && l.start_time.startsWith(todayStr)
+    ).length;
 
     if(!lessons.length){ div.innerHTML='<div class="loading">No lessons found</div>'; return; }
 
@@ -142,19 +174,24 @@ async function loadLessons(){
         <th>Coverage</th><th>Status</th><th>GPS</th>
       </tr>
       ${lessons.map(l=>{
-        const pct = Math.round(l.coverage_pct||0);
+        const pct   = Math.round(l.coverage_pct||0);
         const badge = l.status==='completed'?'badge-green':l.status==='short'?'badge-amber':l.status==='suspicious'?'badge-red':'badge-grey';
         const label = l.status==='completed'?'✅ Confirmed':l.status==='short'?'⚠️ Short':l.status==='suspicious'?'🚨 Flagged':l.status==='started'?'▶ In Progress':'—';
         const mins  = Math.floor((l.actual_duration||0)/60);
         const secs  = (l.actual_duration||0)%60;
-        const gps   = l.start_gps_lat ? `<a class="gps-link" href="https://maps.google.com/?q=${l.start_gps_lat},${l.start_gps_lng}" target="_blank">📍 Map</a>` : '—';
+        const gps   = l.start_gps_lat
+          ? `<a class="gps-link" href="https://maps.google.com/?q=${l.start_gps_lat},${l.start_gps_lng}" target="_blank">📍 Map</a>`
+          : '—';
+        const started = l.start_time
+          ? new Date(l.start_time).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
+          : '—';
         return `<tr>
-          <td><strong>${l.teacher_name||'—'}</strong></td>
-          <td>${l.school_name||l.school_code||'—'}</td>
-          <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.video_name||l.video_id||'—'}</td>
-          <td>${l.subject||'—'} L${l.level||'—'}</td>
-          <td>${l.start_time?new Date(l.start_time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}</td>
-          <td>${l.actual_duration?mins+'m '+secs+'s':'—'}</td>
+          <td><strong>${l.teacher_name}</strong></td>
+          <td>${l.school_name}</td>
+          <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.video_name}</td>
+          <td>${l.subject} ${l.level !== '—' ? 'L'+l.level : ''}</td>
+          <td>${started}</td>
+          <td>${l.actual_duration ? mins+'m '+secs+'s' : '—'}</td>
           <td>
             <strong style="color:${pct>=80?'#16a34a':pct>=50?'#d97706':'#dc2626'}">${pct}%</strong>
             <div class="cov-bar"><div class="cov-fill" style="width:${pct}%;background:${pct>=80?'#16a34a':pct>=50?'#f59e0b':'#dc2626'}"></div></div>
