@@ -512,6 +512,14 @@ function updateOnlineStatus() {
 }
 window.addEventListener('online',  () => { updateOnlineStatus(); syncLogs(); showToast('🟢 Online — syncing logs...'); });
 window.addEventListener('offline', () => { updateOnlineStatus(); });
+
+// Release orientation lock whenever fullscreen exits (back button, swipe, etc.)
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) screen.orientation?.unlock?.();
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  if (!document.webkitFullscreenElement) screen.orientation?.unlock?.();
+});
 updateOnlineStatus();
 
 // ══════════════════════════════════════════════════════════
@@ -971,11 +979,34 @@ function toggleMute() {
 function toggleFullscreen() {
   const container = document.getElementById('video-container');
   if (!document.fullscreenElement) {
-    container.requestFullscreen?.() || container.webkitRequestFullscreen?.();
+    // Enter fullscreen
+    const req = container.requestFullscreen?.() || container.webkitRequestFullscreen?.();
+    // Lock to landscape on mobile after fullscreen is granted
+    if (req && req.then) {
+      req.then(() => {
+        screen.orientation?.lock?.('landscape').catch(() => {});
+      }).catch(() => {});
+    } else {
+      // Safari / older — try immediately
+      screen.orientation?.lock?.('landscape').catch(() => {});
+    }
   } else {
+    // Exit fullscreen and release orientation lock
+    screen.orientation?.unlock?.();
     document.exitFullscreen?.() || document.webkitExitFullscreen?.();
   }
 }
+
+// Also handle hardware rotation — auto-fullscreen when phone turned landscape during playback
+window.addEventListener('orientationchange', () => {
+  const angle = screen.orientation?.angle ?? window.orientation ?? 0;
+  const isLandscape = angle === 90 || angle === -90 || angle === 270;
+  const videoEl = document.getElementById('video-el');
+  if (isLandscape && videoEl && !videoEl.paused && !document.fullscreenElement) {
+    const container = document.getElementById('video-container');
+    container.requestFullscreen?.() || container.webkitRequestFullscreen?.();
+  }
+});
 
 function confirmBack() {
   if (maxWatched > 0 && !document.getElementById('completion-overlay').classList.contains('show')) {
@@ -1076,6 +1107,7 @@ function logVideoEvent(type, pct) {
 
 async function syncLogs() {
   if (!navigator.onLine) return;
+  // Always re-read from localStorage to get latest state
   try { logSyncQueue = JSON.parse(localStorage.getItem('vlog_sync_queue') || '[]'); } catch(e) { return; }
   const pending = logSyncQueue.filter(e => !e.synced);
   if (!pending.length) return;
@@ -1088,14 +1120,25 @@ async function syncLogs() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(event),
       });
-      const data = await res.json().catch(() => ({}));
-      if (data.saved) { event.synced = true; sent++; }
-    } catch(e) { break; }
+      // Accept any 2xx response as success — don't rely solely on data.saved
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.saved !== false) {           // treat missing field as success
+          event.synced = true;
+          sent++;
+          // Persist immediately after each success so partial syncs are not lost
+          localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
+        }
+      }
+    } catch(e) {
+      console.warn('[VideoLog] Sync failed for event, will retry later:', e.message);
+      break; // stop on network error, retry next time
+    }
   }
 
   if (sent > 0) {
-    localStorage.setItem('vlog_sync_queue', JSON.stringify(logSyncQueue));
     showToast(`✅ ${sent} video log${sent>1?'s':''} synced`);
+    renderLog();
   }
 }
 
