@@ -760,13 +760,21 @@ function exportCSV() {
 
 function mapToQuestionBank(q, i) {
   const opts = q.options || [];
-  const stripLetter = (s) => String(s || '').replace(/^[A-D][\.\s]+/, '').trim();
-  let qText = q.question || '';
-  // For FillInTheBlank, keep ___ visible in the question text
+  const stripLetter = (s) => String(s || '').replace(/^[A-D][.\s]+/, '').trim();
+  const qText = q.question || '';
+
+  // Convert grade string to integer level e.g. "Elementary Grade 6" -> 6, "Primary Grade 3" -> 3
+  const gradeMatch = String(q.grade || '').match(/(\d+)/);
+  const levelInt = gradeMatch ? parseInt(gradeMatch[1]) : 1;
+
+  // difficulty string to integer: easy=1, medium=2, hard=3
+  const diffMap = { easy: 1, medium: 2, hard: 3 };
+  const diffInt = diffMap[q.difficulty] || 2;
+
   return {
     question_id:    'GEN-' + Date.now() + '-' + i,
     subject:        q.subject || '',
-    level:          q.grade || '',
+    level:          levelInt,
     topic_tag:      q.topic || '',
     q_text_english: qText,
     q_text_urdu:    (q.subject === 'Urdu') ? qText : '',
@@ -777,10 +785,8 @@ function mapToQuestionBank(q, i) {
     option_d:       stripLetter(opts[3]),
     correct_option: q.correct_answer || '',
     question_type:  q.type || 'MCQ',
-    pairs:          q.pairs ? JSON.stringify(q.pairs) : '',
-    active:         2, // approved
-    status:         'approved',
-    source:         'ai-generator'
+    difficulty:     diffInt,
+    active:         2
   };
 }
 
