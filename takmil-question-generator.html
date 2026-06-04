@@ -249,6 +249,36 @@
   .footer { text-align: center; font-size: 0.75rem; color: var(--text-3); margin-top: 3rem; }
 
 
+
+  /* BULK CSV SECTION */
+  .bulk-upload-zone {
+    border: 2px dashed var(--border-strong);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--bg);
+    position: relative;
+  }
+  .bulk-upload-zone:hover { border-color: var(--text); background: #ECEAE4; }
+  .bulk-upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .csv-table-wrap { overflow-x: auto; margin: 1rem 0; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .csv-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .csv-table th { background: var(--bg); padding: 8px 12px; text-align: left; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); border-bottom: 1px solid var(--border); }
+  .csv-table td { padding: 7px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .csv-table tr:last-child td { border-bottom: none; }
+  .csv-table tr:hover td { background: var(--bg); }
+  .bulk-progress-row { display: flex; align-items: center; gap: 12px; margin: 6px 0; font-size: 0.82rem; }
+  .bulk-row-status { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .bulk-row-status.pending  { background: var(--border); color: var(--text-3); }
+  .bulk-row-status.running  { background: var(--amber-bg); color: var(--amber); }
+  .bulk-row-status.done     { background: var(--green-bg); color: var(--green); }
+  .bulk-row-status.failed   { background: var(--red-bg); color: var(--red); }
+  .bulk-summary { background: var(--green-bg); color: var(--green); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.85rem; font-weight: 500; margin-top: 1rem; }
+  .template-link { font-size: 0.8rem; color: var(--text-2); text-decoration: underline; cursor: pointer; }
+  .template-link:hover { color: var(--text); }
+
   /* IMAGE QUESTION SECTION */
   .upload-zone {
     border: 2px dashed var(--border-strong);
@@ -379,6 +409,47 @@
   </div>
 
   <div id="error-area"></div>
+
+  <!-- BULK CSV GENERATOR -->
+  <div class="section-divider"><span>Or generate in bulk from CSV</span></div>
+
+  <div class="card" id="bulk-section">
+    <div class="card-title">Bulk Question Generator</div>
+    <p style="font-size:0.85rem;color:#6B6760;margin-bottom:0.75rem;">Upload a CSV with Subject, Grade, and Topic — generates 10 mixed-difficulty questions per row and downloads as a single CSV.</p>
+    <span class="template-link" onclick="downloadTemplate()">⬇ Download CSV template</span>
+
+    <div style="margin-top:1rem;" id="bulk-upload-area">
+      <div class="bulk-upload-zone" id="bulk-zone">
+        <input type="file" id="bulk-input" accept=".csv,text/csv" onchange="handleBulkCSV(event)">
+        <div class="upload-icon">📄</div>
+        <div class="upload-label">Click to upload your CSV file</div>
+        <div class="upload-hint">Columns: Subject, Grade, Topic</div>
+      </div>
+    </div>
+
+    <div id="bulk-preview-area" style="display:none;">
+      <div class="csv-table-wrap">
+        <table class="csv-table">
+          <thead><tr><th>#</th><th>Subject</th><th>Grade</th><th>Topic</th><th>Status</th></tr></thead>
+          <tbody id="bulk-table-body"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:1rem;">
+        <button class="btn btn-primary" id="bulk-gen-btn" onclick="runBulkGeneration()" style="flex:2;">⚡ Generate all questions</button>
+        <button class="btn btn-outline" onclick="resetBulk()" style="flex:1;">✕ Clear</button>
+      </div>
+    </div>
+
+    <div id="bulk-progress-area" style="display:none;margin-top:1rem;">
+      <div class="card-title">Generating...</div>
+      <div id="bulk-progress-list"></div>
+      <div class="progress-wrap" style="margin-top:0.75rem;">
+        <div class="progress-bar" id="bulk-progress-bar"></div>
+      </div>
+    </div>
+
+    <div id="bulk-done-area" style="display:none;margin-top:1rem;"></div>
+  </div>
 
   <!-- IMAGE QUESTION GENERATOR -->
   <div class="section-divider"><span>Or generate from an image</span></div>
@@ -700,6 +771,184 @@ function regenerate() {
 
 function showError(msg) {
   document.getElementById('error-area').innerHTML = `<div class="alert alert-error">${msg}</div>`;
+}
+
+
+// ── Bulk CSV Generator ────────────────────────────────────────────────────────
+let bulkRows = [];
+let allBulkQuestions = [];
+
+function downloadTemplate() {
+  const csv = 'Subject,Grade,Topic\nEnglish,Elementary Grade 6,My Homeland\nMath,Primary Grade 4,Fractions\nUrdu,Elementary Grade 7,نعت کی پڑھائی\nScience,Elementary Grade 8,Human Body Systems';
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'takmil_bulk_template.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function handleBulkCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result.replace(/^\uFEFF/, ''); // strip BOM
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+    if (lines.length < 2) { alert('CSV must have a header row and at least one data row.'); return; }
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const subjectIdx = headers.findIndex(h => h.includes('subject'));
+    const gradeIdx   = headers.findIndex(h => h.includes('grade'));
+    const topicIdx   = headers.findIndex(h => h.includes('topic'));
+    if (subjectIdx === -1 || gradeIdx === -1 || topicIdx === -1) {
+      alert('CSV must have columns: Subject, Grade, Topic'); return;
+    }
+    bulkRows = lines.slice(1).map((line, i) => {
+      const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+      return { id: i, subject: cols[subjectIdx] || '', grade: cols[gradeIdx] || '', topic: cols[topicIdx] || '', status: 'pending' };
+    }).filter(r => r.subject && r.grade && r.topic);
+
+    renderBulkTable();
+    document.getElementById('bulk-upload-area').style.display = 'none';
+    document.getElementById('bulk-preview-area').style.display = 'block';
+    document.getElementById('bulk-done-area').style.display = 'none';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function renderBulkTable() {
+  const tbody = document.getElementById('bulk-table-body');
+  tbody.innerHTML = bulkRows.map(r => `
+    <tr id="bulk-row-${r.id}">
+      <td style="color:var(--text-3);">${r.id + 1}</td>
+      <td>${r.subject}</td>
+      <td>${r.grade}</td>
+      <td>${r.topic}</td>
+      <td><span class="bulk-row-status ${r.status}" id="bulk-status-${r.id}">${r.status === 'pending' ? '–' : r.status === 'running' ? '⟳' : r.status === 'done' ? '✓' : '!'}</span></td>
+    </tr>`).join('');
+}
+
+async function runBulkGeneration() {
+  if (!bulkRows.length) return;
+  allBulkQuestions = [];
+  bulkRows.forEach(r => r.status = 'pending');
+
+  document.getElementById('bulk-preview-area').style.display = 'none';
+  document.getElementById('bulk-progress-area').style.display = 'block';
+  document.getElementById('bulk-done-area').style.display = 'none';
+
+  const progressList = document.getElementById('bulk-progress-list');
+  progressList.innerHTML = bulkRows.map(r => `
+    <div class="bulk-progress-row" id="bpr-${r.id}">
+      <span class="bulk-row-status pending" id="bps-${r.id}">–</span>
+      <span id="bpt-${r.id}" style="color:var(--text-2);">${r.subject} · ${r.grade} · ${r.topic}</span>
+    </div>`).join('');
+
+  const bar = document.getElementById('bulk-progress-bar');
+
+  for (let i = 0; i < bulkRows.length; i++) {
+    const r = bulkRows[i];
+    // Update status to running
+    document.getElementById('bps-' + r.id).className = 'bulk-row-status running';
+    document.getElementById('bps-' + r.id).textContent = '⟳';
+    document.getElementById('bpt-' + r.id).style.color = 'var(--text)';
+    bar.style.width = Math.round((i / bulkRows.length) * 100) + '%';
+
+    try {
+      const prompt = `Generate exactly 10 assessment questions. Return ONLY a valid JSON array with no markdown, no explanation.
+
+Subject: ${r.subject}, Grade: ${r.grade}, Topic: ${r.topic}
+Difficulty: mixed (distribute easy/medium/hard)
+Types: distribute evenly between MCQ and TrueFalse
+
+MCQ: {"type":"MCQ","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","difficulty":"easy","subject":"${r.subject}","grade":"${r.grade}","topic":"${r.topic}"}
+TrueFalse: {"type":"TrueFalse","question":"...","correct_answer":"True","difficulty":"easy","subject":"${r.subject}","grade":"${r.grade}","topic":"${r.topic}"}
+
+Output the JSON array only. Start with [ and end with ].`;
+
+      const res = await fetch('/api/questions/generate-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 4096,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error || !data.content) throw new Error(data.error?.message || 'API error');
+      const text = data.content.map(b => b.text || '').join('');
+      const clean = text.replace(/```json|```/g, '').trim();
+      const qs = JSON.parse(clean);
+      allBulkQuestions.push(...qs);
+
+      document.getElementById('bps-' + r.id).className = 'bulk-row-status done';
+      document.getElementById('bps-' + r.id).textContent = '✓';
+      document.getElementById('bpt-' + r.id).style.color = 'var(--green)';
+    } catch (err) {
+      document.getElementById('bps-' + r.id).className = 'bulk-row-status failed';
+      document.getElementById('bps-' + r.id).textContent = '!';
+      document.getElementById('bpt-' + r.id).style.color = 'var(--red)';
+    }
+
+    // Small delay to avoid rate limiting
+    if (i < bulkRows.length - 1) await new Promise(resolve => setTimeout(resolve, 600));
+  }
+
+  bar.style.width = '100%';
+  setTimeout(() => {
+    document.getElementById('bulk-progress-area').style.display = 'none';
+    showBulkDone();
+  }, 800);
+}
+
+function showBulkDone() {
+  const doneArea = document.getElementById('bulk-done-area');
+  const failed = bulkRows.filter(r => {
+    const el = document.getElementById('bps-' + r.id);
+    return el && el.classList.contains('failed');
+  }).length;
+
+  doneArea.innerHTML = `
+    <div class="bulk-summary">
+      ✓ Done — ${allBulkQuestions.length} questions generated from ${bulkRows.length - failed} topic${bulkRows.length - failed !== 1 ? 's' : ''}${failed ? ` (${failed} failed)` : ''}
+    </div>
+    <div style="display:flex;gap:10px;margin-top:1rem;">
+      <button class="btn btn-primary" onclick="downloadBulkCSV()" style="flex:2;">⬇ Download CSV (${allBulkQuestions.length} questions)</button>
+      <button class="btn btn-outline" onclick="resetBulk()" style="flex:1;">↺ Start over</button>
+    </div>`;
+  doneArea.style.display = 'block';
+}
+
+function downloadBulkCSV() {
+  if (!allBulkQuestions.length) return;
+  const headers = ['type','question','option_a','option_b','option_c','option_d','correct_answer','difficulty','subject','grade','topic'];
+  const rows = allBulkQuestions.map(q => {
+    const opts = q.options || [];
+    const clean = s => '"' + String(s || '').replace(/"/g, '""') + '"';
+    return [
+      q.type, clean(q.question),
+      clean((opts[0] || '').replace(/^A\.\s*/, '')),
+      clean((opts[1] || '').replace(/^B\.\s*/, '')),
+      clean((opts[2] || '').replace(/^C\.\s*/, '')),
+      clean((opts[3] || '').replace(/^D\.\s*/, '')),
+      clean(q.correct_answer), q.difficulty || 'medium',
+      q.subject, q.grade, clean(q.topic)
+    ].join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'takmil_bulk_questions.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function resetBulk() {
+  bulkRows = []; allBulkQuestions = [];
+  document.getElementById('bulk-input').value = '';
+  document.getElementById('bulk-upload-area').style.display = 'block';
+  document.getElementById('bulk-preview-area').style.display = 'none';
+  document.getElementById('bulk-progress-area').style.display = 'none';
+  document.getElementById('bulk-done-area').style.display = 'none';
 }
 
 // ── Image Question Generator ──────────────────────────────────────────────────
