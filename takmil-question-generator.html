@@ -199,6 +199,7 @@
   .badge-tf { background: var(--green-bg); color: var(--green); }
   .badge-sa { background: var(--amber-bg); color: var(--amber); }
   .badge-match { background: #F0E6FF; color: #5B21B6; }
+  .badge-fitb  { background: #FFF0F6; color: #9D174D; }
   .badge-easy { background: var(--green-bg); color: var(--green); }
   .badge-medium { background: var(--amber-bg); color: var(--amber); }
   .badge-hard { background: var(--red-bg); color: var(--red); }
@@ -397,6 +398,7 @@
         <label class="checkbox-label"><input type="checkbox" id="type-tf" checked> True / False</label>
         <label class="checkbox-label"><input type="checkbox" id="type-sa"> Short answer</label>
         <label class="checkbox-label"><input type="checkbox" id="type-match"> Match the columns</label>
+        <label class="checkbox-label"><input type="checkbox" id="type-fitb"> Fill in the blanks</label>
       </div>
     </div>
 
@@ -504,6 +506,7 @@
           <label class="checkbox-label"><input type="checkbox" id="img-type-mcq" checked> Multiple choice (MCQ)</label>
           <label class="checkbox-label"><input type="checkbox" id="img-type-tf" checked> True / False</label>
           <label class="checkbox-label"><input type="checkbox" id="img-type-sa"> Short answer</label>
+          <label class="checkbox-label"><input type="checkbox" id="img-type-fitb"> Fill in the blanks</label>
         </div>
       </div>
 
@@ -584,6 +587,8 @@ async function generateQuestions() {
   if (useSA)  types.push('Short Answer (model answer 1-2 sentences)');
   const useMatch = document.getElementById('type-match').checked;
   if (useMatch) types.push('MatchTheColumns (5 pairs: left column items matched to right column items)');
+  const useFITB = document.getElementById('type-fitb').checked;
+  if (useFITB) types.push('FillInTheBlank (sentence with one blank marked as ___, answer is the missing word/phrase)');
 
   const topicLine = topic || (subject + ' general');
   const langLine = lang === 'Urdu' ? 'Write all questions and answers in Urdu script.' : 'Write in simple English for Pakistani school students.';
@@ -598,6 +603,7 @@ JSON format for each question type:
 MCQ: {"type":"MCQ","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 TrueFalse: {"type":"TrueFalse","question":"...","correct_answer":"True","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 ShortAnswer: {"type":"ShortAnswer","question":"...","correct_answer":"...","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
+FillInTheBlank: {"type":"FillInTheBlank","question":"The capital of Pakistan is ___.","correct_answer":"Islamabad","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 MatchTheColumns: {"type":"MatchTheColumns","question":"Match the following:","pairs":[{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."}],"correct_answer":"See pairs","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 
 Output the JSON array only. Start with [ and end with ].`;
@@ -647,19 +653,21 @@ function renderResults(qs) {
   const tf  = qs.filter(q => q.type === 'TrueFalse').length;
   const sa    = qs.filter(q => q.type === 'ShortAnswer').length;
   const match = qs.filter(q => q.type === 'MatchTheColumns').length;
+  const fitb  = qs.filter(q => q.type === 'FillInTheBlank').length;
 
   let statsHtml = `<div class="stat"><div class="stat-num">${qs.length}</div><div class="stat-lbl">Total</div></div>`;
   if (mcq) statsHtml += `<div class="stat"><div class="stat-num">${mcq}</div><div class="stat-lbl">MCQ</div></div>`;
   if (tf)  statsHtml += `<div class="stat"><div class="stat-num">${tf}</div><div class="stat-lbl">True / False</div></div>`;
   if (sa)    statsHtml += `<div class="stat"><div class="stat-num">${sa}</div><div class="stat-lbl">Short answer</div></div>`;
   if (match) statsHtml += `<div class="stat"><div class="stat-num">${match}</div><div class="stat-lbl">Match columns</div></div>`;
+  if (fitb)  statsHtml += `<div class="stat"><div class="stat-num">${fitb}</div><div class="stat-lbl">Fill in blanks</div></div>`;
   document.getElementById('stats-row').innerHTML = statsHtml;
 
   const list = document.getElementById('q-list');
   list.innerHTML = '';
   qs.forEach((q, i) => {
-    const typeClass  = q.type === 'MCQ' ? 'badge-mcq' : q.type === 'TrueFalse' ? 'badge-tf' : q.type === 'MatchTheColumns' ? 'badge-match' : 'badge-sa';
-    const typeLabel  = q.type === 'MCQ' ? 'MCQ' : q.type === 'TrueFalse' ? 'True / False' : q.type === 'MatchTheColumns' ? 'Match columns' : 'Short answer';
+    const typeClass  = q.type === 'MCQ' ? 'badge-mcq' : q.type === 'TrueFalse' ? 'badge-tf' : q.type === 'MatchTheColumns' ? 'badge-match' : q.type === 'FillInTheBlank' ? 'badge-fitb' : 'badge-sa';
+    const typeLabel  = q.type === 'MCQ' ? 'MCQ' : q.type === 'TrueFalse' ? 'True / False' : q.type === 'MatchTheColumns' ? 'Match columns' : q.type === 'FillInTheBlank' ? 'Fill in blank' : 'Short answer';
     const diffClass  = 'badge-' + (q.difficulty || 'medium');
 
     let extra = '';
@@ -674,6 +682,8 @@ function renderResults(qs) {
         const isCorrect = letter === q.correct_answer;
         return `<div class="opt${isCorrect ? ' correct' : ''}">${opt}${isCorrect ? ' ✓' : ''}</div>`;
       }).join('') + '</div>';
+    } else if (q.type === 'FillInTheBlank') {
+      extra = `<div class="answer-box"><div class="answer-lbl">Answer</div>${q.correct_answer}</div>`;
     } else if (q.type === 'TrueFalse') {
       extra = `<div class="answer-box"><div class="answer-lbl">Answer</div>${q.correct_answer}</div>`;
     } else {
@@ -1016,6 +1026,8 @@ async function generateImageQuestions() {
   if (useMCQ) types.push('MCQ');
   if (useTF)  types.push('TrueFalse');
   if (useSA)  types.push('ShortAnswer');
+  const useImgFITB = document.getElementById('img-type-fitb').checked;
+  if (useImgFITB) types.push('FillInTheBlank');
 
   const btn = document.getElementById('img-gen-btn');
   btn.disabled = true;
@@ -1038,6 +1050,7 @@ Rules:
 MCQ: {"type":"MCQ","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","difficulty":"easy","subject":"General","grade":"${grade}","topic":"Image-based","image_ref":true}
 TrueFalse: {"type":"TrueFalse","question":"...","correct_answer":"True","difficulty":"easy","subject":"General","grade":"${grade}","topic":"Image-based","image_ref":true}
 ShortAnswer: {"type":"ShortAnswer","question":"...","correct_answer":"...","difficulty":"easy","subject":"General","grade":"${grade}","topic":"Image-based","image_ref":true}
+FillInTheBlank: {"type":"FillInTheBlank","question":"The animal in the picture is ___.","correct_answer":"...","difficulty":"easy","subject":"General","grade":"${grade}","topic":"Image-based","image_ref":true}
 
 Output the JSON array only. Start with [ and end with ].`;
 
@@ -1103,8 +1116,8 @@ function renderImgResults(qs) {
   const list = document.getElementById('img-q-list');
   list.innerHTML = '';
   qs.forEach((q, i) => {
-    const typeClass = q.type === 'MCQ' ? 'badge-mcq' : q.type === 'TrueFalse' ? 'badge-tf' : 'badge-sa';
-    const typeLabel = q.type === 'MCQ' ? 'MCQ' : q.type === 'TrueFalse' ? 'True / False' : 'Short answer';
+    const typeClass = q.type === 'MCQ' ? 'badge-mcq' : q.type === 'TrueFalse' ? 'badge-tf' : q.type === 'FillInTheBlank' ? 'badge-fitb' : 'badge-sa';
+    const typeLabel = q.type === 'MCQ' ? 'MCQ' : q.type === 'TrueFalse' ? 'True / False' : q.type === 'FillInTheBlank' ? 'Fill in blank' : 'Short answer';
 
     let extra = '';
     if (q.type === 'MCQ' && q.options) {
@@ -1112,6 +1125,10 @@ function renderImgResults(qs) {
         const isCorrect = opt.charAt(0) === q.correct_answer;
         return `<div class="opt${isCorrect ? ' correct' : ''}">${opt}${isCorrect ? ' ✓' : ''}</div>`;
       }).join('') + '</div>';
+    } else if (q.type === 'FillInTheBlank') {
+      extra = `<div class="answer-box"><div class="answer-lbl">Answer</div>${q.correct_answer}</div>`;
+    } else if (q.type === 'FillInTheBlank') {
+      extra = `<div class="answer-box"><div class="answer-lbl">Answer</div>${q.correct_answer}</div>`;
     } else if (q.type === 'TrueFalse') {
       extra = `<div class="answer-box"><div class="answer-lbl">Answer</div>${q.correct_answer}</div>`;
     } else {
