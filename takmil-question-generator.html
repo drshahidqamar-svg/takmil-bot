@@ -807,7 +807,13 @@ async function importToDatabase() {
     });
     const data = await res.json();
     if (res.ok) {
-      statusEl.innerHTML = `<div class="status-msg success">✓ ${data.imported || questions.length} questions added to Question Bank. <a href="/question-bank" target="_blank" style="color:var(--green);font-weight:500;">View in Question Bank →</a></div>`;
+      const errDetail = data.errors > 0 ? ` (${data.errors} failed: ${data.lastError})` : '';
+      const skipDetail = data.skipped > 0 ? ` (${data.skipped} skipped)` : '';
+      if (data.imported > 0) {
+        statusEl.innerHTML = `<div class="status-msg success">✓ ${data.imported} questions added to Question Bank${skipDetail}${errDetail}. <a href="/question-bank" target="_blank" style="color:var(--green);font-weight:500;">View in Question Bank →</a></div>`;
+      } else {
+        statusEl.innerHTML = `<div class="status-msg error">0 imported. Skipped: ${data.skipped}, Errors: ${data.errors}. ${data.lastError || ''}</div>`;
+      }
     } else {
       statusEl.innerHTML = `<div class="status-msg error">Import failed: ${data.error || 'Unknown error'}</div>`;
     }
@@ -1246,7 +1252,13 @@ async function importImgToDatabase() {
     });
     const data = await res.json();
     if (res.ok) {
-      statusEl.innerHTML = `<div class="status-msg success">✓ ${data.imported || imageQuestions.length} questions added to Question Bank. <a href="/question-bank" target="_blank" style="color:var(--green);font-weight:500;">View in Question Bank →</a></div>`;
+      const errDetail = data.errors > 0 ? ` (${data.errors} failed: ${data.lastError})` : '';
+      const skipDetail = data.skipped > 0 ? ` (${data.skipped} skipped)` : '';
+      if (data.imported > 0) {
+        statusEl.innerHTML = `<div class="status-msg success">✓ ${data.imported} questions added to Question Bank${skipDetail}${errDetail}. <a href="/question-bank" target="_blank" style="color:var(--green);font-weight:500;">View in Question Bank →</a></div>`;
+      } else {
+        statusEl.innerHTML = `<div class="status-msg error">0 imported. Skipped: ${data.skipped}, Errors: ${data.errors}. ${data.lastError || ''}</div>`;
+      }
     } else {
       statusEl.innerHTML = `<div class="status-msg error">Import failed: ${data.error || 'Unknown error'}</div>`;
     }
