@@ -422,7 +422,7 @@ TrueFalse: {"type":"TrueFalse","question":"...","correct_answer":"True","difficu
 ShortAnswer: {"type":"ShortAnswer","question":"...","correct_answer":"...","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 MatchTheColumns: {"type":"MatchTheColumns","question":"Match the following:","pairs":[{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."}],"correct_answer":"See pairs","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 
-Output the JSON array only. Start with [ and end with ].\`;
+Output the JSON array only. Start with [ and end with ].`;
 
   try {
     const res = await fetch('/api/questions/generate-ai', {
