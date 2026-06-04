@@ -333,7 +333,7 @@
     <div class="form-grid">
       <div>
         <label class="form-label">Subject</label>
-        <select id="subject">
+        <select id="subject" onchange="handleSubjectChange()">
           <option value="English">English</option>
           <option value="Math">Math</option>
           <option value="Urdu">Urdu</option>
@@ -557,6 +557,19 @@
 let questions = [];
 let isGenerating = false;
 
+function handleSubjectChange() {
+  const subject = document.getElementById('subject').value;
+  const langSelect = document.getElementById('lang');
+  if (subject === 'Urdu') {
+    langSelect.value = 'Urdu';
+    langSelect.disabled = true;
+    langSelect.title = 'Urdu subject always generates in Urdu';
+  } else {
+    langSelect.disabled = false;
+    langSelect.title = '';
+  }
+}
+
 async function generateQuestions() {
   if (isGenerating) return;
 
@@ -570,7 +583,7 @@ async function generateQuestions() {
   const topic      = document.getElementById('topic').value.trim();
   const count      = document.getElementById('count').value;
   const difficulty = document.getElementById('difficulty').value;
-  const lang       = document.getElementById('lang').value;
+  const lang       = (subject === 'Urdu') ? 'Urdu' : document.getElementById('lang').value;
 
   isGenerating = true;
   const btn = document.getElementById('gen-btn');
@@ -863,11 +876,13 @@ async function runBulkGeneration() {
     bar.style.width = Math.round((i / bulkRows.length) * 100) + '%';
 
     try {
-      const prompt = `Generate exactly 10 assessment questions. Return ONLY a valid JSON array with no markdown, no explanation.
+      const isUrdu = r.subject.toLowerCase() === 'urdu';
+  const prompt = `Generate exactly 10 assessment questions. Return ONLY a valid JSON array with no markdown, no explanation.
 
 Subject: ${r.subject}, Grade: ${r.grade}, Topic: ${r.topic}
 Difficulty: mixed (distribute easy/medium/hard)
 Types: distribute evenly between MCQ and TrueFalse
+Language: ${isUrdu ? 'Write ALL questions and answers in Urdu script only.' : 'Write in English.'}
 
 MCQ: {"type":"MCQ","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","difficulty":"easy","subject":"${r.subject}","grade":"${r.grade}","topic":"${r.topic}"}
 TrueFalse: {"type":"TrueFalse","question":"...","correct_answer":"True","difficulty":"easy","subject":"${r.subject}","grade":"${r.grade}","topic":"${r.topic}"}
