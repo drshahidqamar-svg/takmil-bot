@@ -407,50 +407,22 @@ async function generateQuestions() {
   const useMatch = document.getElementById('type-match').checked;
   if (useMatch) types.push('MatchTheColumns (5 pairs: left column items matched to right column items)');
 
-  const topicLine = topic ? `Topic/Unit: ${topic}` : `General curriculum topics appropriate for ${grade}`;
-  const langLine  = lang === 'Urdu' ? 'Write all question text and answers in Urdu script.' : 'Write in clear English appropriate for Pakistani school students.';
+  const topicLine = topic || (subject + ' general');
+  const langLine = lang === 'Urdu' ? 'Write all questions and answers in Urdu script.' : 'Write in simple English for Pakistani school students.';
 
-  const prompt = `You are an expert educational assessment writer for Pakistani schools (curriculum: Punjab/Sindh/KPK/Baluchistan).
+  const prompt = `Generate exactly ${count} assessment questions. Return ONLY a valid JSON array with no markdown, no explanation, no extra text.
 
-Generate exactly ${count} assessment questions for:
-- Subject: ${subject}
-- Grade: ${grade}
-- ${topicLine}
-- Difficulty: ${difficulty}
-- Question types: ${types.join(', ')}
-- ${langLine}
+Subject: ${subject}, Grade: ${grade}, Topic: ${topicLine}, Difficulty: ${difficulty}
+Language: ${langLine}
+Types to use (distribute evenly): ${types.join(', ')}
 
-Distribute types as evenly as possible across the ${count} questions.
+JSON format for each question type:
+MCQ: {"type":"MCQ","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
+TrueFalse: {"type":"TrueFalse","question":"...","correct_answer":"True","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
+ShortAnswer: {"type":"ShortAnswer","question":"...","correct_answer":"...","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
+MatchTheColumns: {"type":"MatchTheColumns","question":"Match the following:","pairs":[{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."}],"correct_answer":"See pairs","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 
-Return ONLY a JSON array — no preamble, no markdown fences, no explanation. Each item:
-{
-  "type": "MCQ" | "TrueFalse" | "ShortAnswer",
-  "question": "question text",
-  "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
-  "correct_answer": "A" | "B" | "C" | "D" | "True" | "False" | "model answer text",
-  "difficulty": "easy" | "medium" | "hard",
-  "subject": "${subject}",
-  "grade": "${grade}",
-  "topic": "${topic || subject + ' general'}"
-}
-For TrueFalse and ShortAnswer, omit the "options" key entirely.
-For MatchTheColumns, use this structure instead of options/correct_answer:
-{
-  "type": "MatchTheColumns",
-  "question": "Match the following:",
-  "pairs": [
-    { "left": "item1", "right": "match1" },
-    { "left": "item2", "right": "match2" },
-    { "left": "item3", "right": "match3" },
-    { "left": "item4", "right": "match4" },
-    { "left": "item5", "right": "match5" }
-  ],
-  "correct_answer": "See pairs",
-  "difficulty": "easy"|"medium"|"hard",
-  "subject": "...",
-  "grade": "...",
-  "topic": "..."
-}`;
+Output the JSON array only. Start with [ and end with ].\`;
 
   try {
     const res = await fetch('/api/questions/generate-ai', {
@@ -458,7 +430,7 @@ For MatchTheColumns, use this structure instead of options/correct_answer:
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
+        max_tokens: 4096,
         messages: [{ role: 'user', content: prompt }]
       })
     });
