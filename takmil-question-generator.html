@@ -248,6 +248,32 @@
   /* FOOTER */
   .footer { text-align: center; font-size: 0.75rem; color: var(--text-3); margin-top: 3rem; }
 
+
+  /* IMAGE QUESTION SECTION */
+  .upload-zone {
+    border: 2px dashed var(--border-strong);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--bg);
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--text); background: #ECEAE4; }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 2rem; margin-bottom: 8px; }
+  .upload-label { font-size: 0.9rem; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .upload-hint { font-size: 0.78rem; color: var(--text-3); }
+  .img-preview-wrap { position: relative; margin-bottom: 1rem; }
+  .img-preview { width: 100%; max-height: 320px; object-fit: contain; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); }
+  .img-remove { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .img-remove:hover { background: var(--red); }
+  .section-divider { display: flex; align-items: center; gap: 12px; margin: 1.5rem 0; }
+  .section-divider span { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-3); white-space: nowrap; }
+  .section-divider::before, .section-divider::after { content: ''; flex: 1; border-top: 1px solid var(--border); }
+  .img-q-card { border-left: 3px solid #7C3AED; }
+
   @media (max-width: 600px) {
     .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
     .actions-row { flex-direction: column; }
@@ -353,6 +379,87 @@
   </div>
 
   <div id="error-area"></div>
+
+  <!-- IMAGE QUESTION GENERATOR -->
+  <div class="section-divider"><span>Or generate from an image</span></div>
+
+  <div class="card" id="img-section">
+    <div class="card-title">Image Question Generator</div>
+    <p style="font-size:0.85rem;color:var(--color-text-secondary,#6B6760);margin-bottom:1rem;">Upload a classroom image, diagram, or illustration — AI will generate questions about it.</p>
+
+    <div id="img-upload-area">
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="img-input" accept="image/*" onchange="handleImageUpload(event)">
+        <div class="upload-icon">🖼️</div>
+        <div class="upload-label">Click to upload or drag an image here</div>
+        <div class="upload-hint">JPG, PNG, GIF, WEBP — max 5MB</div>
+      </div>
+    </div>
+
+    <div id="img-preview-area" style="display:none;">
+      <div class="img-preview-wrap">
+        <img id="img-preview" class="img-preview" src="" alt="Preview">
+        <button class="img-remove" onclick="removeImage()" title="Remove image">✕</button>
+      </div>
+
+      <div class="form-grid" style="margin-bottom:1rem;">
+        <div>
+          <label class="form-label">Number of questions</label>
+          <select id="img-count">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Grade level</label>
+          <select id="img-grade">
+            <option value="Primary Grade 1">Primary — Grade 1</option>
+            <option value="Primary Grade 2">Primary — Grade 2</option>
+            <option value="Primary Grade 3">Primary — Grade 3</option>
+            <option value="Primary Grade 4">Primary — Grade 4</option>
+            <option value="Primary Grade 5">Primary — Grade 5</option>
+            <option value="Elementary Grade 6">Elementary — Grade 6</option>
+            <option value="Elementary Grade 7">Elementary — Grade 7</option>
+            <option value="Elementary Grade 8">Elementary — Grade 8</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Question types</label>
+        <div class="checkbox-row">
+          <label class="checkbox-label"><input type="checkbox" id="img-type-mcq" checked> Multiple choice (MCQ)</label>
+          <label class="checkbox-label"><input type="checkbox" id="img-type-tf" checked> True / False</label>
+          <label class="checkbox-label"><input type="checkbox" id="img-type-sa"> Short answer</label>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="img-gen-btn" onclick="generateImageQuestions()">
+        🔍 Generate questions from image
+      </button>
+      <div class="progress-wrap" id="img-progress-wrap" style="display:none;">
+        <div class="progress-bar" id="img-progress-bar"></div>
+      </div>
+    </div>
+
+    <div id="img-error-area"></div>
+
+    <!-- IMAGE RESULTS -->
+    <div id="img-results-area" style="display:none;margin-top:1.5rem;">
+      <hr style="border:none;border-top:1px solid var(--border);margin-bottom:1rem;">
+      <div class="card-title">Generated questions</div>
+      <div class="stats-row" id="img-stats-row"></div>
+      <div class="q-list" id="img-q-list"></div>
+      <div class="actions-row">
+        <button class="btn btn-outline" onclick="exportImgCSV()">⬇ Export CSV</button>
+        <button class="btn btn-outline" id="img-import-btn" onclick="importImgToDatabase()">⬆ Import to database</button>
+      </div>
+      <div id="img-status-msg"></div>
+    </div>
+  </div>
+
 
   <!-- RESULTS -->
   <div id="results-area" style="display:none;">
@@ -594,6 +701,252 @@ function regenerate() {
 function showError(msg) {
   document.getElementById('error-area').innerHTML = `<div class="alert alert-error">${msg}</div>`;
 }
+
+// ── Image Question Generator ──────────────────────────────────────────────────
+let imageBase64 = null;
+let imageMediaType = 'image/jpeg';
+let imageQuestions = [];
+
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showImgError('Image too large. Please use an image under 5MB.'); return; }
+  imageMediaType = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const result = e.target.result;
+    imageBase64 = result.split(',')[1];
+    document.getElementById('img-preview').src = result;
+    document.getElementById('img-upload-area').style.display = 'none';
+    document.getElementById('img-preview-area').style.display = 'block';
+    document.getElementById('img-results-area').style.display = 'none';
+    document.getElementById('img-error-area').innerHTML = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage() {
+  imageBase64 = null;
+  imageQuestions = [];
+  document.getElementById('img-input').value = '';
+  document.getElementById('img-preview').src = '';
+  document.getElementById('img-upload-area').style.display = 'block';
+  document.getElementById('img-preview-area').style.display = 'none';
+  document.getElementById('img-results-area').style.display = 'none';
+  document.getElementById('img-error-area').innerHTML = '';
+}
+
+// Drag and drop
+const uploadZone = document.getElementById('upload-zone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('img-input').files = dt.files;
+    handleImageUpload({ target: { files: [file] } });
+  }
+});
+
+async function generateImageQuestions() {
+  if (!imageBase64) { showImgError('Please upload an image first.'); return; }
+
+  const useMCQ = document.getElementById('img-type-mcq').checked;
+  const useTF  = document.getElementById('img-type-tf').checked;
+  const useSA  = document.getElementById('img-type-sa').checked;
+  if (!useMCQ && !useTF && !useSA) { showImgError('Select at least one question type.'); return; }
+
+  const count = document.getElementById('img-count').value;
+  const grade = document.getElementById('img-grade').value;
+
+  const types = [];
+  if (useMCQ) types.push('MCQ');
+  if (useTF)  types.push('TrueFalse');
+  if (useSA)  types.push('ShortAnswer');
+
+  const btn = document.getElementById('img-gen-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Analysing image...';
+  document.getElementById('img-results-area').style.display = 'none';
+  document.getElementById('img-error-area').innerHTML = '';
+  document.getElementById('img-progress-wrap').style.display = 'block';
+  animateImgProgress();
+
+  const prompt = `Look at this image carefully. Generate exactly ${count} assessment questions about what you see in the image.
+
+Grade level: ${grade}
+Question types to use (distribute evenly): ${types.join(', ')}
+
+Rules:
+- Questions must be directly about the image content
+- Return ONLY a valid JSON array, no markdown, no explanation
+- Each question must also include "image_ref": true to mark it as image-based
+
+MCQ: {"type":"MCQ","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","difficulty":"easy","subject":"General","grade":"${grade}","topic":"Image-based","image_ref":true}
+TrueFalse: {"type":"TrueFalse","question":"...","correct_answer":"True","difficulty":"easy","subject":"General","grade":"${grade}","topic":"Image-based","image_ref":true}
+ShortAnswer: {"type":"ShortAnswer","question":"...","correct_answer":"...","difficulty":"easy","subject":"General","grade":"${grade}","topic":"Image-based","image_ref":true}
+
+Output the JSON array only. Start with [ and end with ].`;
+
+  try {
+    const res = await fetch('/api/questions/generate-ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 4096,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: imageMediaType, data: imageBase64 } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || data.error || !data.content) {
+      throw new Error(data.error?.message || data.error || JSON.stringify(data).substring(0, 200));
+    }
+    const text = data.content.map(b => b.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    imageQuestions = JSON.parse(clean);
+    // Attach image to each question
+    imageQuestions = imageQuestions.map(q => ({ ...q, image_base64: imageBase64, image_media_type: imageMediaType }));
+    renderImgResults(imageQuestions);
+  } catch (err) {
+    showImgError('Generation failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔍 Generate questions from image';
+    document.getElementById('img-progress-wrap').style.display = 'none';
+    document.getElementById('img-progress-bar').style.width = '0';
+  }
+}
+
+function animateImgProgress() {
+  const bar = document.getElementById('img-progress-bar');
+  let w = 0;
+  const iv = setInterval(() => {
+    const btn = document.getElementById('img-gen-btn');
+    if (!btn.disabled) { bar.style.width = '100%'; clearInterval(iv); return; }
+    w = Math.min(w + (Math.random() * 8), 85);
+    bar.style.width = w + '%';
+  }, 300);
+}
+
+function renderImgResults(qs) {
+  const mcq = qs.filter(q => q.type === 'MCQ').length;
+  const tf  = qs.filter(q => q.type === 'TrueFalse').length;
+  const sa  = qs.filter(q => q.type === 'ShortAnswer').length;
+
+  let statsHtml = `<div class="stat"><div class="stat-num">${qs.length}</div><div class="stat-lbl">Total</div></div>`;
+  if (mcq) statsHtml += `<div class="stat"><div class="stat-num">${mcq}</div><div class="stat-lbl">MCQ</div></div>`;
+  if (tf)  statsHtml += `<div class="stat"><div class="stat-num">${tf}</div><div class="stat-lbl">True / False</div></div>`;
+  if (sa)  statsHtml += `<div class="stat"><div class="stat-num">${sa}</div><div class="stat-lbl">Short answer</div></div>`;
+  document.getElementById('img-stats-row').innerHTML = statsHtml;
+
+  const list = document.getElementById('img-q-list');
+  list.innerHTML = '';
+  qs.forEach((q, i) => {
+    const typeClass = q.type === 'MCQ' ? 'badge-mcq' : q.type === 'TrueFalse' ? 'badge-tf' : 'badge-sa';
+    const typeLabel = q.type === 'MCQ' ? 'MCQ' : q.type === 'TrueFalse' ? 'True / False' : 'Short answer';
+
+    let extra = '';
+    if (q.type === 'MCQ' && q.options) {
+      extra = '<div class="options">' + q.options.map(opt => {
+        const isCorrect = opt.charAt(0) === q.correct_answer;
+        return `<div class="opt${isCorrect ? ' correct' : ''}">${opt}${isCorrect ? ' ✓' : ''}</div>`;
+      }).join('') + '</div>';
+    } else if (q.type === 'TrueFalse') {
+      extra = `<div class="answer-box"><div class="answer-lbl">Answer</div>${q.correct_answer}</div>`;
+    } else {
+      extra = `<div class="answer-box"><div class="answer-lbl">Model answer</div>${q.correct_answer}</div>`;
+    }
+
+    list.innerHTML += `
+      <div class="q-card img-q-card" id="iqc-${i}">
+        <button class="q-del" onclick="deleteImgQ(${i})" title="Remove">✕</button>
+        <div class="q-top">
+          <span class="q-num">${i + 1}.</span>
+          <span class="q-text">${q.question}</span>
+        </div>
+        <span class="badge ${typeClass}">${typeLabel}</span>
+        <span class="badge" style="background:#F0E6FF;color:#5B21B6;">📷 Image-based</span>
+        ${extra}
+      </div>`;
+  });
+
+  document.getElementById('img-results-area').style.display = 'block';
+  document.getElementById('img-status-msg').innerHTML = '';
+}
+
+function deleteImgQ(i) {
+  imageQuestions.splice(i, 1);
+  renderImgResults(imageQuestions);
+}
+
+function exportImgCSV() {
+  if (!imageQuestions.length) return;
+  const headers = ['type','question','option_a','option_b','option_c','option_d','correct_answer','difficulty','subject','grade','topic','image_ref'];
+  const rows = imageQuestions.map(q => {
+    const opts = q.options || [];
+    const clean = s => '"' + String(s || '').replace(/"/g, '""') + '"';
+    return [
+      q.type, clean(q.question),
+      clean((opts[0] || '').replace(/^A\.\s*/, '')),
+      clean((opts[1] || '').replace(/^B\.\s*/, '')),
+      clean((opts[2] || '').replace(/^C\.\s*/, '')),
+      clean((opts[3] || '').replace(/^D\.\s*/, '')),
+      clean(q.correct_answer), q.difficulty || 'medium',
+      q.subject, q.grade, clean(q.topic), 'true'
+    ].join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'takmil_image_questions.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importImgToDatabase() {
+  if (!imageQuestions.length) return;
+  const btn = document.getElementById('img-import-btn');
+  const statusEl = document.getElementById('img-status-msg');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner spinner-dark"></span> Importing...';
+  statusEl.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/questions/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questions: imageQuestions })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      statusEl.innerHTML = `<div class="status-msg success">✓ ${data.inserted || imageQuestions.length} image questions imported successfully.</div>`;
+    } else {
+      statusEl.innerHTML = `<div class="status-msg error">Import failed: ${data.error || 'Unknown error'}</div>`;
+    }
+  } catch (err) {
+    statusEl.innerHTML = `<div class="status-msg error">Could not reach the server. Try Export CSV instead.</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⬆ Import to database';
+  }
+}
+
+function showImgError(msg) {
+  document.getElementById('img-error-area').innerHTML = `<div class="alert alert-error" style="margin-top:1rem;">${msg}</div>`;
+}
+
 </script>
 </body>
 </html>
