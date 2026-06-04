@@ -528,7 +528,7 @@
       <div class="q-list" id="img-q-list"></div>
       <div class="actions-row">
         <button class="btn btn-outline" onclick="exportImgCSV()">⬇ Export CSV</button>
-        <button class="btn btn-outline" id="img-import-btn" onclick="importImgToDatabase()">⬆ Import to database</button>
+        <button class="btn btn-outline" id="img-import-btn" onclick="importImgToDatabase()">⬆ Import to Question Bank</button>
       </div>
       <div id="img-status-msg"></div>
     </div>
@@ -543,7 +543,7 @@
       <div class="q-list" id="q-list"></div>
       <div class="actions-row">
         <button class="btn btn-outline" onclick="exportCSV()">⬇ Export CSV</button>
-        <button class="btn btn-outline" id="import-btn" onclick="importToDatabase()">⬆ Import to database</button>
+        <button class="btn btn-outline" id="import-btn" onclick="importToDatabase()">⬆ Import to Question Bank</button>
         <button class="btn btn-outline" onclick="regenerate()">↺ Regenerate</button>
       </div>
       <div id="status-msg"></div>
@@ -758,6 +758,32 @@ function exportCSV() {
   URL.revokeObjectURL(url);
 }
 
+function mapToQuestionBank(q, i) {
+  const opts = q.options || [];
+  const stripLetter = (s) => String(s || '').replace(/^[A-D][\.\s]+/, '').trim();
+  let qText = q.question || '';
+  // For FillInTheBlank, keep ___ visible in the question text
+  return {
+    question_id:    'GEN-' + Date.now() + '-' + i,
+    subject:        q.subject || '',
+    level:          q.grade || '',
+    topic_tag:      q.topic || '',
+    q_text_english: qText,
+    q_text_urdu:    (q.subject === 'Urdu') ? qText : '',
+    image_url:      q.image_base64 ? 'data:' + (q.image_media_type || 'image/jpeg') + ';base64,' + q.image_base64 : '',
+    option_a:       stripLetter(opts[0]),
+    option_b:       stripLetter(opts[1]),
+    option_c:       stripLetter(opts[2]),
+    option_d:       stripLetter(opts[3]),
+    correct_option: q.correct_answer || '',
+    question_type:  q.type || 'MCQ',
+    pairs:          q.pairs ? JSON.stringify(q.pairs) : '',
+    active:         2, // approved
+    status:         'approved',
+    source:         'ai-generator'
+  };
+}
+
 async function importToDatabase() {
   if (!questions.length) return;
   const btn = document.getElementById('import-btn');
@@ -767,14 +793,15 @@ async function importToDatabase() {
   statusEl.innerHTML = '';
 
   try {
-    const res = await fetch('/api/questions/bulk', {
+    const mapped = questions.map((q, i) => mapToQuestionBank(q, i));
+    const res = await fetch('/api/questions/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questions })
+      body: JSON.stringify({ questions: mapped })
     });
     const data = await res.json();
     if (res.ok) {
-      statusEl.innerHTML = `<div class="status-msg success">✓ ${data.inserted || questions.length} questions imported successfully.</div>`;
+      statusEl.innerHTML = `<div class="status-msg success">✓ ${data.imported || questions.length} questions added to Question Bank. <a href="/question-bank" target="_blank" style="color:var(--green);font-weight:500;">View in Question Bank →</a></div>`;
     } else {
       statusEl.innerHTML = `<div class="status-msg error">Import failed: ${data.error || 'Unknown error'}</div>`;
     }
@@ -782,7 +809,7 @@ async function importToDatabase() {
     statusEl.innerHTML = `<div class="status-msg error">Could not reach the server. Try Export CSV instead.</div>`;
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '⬆ Import to database';
+    btn.innerHTML = '⬆ Import to Question Bank';
   }
 }
 
@@ -1205,14 +1232,15 @@ async function importImgToDatabase() {
   statusEl.innerHTML = '';
 
   try {
-    const res = await fetch('/api/questions/bulk', {
+    const mapped = imageQuestions.map((q, i) => mapToQuestionBank(q, i));
+    const res = await fetch('/api/questions/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questions: imageQuestions })
+      body: JSON.stringify({ questions: mapped })
     });
     const data = await res.json();
     if (res.ok) {
-      statusEl.innerHTML = `<div class="status-msg success">✓ ${data.inserted || imageQuestions.length} image questions imported successfully.</div>`;
+      statusEl.innerHTML = `<div class="status-msg success">✓ ${data.imported || imageQuestions.length} questions added to Question Bank. <a href="/question-bank" target="_blank" style="color:var(--green);font-weight:500;">View in Question Bank →</a></div>`;
     } else {
       statusEl.innerHTML = `<div class="status-msg error">Import failed: ${data.error || 'Unknown error'}</div>`;
     }
@@ -1220,7 +1248,7 @@ async function importImgToDatabase() {
     statusEl.innerHTML = `<div class="status-msg error">Could not reach the server. Try Export CSV instead.</div>`;
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '⬆ Import to database';
+    btn.innerHTML = '⬆ Import to Question Bank';
   }
 }
 
