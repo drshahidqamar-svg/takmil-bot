@@ -128,6 +128,7 @@ app.get('/lessons-admin',        (req, res) => res.sendFile(path.join(__dirname,
 app.get('/admin-portal', (req, res) => res.sendFile(path.join(__dirname, 'takmil-ops-console.html')));
 app.get('/dashboard',            (req, res) => res.sendFile(path.join(__dirname, 'assessment-dashboard.html')));
 app.get('/assessment-dashboard', (req, res) => res.sendFile(path.join(__dirname, 'assessment-dashboard.html')));
+app.get('/question-generator',   (req, res) => res.sendFile(path.join(__dirname, 'takmil-question-generator.html')));
 app.get('/question-bank',        (req, res) => res.sendFile(path.join(__dirname, 'takmil-question-bank.html')));
 app.get('/register',             (req, res) => res.sendFile(path.join(__dirname, 'register.html')));
 app.get('/results',              (req, res) => res.sendFile(path.join(__dirname, 'results.html')));
