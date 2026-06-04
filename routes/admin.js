@@ -230,7 +230,7 @@ router.post('/api/questions/import', async (req, res) => {
             (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
              image_url, question_type, option_a, option_b, option_c, option_d,
              correct_option, active, created_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,
+          VALUES ($1,$2,$3,$4,$5,$6,$7::text,
             CASE WHEN $7 IS NOT NULL AND $7!='' THEN 'picture' ELSE 'text' END,
             $8,$9,$10,$11,$12,$13,NOW())
           ON CONFLICT (question_id) DO UPDATE SET
@@ -846,26 +846,6 @@ router.get('/api/analytics', async (req, res) => {
 
     res.json({ dailyTrend, rcPerf, coordPerf, schoolPerf });
   } catch(err) { res.status(500).json({ error: err.message }); }
-});
-
-
-// ── Question Generator page proxy (takmil-question-generator.html) ────────────
-router.post('/api/questions/generate-ai', async (req, res) => {
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 module.exports = { router };
