@@ -198,6 +198,7 @@
   .badge-mcq { background: var(--blue-bg); color: var(--blue); }
   .badge-tf { background: var(--green-bg); color: var(--green); }
   .badge-sa { background: var(--amber-bg); color: var(--amber); }
+  .badge-match { background: #F0E6FF; color: #5B21B6; }
   .badge-easy { background: var(--green-bg); color: var(--green); }
   .badge-medium { background: var(--amber-bg); color: var(--amber); }
   .badge-hard { background: var(--red-bg); color: var(--red); }
@@ -222,6 +223,12 @@
     border-radius: var(--radius-sm); line-height: 1;
   }
   .q-del:hover { background: var(--red-bg); color: var(--red); }
+  .match-table { margin: 8px 0 0 34px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .match-header { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); padding: 5px 10px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); }
+  .match-row { display: grid; grid-template-columns: 1fr 1fr; padding: 5px 10px; border-top: 1px solid var(--border); font-size: 0.83rem; }
+  .match-row:hover { background: var(--bg); }
+  .match-left { color: var(--text); }
+  .match-right { color: var(--green); font-weight: 500; }
 
   /* STATUS */
   .status-msg { text-align: center; font-size: 0.85rem; margin-top: 10px; padding: 8px; border-radius: var(--radius-sm); }
@@ -333,6 +340,7 @@
         <label class="checkbox-label"><input type="checkbox" id="type-mcq" checked> Multiple choice (MCQ)</label>
         <label class="checkbox-label"><input type="checkbox" id="type-tf" checked> True / False</label>
         <label class="checkbox-label"><input type="checkbox" id="type-sa"> Short answer</label>
+        <label class="checkbox-label"><input type="checkbox" id="type-match"> Match the columns</label>
       </div>
     </div>
 
@@ -396,6 +404,8 @@ async function generateQuestions() {
   if (useMCQ) types.push('MCQ (4 options labeled A, B, C, D — one correct)');
   if (useTF)  types.push('True/False');
   if (useSA)  types.push('Short Answer (model answer 1-2 sentences)');
+  const useMatch = document.getElementById('type-match').checked;
+  if (useMatch) types.push('MatchTheColumns (5 pairs: left column items matched to right column items)');
 
   const topicLine = topic ? `Topic/Unit: ${topic}` : `General curriculum topics appropriate for ${grade}`;
   const langLine  = lang === 'Urdu' ? 'Write all question text and answers in Urdu script.' : 'Write in clear English appropriate for Pakistani school students.';
@@ -423,7 +433,24 @@ Return ONLY a JSON array — no preamble, no markdown fences, no explanation. Ea
   "grade": "${grade}",
   "topic": "${topic || subject + ' general'}"
 }
-For TrueFalse and ShortAnswer, omit the "options" key entirely.`;
+For TrueFalse and ShortAnswer, omit the "options" key entirely.
+For MatchTheColumns, use this structure instead of options/correct_answer:
+{
+  "type": "MatchTheColumns",
+  "question": "Match the following:",
+  "pairs": [
+    { "left": "item1", "right": "match1" },
+    { "left": "item2", "right": "match2" },
+    { "left": "item3", "right": "match3" },
+    { "left": "item4", "right": "match4" },
+    { "left": "item5", "right": "match5" }
+  ],
+  "correct_answer": "See pairs",
+  "difficulty": "easy"|"medium"|"hard",
+  "subject": "...",
+  "grade": "...",
+  "topic": "..."
+}`;
 
   try {
     const res = await fetch('/api/questions/generate-ai', {
@@ -468,23 +495,30 @@ function animateProgress() {
 function renderResults(qs) {
   const mcq = qs.filter(q => q.type === 'MCQ').length;
   const tf  = qs.filter(q => q.type === 'TrueFalse').length;
-  const sa  = qs.filter(q => q.type === 'ShortAnswer').length;
+  const sa    = qs.filter(q => q.type === 'ShortAnswer').length;
+  const match = qs.filter(q => q.type === 'MatchTheColumns').length;
 
   let statsHtml = `<div class="stat"><div class="stat-num">${qs.length}</div><div class="stat-lbl">Total</div></div>`;
   if (mcq) statsHtml += `<div class="stat"><div class="stat-num">${mcq}</div><div class="stat-lbl">MCQ</div></div>`;
   if (tf)  statsHtml += `<div class="stat"><div class="stat-num">${tf}</div><div class="stat-lbl">True / False</div></div>`;
-  if (sa)  statsHtml += `<div class="stat"><div class="stat-num">${sa}</div><div class="stat-lbl">Short answer</div></div>`;
+  if (sa)    statsHtml += `<div class="stat"><div class="stat-num">${sa}</div><div class="stat-lbl">Short answer</div></div>`;
+  if (match) statsHtml += `<div class="stat"><div class="stat-num">${match}</div><div class="stat-lbl">Match columns</div></div>`;
   document.getElementById('stats-row').innerHTML = statsHtml;
 
   const list = document.getElementById('q-list');
   list.innerHTML = '';
   qs.forEach((q, i) => {
-    const typeClass  = q.type === 'MCQ' ? 'badge-mcq' : q.type === 'TrueFalse' ? 'badge-tf' : 'badge-sa';
-    const typeLabel  = q.type === 'MCQ' ? 'MCQ' : q.type === 'TrueFalse' ? 'True / False' : 'Short answer';
+    const typeClass  = q.type === 'MCQ' ? 'badge-mcq' : q.type === 'TrueFalse' ? 'badge-tf' : q.type === 'MatchTheColumns' ? 'badge-match' : 'badge-sa';
+    const typeLabel  = q.type === 'MCQ' ? 'MCQ' : q.type === 'TrueFalse' ? 'True / False' : q.type === 'MatchTheColumns' ? 'Match columns' : 'Short answer';
     const diffClass  = 'badge-' + (q.difficulty || 'medium');
 
     let extra = '';
-    if (q.type === 'MCQ' && q.options) {
+    if (q.type === 'MatchTheColumns' && q.pairs) {
+      extra = '<div class="match-table">' +
+        '<div class="match-header"><span>Column A</span><span>Column B</span></div>' +
+        q.pairs.map(p => `<div class="match-row"><span class="match-left">${p.left}</span><span class="match-right">${p.right}</span></div>`).join('') +
+        '</div>';
+    } else if (q.type === 'MCQ' && q.options) {
       extra = '<div class="options">' + q.options.map(opt => {
         const letter = opt.charAt(0);
         const isCorrect = letter === q.correct_answer;
@@ -522,6 +556,11 @@ function exportCSV() {
   if (!questions.length) return;
   const headers = ['type','question','option_a','option_b','option_c','option_d','correct_answer','difficulty','subject','grade','topic'];
   const rows = questions.map(q => {
+    if (q.type === 'MatchTheColumns') {
+      const pairsStr = q.pairs ? q.pairs.map(p => p.left + ' → ' + p.right).join(' | ') : '';
+      const clean = s => '"' + String(s || '').replace(/"/g, '""') + '"';
+      return [q.type, clean(q.question), clean(pairsStr), '', '', '', 'See pairs', q.difficulty || 'medium', q.subject, q.grade, clean(q.topic)].join(',');
+    }
     const opts = q.options || [];
     const clean = s => '"' + String(s || '').replace(/"/g, '""') + '"';
     return [
