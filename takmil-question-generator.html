@@ -200,6 +200,7 @@
   .badge-sa { background: var(--amber-bg); color: var(--amber); }
   .badge-match { background: #F0E6FF; color: #5B21B6; }
   .badge-fitb  { background: #FFF0F6; color: #9D174D; }
+  .badge-sb    { background: #E0F2FE; color: #0C4A6E; }
   .badge-easy { background: var(--green-bg); color: var(--green); }
   .badge-medium { background: var(--amber-bg); color: var(--amber); }
   .badge-hard { background: var(--red-bg); color: var(--red); }
@@ -229,6 +230,9 @@
   .match-row { display: grid; grid-template-columns: 1fr 1fr; padding: 5px 10px; border-top: 1px solid var(--border); font-size: 0.83rem; }
   .match-row:hover { background: var(--bg); }
   .match-left { color: var(--text); }
+  .sb-words { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0 34px; }
+  .sb-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 20px; padding: 3px 10px; font-size: 0.8rem; color: var(--text); }
+  .sb-chip-num { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-3); }
   .match-right { color: var(--green); font-weight: 500; }
 
   /* STATUS */
@@ -420,6 +424,7 @@
         <label class="checkbox-label"><input type="checkbox" id="type-sa"> Short answer</label>
         <label class="checkbox-label"><input type="checkbox" id="type-match"> Match the columns</label>
         <label class="checkbox-label"><input type="checkbox" id="type-fitb"> Fill in the blanks</label>
+        <label class="checkbox-label"><input type="checkbox" id="type-sb"> Sentence builder</label>
       </div>
     </div>
 
@@ -644,6 +649,8 @@ async function generateQuestions() {
   if (useMatch) types.push('MatchTheColumns (5 pairs: left column items matched to right column items)');
   const useFITB = document.getElementById('type-fitb').checked;
   if (useFITB) types.push('FillInTheBlank (sentence with one blank marked as ___, answer is the missing word/phrase)');
+  const useSB = document.getElementById('type-sb').checked;
+  if (useSB) types.push('SentenceBuilder (give 4-6 scrambled words, student arranges into correct sentence)');
 
   const topicLine = topic || (subject + ' general');
   const langLine = lang === 'Urdu' ? 'Write all questions and answers in Urdu script.' : 'Write in simple English for Pakistani school students.';
@@ -659,6 +666,7 @@ MCQ: {"type":"MCQ","question":"...","options":["A. ...","B. ...","C. ...","D. ..
 TrueFalse: {"type":"TrueFalse","question":"...","correct_answer":"True","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 ShortAnswer: {"type":"ShortAnswer","question":"...","correct_answer":"...","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 FillInTheBlank: {"type":"FillInTheBlank","question":"The capital of Pakistan is ___.","correct_answer":"Islamabad","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
+SentenceBuilder: {"type":"SentenceBuilder","question":"Make a sentence using these words:","words":["word1","word2","word3","word4","word5"],"correct_answer":"The correct sentence here.","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 MatchTheColumns: {"type":"MatchTheColumns","question":"Match the following:","pairs":[{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."}],"correct_answer":"See pairs","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 
 Output the JSON array only. Start with [ and end with ].`;
@@ -709,6 +717,7 @@ function renderResults(qs) {
   const sa    = qs.filter(q => q.type === 'ShortAnswer').length;
   const match = qs.filter(q => q.type === 'MatchTheColumns').length;
   const fitb  = qs.filter(q => q.type === 'FillInTheBlank').length;
+  const sb    = qs.filter(q => q.type === 'SentenceBuilder').length;
 
   let statsHtml = `<div class="stat"><div class="stat-num">${qs.length}</div><div class="stat-lbl">Total</div></div>`;
   if (mcq) statsHtml += `<div class="stat"><div class="stat-num">${mcq}</div><div class="stat-lbl">MCQ</div></div>`;
@@ -716,13 +725,14 @@ function renderResults(qs) {
   if (sa)    statsHtml += `<div class="stat"><div class="stat-num">${sa}</div><div class="stat-lbl">Short answer</div></div>`;
   if (match) statsHtml += `<div class="stat"><div class="stat-num">${match}</div><div class="stat-lbl">Match columns</div></div>`;
   if (fitb)  statsHtml += `<div class="stat"><div class="stat-num">${fitb}</div><div class="stat-lbl">Fill in blanks</div></div>`;
+  if (sb)    statsHtml += `<div class="stat"><div class="stat-num">${sb}</div><div class="stat-lbl">Sentence builder</div></div>`;
   document.getElementById('stats-row').innerHTML = statsHtml;
 
   const list = document.getElementById('q-list');
   list.innerHTML = '';
   qs.forEach((q, i) => {
-    const typeClass  = q.type === 'MCQ' ? 'badge-mcq' : q.type === 'TrueFalse' ? 'badge-tf' : q.type === 'MatchTheColumns' ? 'badge-match' : q.type === 'FillInTheBlank' ? 'badge-fitb' : 'badge-sa';
-    const typeLabel  = q.type === 'MCQ' ? 'MCQ' : q.type === 'TrueFalse' ? 'True / False' : q.type === 'MatchTheColumns' ? 'Match columns' : q.type === 'FillInTheBlank' ? 'Fill in blank' : 'Short answer';
+    const typeClass  = q.type === 'MCQ' ? 'badge-mcq' : q.type === 'TrueFalse' ? 'badge-tf' : q.type === 'MatchTheColumns' ? 'badge-match' : q.type === 'FillInTheBlank' ? 'badge-fitb' : q.type === 'SentenceBuilder' ? 'badge-sb' : 'badge-sa';
+    const typeLabel  = q.type === 'MCQ' ? 'MCQ' : q.type === 'TrueFalse' ? 'True / False' : q.type === 'MatchTheColumns' ? 'Match columns' : q.type === 'FillInTheBlank' ? 'Fill in blank' : q.type === 'SentenceBuilder' ? 'Sentence builder' : 'Short answer';
     const diffClass  = 'badge-' + (q.difficulty || 'medium');
 
     let extra = '';
@@ -737,6 +747,9 @@ function renderResults(qs) {
         const isCorrect = letter === q.correct_answer;
         return `<div class="opt${isCorrect ? ' correct' : ''}">${opt}${isCorrect ? ' ✓' : ''}</div>`;
       }).join('') + '</div>';
+    } else if (q.type === 'SentenceBuilder' && q.words) {
+      const shuffled = q.words.map((w, i) => `<span class="sb-chip"><span class="sb-chip-num">${i+1}</span>${w}</span>`).join('');
+      extra = `<div class="sb-words">${shuffled}</div><div class="answer-box"><div class="answer-lbl">Correct sentence</div>${q.correct_answer}</div>`;
     } else if (q.type === 'FillInTheBlank') {
       extra = `<div class="answer-box"><div class="answer-lbl">Answer</div>${q.correct_answer}</div>`;
     } else if (q.type === 'TrueFalse') {
@@ -822,7 +835,8 @@ function mapToQuestionBank(q, i) {
     q_text_english: qText,
     q_text_urdu:    (q.subject === 'Urdu') ? qText : '',
     image_url:      q.image_base64 ? 'data:' + (q.image_media_type || 'image/jpeg') + ';base64,' + q.image_base64 : '',
-    option_a:       stripLetter(opts[0]),
+    // For SentenceBuilder, store words in option_a..d and overflow in correct_option
+    option_a:       q.type === 'SentenceBuilder' ? (q.words && q.words[0] ? q.words.slice(0,4).join('|') : '') : stripLetter(opts[0]),
     option_b:       stripLetter(opts[1]),
     option_c:       stripLetter(opts[2]),
     option_d:       stripLetter(opts[3]),
@@ -1224,6 +1238,9 @@ function renderImgResults(qs) {
       }).join('') + '</div>';
     } else if (q.type === 'FillInTheBlank') {
       extra = `<div class="answer-box"><div class="answer-lbl">Answer</div>${q.correct_answer}</div>`;
+    } else if (q.type === 'SentenceBuilder' && q.words) {
+      const shuffled = q.words.map((w, i) => `<span class="sb-chip"><span class="sb-chip-num">${i+1}</span>${w}</span>`).join('');
+      extra = `<div class="sb-words">${shuffled}</div><div class="answer-box"><div class="answer-lbl">Correct sentence</div>${q.correct_answer}</div>`;
     } else if (q.type === 'FillInTheBlank') {
       extra = `<div class="answer-box"><div class="answer-lbl">Answer</div>${q.correct_answer}</div>`;
     } else if (q.type === 'TrueFalse') {
