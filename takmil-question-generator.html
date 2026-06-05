@@ -772,7 +772,7 @@ function mapToQuestionBank(q, i) {
   const diffInt = diffMap[q.difficulty] || 2;
 
   return {
-    question_id:    'GEN-' + Date.now() + '-' + i,
+    question_id:    'GEN-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substring(2, 7),
     subject:        q.subject || '',
     level:          levelInt,
     topic_tag:      q.topic || '',
@@ -786,7 +786,7 @@ function mapToQuestionBank(q, i) {
     correct_option: q.correct_answer || '',
     question_type:  q.type || 'MCQ',
     difficulty:     diffInt,
-    active:         1
+    active:         2
   };
 }
 
