@@ -346,14 +346,35 @@
       <div>
         <label class="form-label">Grade level</label>
         <select id="grade">
-          <option value="Primary Grade 1">Primary — Grade 1</option>
-          <option value="Primary Grade 2">Primary — Grade 2</option>
-          <option value="Primary Grade 3">Primary — Grade 3</option>
-          <option value="Primary Grade 4">Primary — Grade 4</option>
-          <option value="Primary Grade 5">Primary — Grade 5</option>
-          <option value="Elementary Grade 6">Elementary — Grade 6</option>
-          <option value="Elementary Grade 7">Elementary — Grade 7</option>
-          <option value="Elementary Grade 8">Elementary — Grade 8</option>
+          <optgroup label="Primary (Levels 1–12)">
+            <option value="Primary|1">Primary — Level 1</option>
+            <option value="Primary|2">Primary — Level 2</option>
+            <option value="Primary|3">Primary — Level 3</option>
+            <option value="Primary|4">Primary — Level 4</option>
+            <option value="Primary|5">Primary — Level 5</option>
+            <option value="Primary|6">Primary — Level 6</option>
+            <option value="Primary|7">Primary — Level 7</option>
+            <option value="Primary|8">Primary — Level 8</option>
+            <option value="Primary|9">Primary — Level 9</option>
+            <option value="Primary|10">Primary — Level 10</option>
+            <option value="Primary|11">Primary — Level 11</option>
+            <option value="Primary|12">Primary — Level 12</option>
+          </optgroup>
+          <optgroup label="Elementary Grade 6">
+            <option value="Grade 6|1">Grade 6 — Level 1</option>
+            <option value="Grade 6|2">Grade 6 — Level 2</option>
+            <option value="Grade 6|3">Grade 6 — Level 3</option>
+          </optgroup>
+          <optgroup label="Elementary Grade 7">
+            <option value="Grade 7|1">Grade 7 — Level 1</option>
+            <option value="Grade 7|2">Grade 7 — Level 2</option>
+            <option value="Grade 7|3">Grade 7 — Level 3</option>
+          </optgroup>
+          <optgroup label="Elementary Grade 8">
+            <option value="Grade 8|1">Grade 8 — Level 1</option>
+            <option value="Grade 8|2">Grade 8 — Level 2</option>
+            <option value="Grade 8|3">Grade 8 — Level 3</option>
+          </optgroup>
         </select>
       </div>
     </div>
@@ -488,14 +509,35 @@
         <div>
           <label class="form-label">Grade level</label>
           <select id="img-grade">
-            <option value="Primary Grade 1">Primary — Grade 1</option>
-            <option value="Primary Grade 2">Primary — Grade 2</option>
-            <option value="Primary Grade 3">Primary — Grade 3</option>
-            <option value="Primary Grade 4">Primary — Grade 4</option>
-            <option value="Primary Grade 5">Primary — Grade 5</option>
-            <option value="Elementary Grade 6">Elementary — Grade 6</option>
-            <option value="Elementary Grade 7">Elementary — Grade 7</option>
-            <option value="Elementary Grade 8">Elementary — Grade 8</option>
+            <optgroup label="Primary (Levels 1–12)">
+              <option value="Primary|1">Primary — Level 1</option>
+              <option value="Primary|2">Primary — Level 2</option>
+              <option value="Primary|3">Primary — Level 3</option>
+              <option value="Primary|4">Primary — Level 4</option>
+              <option value="Primary|5">Primary — Level 5</option>
+              <option value="Primary|6">Primary — Level 6</option>
+              <option value="Primary|7">Primary — Level 7</option>
+              <option value="Primary|8">Primary — Level 8</option>
+              <option value="Primary|9">Primary — Level 9</option>
+              <option value="Primary|10">Primary — Level 10</option>
+              <option value="Primary|11">Primary — Level 11</option>
+              <option value="Primary|12">Primary — Level 12</option>
+            </optgroup>
+            <optgroup label="Elementary Grade 6">
+              <option value="Grade 6|1">Grade 6 — Level 1</option>
+              <option value="Grade 6|2">Grade 6 — Level 2</option>
+              <option value="Grade 6|3">Grade 6 — Level 3</option>
+            </optgroup>
+            <optgroup label="Elementary Grade 7">
+              <option value="Grade 7|1">Grade 7 — Level 1</option>
+              <option value="Grade 7|2">Grade 7 — Level 2</option>
+              <option value="Grade 7|3">Grade 7 — Level 3</option>
+            </optgroup>
+            <optgroup label="Elementary Grade 8">
+              <option value="Grade 8|1">Grade 8 — Level 1</option>
+              <option value="Grade 8|2">Grade 8 — Level 2</option>
+              <option value="Grade 8|3">Grade 8 — Level 3</option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -608,7 +650,7 @@ async function generateQuestions() {
 
   const prompt = `Generate exactly ${count} assessment questions. Return ONLY a valid JSON array with no markdown, no explanation, no extra text.
 
-Subject: ${subject}, Grade: ${grade}, Topic: ${topicLine}, Difficulty: ${difficulty}
+Subject: ${subject}, Grade: ${grade.split('|')[0]} Level ${grade.split('|')[1] || ''}, Topic: ${topicLine}, Difficulty: ${difficulty}
 Language: ${langLine}
 Types to use (distribute evenly): ${types.join(', ')}
 
@@ -763,9 +805,10 @@ function mapToQuestionBank(q, i) {
   const stripLetter = (s) => String(s || '').replace(/^[A-D][.\s]+/, '').trim();
   const qText = q.question || '';
 
-  // Convert grade string to integer level e.g. "Elementary Grade 6" -> 6, "Primary Grade 3" -> 3
-  const gradeMatch = String(q.grade || '').match(/(\d+)/);
-  const levelInt = gradeMatch ? parseInt(gradeMatch[1]) : 1;
+  // Parse grade value format "Primary|3" or "Grade 6|2"
+  const gradeParts = String(q.grade || '').split('|');
+  const levelInt = gradeParts.length > 1 ? parseInt(gradeParts[1]) : 1;
+  const gradeLabel = gradeParts[0] || 'Primary'; // "Primary" or "Grade 6/7/8"
 
   // difficulty string to integer: easy=1, medium=2, hard=3
   const diffMap = { easy: 1, medium: 2, hard: 3 };
@@ -775,7 +818,7 @@ function mapToQuestionBank(q, i) {
     question_id:    'GEN-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substring(2, 7),
     subject:        q.subject || '',
     level:          levelInt,
-    topic_tag:      q.topic || '',
+    topic_tag:      q.topic || gradeLabel || '',
     q_text_english: qText,
     q_text_urdu:    (q.subject === 'Urdu') ? qText : '',
     image_url:      q.image_base64 ? 'data:' + (q.image_media_type || 'image/jpeg') + ';base64,' + q.image_base64 : '',
@@ -841,7 +884,7 @@ let bulkRows = [];
 let allBulkQuestions = [];
 
 function downloadTemplate() {
-  const csv = 'Subject,Grade,Topic\nEnglish,Elementary Grade 6,My Homeland\nMath,Primary Grade 4,Fractions\nUrdu,Elementary Grade 7,نعت کی پڑھائی\nScience,Elementary Grade 8,Human Body Systems';
+  const csv = 'Subject,Grade,Topic\nEnglish,Grade 6|1,My Homeland\nMath,Primary|4,Fractions\nUrdu,Grade 7|2,نعت کی پڑھائی\nScience,Grade 8|1,Human Body Systems';
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'takmil_bulk_template.csv'; a.click();
