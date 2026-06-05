@@ -55,7 +55,7 @@ router.post('/admin/questions', async (req, res) => {
     if (!question_id || !level || !subject) return res.status(400).json({ error: 'question_id, level, subject required' });
     const r = await db.pool.query(`
       INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, q_text_urdu, option_a, option_b, option_c, option_d, correct_option, active, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7::text,$8,$9,$10,$11,$12,NOW())
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
       ON CONFLICT (question_id) DO UPDATE SET level=$2,subject=$3,topic_tag=$4,q_text_english=$5,q_text_urdu=$6,option_a=$7,option_b=$8,option_c=$9,option_d=$10,correct_option=$11,active=$12
       RETURNING *, (active=1) AS is_approved, COALESCE(q_text_english, q_text_urdu) AS question_text`,
       [question_id, level, subject, topic_tag||null, question_text||null, question_text_ur||null,
@@ -116,7 +116,7 @@ router.post('/api/questions/save', async (req, res) => {
     for (const q of questions) {
       await db.pool.query(`
         INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, option_a, option_b, option_c, option_d, correct_option, active, created_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7::text,$8,$9,$10,1,NOW())
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,1,NOW())
         ON CONFLICT (question_id) DO UPDATE SET active=1, q_text_english=$5`,
         [q.question_id, level, subject, topic||null, q.question_text || q.q_text_english || null, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_option]);
       saved++;
@@ -230,7 +230,7 @@ router.post('/api/questions/import', async (req, res) => {
             (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
              image_url, question_type, option_a, option_b, option_c, option_d,
              correct_option, active, created_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7::text,
+          VALUES ($1,$2,$3,$4,$5,$6,$7,
             CASE WHEN $7 IS NOT NULL AND $7!='' THEN 'picture' ELSE 'text' END,
             $8,$9,$10,$11,$12,$13,NOW())
           ON CONFLICT (question_id) DO UPDATE SET
@@ -439,7 +439,7 @@ router.post('/admin/import/questions', async (req, res) => {
       const topicTag   = String(row.topic_tag || '').trim();
       if (!qText || !optA || !optB || !optC || !optD) { skipped++; continue; }
       await db.pool.query(
-        `INSERT INTO questions (question_id,level,subject,q_text_english,q_text_urdu,option_a,option_b,option_c,option_d,correct_option,topic_tag) VALUES ($1,$2,$3,$4,$5,$6,$7::text,$8,$9,$10,$11)`,
+        `INSERT INTO questions (question_id,level,subject,q_text_english,q_text_urdu,option_a,option_b,option_c,option_d,correct_option,topic_tag) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
         [questionId, level, subject, qText, qTextUrdu, optA, optB, optC, optD, correctOpt, topicTag]);
       inserted++;
     } catch(err) { lastError = err.message; errors++; }
@@ -709,7 +709,7 @@ router.post('/admin/questions', async (req, res) => {
         (question_id, topic_tag, level, subject, q_text_english, q_text_urdu,
          option_a, option_b, option_c, option_d, correct_option,
          source_type, video_id, approved_by, active)
-      VALUES ($1,$2,$3,$4,$5,$6,$7::text,$8,$9,$10,$11,$12,$13,$14,$15)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       RETURNING id`,
       [b.question_id, b.topic_tag, b.level, b.subject,
        b.question_text, b.question_text_ur,
@@ -846,26 +846,6 @@ router.get('/api/analytics', async (req, res) => {
 
     res.json({ dailyTrend, rcPerf, coordPerf, schoolPerf });
   } catch(err) { res.status(500).json({ error: err.message }); }
-});
-
-
-// ── Question Generator page proxy (takmil-question-generator.html) ────────────
-router.post('/api/questions/generate-ai', async (req, res) => {
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 module.exports = { router };
