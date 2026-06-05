@@ -760,8 +760,13 @@ function renderMatchColumns(q, opts) {
 
 function renderSentenceBuilder(q, opts) {
   let words = [];
-  try { words = JSON.parse('[' + (q.option_a||'').split('|').map(w => `"${w}"`).join(',') + ']'); } catch(e) {}
-  if (!words.length && q.option_a) words = q.option_a.split('|').filter(Boolean);
+  // Words stored as pipe-separated in option_a: "dog|the|in|lived"
+  const raw = q.option_a || q.option_b || '';
+  if (raw.includes('|')) {
+    words = raw.split('|').map(w => w.trim()).filter(Boolean);
+  } else if (raw) {
+    words = raw.split(' ').map(w => w.trim()).filter(Boolean);
+  }
   if (!words.length) { opts.innerHTML = '<p style="color:#9ca3af">No words available</p>'; document.getElementById('q-next').disabled = false; return; }
 
   const shuffled = [...words].sort(() => Math.random() - 0.5);
