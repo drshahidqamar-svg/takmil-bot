@@ -296,7 +296,7 @@ tbody tr{animation:fade-in 0.25s ease both}
   <div class="sb-divider"></div>
   <div class="sb-sec">
     <div class="sb-lbl">Level</div>
-    <select class="sb-select" onchange="setLevel(this.value)">
+    <select class="sb-select" onchange="setLevel(this.value, null)">
       <option value="">All Levels</option>
       <option value="L1">Level 1</option>
       <option value="L2">Level 2</option>
@@ -441,13 +441,17 @@ let filtered  = [];
 let activeSubject='', activeLevel='', activeStatus='';
 let loading = false;
 
-async function loadFromAPI(){
+async function loadFromAPI(subjectFilter, levelFilter){
   if(loading) return;
   loading = true;
   document.getElementById('q-tbody').innerHTML =
     '<tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8">⏳ Loading questions...</td></tr>';
   try {
-    const resp = await fetch('/api/questions/bank?limit=2000');
+    // Build URL with server-side filters
+    const params = new URLSearchParams({ limit: 500 });
+    if(subjectFilter) params.set('subject', subjectFilter);
+    if(levelFilter) params.set('level', levelFilter.replace('L',''));
+    const resp = await fetch('/api/questions/bank?' + params.toString());
     if(!resp.ok) throw new Error('Server error ' + resp.status);
     const data = await resp.json();
     QUESTIONS = (data.questions || data || []).map(q => ({
@@ -462,7 +466,8 @@ async function loadFromAPI(){
       source:   q.source || '',
     }));
     applyFilters();
-    showBanner('✅ Loaded ' + QUESTIONS.length + ' questions', '#dcfce7', '#15803d');
+    const filterDesc = [activeSubject, activeLevel ? 'Level '+activeLevel.replace('L','') : ''].filter(Boolean).join(' · ') || 'All';
+showBanner('✅ Loaded ' + QUESTIONS.length + ' questions — ' + filterDesc, '#dcfce7', '#15803d');
   } catch(e) {
     QUESTIONS = Array.from({length:10},(_,i)=>({
       id:i+1, subject:['English','Math','Urdu'][i%3],
@@ -489,9 +494,15 @@ function setSubject(s,el){
   document.querySelectorAll('.sb-item').forEach(x=>{
     if(x.closest('.sb-sec')===el.closest('.sb-sec')) x.classList.remove('active');
   });
-  el.classList.add('active'); applyFilters();
+  el.classList.add('active');
+  loading = false;
+  loadFromAPI(activeSubject, activeLevel);
 }
-function setLevel(l){activeLevel=l;applyFilters();}
+function setLevel(l,el){
+  activeLevel=l;
+  loading = false;
+  loadFromAPI(activeSubject, activeLevel);
+}
 function setStatus(s,el){
   activeStatus=s;
   document.querySelectorAll('.sb-item').forEach(x=>{
@@ -722,7 +733,9 @@ function parseCSVRow(row){
   return result;
 }
 
-loadFromAPI();
+// Show prompt on load — user selects subject/level to fetch questions
+document.getElementById('q-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:48px;color:#94a3b8;font-size:13px">👈 Select a subject and level from the sidebar to load questions</td></tr>';
+document.getElementById('q-count').textContent = 'Select a filter to load';
 loadBreakdown();
 </script>
 </body>
