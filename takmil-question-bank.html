@@ -303,6 +303,13 @@ tbody tr{animation:fade-in 0.25s ease both}
       <option value="L3">Level 3</option>
       <option value="L4">Level 4</option>
       <option value="L5">Level 5</option>
+      <option value="L6">Level 6</option>
+      <option value="L7">Level 7</option>
+      <option value="L8">Level 8</option>
+      <option value="L9">Level 9</option>
+      <option value="L10">Level 10</option>
+      <option value="L11">Level 11</option>
+      <option value="L12">Level 12</option>
     </select>
   </div>
   <div class="sb-divider"></div>
@@ -500,8 +507,10 @@ function setSubject(s,el){
 }
 function setLevel(l,el){
   activeLevel=l;
+  // Strip "L" prefix for API call — API expects plain integer
+  const levelNum = l ? l.replace('L','') : '';
   loading = false;
-  loadFromAPI(activeSubject, activeLevel);
+  loadFromAPI(activeSubject, levelNum);
 }
 function setStatus(s,el){
   activeStatus=s;
