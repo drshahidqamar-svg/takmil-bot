@@ -576,8 +576,18 @@ function showQuestion(idx) {
 
   const opts = document.getElementById('q-opts');
   opts.innerHTML = '';
-  const qtype = (q.question_type || 'MCQ').toUpperCase();
   document.getElementById('q-next').disabled = true;
+
+  // Detect type — use question_type field if set, otherwise infer from data
+  let qtype = (q.question_type || '').toUpperCase().replace(/[^A-Z]/g, '');
+  if (!qtype || qtype === 'TEXT' || qtype === 'PICTURE') {
+    // Legacy questions — infer type from data shape
+    const hasOptions = ['a','b','c','d'].some(l => q['option_' + l]);
+    const correctOpt = (q.correct_option || q.correct || '').toUpperCase();
+    if (hasOptions) qtype = 'MCQ';
+    else if (correctOpt === 'TRUE' || correctOpt === 'FALSE') qtype = 'TRUEFALSE';
+    else qtype = 'MCQ';
+  }
 
   if (qtype === 'TRUEFALSE') {
     renderTrueFalse(q, opts);
@@ -590,7 +600,7 @@ function showQuestion(idx) {
   } else if (qtype === 'SENTENCEBUILDER') {
     renderSentenceBuilder(q, opts);
   } else {
-    // Default MCQ
+    // MCQ (default)
     ['a','b','c','d'].forEach(l => {
       const text = q['option_' + l] || '';
       if (!text) return;
