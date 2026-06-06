@@ -422,10 +422,14 @@
         <label class="checkbox-label"><input type="checkbox" id="type-mcq" checked> Multiple choice (MCQ)</label>
         <label class="checkbox-label"><input type="checkbox" id="type-tf" checked> True / False</label>
         <label class="checkbox-label"><input type="checkbox" id="type-sa"> Short answer</label>
-        <label class="checkbox-label"><input type="checkbox" id="type-match"> Match the columns</label>
+        <label class="checkbox-label"><input type="checkbox" id="type-match" onchange="checkMatchMathWarning()"> Match the columns</label>
         <label class="checkbox-label"><input type="checkbox" id="type-fitb"> Fill in the blanks</label>
         <label class="checkbox-label"><input type="checkbox" id="type-sb"> Sentence builder</label>
       </div>
+    </div>
+
+    <div id="match-math-warning" style="display:none;background:#FEF3C7;border:1px solid #F59E0B;border-radius:var(--radius-sm);padding:10px 14px;font-size:0.82rem;color:#92400E;margin-bottom:12px;">
+      ⚠️ <strong>Math + Match the Columns:</strong> AI may generate incorrect math pairs. Review carefully before importing, or use a different question type for Math.
     </div>
 
     <button class="btn btn-primary" id="gen-btn" onclick="generateQuestions()">
@@ -615,6 +619,14 @@ function handleSubjectChange() {
     langSelect.disabled = false;
     langSelect.title = '';
   }
+  checkMatchMathWarning();
+}
+
+function checkMatchMathWarning() {
+  const subject = document.getElementById('subject').value;
+  const matchChecked = document.getElementById('type-match').checked;
+  const warn = document.getElementById('match-math-warning');
+  if (warn) warn.style.display = (subject === 'Math' && matchChecked) ? 'block' : 'none';
 }
 
 async function generateQuestions() {
