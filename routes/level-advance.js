@@ -348,7 +348,7 @@ router.post('/portal/session/start', async (req, res) => {
         question_text: q.q_text_english || q.question_text || '',
         q_text_urdu: q.q_text_urdu || '', image_url: q.image_url || null,
         option_a: optA, option_b: optB, option_c: optC, option_d: optD,
-        correct: correct,
+        correct: isMCQ ? correct : (q.correct_option || ''),
         question_type: q.question_type || 'text',
       };
     });
