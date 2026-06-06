@@ -178,7 +178,7 @@ router.get('/api/assess/questions/:pin', async (req, res) => {
       const qs = await db.pool.query(`
         SELECT question_id AS id, COALESCE(q_text_english,q_text_urdu) AS question_text,
                q_text_urdu, q_text_english, option_a,option_b,option_c,option_d,
-               correct_option, subject, level, image_url
+               correct_option, question_type, subject, level, image_url
         FROM questions WHERE active=1 AND level BETWEEN 1 AND 11 ORDER BY RANDOM() LIMIT $1
       `, [QUESTIONS_PER_SESSION * subjectList.length]);
       allQuestions = qs.rows;
@@ -187,7 +187,7 @@ router.get('/api/assess/questions/:pin', async (req, res) => {
         const qs = await db.pool.query(`
           SELECT question_id AS id, COALESCE(q_text_english,q_text_urdu) AS question_text,
                  q_text_urdu, q_text_english, option_a,option_b,option_c,option_d,
-                 correct_option, subject, level, image_url
+                 correct_option, question_type, subject, level, image_url
           FROM questions WHERE active=1 AND level=$1::integer AND subject ILIKE $2
           ORDER BY RANDOM() LIMIT $3
         `, [parseInt(s.level), subj, QUESTIONS_PER_SESSION]);
@@ -196,7 +196,7 @@ router.get('/api/assess/questions/:pin', async (req, res) => {
           const fallback = await db.pool.query(`
             SELECT question_id AS id, COALESCE(q_text_english,q_text_urdu) AS question_text,
                    q_text_urdu, q_text_english, option_a,option_b,option_c,option_d,
-                   correct_option, subject, level, image_url
+                   correct_option, question_type, subject, level, image_url
             FROM questions WHERE active=1 AND subject ILIKE $1 ORDER BY RANDOM() LIMIT $2
           `, [subj, QUESTIONS_PER_SESSION]);
           allQuestions = allQuestions.concat(fallback.rows);
@@ -320,23 +320,36 @@ router.post('/portal/session/start', async (req, res) => {
     if (!questions.length) return res.status(404).json({ error: 'No questions found for this assessment. Please contact your coordinator.' });
 
     const shuffled = questions.map(q => {
-      const correctOption = (q.correct_option || 'A').toUpperCase();
-      const opts = [
-        { label: 'A', text: q.option_a }, { label: 'B', text: q.option_b },
-        { label: 'C', text: q.option_c }, { label: 'D', text: q.option_d },
-      ];
-      const correctText = opts.find(o => o.label === correctOption)?.text;
-      for (let i = opts.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [opts[i], opts[j]] = [opts[j], opts[i]];
+      const qtype = (q.question_type || 'text').toLowerCase();
+      const isMCQ = qtype === 'mcq' || qtype === 'text' || qtype === 'picture';
+
+      // Only shuffle options for MCQ — preserve raw data for all other types
+      let optA = q.option_a, optB = q.option_b, optC = q.option_c, optD = q.option_d;
+      let correct = (q.correct_option || 'A').toUpperCase();
+
+      if (isMCQ) {
+        const correctOption = correct;
+        const opts = [
+          { label: 'A', text: q.option_a }, { label: 'B', text: q.option_b },
+          { label: 'C', text: q.option_c }, { label: 'D', text: q.option_d },
+        ];
+        const correctText = opts.find(o => o.label === correctOption)?.text;
+        for (let i = opts.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [opts[i], opts[j]] = [opts[j], opts[i]];
+        }
+        optA = opts[0].text; optB = opts[1].text;
+        optC = opts[2].text; optD = opts[3].text;
+        correct = ['A','B','C','D'][opts.findIndex(o => o.text === correctText)] || 'A';
       }
+
       return {
         id: q.question_id || q.id, level: q.level,
         question_text: q.q_text_english || q.question_text || '',
         q_text_urdu: q.q_text_urdu || '', image_url: q.image_url || null,
-        option_a: opts[0].text, option_b: opts[1].text,
-        option_c: opts[2].text, option_d: opts[3].text,
-        correct: ['A','B','C','D'][opts.findIndex(o => o.text === correctText)] || 'A',
+        option_a: optA, option_b: optB, option_c: optC, option_d: optD,
+        correct: correct,
+        question_type: q.question_type || 'text',
       };
     });
 
@@ -958,7 +971,7 @@ router.get('/api/assess/bundle/:pin', async (req, res) => {
       const qs = await db.pool.query(`
         SELECT question_id AS id, COALESCE(q_text_english,q_text_urdu) AS question_text,
                q_text_urdu, q_text_english, option_a,option_b,option_c,option_d,
-               correct_option, subject, level, image_url
+               correct_option, question_type, subject, level, image_url
         FROM questions WHERE active=1 AND level BETWEEN 1 AND 11
         ORDER BY RANDOM() LIMIT $1
       `, [QUESTIONS_PER_SESSION * subjectList.length]);
@@ -968,7 +981,7 @@ router.get('/api/assess/bundle/:pin', async (req, res) => {
         const qs = await db.pool.query(`
           SELECT question_id AS id, COALESCE(q_text_english,q_text_urdu) AS question_text,
                  q_text_urdu, q_text_english, option_a,option_b,option_c,option_d,
-                 correct_option, subject, level, image_url
+                 correct_option, question_type, subject, level, image_url
           FROM questions WHERE active=1 AND level=$1::integer AND subject ILIKE $2
           ORDER BY RANDOM() LIMIT $3
         `, [parseInt(session.level), subj, QUESTIONS_PER_SESSION]);
@@ -977,7 +990,7 @@ router.get('/api/assess/bundle/:pin', async (req, res) => {
           const fallback = await db.pool.query(`
             SELECT question_id AS id, COALESCE(q_text_english,q_text_urdu) AS question_text,
                    q_text_urdu, q_text_english, option_a,option_b,option_c,option_d,
-                   correct_option, subject, level, image_url
+                   correct_option, question_type, subject, level, image_url
             FROM questions WHERE active=1 AND subject ILIKE $1
             ORDER BY RANDOM() LIMIT $2
           `, [subj, QUESTIONS_PER_SESSION]);
