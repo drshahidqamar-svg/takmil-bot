@@ -230,8 +230,8 @@ router.post('/api/questions/import', async (req, res) => {
             (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
              image_url, question_type, option_a, option_b, option_c, option_d,
              correct_option, active, created_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,
-            CASE WHEN $7 IS NOT NULL AND $7!='' THEN 'picture' ELSE 'text' END,
+          VALUES ($1,$2,$3,$4,$5,$6,$7::text,
+            $14,
             $8,$9,$10,$11,$12,$13,NOW())
           ON CONFLICT (question_id) DO UPDATE SET
             q_text_english = COALESCE(NULLIF($5,''), questions.q_text_english),
