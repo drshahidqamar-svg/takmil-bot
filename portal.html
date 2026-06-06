@@ -21,7 +21,7 @@
 html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',sans-serif;color:var(--text)}
 .screen{display:none;position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-top:20px;background:var(--bg)}
 .screen.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
-/** HEADER */
+/* HEADER */
 .app-header{width:100%;max-width:480px;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--green);border-radius:var(--r);margin-bottom:16px;color:white;}
 .app-header .logo{font-size:20px;font-weight:900;letter-spacing:1px;color:var(--green3)}
 .sync-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,0.15)}
@@ -119,6 +119,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
   .seq-chip{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border:2px solid var(--border);border-radius:20px;background:white;font-size:15px;font-family:'Nunito',sans-serif}
   .seq-input{width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:16px;outline:none;margin-bottom:8px}
   .seq-input:focus{border-color:var(--green2)}
+
+  .subject-select-grid{display:grid;grid-template-columns:1fr;gap:14px;margin:20px 0}
+  .subject-select-btn{padding:20px 16px;border:2px solid var(--border);border-radius:16px;background:white;cursor:pointer;font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;text-align:center;display:flex;align-items:center;gap:14px;transition:all 0.15s}
+  .subject-select-btn:hover{border-color:var(--green2);background:#f0fdf4;transform:translateY(-1px)}
+  .subject-select-btn .subj-icon{font-size:32px}
+  .subject-select-btn .subj-info{text-align:left}
+  .subject-select-btn .subj-name{font-size:18px;font-weight:800;color:var(--text)}
+  .subject-select-btn .subj-label{font-size:13px;color:var(--muted);font-weight:600}
+  .welcome-name{font-size:22px;font-weight:900;color:var(--green);margin-bottom:4px}
+  .welcome-level{font-size:14px;color:var(--muted);margin-bottom:20px}
 </style>
 </head>
 <body>
@@ -195,6 +205,42 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
       <div class="question-text" id="q-text"></div>
       <div class="options-grid" id="q-opts"></div>
       <button class="btn btn-green" id="q-next" onclick="nextQuestion()" disabled>Next — اگلا ▶</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── SCREEN: SUBJECT SELECT ── -->
+<div class="screen" id="s-subject">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <div class="sync-badge online" id="subj-sync-badge">✓ Connected</div>
+  </div>
+  <div class="card">
+    <div class="welcome-name" id="subj-welcome-name">Hello, Student!</div>
+    <div class="welcome-level" id="subj-welcome-level">Select a subject to begin</div>
+    <div class="subject-select-grid">
+      <button class="subject-select-btn" onclick="selectSubject('English')">
+        <span class="subj-icon">📖</span>
+        <div class="subj-info">
+          <div class="subj-name">English</div>
+          <div class="subj-label">انگریزی</div>
+        </div>
+      </button>
+      <button class="subject-select-btn" onclick="selectSubject('Math')">
+        <span class="subj-icon">🔢</span>
+        <div class="subj-info">
+          <div class="subj-name">Math</div>
+          <div class="subj-label">ریاضی</div>
+        </div>
+      </button>
+      <button class="subject-select-btn" onclick="selectSubject('Urdu')">
+        <span class="subj-icon">✏️</span>
+        <div class="subj-info">
+          <div class="subj-name">Urdu</div>
+          <div class="subj-label">اردو</div>
+        </div>
+      </button>
     </div>
   </div>
 </div>
@@ -412,7 +458,6 @@ async function validatePin(pin, name) {
                 option_a: q.option_a, option_b: q.option_b,
                 option_c: q.option_c, option_d: q.option_d,
                 correct_option: q.correct || q.correct_option || 'A',
-                question_type: q.question_type || 'text',
                 subject: subj, level: data.level,
               });
             }
@@ -529,7 +574,16 @@ async function startAssessment() {
     );
   }
 
-  await loadSubject(session.subjects[0]);
+  // Show subject selection screen
+  document.getElementById('subj-welcome-name').textContent = 'Hello, ' + name + '!';
+  document.getElementById('subj-welcome-level').textContent = 'Level ' + result.level + ' — Choose a subject to begin';
+  showScreen('s-subject');
+}
+
+async function selectSubject(subject) {
+  session.subjects = [subject];
+  session.subjectIdx = 0;
+  await loadSubject(subject);
 }
 
 async function loadSubject(subject) {
