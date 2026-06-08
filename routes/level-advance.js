@@ -323,7 +323,6 @@ router.post('/portal/session/start', async (req, res) => {
       const qtype = (q.question_type || 'text').toLowerCase();
       const isMCQ = qtype === 'mcq' || qtype === 'text' || qtype === 'picture';
 
-      // Only shuffle options for MCQ — preserve raw data for all other types
       let optA = q.option_a, optB = q.option_b, optC = q.option_c, optD = q.option_d;
       let correct = (q.correct_option || 'A').toUpperCase();
 
