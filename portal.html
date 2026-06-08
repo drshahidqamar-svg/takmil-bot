@@ -119,15 +119,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
   .seq-chip{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border:2px solid var(--border);border-radius:20px;background:white;font-size:15px;font-family:'Nunito',sans-serif}
   .seq-input{width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:16px;outline:none;margin-bottom:8px}
   .seq-input:focus{border-color:var(--green2)}
-
-  .subject-select-grid{display:grid;grid-template-columns:1fr;gap:14px;margin:20px 0}
-  .subject-select-btn{padding:20px 16px;border:2px solid var(--border);border-radius:16px;background:white;cursor:pointer;font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;display:flex;align-items:center;gap:14px;transition:all 0.15s;width:100%}
-  .subject-select-btn:hover{border-color:var(--green2);background:#f0fdf4}
-  .subj-icon{font-size:32px}
-  .subj-name{font-size:18px;font-weight:800;color:var(--text);text-align:left}
-  .subj-label{font-size:13px;color:var(--muted);font-weight:600;text-align:left}
-  .welcome-name{font-size:22px;font-weight:900;color:var(--green);margin-bottom:4px}
-  .welcome-level{font-size:14px;color:var(--muted);margin-bottom:20px}
 </style>
 </head>
 <body>
@@ -208,26 +199,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
   </div>
 </div>
 
-
-<!-- ── SCREEN: SUBJECT SELECT ── -->
-<div class="screen" id="s-subject">
-  <div class="app-header"><div class="logo">TAKMIL</div><div class="sync-badge online">✓ Connected</div></div>
-  <div class="card">
-    <div class="welcome-name" id="subj-welcome-name">Hello!</div>
-    <div class="welcome-level" id="subj-welcome-level">Select a subject to begin</div>
-    <div class="subject-select-grid">
-      <button class="subject-select-btn" onclick="selectSubject('English')">
-        <span class="subj-icon">📖</span><div><div class="subj-name">English</div><div class="subj-label">انگریزی</div></div>
-      </button>
-      <button class="subject-select-btn" onclick="selectSubject('Math')">
-        <span class="subj-icon">🔢</span><div><div class="subj-name">Math</div><div class="subj-label">ریاضی</div></div>
-      </button>
-      <button class="subject-select-btn" onclick="selectSubject('Urdu')">
-        <span class="subj-icon">✏️</span><div><div class="subj-name">Urdu</div><div class="subj-label">اردو</div></div>
-      </button>
-    </div>
-  </div>
-</div>
 <!-- ── SCREEN: SUBJECT TRANSITION ── -->
 <div class="screen" id="s-transition">
   <div class="app-header">
@@ -441,7 +412,6 @@ async function validatePin(pin, name) {
                 option_a: q.option_a, option_b: q.option_b,
                 option_c: q.option_c, option_d: q.option_d,
                 correct_option: q.correct || q.correct_option || 'A',
-                question_type: q.question_type || 'text',
                 subject: subj, level: data.level,
               });
             }
@@ -558,15 +528,7 @@ async function startAssessment() {
     );
   }
 
-  document.getElementById('subj-welcome-name').textContent = 'Hello, ' + session.name + '!';
-  document.getElementById('subj-welcome-level').textContent = 'Level ' + session.level + ' — Choose a subject';
-  showScreen('s-subject');
-}
-
-async function selectSubject(subject) {
-  session.subjects = [subject];
-  session.subjectIdx = 0;
-  await loadSubject(subject);
+  await loadSubject(session.subjects[0]);
 }
 
 async function loadSubject(subject) {
@@ -698,7 +660,7 @@ function renderShortAnswer(q, opts) {
     if (!session._saRevealed) {
       session._saRevealed = true;
       modelDiv.style.display = 'block';
-      modelDiv.innerHTML = '<strong>Model answer:</strong> ' + (q.correct_option || '');
+      modelDiv.innerHTML = '<strong>Model answer:</strong> ' + (q.correct || q.correct_option || '');
       nextBtn.textContent = 'Next — اگلا ▶';
     } else {
       session._saRevealed = false;
@@ -709,7 +671,7 @@ function renderShortAnswer(q, opts) {
 
 function renderFillBlank(q, opts) {
   const text = q.q_text_english || '';
-  const correct = q.correct_option || '';
+  const correct = q.correct || q.correct_option || '';
   const wrap = document.createElement('div');
   wrap.className = 'fitb-wrap';
   const parts = text.split('___');
@@ -809,7 +771,7 @@ function renderSentenceBuilder(q, opts) {
 
   const shuffled = [...words].sort(() => Math.random() - 0.5);
   let placed = [];
-  const correct = (q.correct_option || '').toLowerCase();
+  const correct = (q.correct || q.correct_option || '').toLowerCase();
 
   const pool = document.createElement('div'); pool.className = 'sb-pool'; pool.id = 'sb-pool';
   const box  = document.createElement('div'); box.className  = 'sb-sentence'; box.id = 'sb-box';
@@ -859,7 +821,7 @@ function renderSentenceBuilder(q, opts) {
       if (attempt !== correct) {
         const corDiv = document.createElement('div');
         corDiv.style.cssText = 'color:#15803d;font-size:14px;margin-top:8px;';
-        corDiv.textContent = '✓ Correct: ' + q.correct_option;
+        corDiv.textContent = '✓ Correct: ' + (q.correct || q.correct_option || '');
         opts.appendChild(corDiv);
       }
       nextBtn.textContent = 'Next — اگلا ▶';
