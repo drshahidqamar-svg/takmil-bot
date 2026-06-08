@@ -322,26 +322,21 @@ router.post('/portal/session/start', async (req, res) => {
     const shuffled = questions.map(q => {
       const qtype = (q.question_type || 'text').toLowerCase();
       const isMCQ = qtype === 'mcq' || qtype === 'text' || qtype === 'picture';
-
       let optA = q.option_a, optB = q.option_b, optC = q.option_c, optD = q.option_d;
       let correct = (q.correct_option || 'A').toUpperCase();
-
       if (isMCQ) {
-        const correctOption = correct;
         const opts = [
           { label: 'A', text: q.option_a }, { label: 'B', text: q.option_b },
           { label: 'C', text: q.option_c }, { label: 'D', text: q.option_d },
         ];
-        const correctText = opts.find(o => o.label === correctOption)?.text;
+        const correctText = opts.find(o => o.label === correct)?.text;
         for (let i = opts.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [opts[i], opts[j]] = [opts[j], opts[i]];
         }
-        optA = opts[0].text; optB = opts[1].text;
-        optC = opts[2].text; optD = opts[3].text;
+        optA = opts[0].text; optB = opts[1].text; optC = opts[2].text; optD = opts[3].text;
         correct = ['A','B','C','D'][opts.findIndex(o => o.text === correctText)] || 'A';
       }
-
       return {
         id: q.question_id || q.id, level: q.level,
         question_text: q.q_text_english || q.question_text || '',
