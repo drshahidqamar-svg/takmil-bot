@@ -669,7 +669,8 @@ FillInTheBlank: {"type":"FillInTheBlank","question":"The capital of Pakistan is 
 SentenceBuilder: {"type":"SentenceBuilder","question":"Make a sentence using these words:","words":["word1","word2","word3","word4","word5"],"correct_answer":"The correct sentence here.","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 MatchTheColumns: {"type":"MatchTheColumns","question":"Match the following:","pairs":[{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."}],"correct_answer":"See pairs","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 
-IMPORTANT for MatchTheColumns: all "right" values must be unique — no two pairs can share the same answer. Each pair must be factually correct.
+IMPORTANT for MatchTheColumns: all "right" values must be unique — no two pairs can share the same answer.
+IMPORTANT for SentenceBuilder: "words" array must contain every word from correct_answer.
 Output the JSON array only. Start with [ and end with ].`;
 
   try {
