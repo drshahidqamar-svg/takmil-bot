@@ -488,7 +488,7 @@ async function getQuestions(subject, level, name, pin) {
     image_url:     q.image_url || null,
     option_a: q.option_a, option_b: q.option_b,
     option_c: q.option_c, option_d: q.option_d,
-    correct:  q.correct_option || 'A',
+    correct:  q.correct || q.correct_option || 'A',
   }));
 }
 
@@ -623,7 +623,7 @@ function renderTrueFalse(q, opts) {
     btn.onclick = () => {
       session.answers[session.currentQ] = val.toUpperCase();
       document.querySelectorAll('.tf-btn').forEach(b => b.style.pointerEvents = 'none');
-      const correct = (q.correct_option || '').toUpperCase();
+      const correct = (q.correct || q.correct_option || '').toUpperCase();
       btn.style.borderColor = val.toUpperCase() === correct ? 'var(--green2)' : 'var(--red)';
       btn.style.background  = val.toUpperCase() === correct ? '#dcfce7' : '#fef2f2';
       if (val.toUpperCase() !== correct) {
@@ -743,13 +743,14 @@ function renderMatchColumns(q, opts) {
       pairs.forEach((p, i) => {
         const sel = document.getElementById('match-' + i);
         if (sel) {
-          const isCorrect = sel.value === p.right;
+          const isCorrect = sel.value.trim() === (p.right || '').trim();
           sel.style.borderColor = isCorrect ? 'var(--green2)' : 'var(--red)';
           sel.style.background  = isCorrect ? '#dcfce7' : '#fef2f2';
           sel.disabled = true;
           if (!isCorrect) allCorrect = false;
         }
       });
+      session.answers[session.currentQ] = { _allCorrect: allCorrect };
       nextBtn.textContent = 'Next — اگلا ▶';
     } else {
       session._matchChecked = false;
