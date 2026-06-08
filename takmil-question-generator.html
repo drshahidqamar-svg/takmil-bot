@@ -422,14 +422,10 @@
         <label class="checkbox-label"><input type="checkbox" id="type-mcq" checked> Multiple choice (MCQ)</label>
         <label class="checkbox-label"><input type="checkbox" id="type-tf" checked> True / False</label>
         <label class="checkbox-label"><input type="checkbox" id="type-sa"> Short answer</label>
-        <label class="checkbox-label"><input type="checkbox" id="type-match" onchange="checkMatchMathWarning()"> Match the columns</label>
+        <label class="checkbox-label"><input type="checkbox" id="type-match"> Match the columns</label>
         <label class="checkbox-label"><input type="checkbox" id="type-fitb"> Fill in the blanks</label>
         <label class="checkbox-label"><input type="checkbox" id="type-sb"> Sentence builder</label>
       </div>
-    </div>
-
-    <div id="match-math-warning" style="display:none;background:#FEF3C7;border:1px solid #F59E0B;border-radius:var(--radius-sm);padding:10px 14px;font-size:0.82rem;color:#92400E;margin-bottom:12px;">
-      ⚠️ <strong>Math + Match the Columns:</strong> AI may generate incorrect math pairs. Review carefully before importing, or use a different question type for Math.
     </div>
 
     <button class="btn btn-primary" id="gen-btn" onclick="generateQuestions()">
@@ -619,14 +615,6 @@ function handleSubjectChange() {
     langSelect.disabled = false;
     langSelect.title = '';
   }
-  checkMatchMathWarning();
-}
-
-function checkMatchMathWarning() {
-  const subject = document.getElementById('subject').value;
-  const matchChecked = document.getElementById('type-match').checked;
-  const warn = document.getElementById('match-math-warning');
-  if (warn) warn.style.display = (subject === 'Math' && matchChecked) ? 'block' : 'none';
 }
 
 async function generateQuestions() {
@@ -679,8 +667,9 @@ TrueFalse: {"type":"TrueFalse","question":"...","correct_answer":"True","difficu
 ShortAnswer: {"type":"ShortAnswer","question":"...","correct_answer":"...","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 FillInTheBlank: {"type":"FillInTheBlank","question":"The capital of Pakistan is ___.","correct_answer":"Islamabad","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 SentenceBuilder: {"type":"SentenceBuilder","question":"Make a sentence using these words:","words":["word1","word2","word3","word4","word5"],"correct_answer":"The correct sentence here.","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
-MatchTheColumns: {"type":"MatchTheColumns","question":"Match the following:","pairs":[{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."}],"correct_answer":"See pairs","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
+MatchTheColumns: {"type":"MatchTheColumns","question":"Match the following:","pairs":[{"left":"itemA","right":"correct match for itemA"},{"left":"itemB","right":"correct match for itemB"},{"left":"itemC","right":"correct match for itemC"},{"left":"itemD","right":"correct match for itemD"},{"left":"itemE","right":"correct match for itemE"}],"correct_answer":"See pairs","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
 
+CRITICAL for MatchTheColumns: Each "left" item must match EXACTLY with its "right" item. Double-check every pair is factually correct before including it.
 Output the JSON array only. Start with [ and end with ].`;
 
   try {
@@ -848,10 +837,10 @@ function mapToQuestionBank(q, i) {
     q_text_urdu:    (q.subject === 'Urdu') ? qText : '',
     image_url:      q.image_base64 ? 'data:' + (q.image_media_type || 'image/jpeg') + ';base64,' + q.image_base64 : '',
     // For SentenceBuilder, store ALL words pipe-separated in option_a
-    option_a:       q.type === 'SentenceBuilder' ? (q.words ? q.words.join('|') : '') : q.type === 'MatchTheColumns' ? (q.pairs ? JSON.stringify(q.pairs) : '') : stripLetter(opts[0]),
-    option_b:       (q.type === 'SentenceBuilder' || q.type === 'MatchTheColumns') ? '' : stripLetter(opts[1]),
-    option_c:       (q.type === 'SentenceBuilder' || q.type === 'MatchTheColumns') ? '' : stripLetter(opts[2]),
-    option_d:       (q.type === 'SentenceBuilder' || q.type === 'MatchTheColumns') ? '' : stripLetter(opts[3]),
+    option_a:       q.type === 'SentenceBuilder' ? (q.words ? q.words.join('|') : '') : stripLetter(opts[0]),
+    option_b:       stripLetter(opts[1]),
+    option_c:       stripLetter(opts[2]),
+    option_d:       stripLetter(opts[3]),
     correct_option: q.correct_answer || '',
     question_type:  q.type || 'MCQ',
     difficulty:     diffInt,
