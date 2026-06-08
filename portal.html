@@ -121,12 +121,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
   .seq-input:focus{border-color:var(--green2)}
 
   .subject-select-grid{display:grid;grid-template-columns:1fr;gap:14px;margin:20px 0}
-  .subject-select-btn{padding:20px 16px;border:2px solid var(--border);border-radius:16px;background:white;cursor:pointer;font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;text-align:center;display:flex;align-items:center;gap:14px;transition:all 0.15s}
-  .subject-select-btn:hover{border-color:var(--green2);background:#f0fdf4;transform:translateY(-1px)}
-  .subject-select-btn .subj-icon{font-size:32px}
-  .subject-select-btn .subj-info{text-align:left}
-  .subject-select-btn .subj-name{font-size:18px;font-weight:800;color:var(--text)}
-  .subject-select-btn .subj-label{font-size:13px;color:var(--muted);font-weight:600}
+  .subject-select-btn{padding:20px 16px;border:2px solid var(--border);border-radius:16px;background:white;cursor:pointer;font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;display:flex;align-items:center;gap:14px;transition:all 0.15s;width:100%}
+  .subject-select-btn:hover{border-color:var(--green2);background:#f0fdf4}
+  .subj-icon{font-size:32px}
+  .subj-name{font-size:18px;font-weight:800;color:var(--text);text-align:left}
+  .subj-label{font-size:13px;color:var(--muted);font-weight:600;text-align:left}
   .welcome-name{font-size:22px;font-weight:900;color:var(--green);margin-bottom:4px}
   .welcome-level{font-size:14px;color:var(--muted);margin-bottom:20px}
 </style>
@@ -212,39 +211,23 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 
 <!-- ── SCREEN: SUBJECT SELECT ── -->
 <div class="screen" id="s-subject">
-  <div class="app-header">
-    <div class="logo">TAKMIL</div>
-    <div class="sync-badge online">✓ Connected</div>
-  </div>
+  <div class="app-header"><div class="logo">TAKMIL</div><div class="sync-badge online">✓ Connected</div></div>
   <div class="card">
-    <div class="welcome-name" id="subj-welcome-name">Hello, Student!</div>
+    <div class="welcome-name" id="subj-welcome-name">Hello!</div>
     <div class="welcome-level" id="subj-welcome-level">Select a subject to begin</div>
     <div class="subject-select-grid">
       <button class="subject-select-btn" onclick="selectSubject('English')">
-        <span class="subj-icon">📖</span>
-        <div class="subj-info">
-          <div class="subj-name">English</div>
-          <div class="subj-label">انگریزی</div>
-        </div>
+        <span class="subj-icon">📖</span><div><div class="subj-name">English</div><div class="subj-label">انگریزی</div></div>
       </button>
       <button class="subject-select-btn" onclick="selectSubject('Math')">
-        <span class="subj-icon">🔢</span>
-        <div class="subj-info">
-          <div class="subj-name">Math</div>
-          <div class="subj-label">ریاضی</div>
-        </div>
+        <span class="subj-icon">🔢</span><div><div class="subj-name">Math</div><div class="subj-label">ریاضی</div></div>
       </button>
       <button class="subject-select-btn" onclick="selectSubject('Urdu')">
-        <span class="subj-icon">✏️</span>
-        <div class="subj-info">
-          <div class="subj-name">Urdu</div>
-          <div class="subj-label">اردو</div>
-        </div>
+        <span class="subj-icon">✏️</span><div><div class="subj-name">Urdu</div><div class="subj-label">اردو</div></div>
       </button>
     </div>
   </div>
 </div>
-
 <!-- ── SCREEN: SUBJECT TRANSITION ── -->
 <div class="screen" id="s-transition">
   <div class="app-header">
@@ -458,6 +441,7 @@ async function validatePin(pin, name) {
                 option_a: q.option_a, option_b: q.option_b,
                 option_c: q.option_c, option_d: q.option_d,
                 correct_option: q.correct || q.correct_option || 'A',
+                question_type: q.question_type || 'text',
                 subject: subj, level: data.level,
               });
             }
@@ -574,9 +558,8 @@ async function startAssessment() {
     );
   }
 
-  // Show subject selection screen
   document.getElementById('subj-welcome-name').textContent = 'Hello, ' + session.name + '!';
-  document.getElementById('subj-welcome-level').textContent = 'Level ' + session.level + ' — Choose a subject to begin';
+  document.getElementById('subj-welcome-level').textContent = 'Level ' + session.level + ' — Choose a subject';
   showScreen('s-subject');
 }
 
@@ -798,14 +781,13 @@ function renderMatchColumns(q, opts) {
       pairs.forEach((p, i) => {
         const sel = document.getElementById('match-' + i);
         if (sel) {
-          const isCorrect = sel.value.trim() === (p.right || '').trim();
+          const isCorrect = sel.value === p.right;
           sel.style.borderColor = isCorrect ? 'var(--green2)' : 'var(--red)';
           sel.style.background  = isCorrect ? '#dcfce7' : '#fef2f2';
           sel.disabled = true;
           if (!isCorrect) allCorrect = false;
         }
       });
-      session.answers[session.currentQ] = { _allCorrect: allCorrect };
       nextBtn.textContent = 'Next — اگلا ▶';
     } else {
       session._matchChecked = false;
