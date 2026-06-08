@@ -619,7 +619,7 @@ router.get('/api/results/school/:identifier', async (req, res) => {
     res.json({ students: r.rows });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
-// ── Level Advancement Console APIs ───────────────────────────────────────────
+// -── Level Advancement Console APIs ───────────────────────────────────────────
 router.get('/api/console/schools-progress', async (req, res) => {
   try {
     const r = await db.pool.query(`
