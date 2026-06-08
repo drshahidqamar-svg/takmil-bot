@@ -441,6 +441,7 @@ async function validatePin(pin, name) {
                 option_a: q.option_a, option_b: q.option_b,
                 option_c: q.option_c, option_d: q.option_d,
                 correct_option: q.correct || q.correct_option || 'A',
+                question_type: q.question_type || 'text',
                 subject: subj, level: data.level,
               });
             }
@@ -853,10 +854,12 @@ function renderSentenceBuilder(q, opts) {
   nextBtn.onclick = () => {
     if (!session._sbChecked) {
       session._sbChecked = true;
-      const attempt = placed.map(i => shuffled[i]).join(' ').toLowerCase();
-      box.style.border = '2px solid ' + (attempt === correct ? 'var(--green2)' : 'var(--red)');
-      box.style.background = attempt === correct ? '#dcfce7' : '#fef2f2';
-      if (attempt !== correct) {
+      const strip = s => String(s||'').toLowerCase().replace(/[.,!?;:]/g,'').trim();
+      const attempt = strip(placed.map(i => shuffled[i]).join(' '));
+      const correctClean = strip(correct);
+      box.style.border = '2px solid ' + (attempt === correctClean ? 'var(--green2)' : 'var(--red)');
+      box.style.background = attempt === correctClean ? '#dcfce7' : '#fef2f2';
+      if (attempt !== correctClean) {
         const corDiv = document.createElement('div');
         corDiv.style.cssText = 'color:#15803d;font-size:14px;margin-top:8px;';
         corDiv.textContent = '✓ Correct: ' + (q.correct || q.correct_option || '');
@@ -914,8 +917,21 @@ function finishSubject() {
   const qs = session.currentQuestions;
   let score = 0;
   qs.forEach((q, i) => {
-    const correct = (q.correct || q.correct_option || '').toUpperCase();
-    if (session.answers[i] === correct) score++;
+    const qtype = (q.question_type || 'text').toUpperCase().replace(/[^A-Z]/g,'');
+    const ans = session.answers[i];
+    const correct = (q.correct || q.correct_option || '').trim();
+    if (qtype === 'SHORTANSWER') {
+      if (ans && String(ans).trim().length > 0) score++;
+    } else if (qtype === 'FILLINTHEBLANK') {
+      if (String(ans || '').trim().toLowerCase() === correct.toLowerCase()) score++;
+    } else if (qtype === 'SENTENCEBUILDER') {
+      const strip = s => String(s||'').toLowerCase().replace(/[.,!?;:]/g,'').trim();
+      if (strip(ans) === strip(correct)) score++;
+    } else if (qtype === 'MATCHTHECOLUMNS') {
+      if (ans && ans._allCorrect === true) score++;
+    } else {
+      if (String(ans || '').toUpperCase() === correct.toUpperCase()) score++;
+    }
   });
   const pct = Math.round((score / qs.length) * 100);
   session.subjectResults.push({ subject: session.currentSubject, score, total: qs.length, pct });
