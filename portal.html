@@ -21,33 +21,27 @@
 html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',sans-serif;color:var(--text)}
 .screen{display:none;position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-top:20px;background:var(--bg)}
 .screen.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
-/* HEADER */
 .app-header{width:100%;max-width:480px;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--green);border-radius:var(--r);margin-bottom:16px;color:white;}
 .app-header .logo{font-size:20px;font-weight:900;letter-spacing:1px;color:var(--green3)}
 .sync-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,0.15)}
 .sync-badge.online{background:#dcfce7;color:#15803d}
 .sync-badge.offline{background:#fef2f2;color:#dc2626}
 .sync-badge.syncing{background:#dbeafe;color:#1d4ed8}
-/* CARDS */
 .card{width:100%;max-width:480px;background:var(--card);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);margin-bottom:16px;}
 .card-title{font-size:18px;font-weight:800;color:var(--green);margin-bottom:4px}
 .card-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
-/* BUTTONS */
 .btn{width:100%;padding:16px;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;letter-spacing:0.3px;}
 .btn-green{background:var(--green2);color:white}
 .btn-green:active{background:var(--green);transform:scale(0.98)}
 .btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}
 .btn:disabled{opacity:0.5;cursor:not-allowed}
-/* INPUTS */
 .input{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:12px;font-size:16px;font-family:'Nunito',sans-serif;color:var(--text);outline:none;background:white;margin-bottom:12px;transition:border-color 0.2s;}
 .input:focus{border-color:var(--green2)}
 .label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block}
-/* PROGRESS */
 .progress-wrap{margin-bottom:16px}
 .progress-label{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px}
 .progress-bar{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
 .progress-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));border-radius:4px;transition:width 0.4s ease}
-/* QUESTION */
 .question-img{width:100%;height:200px;object-fit:cover;border-radius:12px;margin-bottom:16px;border:2px solid var(--border);display:none;}
 .question-text{font-size:20px;font-weight:800;line-height:1.4;margin-bottom:20px;color:var(--text)}
 .options-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
@@ -58,12 +52,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 .opt-btn.selected .opt-letter{background:var(--green2);color:white}
 .opt-btn.correct{border-color:var(--green2);background:#dcfce7}
 .opt-btn.wrong{border-color:var(--red);background:#fef2f2}
-/* SUBJECT TRANSITION */
 .subject-transition{text-align:center;padding:20px 0}
 .subject-emoji{font-size:64px;margin-bottom:16px}
 .subject-done{font-size:22px;font-weight:900;color:var(--green);margin-bottom:8px}
 .subject-next{font-size:15px;color:var(--muted);margin-bottom:28px}
-/* RESULTS */
 .result-circle{width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--green2) var(--pct),#e2e8f0 0);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;position:relative;}
 .result-circle::before{content:'';position:absolute;inset:12px;border-radius:50%;background:white;}
 .result-pct{font-size:26px;font-weight:900;color:var(--green);position:relative;z-index:1}
@@ -75,15 +67,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 .subj-name{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase}
 .subj-score{font-size:20px;font-weight:900;color:var(--green)}
 .subj-pct{font-size:12px;color:var(--muted)}
-/* SYNC */
 .sync-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:var(--bg);margin-bottom:8px;font-size:13px;font-weight:600;}
 .sync-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .sync-dot.pending{background:var(--amber)}
 .sync-dot.done{background:var(--green2)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-/* TOAST */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a3a2a;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;display:none;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:340px;text-align:center;}
-/* INSTALL BANNER */
 #install-banner{display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:480px;z-index:9999;background:#1a3a2a;border:2px solid #4ade80;border-radius:16px;padding:16px 20px;box-shadow:0 8px 32px rgba(0,0,0,0.3);align-items:center;gap:12px;}
 #install-banner .ib-icon{font-size:28px;flex-shrink:0}
 #install-banner .ib-text{flex:1;color:white}
@@ -92,47 +81,44 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
 #install-banner .ib-btns{display:flex;gap:8px;flex-shrink:0}
 #install-banner .ib-install{background:#4ade80;color:#0f2419;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif}
 #install-banner .ib-dismiss{background:transparent;border:1px solid rgba(255,255,255,0.3);color:white;border-radius:10px;padding:8px 10px;font-size:13px;cursor:pointer;font-family:'Nunito',sans-serif}
-
-  /* ── New question type styles ── */
-  .tf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
-  .tf-btn{padding:18px;border:2px solid var(--border);border-radius:12px;background:white;cursor:pointer;font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;text-align:center}
-  .tf-btn:hover{border-color:var(--green2);background:#f0fdf4}
-  .sa-textarea{width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:15px;resize:vertical;min-height:90px;outline:none}
-  .sa-textarea:focus{border-color:var(--green2)}
-  .sa-model{background:#f0fdf4;border:1.5px solid var(--green2);border-radius:10px;padding:12px;font-size:14px;color:#15803d;margin-top:10px;display:none}
-  .fitb-input{border:none;border-bottom:2px solid var(--green2);background:transparent;font-family:'Nunito',sans-serif;font-size:16px;width:130px;text-align:center;outline:none;padding:2px 6px}
-  .fitb-wrap{font-size:17px;line-height:2.2;margin-bottom:12px}
-  .match-table{width:100%;border-collapse:collapse;margin-bottom:8px}
-  .match-table td{padding:10px 12px;border:1.5px solid var(--border);font-size:14px;vertical-align:middle}
-  .match-table .col-a{background:#EFF6FF;font-weight:700;width:40%}
-  .match-sel{width:100%;padding:7px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:14px;background:white}
-  .sb-pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;min-height:44px}
-  .sb-chip{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border:2px solid var(--border);border-radius:20px;background:white;cursor:pointer;font-size:15px;font-family:'Nunito',sans-serif;transition:all 0.12s}
-  .sb-chip:hover{border-color:var(--green2);background:#f0fdf4}
-  .sb-chip.used{opacity:0.25;pointer-events:none}
-  .sb-chip-num{font-size:11px;color:#9ca3af;font-weight:700}
-  .sb-sentence{min-height:50px;border:2px solid var(--border);border-radius:12px;padding:10px 14px;background:#f8fafc;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
-  .sb-placed{display:inline-flex;align-items:center;gap:5px;background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:16px;padding:5px 12px;font-size:15px;cursor:pointer;font-family:'Nunito',sans-serif}
-  .sb-placed:hover{opacity:0.7}
-  .sb-empty-hint{font-size:13px;color:#9ca3af;pointer-events:none}
-  .seq-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-  .seq-chip{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border:2px solid var(--border);border-radius:20px;background:white;font-size:15px;font-family:'Nunito',sans-serif}
-  .seq-input{width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:16px;outline:none;margin-bottom:8px}
-  .seq-input:focus{border-color:var(--green2)}
-
-  .subject-select-grid{display:grid;grid-template-columns:1fr;gap:14px;margin:20px 0}
-  .subject-select-btn{padding:20px 16px;border:2px solid var(--border);border-radius:16px;background:white;cursor:pointer;font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;display:flex;align-items:center;gap:14px;transition:all 0.15s;width:100%;text-align:left}
-  .subject-select-btn:hover{border-color:var(--green2);background:#f0fdf4}
-  .subj-icon{font-size:32px}
-  .subj-name{font-size:18px;font-weight:800;color:var(--text)}
-  .subj-label{font-size:13px;color:var(--muted);font-weight:600}
-  .welcome-name{font-size:22px;font-weight:900;color:var(--green);margin-bottom:4px}
-  .welcome-level{font-size:14px;color:var(--muted);margin-bottom:20px}
+.tf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+.tf-btn{padding:18px;border:2px solid var(--border);border-radius:12px;background:white;cursor:pointer;font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;text-align:center}
+.tf-btn:hover{border-color:var(--green2);background:#f0fdf4}
+.sa-textarea{width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:15px;resize:vertical;min-height:90px;outline:none}
+.sa-textarea:focus{border-color:var(--green2)}
+.sa-model{background:#f0fdf4;border:1.5px solid var(--green2);border-radius:10px;padding:12px;font-size:14px;color:#15803d;margin-top:10px;display:none}
+.fitb-input{border:none;border-bottom:2px solid var(--green2);background:transparent;font-family:'Nunito',sans-serif;font-size:16px;width:130px;text-align:center;outline:none;padding:2px 6px}
+.fitb-wrap{font-size:17px;line-height:2.2;margin-bottom:12px}
+.match-table{width:100%;border-collapse:collapse;margin-bottom:8px}
+.match-table td{padding:10px 12px;border:1.5px solid var(--border);font-size:14px;vertical-align:middle}
+.match-table .col-a{background:#EFF6FF;font-weight:700;width:40%}
+.match-sel{width:100%;padding:7px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:14px;background:white}
+.sb-pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;min-height:44px}
+.sb-chip{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border:2px solid var(--border);border-radius:20px;background:white;cursor:pointer;font-size:15px;font-family:'Nunito',sans-serif;transition:all 0.12s}
+.sb-chip:hover{border-color:var(--green2);background:#f0fdf4}
+.sb-chip.used{opacity:0.25;pointer-events:none}
+.sb-chip-num{font-size:11px;color:#9ca3af;font-weight:700}
+.sb-sentence{min-height:50px;border:2px solid var(--border);border-radius:12px;padding:10px 14px;background:#f8fafc;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.sb-placed{display:inline-flex;align-items:center;gap:5px;background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:16px;padding:5px 12px;font-size:15px;cursor:pointer;font-family:'Nunito',sans-serif}
+.sb-placed:hover{opacity:0.7}
+.sb-empty-hint{font-size:13px;color:#9ca3af;pointer-events:none}
+.seq-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.seq-chip{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border:2px solid var(--border);border-radius:20px;background:white;font-size:15px;font-family:'Nunito',sans-serif}
+.seq-input{width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:16px;outline:none;margin-bottom:8px}
+.seq-input:focus{border-color:var(--green2)}
+.subject-select-grid{display:grid;grid-template-columns:1fr;gap:14px;margin:20px 0}
+.subject-select-btn{padding:20px 16px;border:2px solid var(--border);border-radius:16px;background:white;cursor:pointer;font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;display:flex;align-items:center;gap:14px;transition:all 0.15s;width:100%;text-align:left}
+.subject-select-btn:hover{border-color:var(--green2);background:#f0fdf4}
+.subj-icon{font-size:32px}
+.subj-name{font-size:18px;font-weight:800;color:var(--text)}
+.subj-label{font-size:13px;color:var(--muted);font-weight:600}
+.welcome-name{font-size:22px;font-weight:900;color:var(--green);margin-bottom:4px}
+.welcome-level{font-size:14px;color:var(--muted);margin-bottom:20px}
 </style>
 </head>
 <body>
 
-<!-- ── SCREEN: HOME ── -->
+<!-- SCREEN: HOME -->
 <div class="screen active" id="s-home">
   <div class="app-header">
     <div class="logo">TAKMIL</div>
@@ -172,7 +158,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
   </div>
 </div>
 
-<!-- ── SCREEN: LOADING ── -->
+<!-- SCREEN: LOADING -->
 <div class="screen" id="s-loading">
   <div class="app-header">
     <div class="logo">TAKMIL</div>
@@ -185,7 +171,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
   </div>
 </div>
 
-<!-- ── SCREEN: QUESTION ── -->
+<!-- SCREEN: QUESTION -->
 <div class="screen" id="s-question">
   <div class="app-header">
     <div class="logo" id="q-name" style="font-size:14px;font-weight:700;color:white"></div>
@@ -208,8 +194,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
   </div>
 </div>
 
-
-<!-- ── SCREEN: SUBJECT SELECT ── -->
+<!-- SCREEN: SUBJECT SELECT -->
 <div class="screen" id="s-subject">
   <div class="app-header"><div class="logo">TAKMIL</div><div class="sync-badge online">✓ Connected</div></div>
   <div class="card">
@@ -228,7 +213,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
     </div>
   </div>
 </div>
-<!-- ── SCREEN: SUBJECT TRANSITION ── -->
+
+<!-- SCREEN: SUBJECT TRANSITION -->
 <div class="screen" id="s-transition">
   <div class="app-header">
     <div class="logo">TAKMIL</div>
@@ -244,7 +230,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',
   </div>
 </div>
 
-<!-- ── SCREEN: RESULTS ── -->
+<!-- SCREEN: RESULTS -->
 <div class="screen" id="s-results">
   <div class="app-header">
     <div class="logo">TAKMIL</div>
@@ -287,7 +273,6 @@ const BASE = '';
 const DB_NAME = 'takmil_offline';
 let db;
 
-// Session state
 let session = {
   pin:'', name:'', studentId:'', level:1,
   subjects:['English','Math','Urdu'],
@@ -295,6 +280,17 @@ let session = {
   currentQuestions:[], answers:[],
   currentQ:0, currentSubject:'', gps:null
 };
+
+// ── NORMALIZER — strips invisible Unicode chars, collapses whitespace ──────────
+// Used for all answer comparisons (MCQ letters AND sentence builder strings)
+function normalizeAnswer(s) {
+  return String(s || '')
+    .replace(/[\u200b\u200c\u200d\u200e\u200f\ufeff]/g, '')
+    .toLowerCase()
+    .replace(/[.,!?;:،؟]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 // ══ IndexedDB ══════════════════════════════════════════════════════════════════
 function openDB() {
@@ -365,9 +361,9 @@ function showToast(msg, ms=2500) {
 
 // ══ Online/Offline UI ══════════════════════════════════════════════════════════
 function updateStatusUI() {
-  const badge   = document.getElementById('home-status-badge');
-  const offBar  = document.getElementById('offline-info-bar');
-  const onBar   = document.getElementById('online-preload-bar');
+  const badge  = document.getElementById('home-status-badge');
+  const offBar = document.getElementById('offline-info-bar');
+  const onBar  = document.getElementById('online-preload-bar');
   if (!badge) return;
   if (isOnline()) {
     badge.textContent = '🟢 Online'; badge.className = 'sync-badge online';
@@ -393,24 +389,20 @@ async function updatePendingUI() {
 window.addEventListener('online',  () => { updateStatusUI(); syncPending(); });
 window.addEventListener('offline', () => { updateStatusUI(); });
 
-// ══ PIN VALIDATION — with caching ══════════════════════════════════════════════
-// When online: validates, then caches PIN + questions for offline use
-// When offline: loads from IndexedDB cache
+// ══ PIN VALIDATION ══════════════════════════════════════════════════════════════
 async function validatePin(pin, name) {
   const upperPin = pin.toUpperCase();
 
   if (isOnline()) {
     try {
-      // Call server — this both validates AND returns questions
-      const payload  = { pin: upperPin, studentName: name, subject: null };
-      const resp     = await fetch(BASE + '/portal/session/start', {
+      const payload = { pin: upperPin, studentName: name, subject: null };
+      const resp    = await fetch(BASE + '/portal/session/start', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       const data = await resp.json();
       if (!resp.ok || data.error) return { valid: false, error: data.error || 'Invalid PIN' };
 
-      // ── CACHE PIN for offline use ──────────────────────────────────────────
       await dbPut('pins', {
         pin:        upperPin,
         level:      data.level,
@@ -419,8 +411,6 @@ async function validatePin(pin, name) {
         cached_at:  new Date().toISOString(),
       });
 
-      // ── CACHE questions for all subjects ────────────────────────────────────
-      // Pre-load questions for all 3 subjects at this level while online
       const subjects = ['English', 'Math', 'Urdu'];
       for (const subj of subjects) {
         try {
@@ -431,7 +421,6 @@ async function validatePin(pin, name) {
           const qData = await qResp.json();
           if (qData.questions && qData.questions.length > 0) {
             for (const q of qData.questions) {
-              // Normalise to a consistent shape with a stable key
               await dbPut('questions', {
                 question_id:    q.id || (q.question_id + '_' + subj + '_' + data.level),
                 question_text:  q.question_text || '',
@@ -441,37 +430,30 @@ async function validatePin(pin, name) {
                 option_a: q.option_a, option_b: q.option_b,
                 option_c: q.option_c, option_d: q.option_d,
                 correct_option: q.correct || q.correct_option || 'A',
-                question_type: q.question_type || 'text',
+                question_type: q.question_type || 'MCQ',
                 subject: subj, level: data.level,
               });
             }
           }
-        } catch(e) { /* non-fatal — this subject won't be available offline */ }
+        } catch(e) {}
       }
-      console.log(`[Portal] PIN ${upperPin} and questions cached for offline use`);
 
       if (data.isMultiSubject) return { valid: true, level: data.level, online: true, multiSubject: true };
       return { valid: true, level: data.level, online: true, sessionId: data.sessionId };
 
     } catch(e) {
       console.warn('[Portal] Server error, trying cache:', e.message);
-      // Fall through to offline check
     }
   }
 
-  // ── OFFLINE: try cached PIN ────────────────────────────────────────────────
   const pinRec = await dbGet('pins', upperPin);
-  if (!pinRec) {
-    return { valid: false, error: 'PIN not found. Please connect to internet first to cache this PIN.' };
-  }
+  if (!pinRec) return { valid: false, error: 'PIN not found. Please connect to internet first to cache this PIN.' };
   if (!pinRec.is_active) return { valid: false, error: 'PIN is not active.' };
-  if (new Date(pinRec.expires_at) < new Date()) {
-    return { valid: false, error: 'Cached PIN has expired. Ask teacher to generate a new one.' };
-  }
+  if (new Date(pinRec.expires_at) < new Date()) return { valid: false, error: 'Cached PIN has expired. Ask teacher to generate a new one.' };
   return { valid: true, level: pinRec.level, online: false };
 }
 
-// ══ QUESTION LOADING — online first, cache fallback ════════════════════════════
+// ══ QUESTION LOADING ══════════════════════════════════════════════════════════
 async function getQuestions(subject, level, name, pin) {
   if (isOnline()) {
     try {
@@ -481,7 +463,6 @@ async function getQuestions(subject, level, name, pin) {
       });
       const data = await resp.json();
       if (data.questions && data.questions.length > 0) {
-        // Cache the questions while we have them
         for (const q of data.questions) {
           await dbPut('questions', {
             question_id:   q.id || (Math.random().toString(36).slice(2)),
@@ -491,6 +472,7 @@ async function getQuestions(subject, level, name, pin) {
             option_a: q.option_a, option_b: q.option_b,
             option_c: q.option_c, option_d: q.option_d,
             correct_option: q.correct || q.correct_option || 'A',
+            question_type: q.question_type || 'MCQ',
             subject, level,
           });
         }
@@ -499,13 +481,9 @@ async function getQuestions(subject, level, name, pin) {
     } catch(e) { console.warn('[Portal] Fetching questions failed, using cache'); }
   }
 
-  // ── Offline fallback: read from IndexedDB ──────────────────────────────────
   const all      = await dbGetAll('questions');
   const filtered = all.filter(q => q.subject === subject && parseInt(q.level) === parseInt(level));
-  if (filtered.length === 0) {
-    return [];
-  }
-  // Shuffle
+  if (filtered.length === 0) return [];
   for (let i = filtered.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
@@ -519,6 +497,7 @@ async function getQuestions(subject, level, name, pin) {
     option_a: q.option_a, option_b: q.option_b,
     option_c: q.option_c, option_d: q.option_d,
     correct:  q.correct || q.correct_option || 'A',
+    question_type: q.question_type || 'MCQ',
   }));
 }
 
@@ -614,12 +593,21 @@ function showQuestion(idx) {
 
   const opts = document.getElementById('q-opts');
   opts.innerHTML = '';
-  document.getElementById('q-next').disabled = true;
 
-  // Detect type — use question_type field if set, otherwise infer from data
+  // Reset next button to default state
+  const nextBtn = document.getElementById('q-next');
+  nextBtn.disabled = true;
+  nextBtn.textContent = 'Next — اگلا ▶';
+  nextBtn.onclick = nextQuestion;
+
+  // Reset question-type flags
+  session._saRevealed   = false;
+  session._fitbChecked  = false;
+  session._matchChecked = false;
+  session._sbChecked    = false;
+
   let qtype = (q.question_type || '').toUpperCase().replace(/[^A-Z]/g, '');
   if (!qtype || qtype === 'TEXT' || qtype === 'PICTURE') {
-    // Legacy questions — infer type from data shape
     const hasOptions = ['a','b','c','d'].some(l => q['option_' + l]);
     const correctOpt = (q.correct_option || q.correct || '').toUpperCase();
     if (hasOptions) qtype = 'MCQ';
@@ -627,17 +615,12 @@ function showQuestion(idx) {
     else qtype = 'MCQ';
   }
 
-  if (qtype === 'TRUEFALSE') {
-    renderTrueFalse(q, opts);
-  } else if (qtype === 'SHORTANSWER') {
-    renderShortAnswer(q, opts);
-  } else if (qtype === 'FILLINTHEBLANK') {
-    renderFillBlank(q, opts);
-  } else if (qtype === 'MATCHTHECOLUMNS') {
-    renderMatchColumns(q, opts);
-  } else if (qtype === 'SENTENCEBUILDER') {
-    renderSentenceBuilder(q, opts);
-  } else {
+  if      (qtype === 'TRUEFALSE')      renderTrueFalse(q, opts);
+  else if (qtype === 'SHORTANSWER')    renderShortAnswer(q, opts);
+  else if (qtype === 'FILLINTHEBLANK') renderFillBlank(q, opts);
+  else if (qtype === 'MATCHTHECOLUMNS') renderMatchColumns(q, opts);
+  else if (qtype === 'SENTENCEBUILDER') renderSentenceBuilder(q, opts);
+  else {
     // MCQ (default)
     ['a','b','c','d'].forEach(l => {
       const text = q['option_' + l] || '';
@@ -688,12 +671,9 @@ function renderShortAnswer(q, opts) {
   };
   const modelDiv = document.createElement('div');
   modelDiv.className = 'sa-model';
-  modelDiv.id = 'sa-model-ans';
   opts.appendChild(ta);
   opts.appendChild(modelDiv);
-  // Show model answer on Next click — override next button
   const nextBtn = document.getElementById('q-next');
-  nextBtn._origOnclick = nextBtn.onclick;
   nextBtn.onclick = () => {
     if (!session._saRevealed) {
       session._saRevealed = true;
@@ -708,13 +688,13 @@ function renderShortAnswer(q, opts) {
 }
 
 function renderFillBlank(q, opts) {
-  const text = q.q_text_english || '';
+  const text    = q.q_text_english || q.question_text || '';
   const correct = q.correct || q.correct_option || '';
-  const wrap = document.createElement('div');
+  const wrap    = document.createElement('div');
   wrap.className = 'fitb-wrap';
   const parts = text.split('___');
   let html = parts[0];
-  html += `<input class="fitb-input" id="fitb-inp" type="text" placeholder="?" autocomplete="off">`;
+  html += '<input class="fitb-input" id="fitb-inp" type="text" placeholder="?" autocomplete="off">';
   if (parts[1]) html += parts[1];
   wrap.innerHTML = html;
   opts.appendChild(wrap);
@@ -727,11 +707,10 @@ function renderFillBlank(q, opts) {
   nextBtn.onclick = () => {
     if (!session._fitbChecked) {
       session._fitbChecked = true;
-      const ans = inp.value.trim().toLowerCase();
-      const cor = correct.toLowerCase();
-      inp.style.borderBottomColor = ans === cor ? 'var(--green2)' : 'var(--red)';
+      const isCorrect = normalizeAnswer(inp.value) === normalizeAnswer(correct);
+      inp.style.borderBottomColor = isCorrect ? 'var(--green2)' : 'var(--red)';
       inp.readOnly = true;
-      if (ans !== cor) {
+      if (!isCorrect) {
         const hint = document.createElement('div');
         hint.style.cssText = 'color:#15803d;font-size:14px;margin-top:8px;';
         hint.textContent = '✓ Correct answer: ' + correct;
@@ -755,14 +734,14 @@ function renderMatchColumns(q, opts) {
   if (!pairs.length) { opts.innerHTML = '<p style="color:#9ca3af">No pairs available</p>'; document.getElementById('q-next').disabled = false; return; }
 
   const rights = [...pairs.map(p => p.right)].sort(() => Math.random() - 0.5);
-  const table = document.createElement('table');
+  const table  = document.createElement('table');
   table.className = 'match-table';
   pairs.forEach((p, i) => {
-    const tr = document.createElement('tr');
+    const tr  = document.createElement('tr');
     const tdA = document.createElement('td'); tdA.className = 'col-a'; tdA.textContent = p.left;
     const tdB = document.createElement('td');
     const sel = document.createElement('select'); sel.className = 'match-sel'; sel.id = 'match-' + i;
-    sel.innerHTML = '<option value="">-- select --</option>' + rights.map(r => `<option value="${r}">${r}</option>`).join('');
+    sel.innerHTML = '<option value="">-- select --</option>' + rights.map(r => '<option value="' + r + '">' + r + '</option>').join('');
     sel.onchange = () => {
       const allFilled = pairs.every((_, j) => document.getElementById('match-' + j)?.value);
       document.getElementById('q-next').disabled = !allFilled;
@@ -781,7 +760,7 @@ function renderMatchColumns(q, opts) {
       pairs.forEach((p, i) => {
         const sel = document.getElementById('match-' + i);
         if (sel) {
-          const isCorrect = sel.value.trim() === (p.right || '').trim();
+          const isCorrect = normalizeAnswer(sel.value) === normalizeAnswer(p.right);
           sel.style.borderColor = isCorrect ? 'var(--green2)' : 'var(--red)';
           sel.style.background  = isCorrect ? '#dcfce7' : '#fef2f2';
           sel.disabled = true;
@@ -799,22 +778,27 @@ function renderMatchColumns(q, opts) {
 
 function renderSentenceBuilder(q, opts) {
   let words = [];
-  // Words stored as pipe-separated in option_a: "dog|the|in|lived"
   const raw = q.option_a || q.option_b || '';
   if (raw.includes('|')) {
     words = raw.split('|').map(w => w.trim()).filter(Boolean);
   } else if (raw) {
     words = raw.split(' ').map(w => w.trim()).filter(Boolean);
   }
-  if (!words.length) { opts.innerHTML = '<p style="color:#9ca3af">No words available</p>'; document.getElementById('q-next').disabled = false; return; }
+  if (!words.length) {
+    opts.innerHTML = '<p style="color:#9ca3af">No words available</p>';
+    document.getElementById('q-next').disabled = false;
+    return;
+  }
 
+  // correct_option holds the full correct sentence (e.g. "20 PLUS 16 EQUALS 36")
+  const correct  = q.correct || q.correct_option || '';
   const shuffled = [...words].sort(() => Math.random() - 0.5);
-  let placed = [];
-  const correct = (q.correct || q.correct_option || '').toLowerCase();
+  let placed     = [];
 
   const pool = document.createElement('div'); pool.className = 'sb-pool'; pool.id = 'sb-pool';
   const box  = document.createElement('div'); box.className  = 'sb-sentence'; box.id = 'sb-box';
-  const hint = document.createElement('span'); hint.className = 'sb-empty-hint'; hint.textContent = 'Tap words to build your sentence...';
+  const hint = document.createElement('span'); hint.className = 'sb-empty-hint';
+  hint.textContent = 'Tap words to build your sentence...';
   box.appendChild(hint);
   opts.appendChild(pool);
   opts.appendChild(box);
@@ -824,7 +808,7 @@ function renderSentenceBuilder(q, opts) {
     shuffled.forEach((w, i) => {
       const chip = document.createElement('span');
       chip.className = 'sb-chip' + (placed.includes(i) ? ' used' : '');
-      chip.innerHTML = `<span class="sb-chip-num">${i+1}</span>${w}`;
+      chip.innerHTML = '<span class="sb-chip-num">' + (i+1) + '</span>' + w;
       chip.onclick = () => { if (!placed.includes(i)) { placed.push(i); renderAll(); } };
       pool.appendChild(chip);
     });
@@ -854,15 +838,16 @@ function renderSentenceBuilder(q, opts) {
   nextBtn.onclick = () => {
     if (!session._sbChecked) {
       session._sbChecked = true;
-      const strip = s => String(s||'').toLowerCase().replace(/[.,!?;:]/g,'').trim();
-      const attempt = strip(placed.map(i => shuffled[i]).join(' '));
-      const correctClean = strip(correct);
-      box.style.border = '2px solid ' + (attempt === correctClean ? 'var(--green2)' : 'var(--red)');
-      box.style.background = attempt === correctClean ? '#dcfce7' : '#fef2f2';
-      if (attempt !== correctClean) {
+      // FIX: use normalizeAnswer for robust Unicode + whitespace comparison
+      const attempt      = normalizeAnswer(placed.map(i => shuffled[i]).join(' '));
+      const correctClean = normalizeAnswer(correct);
+      const isCorrect    = attempt === correctClean;
+      box.style.border     = '2px solid ' + (isCorrect ? 'var(--green2)' : 'var(--red)');
+      box.style.background = isCorrect ? '#dcfce7' : '#fef2f2';
+      if (!isCorrect) {
         const corDiv = document.createElement('div');
-        corDiv.style.cssText = 'color:#15803d;font-size:14px;margin-top:8px;';
-        corDiv.textContent = '✓ Correct: ' + (q.correct || q.correct_option || '');
+        corDiv.style.cssText = 'color:#15803d;font-size:14px;margin-top:8px;font-weight:700;';
+        corDiv.textContent = '✓ Correct: ' + correct;
         opts.appendChild(corDiv);
       }
       nextBtn.textContent = 'Next — اگلا ▶';
@@ -895,12 +880,11 @@ function selectOption(letter, btn) {
 }
 
 function nextQuestion() {
-  // Reset custom type state
-  session._saRevealed = false;
-  session._fitbChecked = false;
+  // Reset all question-type flags
+  session._saRevealed   = false;
+  session._fitbChecked  = false;
   session._matchChecked = false;
-  session._sbChecked = false;
-  // Restore next button text and handler
+  session._sbChecked    = false;
   const nb = document.getElementById('q-next');
   nb.textContent = 'Next — اگلا ▶';
   nb.onclick = nextQuestion;
@@ -917,28 +901,33 @@ function finishSubject() {
   const qs = session.currentQuestions;
   let score = 0;
   qs.forEach((q, i) => {
-    const qtype = (q.question_type || 'text').toUpperCase().replace(/[^A-Z]/g,'');
-    const ans = session.answers[i];
+    const qtype   = (q.question_type || 'MCQ').toUpperCase().replace(/[^A-Z]/g, '');
+    const ans     = session.answers[i];
     const correct = (q.correct || q.correct_option || '').trim();
+
     if (qtype === 'SHORTANSWER') {
+      // Short answer: award point if student wrote anything
       if (ans && String(ans).trim().length > 0) score++;
     } else if (qtype === 'FILLINTHEBLANK') {
-      if (String(ans || '').trim().toLowerCase() === correct.toLowerCase()) score++;
+      // FIX: use normalizeAnswer for robust comparison
+      if (normalizeAnswer(ans) === normalizeAnswer(correct)) score++;
     } else if (qtype === 'SENTENCEBUILDER') {
-      const strip = s => String(s||'').toLowerCase().replace(/[.,!?;:]/g,'').trim();
-      if (strip(ans) === strip(correct)) score++;
+      // FIX: use normalizeAnswer — handles invisible Unicode chars in Urdu
+      if (normalizeAnswer(ans) === normalizeAnswer(correct)) score++;
     } else if (qtype === 'MATCHTHECOLUMNS') {
       if (ans && ans._allCorrect === true) score++;
     } else {
-      if (String(ans || '').toUpperCase() === correct.toUpperCase()) score++;
+      // MCQ and TrueFalse: letter comparison
+      if (normalizeAnswer(ans) === normalizeAnswer(correct)) score++;
     }
   });
+
   const pct = Math.round((score / qs.length) * 100);
   session.subjectResults.push({ subject: session.currentSubject, score, total: qs.length, pct });
   session.subjectIdx++;
 
   if (session.subjectIdx < session.subjects.length) {
-    const next = session.subjects[session.subjectIdx];
+    const next   = session.subjects[session.subjectIdx];
     const emojis = { Math: '🔢', English: '📖', Urdu: '✍️' };
     document.getElementById('tr-emoji').textContent = emojis[session.currentSubject] || '✅';
     document.getElementById('tr-done').textContent  = session.currentSubject + ' Complete! (' + score + '/' + qs.length + ')';
@@ -961,9 +950,9 @@ async function showFinalResults() {
   const overallPct = totalQ ? Math.round((totalScore / totalQ) * 100) : 0;
   const passed     = overallPct >= 80;
 
-  document.getElementById('res-name').textContent    = session.name;
-  document.getElementById('res-level').textContent   = 'Level ' + session.level + (session.studentId ? ' • ' + session.studentId : '');
-  document.getElementById('res-pct').textContent     = overallPct + '%';
+  document.getElementById('res-name').textContent  = session.name;
+  document.getElementById('res-level').textContent = 'Level ' + session.level + (session.studentId ? ' • ' + session.studentId : '');
+  document.getElementById('res-pct').textContent   = overallPct + '%';
   document.getElementById('res-circle').style.setProperty('--pct', overallPct + '%');
 
   const badge = document.getElementById('res-badge');
@@ -971,11 +960,7 @@ async function showFinalResults() {
   badge.className   = 'result-badge ' + (passed ? 'pass' : 'fail');
 
   document.getElementById('res-breakdown').innerHTML = results.map(r =>
-    `<div class="subj-card">
-      <div class="subj-name">${r.subject}</div>
-      <div class="subj-score">${r.score}/${r.total}</div>
-      <div class="subj-pct">${r.pct}%</div>
-    </div>`
+    '<div class="subj-card"><div class="subj-name">' + r.subject + '</div><div class="subj-score">' + r.score + '/' + r.total + '</div><div class="subj-pct">' + r.pct + '%</div></div>'
   ).join('');
 
   const resultRecord = {
@@ -995,7 +980,6 @@ async function showFinalResults() {
   const syncBadge = document.getElementById('res-sync-badge');
   const syncMsg   = document.getElementById('res-sync-msg');
 
-  // Save to IndexedDB first (always)
   const localId = await dbPut('results', resultRecord);
 
   if (isOnline()) {
@@ -1018,7 +1002,6 @@ async function showFinalResults() {
   showScreen('s-results');
 }
 
-// Submit one result record to server
 async function syncResult(record) {
   try {
     for (const subj of record.subjects) {
@@ -1058,7 +1041,6 @@ async function syncResult(record) {
   }
 }
 
-// Sync all pending (unsynced) results from IndexedDB
 async function syncPending() {
   if (!isOnline()) { showToast('Connect to internet first'); return; }
   const btn = document.getElementById('sync-pending-btn');
@@ -1070,16 +1052,13 @@ async function syncPending() {
 
   for (const record of pending) {
     const ok = await syncResult(record);
-    if (ok) {
-      await dbUpdate(record.local_id, { synced: true });
-      synced++;
-    }
+    if (ok) { await dbUpdate(record.local_id, { synced: true }); synced++; }
   }
 
   if (btn) { btn.disabled = false; }
   await updatePendingUI();
   if (synced > 0) {
-    showToast(`✅ ${synced} result${synced > 1 ? 's' : ''} synced to server!`, 3000);
+    showToast('✅ ' + synced + ' result' + (synced > 1 ? 's' : '') + ' synced to server!', 3000);
   } else if (pending.length === 0) {
     showToast('No pending results to sync');
   } else {
@@ -1105,7 +1084,7 @@ function newStudent() {
 window.addEventListener('online',  () => { showToast('Back online ✓ — syncing results...', 2000); updateStatusUI(); syncPending(); });
 window.addEventListener('offline', () => { showToast('Offline — assessment still works from cache'); updateStatusUI(); });
 
-// ══ PWA INSTALL ══════════════════════════════════════════════════════════════
+// ══ PWA INSTALL ═══════════════════════════════════════════════════════════════
 let _deferredPrompt = null;
 function setupInstallPrompt() {
   if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) return;
@@ -1127,7 +1106,7 @@ function showInstallBanner(ios=false) {
   const banner = document.getElementById('install-banner');
   if (!banner) return;
   if (ios) {
-    banner.querySelector('.ib-sub').textContent    = 'Tap Share → "Add to Home Screen" to install';
+    banner.querySelector('.ib-sub').textContent     = 'Tap Share → "Add to Home Screen" to install';
     banner.querySelector('.ib-install').textContent = 'Got it';
     banner.querySelector('.ib-install').onclick     = dismissInstallBanner;
   }
@@ -1157,6 +1136,7 @@ if ('serviceWorker' in navigator) {
           if (w.state === 'activated') showToast('✅ App updated — works offline now!');
         });
       });
+      if (reg.active) showToast('✅ App cached — works offline');
     })
     .catch(err => console.log('SW error:', err));
 }
@@ -1167,25 +1147,9 @@ openDB()
     updateStatusUI();
     updatePendingUI();
     setupInstallPrompt();
-    // Auto-sync pending results on page load if online
     if (isOnline()) syncPending();
   })
   .catch(console.error);
-
-// ── Register Service Worker ───────────────────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js', { scope: '/' })
-    .then(reg => {
-      reg.addEventListener('updatefound', () => {
-        const w = reg.installing;
-        w.addEventListener('statechange', () => {
-          if (w.state === 'activated') showToast('✅ App ready — works offline now!');
-        });
-      });
-      if (reg.active) showToast('✅ App cached — works offline');
-    })
-    .catch(err => console.log('SW error:', err));
-}
 </script>
 </body>
 </html>
