@@ -455,8 +455,9 @@ async function loadFromAPI(){
       question: q.question_text || q.question || '—',
       answer:   q.correct_answer || q.answer || '',
       options:  q.options || [],
-      option_a: q.option_a || '', option_b: q.option_b || '',
-      option_c: q.option_c || '', option_d: q.option_d || '',
+      option_a: q.option_a||'', option_b: q.option_b||'',
+      option_c: q.option_c||'', option_d: q.option_d||'',
+      question_type: q.question_type||'text',
       topic:    q.topic || '',
       status:   q.status || 'pending',
       source:   q.source || '',
@@ -511,6 +512,17 @@ function applyFilters(){
   renderTable(); renderPipeline(); updateCounts();
 }
 
+function getAnswerHtml(q){
+  const ans = q.answer || '';
+  if(!ans) return '';
+  const qtype = (q.question_type||'text').toUpperCase().replace(/[^A-Z]/g,'');
+  if(qtype==='MCQ'||qtype==='TEXT'||qtype==='PICTURE'){
+    const opts={A:q.option_a,B:q.option_b,C:q.option_c,D:q.option_d};
+    const txt = opts[ans]||'';
+    return '<div style="margin-top:4px;font-size:12px;color:#15803d;font-weight:600">\u2713 '+ans+(txt?'. '+txt:'')+'</div>';
+  }
+  return '<div style="margin-top:4px;font-size:12px;color:#15803d;font-weight:600">\u2713 '+ans+'</div>';
+}
 function renderTable(){
   document.getElementById('q-count').textContent=filtered.length+' questions';
   if(!filtered.length){
@@ -522,23 +534,7 @@ function renderTable(){
       <td class="num">#${String(q.id).padStart(3,'0')}</td>
       <td><span class="tag tag-${(q.subject||'').toLowerCase()}">${q.subject}</span></td>
       <td><span class="lvl">${q.level}</span></td>
-      <td class="question-cell">
-        <div>${q.question}</div>
-        ${(()=>{
-          const opts = [q.option_a,q.option_b,q.option_c,q.option_d].filter(Boolean);
-          const ans = q.answer || '';
-          if(opts.length){
-            return '<div style="margin-top:5px;font-size:11px;color:#64748b">' +
-              ['A','B','C','D'].slice(0,opts.length).map((l,i)=>{
-                const isCorrect = ans===l;
-                return '<span style="margin-right:10px;'+( isCorrect?'color:#15803d;font-weight:700':'')+'">'+ l +'. '+ opts[i] +(isCorrect?' ✓':'')+'</span>';
-              }).join('') + '</div>';
-          } else if(ans){
-            return '<div style="margin-top:4px;font-size:12px;color:#15803d;font-weight:600">✓ Answer: '+ans+'</div>';
-          }
-          return '';
-        })()}
-      </td>
+      <td class="question-cell"><div>${q.question}</div>${getAnswerHtml(q)}</td>
       <td><span class="status-pill sp-${q.status}">${q.status.charAt(0).toUpperCase()+q.status.slice(1)}</span></td>
       <td><div class="acts">
         ${q.status!=='approved'?`<button class="act act-ok" onclick="approveQ(${q.id},event)">✓ Approve</button>`:''}
@@ -579,11 +575,11 @@ async function approveAll(){
 }
 async function loadBreakdown(){
   try{
-    const r=await fetch('/api/questions/breakdown?t=' + Date.now());
+    const r=await fetch('/api/questions/breakdown?t='+Date.now());
     const data=await r.json();
     const counts={Math:0,English:0,Urdu:0,Videos:0};
     Object.entries(data).forEach(([subj,levels])=>{
-      const total=levels.reduce((s,l)=>s+l.total,0);
+      const total=levels.reduce((s,l)=>s+(l.approved||0),0);
       if(subj==='Math') counts.Math=total;
       else if(subj==='English') counts.English=total;
       else if(subj==='Urdu') counts.Urdu=total;
