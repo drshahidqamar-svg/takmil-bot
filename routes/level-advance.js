@@ -8,23 +8,34 @@ const path   = require('path');
 const { PASS_THRESHOLD, QUESTIONS_PER_SESSION, shuffleOptions } = require('../helpers/questions');
 const { sendWhatsApp, twilioClient, FROM_NUMBER } = require('../helpers/whatsapp');
 
+// ── Helper: normalise subject filter ─────────────────────────────────────────
+// Returns { clause, params } for use in WHERE queries.
+// When subject is 'All' or empty, matches Math/English/Urdu without a parameter.
+function subjectFilter(subject, startIdx) {
+  const s = (subject || '').trim();
+  if (!s || s === 'All') {
+    return { clause: `subject IN ('Math','English','Urdu')`, params: [] };
+  }
+  return { clause: `subject ILIKE $${startIdx}`, params: [s] };
+}
+
 // ── HTML pages ────────────────────────────────────────────────────────────────
-router.get('/advance', (req, res) => res.sendFile(path.join(__dirname, '../level-advancement.html')));
-router.get('/offline-portal', (req, res) => res.sendFile(path.join(__dirname, '../offline-portal.html')));
-router.get('/coordinator-portal', (req, res) => res.sendFile(path.join(__dirname, '../coordinator-portal.html')));
-router.get('/assess',        (req, res) => res.sendFile(path.join(__dirname, '../takmil-unified-portal.html')));
-router.get('/level2',        (req, res) => res.sendFile(path.join(__dirname, '../takmil-level2-portal.html')));
-router.get('/level3',        (req, res) => res.sendFile(path.join(__dirname, '../takmil-level3-portal.html')));
-router.get('/jod-tod',       (req, res) => res.sendFile(path.join(__dirname, '../takmil-jod-tod-portal.html')));
-router.get('/portal',        (req, res) => res.sendFile(path.join(__dirname, '../portal.html')));
-router.get('/results',       (req, res) => res.sendFile(path.join(__dirname, '../results.html')));
-router.get('/teacher-portal',(req, res) => res.sendFile(path.join(__dirname, '../teacher-portal.html')));
-router.get('/lessons-admin', (req, res) => res.sendFile(path.join(__dirname, '../lessons-admin.html')));
-router.get('/compliance',    (req, res) => res.sendFile(path.join(__dirname, '../compliance.html')));
-router.get('/image-portal',  (req, res) => res.sendFile(path.join(__dirname, '../image-portal.html')));
-router.get('/pdf-portal',    (req, res) => res.sendFile(path.join(__dirname, '../takmil-pdf-portal-v2.html')));
-router.get('/bulk-assess',   (req, res) => res.sendFile(path.join(__dirname, '../takmil-bulk-assess.html')));
-router.get('/pin-generator', (req, res) => res.sendFile(path.join(__dirname, '../pin-generator.html')));
+router.get('/advance',          (req, res) => res.sendFile(path.join(__dirname, '../level-advancement.html')));
+router.get('/offline-portal',   (req, res) => res.sendFile(path.join(__dirname, '../offline-portal.html')));
+router.get('/coordinator-portal',(req, res) => res.sendFile(path.join(__dirname, '../coordinator-portal.html')));
+router.get('/assess',           (req, res) => res.sendFile(path.join(__dirname, '../takmil-unified-portal.html')));
+router.get('/level2',           (req, res) => res.sendFile(path.join(__dirname, '../takmil-level2-portal.html')));
+router.get('/level3',           (req, res) => res.sendFile(path.join(__dirname, '../takmil-level3-portal.html')));
+router.get('/jod-tod',          (req, res) => res.sendFile(path.join(__dirname, '../takmil-jod-tod-portal.html')));
+router.get('/portal',           (req, res) => res.sendFile(path.join(__dirname, '../portal.html')));
+router.get('/results',          (req, res) => res.sendFile(path.join(__dirname, '../results.html')));
+router.get('/teacher-portal',   (req, res) => res.sendFile(path.join(__dirname, '../teacher-portal.html')));
+router.get('/lessons-admin',    (req, res) => res.sendFile(path.join(__dirname, '../lessons-admin.html')));
+router.get('/compliance',       (req, res) => res.sendFile(path.join(__dirname, '../compliance.html')));
+router.get('/image-portal',     (req, res) => res.sendFile(path.join(__dirname, '../image-portal.html')));
+router.get('/pdf-portal',       (req, res) => res.sendFile(path.join(__dirname, '../takmil-pdf-portal-v2.html')));
+router.get('/bulk-assess',      (req, res) => res.sendFile(path.join(__dirname, '../takmil-bulk-assess.html')));
+router.get('/pin-generator',    (req, res) => res.sendFile(path.join(__dirname, '../pin-generator.html')));
 
 // ── Coordinator login ─────────────────────────────────────────────────────────
 router.post('/api/auth/coordinator-login', async (req, res) => {
@@ -60,7 +71,6 @@ router.post('/api/auth/coordinator-login', async (req, res) => {
       return res.status(200).json({ role:'school', id:c.id, name:c.name, region:c.region, schools:c.schools });
     }
 
-    // Check bot_users (coordinators approved via WhatsApp registration)
     const botUser = await client.query(
       `SELECT * FROM bot_users WHERE phone=$1 AND active=TRUE`, [phone]
     );
@@ -70,8 +80,7 @@ router.post('/api/auth/coordinator-login', async (req, res) => {
       try {
         const sr = await client.query(
           `SELECT id, name, identifier, district FROM schools
-           WHERE ($1::text IS NULL OR region = $1)
-           ORDER BY name LIMIT 200`,
+           WHERE ($1::text IS NULL OR region = $1) ORDER BY name LIMIT 200`,
           [u.region || null]
         );
         schools = sr.rows;
@@ -231,8 +240,7 @@ router.post('/api/assess/submit', async (req, res) => {
 
     let correct = 0;
     for (const a of answers) {
-      const isCorrect = (a.selected_option||'').toUpperCase().trim() === (a.correct_option||'').toUpperCase().trim();
-      if (isCorrect) correct++;
+      if ((a.selected_option||'').toUpperCase().trim() === (a.correct_option||'').toUpperCase().trim()) correct++;
     }
     const total    = answers.length;
     const scorePct = Math.round(correct / total * 100);
@@ -287,11 +295,35 @@ router.get('/api/assess/results/:pin', async (req, res) => {
 });
 
 // ── Portal session (online tablet portal) ────────────────────────────────────
+// FIX: checks tablet_sessions (alphanumeric coordinator PINs) FIRST,
+//      then falls back to pins table (legacy numeric PINs).
+//      Also handles subject='All' correctly by querying all 3 subjects.
 router.post('/portal/session/start', async (req, res) => {
   const { pin, studentName, subject } = req.body;
   if (!pin || !studentName) return res.status(400).json({ error: 'PIN and student name required.' });
   try {
-    const pinRec = await db.validatePin(pin);
+    // Step 1: resolve pinRec from tablet_sessions or pins table
+    let pinRec = null;
+
+    const tsRec = await db.pool.query(
+      `SELECT ts.*, s.id AS school_id FROM tablet_sessions ts
+       LEFT JOIN schools s ON s.identifier ILIKE ts.school_identifier
+       WHERE ts.pin_code = $1 AND ts.active = TRUE AND ts.expires_at > NOW()
+       LIMIT 1`, [pin.toUpperCase()]
+    );
+    if (tsRec.rows.length) {
+      const ts = tsRec.rows[0];
+      pinRec = {
+        id:        ts.id,
+        pin:       ts.pin_code,
+        level:     parseInt(ts.level),
+        subject:   ts.subject || 'All',
+        school_id: ts.school_id || null,
+      };
+    } else {
+      pinRec = await db.validatePin(pin);
+    }
+
     if (!pinRec) return res.status(401).json({ error: 'Invalid or expired PIN. Please ask your teacher.' });
 
     const isFinal        = parseInt(pinRec.level) === 0;
@@ -310,9 +342,11 @@ router.post('/portal/session/start', async (req, res) => {
         questions = questions.concat(r.rows);
       }
     } else {
-      const r = await db.pool.query(
-        `SELECT * FROM questions WHERE subject=$1 AND level=$2 AND active=1 ORDER BY RANDOM() LIMIT 10`,
-        [effectiveSubject, pinRec.level]
+      // FIX: if subject is 'All', query all three subjects at this level
+      const sf = subjectFilter(effectiveSubject, 2);
+      const r  = await db.pool.query(
+        `SELECT * FROM questions WHERE ${sf.clause} AND level=$1 AND active=1 ORDER BY RANDOM() LIMIT 10`,
+        [parseInt(pinRec.level), ...sf.params]
       );
       questions = r.rows;
     }
@@ -575,10 +609,10 @@ router.get('/api/results/sessions', async (req, res) => {
     const { school, level, date_from, date_to } = req.query;
     let where = 'WHERE 1=1';
     const params = [];
-    if (school)     { params.push(school);      where += ` AND ts.school_identifier ILIKE $${params.length}`; }
-    if (level)      { params.push(parseInt(level)); where += ` AND ts.level=$${params.length}`; }
-    if (date_from)  { params.push(date_from);   where += ` AND ts.created_at::date >= $${params.length}::date`; }
-    if (date_to)    { params.push(date_to);     where += ` AND ts.created_at::date <= $${params.length}::date`; }
+    if (school)    { params.push(school);          where += ` AND ts.school_identifier ILIKE $${params.length}`; }
+    if (level)     { params.push(parseInt(level)); where += ` AND ts.level=$${params.length}`; }
+    if (date_from) { params.push(date_from);       where += ` AND ts.created_at::date >= $${params.length}::date`; }
+    if (date_to)   { params.push(date_to);         where += ` AND ts.created_at::date <= $${params.length}::date`; }
 
     const r = await db.pool.query(`
       SELECT ts.id, ts.pin_code, ts.school_identifier, ts.level, ts.created_at,
@@ -619,12 +653,12 @@ router.get('/api/results/school/:identifier', async (req, res) => {
     res.json({ students: r.rows });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
-// -── Level Advancement Console APIs ───────────────────────────────────────────
+
+// ── Level Advancement Console APIs ───────────────────────────────────────────
 router.get('/api/console/schools-progress', async (req, res) => {
   try {
     const r = await db.pool.query(`
-      SELECT 
-        s.id, s.name, s.identifier, s.region, s.province,
+      SELECT s.id, s.name, s.identifier, s.region, s.province,
         NULL AS year, NULL AS section,
         cl.current_level, cl.subject, cl.status,
         cl.lessons_completed, cl.total_lessons, cl.last_assessment,
@@ -645,21 +679,15 @@ router.post('/api/console/advance-level', async (req, res) => {
   try {
     const { school_identifier, subject } = req.body;
     if (!school_identifier) return res.status(400).json({ error: 'school_identifier required' });
-
     const current = await db.pool.query(`
-      SELECT current_level FROM cohort_levels
-      WHERE school_identifier=$1 AND subject=$2
+      SELECT current_level FROM cohort_levels WHERE school_identifier=$1 AND subject=$2
     `, [school_identifier, subject || 'All']);
-
     if (!current.rows.length) return res.status(404).json({ error: 'School cohort not found' });
-
     const newLevel = parseInt(current.rows[0].current_level) + 1;
-
     await db.pool.query(`
       UPDATE cohort_levels SET current_level=$1, last_assessment=NOW(), updated_at=NOW()
       WHERE school_identifier=$2 AND subject=$3
     `, [newLevel, school_identifier, subject || 'All']);
-
     res.json({ success: true, new_level: newLevel, school_identifier });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -668,21 +696,18 @@ router.get('/api/console/level-history', async (req, res) => {
   try {
     const { school } = req.query;
     if (!school) return res.status(400).json({ error: 'school identifier required' });
-
     const r = await db.pool.query(`
       SELECT a.level, a.subject, a.score_pct, a.passed,
              a.completed_at, ar.status AS advancement_status
       FROM assessments a
       LEFT JOIN advancement_requests ar ON ar.assessment_id = a.id
-      WHERE a.school_id = (
-        SELECT id FROM schools WHERE identifier ILIKE $1 LIMIT 1
-      )
+      WHERE a.school_id = (SELECT id FROM schools WHERE identifier ILIKE $1 LIMIT 1)
       ORDER BY a.completed_at DESC LIMIT 50
     `, [school]);
-
     res.json({ history: r.rows });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
+
 router.get('/api/questions/count', async (req, res) => {
   try {
     const { level, subject } = req.query;
@@ -700,7 +725,6 @@ router.get('/api/assessment-dashboard', async (req, res) => {
   try {
     const { from, to, year, month, week, rc, coordinator, grade, level, subject, student, school } = req.query;
 
-    // ── Date range resolution ──
     const today = new Date();
     const fmt   = d => d.toISOString().split('T')[0];
     let dateFrom, dateTo = fmt(today);
@@ -724,13 +748,11 @@ router.get('/api/assessment-dashboard', async (req, res) => {
       dateFrom = fmt(d);
     }
 
-    // ── Grade → level range ──
     let gradeWhere       = '';
     let gradeWhereTablet = '';
     if (grade === 'Primary')    { gradeWhere = ' AND sa.level BETWEEN 1 AND 5';  gradeWhereTablet = ' AND tr.level BETWEEN 1 AND 5'; }
     if (grade === 'Elementary') { gradeWhere = ' AND sa.level BETWEEN 6 AND 11'; gradeWhereTablet = ' AND tr.level BETWEEN 6 AND 11'; }
 
-    // ── Portal assessments (student_assessments table) ──
     let portalParams = [dateFrom, dateTo];
     let portalWhere  = gradeWhere;
     if (level)   { portalParams.push(parseInt(level));  portalWhere += ` AND level=$${portalParams.length}`; }
@@ -741,26 +763,20 @@ router.get('/api/assessment-dashboard', async (req, res) => {
     let portalRows = [];
     try {
       const portalQ = await db.pool.query(`
-        SELECT
-          sa.id,
-          sa.student_name,
-          COALESCE(s.name, 'Unknown School')            AS school_name,
-          COALESCE(s.identifier,'—')                    AS school_identifier,
-          COALESCE(s.region,'—')                        AS region,
-          COALESCE(s.province,'—')                      AS province,
-          COALESCE(sa.teacher_phone,'—')                AS teacher_name,
-          COALESCE(rc.name,'—')                         AS rc_name,
-          COALESCE(sc.name,'—')                         AS coordinator_name,
-          COALESCE(sa.subject,'—')                      AS subject,
+        SELECT sa.id, sa.student_name,
+          COALESCE(s.name,'Unknown School') AS school_name,
+          COALESCE(s.identifier,'—') AS school_identifier,
+          COALESCE(s.region,'—') AS region,
+          COALESCE(s.province,'—') AS province,
+          COALESCE(sa.teacher_phone,'—') AS teacher_name,
+          COALESCE(rc.name,'—') AS rc_name,
+          COALESCE(sc.name,'—') AS coordinator_name,
+          COALESCE(sa.subject,'—') AS subject,
           sa.level,
           CASE WHEN sa.level BETWEEN 1 AND 5 THEN 'Primary' ELSE 'Elementary' END AS grade,
-          NULL::text                                    AS semester,
-          sa.score_pct,
-          sa.passed,
-          sa.total_questions,
-          sa.correct_answers,
-          sa.completed_at,
-          'portal'                                      AS source
+          NULL::text AS semester,
+          sa.score_pct, sa.passed, sa.total_questions, sa.correct_answers, sa.completed_at,
+          'portal' AS source
         FROM student_assessments sa
         LEFT JOIN schools s ON s.id = sa.school_id
         LEFT JOIN regional_coordinators rc ON rc.id = s.regional_coordinator_id
@@ -768,13 +784,11 @@ router.get('/api/assessment-dashboard', async (req, res) => {
         WHERE sa.completed_at::date BETWEEN $1::date AND $2::date
           AND (sa.score_pct IS NOT NULL AND sa.score_pct > 0)
           ${portalWhere}
-        ORDER BY sa.completed_at DESC
-        LIMIT 2000
+        ORDER BY sa.completed_at DESC LIMIT 2000
       `, portalParams);
       portalRows = portalQ.rows;
     } catch(e) { console.log('portal query skip:', e.message); }
 
-    // ── Tablet assessments (tablet_results table) ──
     let tabletParams = [dateFrom, dateTo];
     let tabletWhere  = gradeWhereTablet;
     if (level)   { tabletParams.push(parseInt(level));  tabletWhere += ` AND tr.level=$${tabletParams.length}`; }
@@ -785,48 +799,38 @@ router.get('/api/assessment-dashboard', async (req, res) => {
     let tabletRows = [];
     try {
       const tabletQ = await db.pool.query(`
-        SELECT
-          tr.id,
-          tr.student_name,
-          COALESCE(s.name, tr.school_identifier)        AS school_name,
+        SELECT tr.id, tr.student_name,
+          COALESCE(s.name, tr.school_identifier) AS school_name,
           tr.school_identifier,
-          COALESCE(s.region,'—')                        AS region,
-          COALESCE(s.province,'—')                      AS province,
-          COALESCE(ts.created_by,'—')                   AS teacher_name,
-          COALESCE(rc.name,'—')                         AS rc_name,
-          COALESCE(sc.name,'—')                         AS coordinator_name,
-          COALESCE(ts.subject,'—')                      AS subject,
+          COALESCE(s.region,'—') AS region,
+          COALESCE(s.province,'—') AS province,
+          COALESCE(ts.created_by,'—') AS teacher_name,
+          COALESCE(rc.name,'—') AS rc_name,
+          COALESCE(sc.name,'—') AS coordinator_name,
+          COALESCE(ts.subject,'—') AS subject,
           tr.level,
           CASE WHEN tr.level BETWEEN 1 AND 5 THEN 'Primary' ELSE 'Elementary' END AS grade,
-          NULL::text                                    AS semester,
-          tr.score_pct,
-          tr.passed,
-          tr.total_questions,
-          tr.correct_answers,
-          tr.completed_at,
-          'tablet'                                      AS source
+          NULL::text AS semester,
+          tr.score_pct, tr.passed, tr.total_questions, tr.correct_answers, tr.completed_at,
+          'tablet' AS source
         FROM tablet_results tr
-        LEFT JOIN tablet_sessions    ts ON ts.id = tr.session_id
-        LEFT JOIN schools             s ON s.identifier ILIKE tr.school_identifier
+        LEFT JOIN tablet_sessions ts ON ts.id = tr.session_id
+        LEFT JOIN schools s ON s.identifier ILIKE tr.school_identifier
         LEFT JOIN regional_coordinators rc ON rc.id = s.regional_coordinator_id
         LEFT JOIN school_coordinators   sc ON sc.id = s.school_coordinator_id
         WHERE tr.completed_at::date BETWEEN $1::date AND $2::date
           ${tabletWhere}
-        ORDER BY tr.completed_at DESC
-        LIMIT 2000
+        ORDER BY tr.completed_at DESC LIMIT 2000
       `, tabletParams);
       tabletRows = tabletQ.rows;
     } catch(e) { console.log('tablet query skip:', e.message); }
 
-    // ── Merge & sort ──
     let results = [...portalRows, ...tabletRows]
       .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
 
-    // ── Post-query filters (RC, coordinator) ──
     if (rc)          results = results.filter(r => r.rc_name === rc);
     if (coordinator) results = results.filter(r => r.coordinator_name === coordinator);
 
-    // ── Build filter option lists from full unfiltered set ──
     const all = [...portalRows, ...tabletRows];
     const uniq = arr => [...new Set(arr.filter(Boolean))].sort();
     const filterOptions = {
@@ -837,7 +841,6 @@ router.get('/api/assessment-dashboard', async (req, res) => {
       levels:       [...new Set(all.map(r => r.level).filter(Boolean))].sort((a,b)=>a-b),
     };
 
-    // ── Stats ──
     const total    = results.length;
     const passed   = results.filter(r => r.passed).length;
     const avgScore = total ? Math.round(results.reduce((a,r) => a + parseFloat(r.score_pct||0), 0) / total) : 0;
@@ -850,22 +853,15 @@ router.get('/api/assessment-dashboard', async (req, res) => {
   }
 });
 
-// ── /portal/offline/submit — save result from offline portal assessment ────────
+// ── /portal/offline/submit ────────────────────────────────────────────────────
 router.post('/portal/offline/submit', async (req, res) => {
   try {
-    const {
-      pin, student_name, student_id,
-      subject, level, score, total, pct, passed,
-      overall_pct, overall_passed,
-      timestamp, submission_mode,
-      gps_lat, gps_lng, gps_accuracy,
-    } = req.body;
+    const { pin, student_name, student_id, subject, level, score, total, pct, passed,
+            overall_pct, overall_passed, timestamp, submission_mode,
+            gps_lat, gps_lng, gps_accuracy } = req.body;
 
-    if (!pin || !student_name) {
-      return res.status(400).json({ saved: false, error: 'pin and student_name required' });
-    }
+    if (!pin || !student_name) return res.status(400).json({ saved: false, error: 'pin and student_name required' });
 
-    // Step 1: Ensure all needed columns exist (safe to run every time)
     const alterCmds = [
       `ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS student_id    VARCHAR(50)`,
       `ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS overall_pct   NUMERIC(5,2)`,
@@ -876,17 +872,12 @@ router.post('/portal/offline/submit', async (req, res) => {
       `ALTER TABLE student_assessments ADD COLUMN IF NOT EXISTS gps_accuracy  INTEGER`,
     ];
     for (const cmd of alterCmds) {
-      try { await db.pool.query(cmd); } catch(e) { /* column may already exist */ }
+      try { await db.pool.query(cmd); } catch(e) {}
     }
 
-    // Step 2: Look up school via pin — try both pins table and tablet_sessions
-    let schoolId = null;
-    let pinId    = null;
+    let schoolId = null, pinId = null;
     try {
-      const r = await db.pool.query(
-        `SELECT id, school_id FROM pins WHERE pin_code = $1 LIMIT 1`,
-        [pin.toUpperCase()]
-      );
+      const r = await db.pool.query(`SELECT id, school_id FROM pins WHERE pin = $1 LIMIT 1`, [pin.toUpperCase()]);
       if (r.rows.length) { pinId = r.rows[0].id; schoolId = r.rows[0].school_id; }
     } catch(e) {}
 
@@ -901,7 +892,6 @@ router.post('/portal/offline/submit', async (req, res) => {
       } catch(e) {}
     }
 
-    // Step 3: Insert — only use columns we know exist
     await db.pool.query(`
       INSERT INTO student_assessments
         (pin_id, school_id, student_name, student_id,
@@ -911,51 +901,38 @@ router.post('/portal/offline/submit', async (req, res) => {
          recommendation, completed_at)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
     `, [
-      pinId                          || null,
-      schoolId                       || null,
-      student_name,
-      student_id                     || null,
-      parseInt(level)                || 1,
-      subject                        || 'Unknown',
-      parseInt(total)                || 0,
-      parseInt(score)                || 0,
-      parseFloat(pct)                || 0,
-      passed                         || false,
+      pinId || null, schoolId || null, student_name, student_id || null,
+      parseInt(level) || 1, subject || 'Unknown',
+      parseInt(total) || 0, parseInt(score) || 0,
+      parseFloat(pct) || 0, passed || false,
       overall_pct != null ? parseFloat(overall_pct) : null,
       overall_passed != null ? overall_passed : null,
-      submission_mode                || 'offline',
-      gps_lat                        || null,
-      gps_lng                        || null,
+      submission_mode || 'offline',
+      gps_lat || null, gps_lng || null,
       gps_accuracy ? parseInt(gps_accuracy) : null,
       passed ? '✅ Passed via Portal' : '📚 Needs review',
       timestamp ? new Date(timestamp) : new Date(),
     ]);
 
     return res.json({ saved: true });
-
   } catch (err) {
     console.error('[portal/offline/submit] error:', err.message);
     return res.status(500).json({ saved: false, error: err.message });
   }
 });
 
-// ── /api/assess/bundle/:pin — returns session + questions in one call for offline caching ──
+// ── /api/assess/bundle/:pin ───────────────────────────────────────────────────
 router.get('/api/assess/bundle/:pin', async (req, res) => {
   try {
-    // 1. Validate session
     const sessResult = await db.pool.query(`
-      SELECT ts.*, s.name AS school_name
-      FROM tablet_sessions ts
+      SELECT ts.*, s.name AS school_name FROM tablet_sessions ts
       LEFT JOIN schools s ON s.identifier ILIKE ts.school_identifier
       WHERE ts.pin_code=$1 AND ts.active=TRUE AND ts.expires_at>NOW()
     `, [req.params.pin]);
 
-    if (!sessResult.rows.length) {
-      return res.status(404).json({ error: 'Invalid or expired PIN' });
-    }
+    if (!sessResult.rows.length) return res.status(404).json({ error: 'Invalid or expired PIN' });
     const session = sessResult.rows[0];
 
-    // 2. Load questions (same logic as /api/assess/questions/:pin)
     const subjectList = session.subject && session.subject !== 'All'
       ? session.subject.split(',').map(x => x.trim())
       : ['Math', 'English', 'Urdu'];
@@ -995,9 +972,7 @@ router.get('/api/assess/bundle/:pin', async (req, res) => {
       }
     }
 
-    if (allQuestions.length < 1) {
-      return res.status(400).json({ error: 'No questions available for this level/subject.' });
-    }
+    if (allQuestions.length < 1) return res.status(400).json({ error: 'No questions available for this level/subject.' });
 
     const questions = allQuestions.map(q => ({
       id:             q.id,
@@ -1012,18 +987,17 @@ router.get('/api/assess/bundle/:pin', async (req, res) => {
       option_c:       q.option_c,
       option_d:       q.option_d,
       correct_option: (q.correct_option || 'A').toUpperCase(),
+      question_type:  q.question_type || 'MCQ',
     }));
 
-    // Return session + questions together — client caches this for offline use
     res.json({ session, questions, subjects: subjectList, cachedAt: new Date().toISOString() });
-
   } catch (err) {
     console.error('[assess/bundle] error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ── /api/assess/sync — accept single or batched offline results ───────────────
+// ── /api/assess/sync ──────────────────────────────────────────────────────────
 router.post('/api/assess/sync', async (req, res) => {
   try {
     const payload = req.body;
@@ -1034,7 +1008,6 @@ router.post('/api/assess/sync', async (req, res) => {
     const { pin, student_name, answers, score_pct, correct, total, passed,
             submission_mode, submitted_at } = payload;
 
-    // Validate PIN exists (even expired — offline submissions may arrive late)
     const sess = await db.pool.query(
       `SELECT ts.*, s.id AS schools_id FROM tablet_sessions ts
        LEFT JOIN schools s ON s.identifier ILIKE ts.school_identifier
@@ -1065,7 +1038,6 @@ router.post('/api/assess/sync', async (req, res) => {
 
     const completedAt = submitted_at ? new Date(submitted_at) : new Date();
 
-    // Save to tablet_results (existing flow)
     try {
       await db.pool.query(`
         INSERT INTO tablet_results
@@ -1084,44 +1056,27 @@ router.post('/api/assess/sync', async (req, res) => {
           INSERT INTO tablet_results
             (session_id, student_name, school_identifier, level,
              total_questions, correct_answers, score_pct, passed, completed_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-          ON CONFLICT DO NOTHING
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING
         `, [s.id, student_name, s.school_identifier, s.level,
             finalTotal, finalCorrect, finalScore, finalPassed, completedAt]);
-      } catch(e2) {
-        console.log('[assess/sync] tablet_results note:', e2.message);
-      }
+      } catch(e2) { console.log('[assess/sync] tablet_results note:', e2.message); }
     }
 
-    // Also save to student_assessments — this is what the dashboard reads
     try {
-      const pinRow = await db.pool.query(
-        'SELECT id FROM pins WHERE pin=$1 LIMIT 1', [pin]
-      ).catch(() => ({ rows: [] }));
-      const pinId = pinRow.rows[0]?.id || null;
-
+      const pinRow = await db.pool.query('SELECT id FROM pins WHERE pin=$1 LIMIT 1', [pin]).catch(() => ({ rows: [] }));
+      const pinId  = pinRow.rows[0]?.id || null;
       await db.pool.query(`
         INSERT INTO student_assessments
           (pin_id, school_id, teacher_phone, student_name, level, subject,
            total_questions, correct_answers, score_pct, passed,
            submission_mode, completed_at)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-      `, [
-        pinId,
-        s.schools_id || null,
-        s.created_by || null,
-        student_name,
-        s.level,
-        s.subject || 'All',
-        finalTotal, finalCorrect, finalScore, finalPassed,
-        submission_mode || 'offline',
-        completedAt
-      ]);
-    } catch(e) {
-      console.log('[assess/sync] student_assessments note:', e.message);
-    }
+      `, [pinId, s.schools_id || null, s.created_by || null, student_name,
+          s.level, s.subject || 'All',
+          finalTotal, finalCorrect, finalScore, finalPassed,
+          submission_mode || 'offline', completedAt]);
+    } catch(e) { console.log('[assess/sync] student_assessments note:', e.message); }
 
-    // Save individual answers
     if (answers && answers.length > 0) {
       for (const a of answers) {
         try {
@@ -1145,7 +1100,6 @@ router.post('/api/assess/sync', async (req, res) => {
       passed: finalPassed,
       submission_mode: submission_mode || 'offline',
     });
-
   } catch (err) {
     console.error('[assess/sync] error:', err.message);
     res.status(500).json({ saved: false, error: err.message });
