@@ -1,4 +1,4 @@
-﻿// routes/admin.js ΓÇö Admin APIs & Question Bank
+// routes/admin.js ΓÇö Admin APIs & Question Bank
 // Portals: /question-bank, /dashboard, /import, /bulk-assess
 // APIs: /admin/questions/*, /api/questions/*, /api/generate-questions
 
@@ -230,8 +230,8 @@ router.post('/api/questions/import', async (req, res) => {
             (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
              image_url, question_type, option_a, option_b, option_c, option_d,
              correct_option, active, created_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,
-            CASE WHEN $7 IS NOT NULL AND $7!='' THEN 'picture' ELSE 'text' END,
+          VALUES ($1,$2,$3,$4,$5,$6,$7::text,
+            COALESCE(NULLIF($14,''), CASE WHEN $7::text IS NOT NULL AND $7::text!='' THEN 'picture' ELSE 'text' END),
             $8,$9,$10,$11,$12,$13,NOW())
           ON CONFLICT (question_id) DO UPDATE SET
             q_text_english = COALESCE(NULLIF($5,''), questions.q_text_english),
@@ -239,7 +239,7 @@ router.post('/api/questions/import', async (req, res) => {
             option_a=$8, option_b=$9, option_c=$10, option_d=$11,
             correct_option=$12`,
           [questionId, level, subject, topicTag, qText, qTextUrdu,
-           imageUrl, optA, optB, optC, optD, correctOpt, activeVal]);
+           imageUrl, optA, optB, optC, optD, correctOpt, activeVal, row.question_type||null]);
         imported++;
       } catch(err) { lastError = err.message; errors++; }
     }
@@ -268,7 +268,7 @@ router.get('/api/questions/breakdown', async (req, res) => {
       SELECT subject, level, COUNT(*) as total,
         SUM(CASE WHEN active=1 THEN 1 ELSE 0 END) as approved,
         SUM(CASE WHEN active=0 OR active IS NULL THEN 1 ELSE 0 END) as pending
-      FROM questions WHERE active IN (0,1) GROUP BY subject,level ORDER BY subject,level
+      FROM questions GROUP BY subject,level ORDER BY subject,level
     `);
     const bySubject = {};
     r.rows.forEach(row => {
@@ -848,15 +848,4 @@ router.get('/api/analytics', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-
-router.post('/api/questions/generate-ai', async (req, res) => {
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify(req.body)
-    });
-    res.json(await response.json());
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
 module.exports = { router };
