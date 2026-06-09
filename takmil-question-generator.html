@@ -662,12 +662,12 @@ Language: ${langLine}
 Types to use (distribute evenly): ${types.join(', ')}
 
 JSON format for each question type:
-MCQ: {"type":"MCQ","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
-TrueFalse: {"type":"TrueFalse","question":"...","correct_answer":"True","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
-ShortAnswer: {"type":"ShortAnswer","question":"...","correct_answer":"...","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
-FillInTheBlank: {"type":"FillInTheBlank","question":"The capital of Pakistan is ___.","correct_answer":"Islamabad","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
-SentenceBuilder: {"type":"SentenceBuilder","question":"Make a sentence using these words:","words":["word1","word2","word3","word4","word5"],"correct_answer":"The correct sentence here.","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
-MatchTheColumns: {"type":"MatchTheColumns","question":"Match the following:","pairs":[{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."}],"correct_answer":"See pairs","difficulty":"easy","subject":"${subject}","grade":"${grade}","topic":"${topicLine}"}
+MCQ: {"type":"MCQ","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","difficulty":"easy","subject":"${subject}","grade":"${grade}","level":${grade.split("|")[1]||1},"topic":"${topicLine}"}
+TrueFalse: {"type":"TrueFalse","question":"...","correct_answer":"True","difficulty":"easy","subject":"${subject}","grade":"${grade}","level":${grade.split("|")[1]||1},"topic":"${topicLine}"}
+ShortAnswer: {"type":"ShortAnswer","question":"...","correct_answer":"...","difficulty":"easy","subject":"${subject}","grade":"${grade}","level":${grade.split("|")[1]||1},"topic":"${topicLine}"}
+FillInTheBlank: {"type":"FillInTheBlank","question":"The capital of Pakistan is ___.","correct_answer":"Islamabad","difficulty":"easy","subject":"${subject}","grade":"${grade}","level":${grade.split("|")[1]||1},"topic":"${topicLine}"}
+SentenceBuilder: {"type":"SentenceBuilder","question":"Make a sentence using these words:","words":["word1","word2","word3","word4","word5"],"correct_answer":"The correct sentence here.","difficulty":"easy","subject":"${subject}","grade":"${grade}","level":${grade.split("|")[1]||1},"topic":"${topicLine}"}
+MatchTheColumns: {"type":"MatchTheColumns","question":"Match the following:","pairs":[{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."}],"correct_answer":"See pairs","difficulty":"easy","subject":"${subject}","grade":"${grade}","level":${grade.split("|")[1]||1},"topic":"${topicLine}"}
 
 IMPORTANT for MatchTheColumns: all "right" values must be unique — no two pairs can share the same answer.
 IMPORTANT for SentenceBuilder: "words" array must contain every single word from correct_answer.
@@ -820,10 +820,14 @@ function mapToQuestionBank(q, i) {
   const stripLetter = (s) => String(s || '').replace(/^[A-D][.\s]+/, '').trim();
   const qText = q.question || '';
 
-  // Parse grade value format "Primary|3" or "Grade 6|2"
-  const gradeParts = String(q.grade || '').split('|');
-  const levelInt = gradeParts.length > 1 ? parseInt(gradeParts[1]) : 1;
-  const gradeLabel = gradeParts[0] || 'Primary'; // "Primary" or "Grade 6/7/8"
+  // FIX: AI returns grade as "Primary 11" (space) not "Primary|11" (pipe).
+  // Read level from the grade dropdown directly — never trust q.grade from AI response.
+  const gradeDropdown = document.getElementById('grade')?.value || document.getElementById('img-grade')?.value || '';
+  const dropdownLevel = parseInt(gradeDropdown.split('|')[1]);
+  const gradeParts    = String(q.grade || '').split('|');
+  const gradeStrLevel = parseInt(String(q.grade || '').replace(/[^0-9]/g, ''));
+  const levelInt      = dropdownLevel || (gradeParts.length > 1 ? parseInt(gradeParts[1]) : 0) || gradeStrLevel || 1;
+  const gradeLabel    = (gradeDropdown.split('|')[0]) || gradeParts[0] || 'Primary';
 
   // difficulty string to integer: easy=1, medium=2, hard=3
   const diffMap = { easy: 1, medium: 2, hard: 3 };
