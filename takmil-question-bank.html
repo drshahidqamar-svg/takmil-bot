@@ -519,9 +519,9 @@ function getAnswerHtml(q){
   if(qtype==='MCQ'||qtype==='TEXT'||qtype==='PICTURE'){
     const opts={A:q.option_a,B:q.option_b,C:q.option_c,D:q.option_d};
     const txt = opts[ans]||'';
-    return '<div style="margin-top:4px;font-size:12px;color:#15803d;font-weight:600">\u2713 '+ans+(txt?'. '+txt:'')+'</div>';
+    return '<div style="margin-top:4px;font-size:12px;color:#15803d;font-weight:600">✓ '+ans+(txt?'. '+txt:'')+'</div>';
   }
-  return '<div style="margin-top:4px;font-size:12px;color:#15803d;font-weight:600">\u2713 '+ans+'</div>';
+  return '<div style="margin-top:4px;font-size:12px;color:#15803d;font-weight:600">✓ '+ans+'</div>';
 }
 function renderTable(){
   document.getElementById('q-count').textContent=filtered.length+' questions';

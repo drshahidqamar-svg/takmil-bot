@@ -20,11 +20,11 @@ router.get('/admin/questions/all', async (req, res) => {
       COALESCE(q_text_english, q_text_urdu) AS question_text
       FROM questions WHERE 1=1`;
     const params = [];
-    if (level)       { params.push(parseInt(level)); query += ` AND level=$${params.length}`; }
-    if (subject)     { params.push(subject);         query += ` AND subject=$${params.length}`; }
-    if (topic)       { params.push(topic);           query += ` AND topic_tag=$${params.length}`; }
-    if (video_id)    { params.push(video_id);        query += ` AND video_id=$${params.length}`; }
-    if (source_type) { params.push(source_type);     query += ` AND source_type=$${params.length}`; }
+    if (level)       { params.push(level);       query += ` AND level=$${params.length}`; }
+    if (subject)     { params.push(subject);     query += ` AND subject=$${params.length}`; }
+    if (topic)       { params.push(topic);       query += ` AND topic_tag=$${params.length}`; }
+    if (video_id)    { params.push(video_id);    query += ` AND video_id=$${params.length}`; }
+    if (source_type) { params.push(source_type); query += ` AND source_type=$${params.length}`; }
     if (status === 'approved') query += ` AND active=1`;
     if (status === 'pending')  query += ` AND (active=0 OR active IS NULL)`;
     if (status === 'flagged')  query += ` AND active=-1`;
@@ -39,10 +39,10 @@ router.get('/api/questions', async (req, res) => {
     const { level, subject, topic, video_id, limit = 12 } = req.query;
     let query = `SELECT * FROM questions WHERE active=1`;
     const params = [];
-    if (level)    { params.push(parseInt(level)); query += ` AND level=$${params.length}`; }
-    if (subject)  { params.push(subject);         query += ` AND subject=$${params.length}`; }
-    if (topic)    { params.push(topic);           query += ` AND topic_tag=$${params.length}`; }
-    if (video_id) { params.push(video_id);        query += ` AND video_id=$${params.length}`; }
+    if (level)    { params.push(level);    query += ` AND level=$${params.length}`; }
+    if (subject)  { params.push(subject);  query += ` AND subject=$${params.length}`; }
+    if (topic)    { params.push(topic);    query += ` AND topic_tag=$${params.length}`; }
+    if (video_id) { params.push(video_id); query += ` AND video_id=$${params.length}`; }
     params.push(parseInt(limit)); query += ` ORDER BY RANDOM() LIMIT $${params.length}`;
     const result = await db.pool.query(query, params);
     res.json({ questions: result.rows, count: result.rows.length });
@@ -58,7 +58,7 @@ router.post('/admin/questions', async (req, res) => {
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
       ON CONFLICT (question_id) DO UPDATE SET level=$2,subject=$3,topic_tag=$4,q_text_english=$5,q_text_urdu=$6,option_a=$7,option_b=$8,option_c=$9,option_d=$10,correct_option=$11,active=$12
       RETURNING *, (active=1) AS is_approved, COALESCE(q_text_english, q_text_urdu) AS question_text`,
-      [question_id, parseInt(level), subject, topic_tag||null, question_text||null, question_text_ur||null,
+      [question_id, level, subject, topic_tag||null, question_text||null, question_text_ur||null,
        option_a, option_b, option_c, option_d, correct_option, is_approved ? 1 : 0]);
     res.json({ question: r.rows[0] });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -72,7 +72,7 @@ router.put('/admin/questions/:id', async (req, res) => {
         option_a=$6,option_b=$7,option_c=$8,option_d=$9,correct_option=$10,active=$11
       WHERE id=$12
       RETURNING *, (active=1) AS is_approved, COALESCE(q_text_english, q_text_urdu) AS question_text`,
-      [question_id, parseInt(level), subject, topic_tag||null, question_text,
+      [question_id, level, subject, topic_tag||null, question_text,
        option_a, option_b, option_c, option_d, correct_option, is_approved ? 1 : 0, req.params.id]);
     res.json({ question: r.rows[0] });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -112,25 +112,13 @@ router.post('/api/questions/save', async (req, res) => {
   try {
     const { questions, level, subject, topic } = req.body;
     if (!questions || !Array.isArray(questions)) return res.status(400).json({ error: 'questions array required' });
-    // FIX: use level from each question object (set by mapToQuestionBank) — never fall back to 1
     let saved = 0;
     for (const q of questions) {
-      const qLevel = parseInt(q.level || level);
-      if (!qLevel) { continue; } // skip if no level at all
       await db.pool.query(`
-        INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
-          option_a, option_b, option_c, option_d, correct_option, question_type, active, created_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,1,NOW())
-        ON CONFLICT (question_id) DO UPDATE SET
-          level=$2, subject=$3, topic_tag=$4,
-          q_text_english=COALESCE(NULLIF($5,''), questions.q_text_english),
-          q_text_urdu=COALESCE(NULLIF($6,''), questions.q_text_urdu),
-          option_a=$7, option_b=$8, option_c=$9, option_d=$10,
-          correct_option=$11, question_type=$12, active=1`,
-        [q.question_id, qLevel, q.subject || subject, q.topic_tag || topic || null,
-         q.question_text || q.q_text_english || null, q.q_text_urdu || null,
-         q.option_a, q.option_b, q.option_c, q.option_d,
-         q.correct_option, q.question_type || 'MCQ']);
+        INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, option_a, option_b, option_c, option_d, correct_option, active, created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,1,NOW())
+        ON CONFLICT (question_id) DO UPDATE SET active=1, q_text_english=$5`,
+        [q.question_id, level, subject, topic||null, q.question_text || q.q_text_english || null, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_option]);
       saved++;
     }
     res.json({ saved, message: `${saved} questions saved to database` });
@@ -145,7 +133,6 @@ router.post('/api/questions/csv-update', async (req, res) => {
       INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, q_text_urdu, image_url, question_type, option_a, option_b, option_c, option_d, correct_option, active, created_at)
       VALUES ($1,$2,$3,$4,$5,'',$6, CASE WHEN $6 IS NOT NULL AND $6!='' THEN 'picture' ELSE 'text' END, $7,$8,$9,$10,$11,0,NOW())
       ON CONFLICT (question_id) DO UPDATE SET
-        level=$2,
         q_text_english=COALESCE(NULLIF($5,''), questions.q_text_english),
         image_url=COALESCE(NULLIF($6,''), questions.image_url),
         option_a=COALESCE(NULLIF($7,''), questions.option_a),
@@ -154,7 +141,7 @@ router.post('/api/questions/csv-update', async (req, res) => {
         option_d=COALESCE(NULLIF($10,''), questions.option_d),
         correct_option=COALESCE(NULLIF($11,''), questions.correct_option)
       RETURNING (xmax=0) AS inserted`,
-      [question_id, parseInt(level), subject, topic_tag||'curriculum',
+      [question_id, parseInt(level)||1, subject, topic_tag||'curriculum',
        question_text||null, image_url||null, option_a||null, option_b||null, option_c||null, option_d||null, correct_option||'A']);
     res.json({ inserted: !!r.rows[0]?.inserted, updated: !r.rows[0]?.inserted });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -165,8 +152,8 @@ router.get('/api/questions/export', async (req, res) => {
     const { subject, level, status } = req.query;
     let query = `SELECT question_id, subject, level, topic_tag, COALESCE(q_text_english,q_text_urdu) as question_text, q_text_urdu, image_url, option_a, option_b, option_c, option_d, correct_option, active, created_at FROM questions WHERE 1=1`;
     const params = [];
-    if (subject) { params.push(subject);         query += ` AND subject=$${params.length}`; }
-    if (level)   { params.push(parseInt(level)); query += ` AND level=$${params.length}`; }
+    if (subject) { params.push(subject); query += ` AND subject=$${params.length}`; }
+    if (level)   { params.push(level);   query += ` AND level=$${params.length}`; }
     if (status === 'approved') query += ` AND active=1`;
     if (status === 'pending')  query += ` AND (active=0 OR active IS NULL)`;
     query += ` ORDER BY subject,level,question_id`;
@@ -191,7 +178,7 @@ router.get('/api/questions/export', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Question Bank dashboard route ─────────────────────────────────────────────
+// ── Question Bank dashboard route (used by takmil-question-bank.html) ────────
 router.get('/api/questions/bank', async (req, res) => {
   try {
     const { subject, level, status, limit = 2000 } = req.query;
@@ -204,7 +191,7 @@ router.get('/api/questions/bank', async (req, res) => {
       active, created_at
       FROM questions WHERE 1=1`;
     const params = [];
-    if (subject) { params.push(subject);         query += ` AND subject=$${params.length}`; }
+    if (subject) { params.push(subject); query += ` AND subject=$${params.length}`; }
     if (level)   { params.push(parseInt(level)); query += ` AND level=$${params.length}`; }
     if (status === 'approved') query += ` AND active=1`;
     if (status === 'pending')  query += ` AND (active=0 OR active IS NULL)`;
@@ -216,8 +203,7 @@ router.get('/api/questions/bank', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Question import (POST /api/questions/import) ──────────────────────────────
-// FIX: ON CONFLICT now updates level, subject, active so re-imports correct wrong-level questions
+// ── Question import from question bank HTML (POST /api/questions/import) ─────
 router.post('/api/questions/import', async (req, res) => {
   try {
     const { questions } = req.body;
@@ -238,26 +224,22 @@ router.post('/api/questions/import', async (req, res) => {
         const topicTag    = String(row.topic_tag || row.topic || '').trim();
         const imageUrl    = String(row.image_url || '').trim() || null;
         const activeVal   = row.active !== undefined ? parseInt(row.active) : 0;
-        const qType       = String(row.question_type || (imageUrl ? 'picture' : 'MCQ')).trim();
         if (!qText) { skipped++; continue; }
         await db.pool.query(`
           INSERT INTO questions
             (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
              image_url, question_type, option_a, option_b, option_c, option_d,
              correct_option, active, created_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW())
+          VALUES ($1,$2,$3,$4,$5,$6,$7,
+            CASE WHEN $7 IS NOT NULL AND $7!='' THEN 'picture' ELSE 'text' END,
+            $8,$9,$10,$11,$12,$13,NOW())
           ON CONFLICT (question_id) DO UPDATE SET
-            level          = $2,
-            subject        = $3,
-            topic_tag      = COALESCE(NULLIF($4,''), questions.topic_tag),
             q_text_english = COALESCE(NULLIF($5,''), questions.q_text_english),
             q_text_urdu    = COALESCE(NULLIF($6,''), questions.q_text_urdu),
-            image_url      = COALESCE(NULLIF($7,''), questions.image_url),
-            question_type  = $8,
-            option_a=$9, option_b=$10, option_c=$11, option_d=$12,
-            correct_option=$13, active=$14`,
+            option_a=$8, option_b=$9, option_c=$10, option_d=$11,
+            correct_option=$12`,
           [questionId, level, subject, topicTag, qText, qTextUrdu,
-           imageUrl, qType, optA, optB, optC, optD, correctOpt, activeVal]);
+           imageUrl, optA, optB, optC, optD, correctOpt, activeVal]);
         imported++;
       } catch(err) { lastError = err.message; errors++; }
     }
@@ -286,7 +268,7 @@ router.get('/api/questions/breakdown', async (req, res) => {
       SELECT subject, level, COUNT(*) as total,
         SUM(CASE WHEN active=1 THEN 1 ELSE 0 END) as approved,
         SUM(CASE WHEN active=0 OR active IS NULL THEN 1 ELSE 0 END) as pending
-      FROM questions GROUP BY subject,level ORDER BY subject,level
+      FROM questions WHERE active IN (0,1) GROUP BY subject,level ORDER BY subject,level
     `);
     const bySubject = {};
     r.rows.forEach(row => {
@@ -327,13 +309,13 @@ router.post('/api/questions/save-picture', async (req, res) => {
     await db.pool.query(`
       INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, q_text_urdu, image_url, question_type, option_a, option_b, option_c, option_d, correct_option, active, created_at)
       VALUES ($1,$2,$3,$4,$5,'',$6,'picture',$7,$8,$9,$10,$11,0,NOW())
-      ON CONFLICT (question_id) DO UPDATE SET level=$2,q_text_english=$5,image_url=$6,option_a=$7,option_b=$8,option_c=$9,option_d=$10,correct_option=$11`,
+      ON CONFLICT (question_id) DO UPDATE SET q_text_english=$5,image_url=$6,option_a=$7,option_b=$8,option_c=$9,option_d=$10,correct_option=$11`,
       [question_id, parseInt(level), subject, topic_tag||'picture', question_text, image_url, option_a, option_b, option_c, option_d, correct_option]);
     res.json({ saved: true, message: 'Picture question saved as pending' });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── AI Question Generator (legacy transcript route) ───────────────────────────
+// ── AI Question Generator ─────────────────────────────────────────────────────
 router.post('/api/generate-questions', async (req, res) => {
   try {
     const { transcript, subject, level, topic, name } = req.body;
@@ -390,31 +372,12 @@ ${transcript.substring(0, 3000)}`;
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Question Generator AI proxy ───────────────────────────────────────────────
-router.post('/api/questions/generate-ai', async (req, res) => {
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── Admin: schools, ops, pins ─────────────────────────────────────────────────
+// ── Admin import/schools/students ─────────────────────────────────────────────
 router.post('/admin/pins/generate', async (req, res) => {
   const { schoolId, level, subject, cohortSize, issuedBy, teacherPhone } = req.body;
   if (!schoolId || level === undefined || !subject) return res.status(400).json({ error: 'schoolId, level, subject required' });
   try {
-    const pin = await db.generatePin(schoolId, parseInt(level), subject, cohortSize || 0, issuedBy || 'admin');
+    const pin = await db.generatePin(schoolId, level, subject, cohortSize || 0, issuedBy || 'admin');
     if (teacherPhone) {
       const { sendWhatsApp: sw, twilioClient: tc, FROM_NUMBER: fn } = require('../helpers/whatsapp');
       const schoolRes = await db.pool.query('SELECT name FROM schools WHERE id=$1', [schoolId]);
@@ -446,19 +409,16 @@ router.post('/admin/ops', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-router.get('/admin/advancements/pending', async (req, res) => {
-  try {
-    const r = await db.pool.query(`SELECT ar.*, s.name AS school_name, s.province FROM advancement_requests ar JOIN schools s ON s.id=ar.school_id WHERE ar.status='PENDING' ORDER BY ar.created_at DESC`);
-    res.json(r.rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
+// /admin/schools/list — defined below
+// /admin/pins/list — defined below
+router.get('/admin/advancements/pending',async (req, res) => { try { const r = await db.pool.query(`SELECT ar.*, s.name AS school_name, s.province FROM advancement_requests ar JOIN schools s ON s.id=ar.school_id WHERE ar.status='PENDING' ORDER BY ar.created_at DESC`); res.json(r.rows); } catch(e) { res.status(500).json({ error: e.message }); }});
+// /admin/advancements/all — defined below
+// /admin/assessments/all — defined below
+// /admin/students/results — moved below to correct version
+// /admin/ops/list (one-liner) — defined below
+router.get('/admin/debug/question',     async (req, res) => { try { const r = await db.pool.query('SELECT * FROM questions LIMIT 1'); res.json(r.rows[0] || {}); } catch(e) { res.status(500).json({ error: e.message }); }});
 
-router.get('/admin/debug/question', async (req, res) => {
-  try {
-    const r = await db.pool.query('SELECT * FROM questions LIMIT 1');
-    res.json(r.rows[0] || {});
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
+// /admin/analytics — moved below to correct version
 
 router.post('/admin/import/questions', async (req, res) => {
   const { rows } = req.body;
@@ -479,9 +439,7 @@ router.post('/admin/import/questions', async (req, res) => {
       const topicTag   = String(row.topic_tag || '').trim();
       if (!qText || !optA || !optB || !optC || !optD) { skipped++; continue; }
       await db.pool.query(
-        `INSERT INTO questions (question_id,level,subject,q_text_english,q_text_urdu,option_a,option_b,option_c,option_d,correct_option,topic_tag)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-         ON CONFLICT (question_id) DO UPDATE SET level=$2,subject=$3`,
+        `INSERT INTO questions (question_id,level,subject,q_text_english,q_text_urdu,option_a,option_b,option_c,option_d,correct_option,topic_tag) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
         [questionId, level, subject, qText, qTextUrdu, optA, optB, optC, optD, correctOpt, topicTag]);
       inserted++;
     } catch(err) { lastError = err.message; errors++; }
@@ -496,7 +454,11 @@ router.post('/admin/reassessments/list', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── DASHBOARD API ROUTES ──────────────────────────────────────────────────────
+
+
+// ── DASHBOARD API ROUTES (auto-added) ────────────────────────────────────────
+
+// Analytics summary for dashboard
 router.get('/admin/analytics', async (req, res) => {
   try {
     const summary = await db.pool.query(`
@@ -508,35 +470,52 @@ router.get('/admin/analytics', async (req, res) => {
         COUNT(CASE WHEN passed = false THEN 1 END)::int                   AS failed_count
       FROM student_assessments
     `);
+
     const bySubject = await db.pool.query(`
-      SELECT subject, COUNT(*)::int AS count, ROUND(AVG(score_pct)::numeric, 1)::float AS avg_score
-      FROM student_assessments GROUP BY subject ORDER BY count DESC
+      SELECT subject,
+             COUNT(*)::int                                     AS count,
+             ROUND(AVG(score_pct)::numeric, 1)::float         AS avg_score
+      FROM student_assessments
+      GROUP BY subject ORDER BY count DESC
     `);
+
     const byLevel = await db.pool.query(`
-      SELECT level, COUNT(*)::int AS count, ROUND(AVG(score_pct)::numeric, 1)::float AS avg_score,
-             COUNT(CASE WHEN passed = true THEN 1 END)::int AS passed
-      FROM student_assessments GROUP BY level ORDER BY level
+      SELECT level,
+             COUNT(*)::int                                              AS count,
+             ROUND(AVG(score_pct)::numeric, 1)::float                 AS avg_score,
+             COUNT(CASE WHEN passed = true THEN 1 END)::int           AS passed
+      FROM student_assessments
+      GROUP BY level ORDER BY level
     `);
+
     let advCount = 0;
     try {
-      const adv = await db.pool.query(`SELECT COUNT(*)::int AS n FROM advancement_requests WHERE status='approved'`);
+      const adv = await db.pool.query(
+        `SELECT COUNT(*)::int AS n FROM advancement_requests WHERE status='approved'`
+      );
       advCount = adv.rows[0]?.n || 0;
     } catch(e) {
       try {
-        const adv2 = await db.pool.query(`SELECT COUNT(*)::int AS n FROM advancement_requests WHERE approved=true`);
+        const adv2 = await db.pool.query(
+          `SELECT COUNT(*)::int AS n FROM advancement_requests WHERE approved=true`
+        );
         advCount = adv2.rows[0]?.n || 0;
       } catch(e2) {}
     }
+
     const s = summary.rows[0];
     s.advancements_approved = advCount;
     res.json({ summary: s, bySubject: bySubject.rows, byLevel: byLevel.rows });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// All student results with school info
 router.get('/admin/students/results', async (req, res) => {
   try {
     const result = await db.pool.query(`
-      SELECT sa.*, s.name AS school_name, s.province
+      SELECT sa.*,
+             s.name     AS school_name,
+             s.province
       FROM student_assessments sa
       LEFT JOIN schools s ON sa.school_id = s.id
       ORDER BY COALESCE(sa.completed_at, sa.assessed_at) DESC NULLS LAST
@@ -545,17 +524,35 @@ router.get('/admin/students/results', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Schools list
 router.get('/admin/schools/list', async (req, res) => {
   try {
-    const result = await db.pool.query(`SELECT * FROM schools ORDER BY name`);
+    const result = await db.pool.query(
+      `SELECT * FROM schools ORDER BY name`
+    );
     res.json(result.rows);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Add school
+router.post('/admin/schools', async (req, res) => {
+  try {
+    const { name, province, district, contactName, contactPhone } = req.body;
+    const result = await db.pool.query(
+      `INSERT INTO schools (name, province, district, contact_name, contact_phone)
+       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+      [name, province, district, contactName, contactPhone]
+    );
+    res.json(result.rows[0]);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Pins list
 router.get('/admin/pins/list', async (req, res) => {
   try {
     const result = await db.pool.query(`
-      SELECT p.*, s.name AS school_name FROM pins p
+      SELECT p.*, s.name AS school_name
+      FROM pins p
       LEFT JOIN schools s ON p.school_id = s.id
       ORDER BY p.id DESC LIMIT 200
     `);
@@ -563,27 +560,50 @@ router.get('/admin/pins/list', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Generate PIN
+router.post('/admin/pins/generate', async (req, res) => {
+  try {
+    const { schoolId, level, subject, cohortSize, issuedBy } = req.body;
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    const result = await db.pool.query(
+      `INSERT INTO pins (pin, school_id, level, subject, cohort_size, issued_by, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [pin, schoolId, level, subject, cohortSize || 1, issuedBy || 'Admin', expiresAt]
+    );
+    res.json({ pin, expiresAt, record: result.rows[0] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// All assessments with school info
 router.get('/admin/assessments/all', async (req, res) => {
   try {
     const result = await db.pool.query(`
-      SELECT sa.*, s.name AS school_name FROM student_assessments sa
+      SELECT sa.*,
+             s.name AS school_name
+      FROM student_assessments sa
       LEFT JOIN schools s ON sa.school_id = s.id
-      ORDER BY COALESCE(sa.completed_at, sa.assessed_at) DESC NULLS LAST LIMIT 500
+      ORDER BY COALESCE(sa.completed_at, sa.assessed_at) DESC NULLS LAST
+      LIMIT 500
     `);
     res.json(result.rows);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Advancements list
 router.get('/admin/advancements/list', async (req, res) => {
   try {
     const result = await db.pool.query(`
-      SELECT ar.*, s.name AS school_name FROM advancement_requests ar
-      LEFT JOIN schools s ON ar.school_id = s.id ORDER BY ar.id DESC
+      SELECT ar.*, s.name AS school_name
+      FROM advancement_requests ar
+      LEFT JOIN schools s ON ar.school_id = s.id
+      ORDER BY ar.id DESC
     `);
     res.json(result.rows);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Ops team list
 router.get('/admin/ops/list', async (req, res) => {
   try {
     const result = await db.pool.query(`SELECT * FROM ops_team ORDER BY id DESC`);
@@ -591,38 +611,73 @@ router.get('/admin/ops/list', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Add ops member
+router.post('/admin/ops', async (req, res) => {
+  try {
+    const { phone, name, role } = req.body;
+    const result = await db.pool.query(
+      `INSERT INTO ops_team (phone, name, role) VALUES ($1,$2,$3) RETURNING *`,
+      [phone, name, role]
+    );
+    res.json(result.rows[0]);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Reassessments list
 router.get('/admin/reassessments/list', async (req, res) => {
   try {
     const result = await db.pool.query(`
-      SELECT rs.*, s.name AS school_name FROM reassessment_schedule rs
-      LEFT JOIN schools s ON rs.school_id = s.id ORDER BY rs.scheduled_date DESC
+      SELECT rs.*, s.name AS school_name
+      FROM reassessment_schedule rs
+      LEFT JOIN schools s ON rs.school_id = s.id
+      ORDER BY rs.scheduled_date DESC
     `);
     res.json(result.rows);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Approve-all pending questions
 router.post('/admin/questions/approve-all', async (req, res) => {
   try {
-    const result = await db.pool.query(`UPDATE questions SET active=1 WHERE (active=0 OR active IS NULL) RETURNING id`);
+    const result = await db.pool.query(
+      `UPDATE questions SET active=1 WHERE (active=0 OR active IS NULL) RETURNING id`
+    );
     res.json({ approved: result.rows.length });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Approve by question_id string
 router.post('/admin/questions/approve-by-qid', async (req, res) => {
   try {
     const { question_id } = req.body;
-    await db.pool.query(`UPDATE questions SET active=1 WHERE question_id=$1`, [question_id]);
-    res.json({ approved: true });
-  } catch(err) { res.status(500).json({ error: err.message }); }
-});
-
-router.post('/admin/questions/:id/flag', async (req, res) => {
-  try {
-    await db.pool.query(`UPDATE questions SET active=-1 WHERE id=$1`, [req.params.id]);
+    await db.pool.query(
+      `UPDATE questions SET active=1 WHERE question_id=$1`, [question_id]
+    );
     res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Approve single question by DB id
+router.post('/admin/questions/:id/approve', async (req, res) => {
+  try {
+    await db.pool.query(
+      `UPDATE questions SET active=1 WHERE id=$1`, [req.params.id]
+    );
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Flag question
+router.post('/admin/questions/:id/flag', async (req, res) => {
+  try {
+    await db.pool.query(
+      `UPDATE questions SET active=-1 WHERE id=$1`, [req.params.id]
+    );
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Update question
 router.put('/admin/questions/:id', async (req, res) => {
   try {
     const b = req.body;
@@ -635,7 +690,7 @@ router.put('/admin/questions/:id', async (req, res) => {
         approved_by=$14,
         active=CASE WHEN $14 IS NOT NULL AND $14 != '' THEN 1 ELSE active END
       WHERE id=$15`,
-      [b.question_id, b.topic_tag, parseInt(b.level), b.subject,
+      [b.question_id, b.topic_tag, b.level, b.subject,
        b.question_text, b.question_text_ur,
        b.option_a, b.option_b, b.option_c, b.option_d,
        b.correct_option, b.source_type, b.video_id || null,
@@ -645,6 +700,7 @@ router.put('/admin/questions/:id', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// Create new question
 router.post('/admin/questions', async (req, res) => {
   try {
     const b = req.body;
@@ -655,7 +711,7 @@ router.post('/admin/questions', async (req, res) => {
          source_type, video_id, approved_by, active)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       RETURNING id`,
-      [b.question_id, b.topic_tag, parseInt(b.level), b.subject,
+      [b.question_id, b.topic_tag, b.level, b.subject,
        b.question_text, b.question_text_ur,
        b.option_a, b.option_b, b.option_c, b.option_d,
        b.correct_option, b.source_type, b.video_id || null,
@@ -666,100 +722,124 @@ router.post('/admin/questions', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Analytics page API ────────────────────────────────────────────────────────
+// ── Analytics page API (/api/analytics) ──────────────────────────────────────
 router.get('/api/analytics', async (req, res) => {
   try {
     const { from, to } = req.query;
     const dateFrom = from || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
     const dateTo   = to   || new Date().toISOString().split('T')[0];
 
+    // Daily trend from daily_feedback if it exists, else from student_assessments
     let dailyTrend = [];
     try {
       const dt = await db.pool.query(`
-        SELECT DATE(created_at) AS day,
-          COUNT(DISTINCT school_id)::int AS submissions,
-          (SELECT COUNT(*)::int FROM schools) AS total_schools,
-          ROUND(AVG(attendance_pct)::numeric, 1)::float AS avg_attendance,
-          COALESCE(SUM(tech_used::int), 0)::int AS tech_count,
-          COALESCE(SUM(assembly_held::int), 0)::int AS assembly_count
+        SELECT
+          DATE(created_at)                                  AS day,
+          COUNT(DISTINCT school_id)::int                    AS submissions,
+          (SELECT COUNT(*)::int FROM schools)               AS total_schools,
+          ROUND(AVG(attendance_pct)::numeric, 1)::float     AS avg_attendance,
+          COALESCE(SUM(tech_used::int), 0)::int             AS tech_count,
+          COALESCE(SUM(assembly_held::int), 0)::int         AS assembly_count
         FROM daily_feedback
         WHERE DATE(created_at) BETWEEN $1 AND $2
-        GROUP BY DATE(created_at) ORDER BY day
+        GROUP BY DATE(created_at)
+        ORDER BY day
       `, [dateFrom, dateTo]);
       dailyTrend = dt.rows;
     } catch(e) {
+      // Fallback: build daily trend from student_assessments
       try {
         const dt2 = await db.pool.query(`
-          SELECT DATE(COALESCE(completed_at, assessed_at)) AS day,
-            COUNT(*)::int AS submissions,
-            (SELECT COUNT(*)::int FROM schools) AS total_schools,
-            ROUND(AVG(score_pct)::numeric,1)::float AS avg_attendance,
-            0::int AS tech_count, 0::int AS assembly_count
+          SELECT
+            DATE(COALESCE(completed_at, assessed_at))  AS day,
+            COUNT(*)::int                               AS submissions,
+            (SELECT COUNT(*)::int FROM schools)         AS total_schools,
+            ROUND(AVG(score_pct)::numeric,1)::float     AS avg_attendance,
+            0::int                                      AS tech_count,
+            0::int                                      AS assembly_count
           FROM student_assessments
           WHERE DATE(COALESCE(completed_at, assessed_at)) BETWEEN $1 AND $2
-          GROUP BY DATE(COALESCE(completed_at, assessed_at)) ORDER BY day
+          GROUP BY DATE(COALESCE(completed_at, assessed_at))
+          ORDER BY day
         `, [dateFrom, dateTo]);
         dailyTrend = dt2.rows;
       } catch(e2) {}
     }
 
+    // RC performance
     let rcPerf = [];
     try {
       const rc = await db.pool.query(`
-        SELECT rc.name AS rc_name, rc.region,
-          COUNT(DISTINCT s.id)::int AS total_schools,
-          COUNT(DISTINCT sa.id)::int AS submissions,
+        SELECT
+          rc.name                                                    AS rc_name,
+          rc.region,
+          COUNT(DISTINCT s.id)::int                                  AS total_schools,
+          COUNT(DISTINCT sa.id)::int                                 AS submissions,
           CASE WHEN COUNT(DISTINCT s.id)>0
             THEN ROUND((COUNT(DISTINCT sa.id)::numeric/COUNT(DISTINCT s.id))*100,1)
-            ELSE 0 END::float AS submission_rate,
-          ROUND(AVG(sa.score_pct)::numeric,1)::float AS avg_attendance,
-          0::int AS tech_count, 0::int AS assembly_count
+            ELSE 0 END::float                                        AS submission_rate,
+          ROUND(AVG(sa.score_pct)::numeric,1)::float                AS avg_attendance,
+          0::int                                                     AS tech_count,
+          0::int                                                     AS assembly_count
         FROM regional_coordinators rc
         LEFT JOIN school_coordinators sc ON sc.regional_coordinator_id = rc.id
         LEFT JOIN schools s ON s.id = sc.school_id
         LEFT JOIN student_assessments sa ON sa.school_id = s.id
           AND DATE(COALESCE(sa.completed_at,sa.assessed_at)) BETWEEN $1 AND $2
-        GROUP BY rc.id, rc.name, rc.region ORDER BY submission_rate DESC
+        GROUP BY rc.id, rc.name, rc.region
+        ORDER BY submission_rate DESC
       `, [dateFrom, dateTo]);
       rcPerf = rc.rows;
     } catch(e) {}
 
+    // Coordinator performance
     let coordPerf = [];
     try {
       const co = await db.pool.query(`
-        SELECT sc.name AS coord_name, rc.name AS rc_name, rc.region,
-          COUNT(DISTINCT s.id)::int AS total_schools,
+        SELECT
+          sc.name                                                       AS coord_name,
+          rc.name                                                       AS rc_name,
+          rc.region,
+          COUNT(DISTINCT s.id)::int                                     AS total_schools,
           CASE WHEN COUNT(DISTINCT s.id)>0
             THEN ROUND((COUNT(DISTINCT sa.id)::numeric/COUNT(DISTINCT s.id))*100,1)
-            ELSE 0 END::float AS submission_rate,
-          ROUND(AVG(sa.score_pct)::numeric,1)::float AS avg_attendance,
-          0::int AS tech_count, 0::int AS assembly_count
+            ELSE 0 END::float                                           AS submission_rate,
+          ROUND(AVG(sa.score_pct)::numeric,1)::float                   AS avg_attendance,
+          0::int                                                        AS tech_count,
+          0::int                                                        AS assembly_count
         FROM school_coordinators sc
         LEFT JOIN regional_coordinators rc ON rc.id = sc.regional_coordinator_id
         LEFT JOIN schools s ON s.coordinator_id = sc.id
         LEFT JOIN student_assessments sa ON sa.school_id = s.id
           AND DATE(COALESCE(sa.completed_at,sa.assessed_at)) BETWEEN $1 AND $2
-        GROUP BY sc.id, sc.name, rc.name, rc.region ORDER BY submission_rate DESC
+        GROUP BY sc.id, sc.name, rc.name, rc.region
+        ORDER BY submission_rate DESC
       `, [dateFrom, dateTo]);
       coordPerf = co.rows;
     } catch(e) {}
 
+    // School performance
     let schoolPerf = [];
     try {
       const sp = await db.pool.query(`
-        SELECT s.name AS school_name, s.province AS region, sc.name AS coord_name,
-          COUNT(sa.id)::int AS submissions,
+        SELECT
+          s.name                                                        AS school_name,
+          s.province                                                    AS region,
+          sc.name                                                       AS coord_name,
+          COUNT(sa.id)::int                                             AS submissions,
           CASE WHEN COUNT(sa.id)>0
-            THEN ROUND(COUNT(sa.id)::numeric/GREATEST(($2::date - $1::date + 1),1)*100,1)
-            ELSE 0 END::float AS submission_rate,
-          ROUND(AVG(sa.score_pct)::numeric,1)::float AS avg_attendance,
-          0::int AS tech_count,
-          MAX(COALESCE(sa.completed_at,sa.assessed_at)) AS last_submission
+            THEN ROUND(COUNT(sa.id)::numeric/
+              GREATEST(($2::date - $1::date + 1),1)*100,1)
+            ELSE 0 END::float                                           AS submission_rate,
+          ROUND(AVG(sa.score_pct)::numeric,1)::float                   AS avg_attendance,
+          0::int                                                        AS tech_count,
+          MAX(COALESCE(sa.completed_at,sa.assessed_at))                AS last_submission
         FROM schools s
         LEFT JOIN school_coordinators sc ON sc.id = s.coordinator_id
         LEFT JOIN student_assessments sa ON sa.school_id = s.id
           AND DATE(COALESCE(sa.completed_at,sa.assessed_at)) BETWEEN $1 AND $2
-        GROUP BY s.id, s.name, s.province, sc.name ORDER BY submissions DESC
+        GROUP BY s.id, s.name, s.province, sc.name
+        ORDER BY submissions DESC
       `, [dateFrom, dateTo]);
       schoolPerf = sp.rows;
     } catch(e) {}
@@ -768,4 +848,15 @@ router.get('/api/analytics', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+
+router.post('/api/questions/generate-ai', async (req, res) => {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify(req.body)
+    });
+    res.json(await response.json());
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 module.exports = { router };
