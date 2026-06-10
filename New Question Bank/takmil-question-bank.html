@@ -2,355 +2,391 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TAKMIL / Question Bank</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TAKMIL · Question Bank</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#f5f5f3;color:#1a1c18;min-height:100vh}
-.topbar{background:#1c4a2e;color:#fff;padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.topbar-brand{font-weight:800;font-size:15px;letter-spacing:0.5px;display:flex;align-items:center;gap:10px}
-.topbar-brand span{opacity:0.5;font-weight:400}
-.topbar-stats{display:flex;gap:16px;font-size:12px}
-.topbar-stat{display:flex;align-items:center;gap:5px}
-.dot{width:8px;height:8px;border-radius:50%}
-.dot-g{background:#4ade80}.dot-a{background:#fbbf24}.dot-r{background:#f87171}
-.topbar-btn{background:rgba(255,255,255,0.12);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600}
-.topbar-btn:hover{background:rgba(255,255,255,0.2)}
-.layout{display:flex;height:calc(100vh - 52px)}
-.sidebar{width:220px;background:#fff;border-right:1px solid #e5e5e0;overflow-y:auto;padding:16px 0;flex-shrink:0}
-.sb-lbl{font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;padding:8px 12px 4px;display:block}
-.sb-item{padding:7px 12px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:#374151;border-radius:8px;margin:0 6px}
-.sb-item:hover{background:#f3f2ee}
-.sb-item.active{background:#1c4a2e;color:#fff;font-weight:600}
-.sb-item.active .badge{background:rgba(255,255,255,0.2);color:#fff}
-.badge{font-size:11px;background:#f3f2ee;color:#6b7280;padding:1px 7px;border-radius:10px;font-weight:600}
-.sb-div{height:1px;background:#f0f0ec;margin:8px 12px}
-.sb-select{width:calc(100% - 24px);margin:0 12px;padding:7px 10px;background:#f5f5f3;border:1.5px solid #e5e5e0;border-radius:8px;font-size:12px;color:#374151;outline:none;cursor:pointer;display:block}
-.sb-select:focus{border-color:#1c4a2e}
-.sb-gen-btn{width:calc(100% - 24px);margin:8px 12px 4px;padding:9px;background:#1c4a2e;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
-.sb-gen-btn:hover{background:#256038}
-.main{flex:1;overflow:auto;padding:20px}
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.sc{background:#fff;border-radius:12px;padding:16px 20px;border:1px solid #e5e5e0}
-.sc-num{font-size:28px;font-weight:900;line-height:1}
-.sc-lbl{font-size:12px;color:#9ca3af;margin-top:4px}
-.sc.apr .sc-num{color:#1c4a2e}
-.sc.pnd .sc-num{color:#b45309}
-.sc.flg .sc-num{color:#dc2626}
-.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
-.srch{flex:1;min-width:200px;position:relative}
-.srch input{width:100%;padding:8px 12px 8px 34px;border:1.5px solid #e5e5e0;border-radius:8px;font-size:13px;outline:none;background:#fff}
-.srch input:focus{border-color:#1c4a2e}
-.srch-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af}
-.tb-btn{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid #e5e5e0;background:#fff;color:#374151}
-.tb-btn:hover{background:#f5f5f3}
-.tb-btn.pri{background:#1c4a2e;color:#fff;border-color:#1c4a2e}
-.tb-btn.pri:hover{background:#256038}
-.tb-sel{padding:8px 10px;border:1.5px solid #e5e5e0;border-radius:8px;font-size:12px;background:#fff;color:#374151;outline:none}
-.q-count-lbl{font-size:12px;color:#9ca3af;white-space:nowrap}
-.tbl-wrap{background:#fff;border-radius:12px;border:1px solid #e5e5e0;overflow:hidden}
+:root{
+  --green:#1a4731;--green2:#22573b;--green3:#e8f5ee;
+  --amber:#92400e;--amber2:#fef3c7;
+  --red:#991b1b;--red2:#fee2e2;
+  --blue:#1e40af;--blue2:#dbeafe;
+  --pink:#831843;--pink2:#fce7f3;
+  --text:#111827;--text2:#6b7280;--text3:#9ca3af;
+  --bg:#f9fafb;--bg2:#ffffff;--border:#e5e7eb;--border2:#f3f4f6;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* NAV */
+nav{background:var(--green);color:#fff;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.nav-brand{font-weight:800;font-size:16px;letter-spacing:.3px;display:flex;align-items:center;gap:10px}
+.nav-sep{opacity:.35;font-weight:300;font-size:18px}
+.nav-pills{display:flex;gap:6px}
+.nav-pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(255,255,255,.1);color:#fff;border:none;cursor:pointer;transition:.15s}
+.nav-pill:hover{background:rgba(255,255,255,.2)}
+.nav-pill.active{background:#fff;color:var(--green)}
+
+/* LAYOUT */
+.wrap{display:flex;min-height:calc(100vh - 56px)}
+
+/* SIDEBAR */
+aside{width:240px;background:#fff;border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.aside-sec{padding:0 12px 4px}
+.aside-lbl{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;padding:12px 8px 6px;display:block}
+.aside-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;cursor:pointer;transition:.1s;font-size:13px;color:var(--text)}
+.aside-row:hover{background:var(--bg)}
+.aside-row.on{background:var(--green);color:#fff;font-weight:600}
+.aside-row.on .pill{background:rgba(255,255,255,.2);color:#fff}
+.pill{font-size:11px;background:var(--bg);color:var(--text2);padding:1px 8px;border-radius:12px;font-weight:600;min-width:24px;text-align:center}
+.aside-sep{height:1px;background:var(--border2);margin:6px 12px}
+.aside-select{width:calc(100% - 24px);margin:4px 12px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;color:var(--text);background:#fff;outline:none;cursor:pointer}
+.aside-select:focus{border-color:var(--green)}
+.gen-btn{display:block;width:calc(100% - 24px);margin:12px 12px 4px;padding:10px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;transition:.15s}
+.gen-btn:hover{background:var(--green2)}
+
+/* MAIN */
+main{flex:1;padding:24px;overflow:auto}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+.stat-n{font-size:30px;font-weight:800;line-height:1;color:var(--text)}
+.stat-l{font-size:12px;color:var(--text3);margin-top:5px;font-weight:500}
+.stat.apr .stat-n{color:var(--green)}
+.stat.pnd .stat-n{color:var(--amber)}
+.stat.flg .stat-n{color:var(--red)}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.search-box{flex:1;min-width:220px;position:relative}
+.search-box input{width:100%;padding:9px 14px 9px 38px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:'Inter',sans-serif;outline:none;background:#fff}
+.search-box input:focus{border-color:var(--green)}
+.search-box::before{content:'🔍';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
+.btn{padding:9px 16px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--text);font-family:'Inter',sans-serif;transition:.15s;display:flex;align-items:center;gap:5px}
+.btn:hover{background:var(--bg);border-color:#d1d5db}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.green:hover{background:var(--green2)}
+.sort-sel{padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-size:12px;font-family:'Inter',sans-serif;background:#fff;color:var(--text);outline:none}
+.q-lbl{font-size:12px;color:var(--text3);font-weight:500;white-space:nowrap}
+
+/* TABLE */
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
 table{width:100%;border-collapse:collapse}
-thead th{background:#f9f9f7;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #e5e5e0}
-tbody tr{border-bottom:1px solid #f0f0ec}
-tbody tr:hover{background:#fafaf8}
-tbody tr:last-child{border-bottom:none}
-td{padding:10px 14px;font-size:13px;vertical-align:middle}
-.id-cell{font-size:10px;color:#9ca3af;font-family:monospace;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.stag{font-size:10px;font-weight:800;padding:2px 8px;border-radius:5px;text-transform:uppercase}
-.stag.math{background:#FEF3C7;color:#92400E}
-.stag.english{background:#DBEAFE;color:#1E40AF}
-.stag.urdu{background:#FCE7F3;color:#831843}
-.lvl-badge{background:#f3f2ee;color:#374151;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px}
-.q-text{font-size:13px;color:#1a1c18;line-height:1.4}
-.q-ans{margin-top:3px;font-size:11px;color:#15803d;font-weight:600}
-.q-cell{max-width:480px}
-.sp{font-size:10px;font-weight:800;padding:3px 9px;border-radius:5px;text-transform:uppercase}
-.sp-approved{background:#dcfce7;color:#166534}
-.sp-pending{background:#FEF3C7;color:#92400E}
-.sp-flagged{background:#fee2e2;color:#991b1b}
-.acts{display:flex;gap:6px}
-.act{font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;border:1px solid;font-weight:600}
-.act-ok{background:#dcfce7;color:#166534;border-color:#86efac}
-.act-ok:hover{background:#bbf7d0}
-.act-ed{background:#f3f2ee;color:#374151;border-color:#e5e5e0}
-.act-ed:hover{background:#e5e5e0}
-.empty td{text-align:center;padding:40px;color:#9ca3af;font-size:13px}
+th{padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;background:#fafafa;border-bottom:1px solid var(--border)}
+td{padding:11px 16px;vertical-align:middle;border-bottom:1px solid var(--border2)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+.id-col{font-size:10px;color:var(--text3);font-family:monospace;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.subj-tag{display:inline-block;font-size:10px;font-weight:800;padding:3px 9px;border-radius:5px;text-transform:uppercase;letter-spacing:.3px}
+.t-math{background:var(--amber2);color:var(--amber)}
+.t-english{background:var(--blue2);color:var(--blue)}
+.t-urdu{background:var(--pink2);color:var(--pink)}
+.lvl-tag{display:inline-block;background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px}
+.q-wrap .q-main{font-size:13px;line-height:1.45;color:var(--text)}
+.q-wrap .q-ans{margin-top:3px;font-size:11px;color:#15803d;font-weight:600}
+.status-tag{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;text-transform:uppercase}
+.s-approved{background:#dcfce7;color:#166534}
+.s-pending{background:var(--amber2);color:var(--amber)}
+.s-flagged{background:var(--red2);color:var(--red)}
+.row-acts{display:flex;gap:6px}
+.act{font-size:11px;padding:4px 11px;border-radius:6px;cursor:pointer;font-weight:600;border:1px solid;font-family:'Inter',sans-serif;transition:.1s}
+.a-ok{background:#dcfce7;color:#166534;border-color:#86efac}.a-ok:hover{background:#bbf7d0}
+.a-ed{background:var(--bg);color:var(--text);border-color:var(--border)}.a-ed:hover{background:#e5e7eb}
+.empty-row td{text-align:center;padding:48px;color:var(--text3);font-size:13px}
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="topbar-brand">TAKMIL <span>/</span> QUESTION BANK</div>
-  <div class="topbar-stats">
-    <div class="topbar-stat"><div class="dot dot-g"></div><span id="tb-tot">0</span> Total</div>
-    <div class="topbar-stat"><div class="dot dot-g"></div><span id="tb-apr">0</span> Approved</div>
-    <div class="topbar-stat"><div class="dot dot-a"></div><span id="tb-pnd">0</span> Pending</div>
-    <div class="topbar-stat"><div class="dot dot-r"></div><span id="tb-flg">0</span> Flagged</div>
+
+<nav>
+  <div class="nav-brand">TAKMIL <span class="nav-sep">|</span> Question Bank</div>
+  <div class="nav-pills">
+    <button class="nav-pill active" onclick="location.href='/question-bank'">Question Bank</button>
+    <button class="nav-pill" onclick="location.href='/question-generator'">Generator</button>
+    <button class="nav-pill" onclick="location.href='/'">Home</button>
   </div>
-  <button class="topbar-btn" onclick="location.href='/'">⌂ Home</button>
-</div>
-<div class="layout">
-<div class="sidebar">
-  <span class="sb-lbl">Subject</span>
-  <div class="sb-item active" onclick="setSubj('',this)"><span>All Subjects</span><span class="badge" id="c-all">0</span></div>
-  <div class="sb-item" onclick="setSubj('Math',this)"><span>Math</span><span class="badge" id="c-math">0</span></div>
-  <div class="sb-item" onclick="setSubj('English',this)"><span>English</span><span class="badge" id="c-en">0</span></div>
-  <div class="sb-item" onclick="setSubj('Urdu',this)"><span>اردو / Urdu</span><span class="badge" id="c-ur">0</span></div>
-  <div class="sb-div"></div>
-  <span class="sb-lbl">Grade / Level</span>
-  <select class="sb-select" onchange="setLvl(this.value)">
-    <option value="">All Levels</option>
-    <optgroup label="Primary (1–12)">
-      <option value="Primary:1">Primary — Level 1</option>
-      <option value="Primary:2">Primary — Level 2</option>
-      <option value="Primary:3">Primary — Level 3</option>
-      <option value="Primary:4">Primary — Level 4</option>
-      <option value="Primary:5">Primary — Level 5</option>
-      <option value="Primary:6">Primary — Level 6</option>
-      <option value="Primary:7">Primary — Level 7</option>
-      <option value="Primary:8">Primary — Level 8</option>
-      <option value="Primary:9">Primary — Level 9</option>
-      <option value="Primary:10">Primary — Level 10</option>
-      <option value="Primary:11">Primary — Level 11</option>
-      <option value="Primary:12">Primary — Level 12</option>
-    </optgroup>
-    <optgroup label="Elementary Grade 6">
-      <option value="Grade 6:1">Grade 6 — Level 1</option>
-      <option value="Grade 6:2">Grade 6 — Level 2</option>
-      <option value="Grade 6:3">Grade 6 — Level 3</option>
-    </optgroup>
-    <optgroup label="Elementary Grade 7">
-      <option value="Grade 7:1">Grade 7 — Level 1</option>
-      <option value="Grade 7:2">Grade 7 — Level 2</option>
-      <option value="Grade 7:3">Grade 7 — Level 3</option>
-    </optgroup>
-    <optgroup label="Elementary Grade 8">
-      <option value="Grade 8:1">Grade 8 — Level 1</option>
-      <option value="Grade 8:2">Grade 8 — Level 2</option>
-      <option value="Grade 8:3">Grade 8 — Level 3</option>
-    </optgroup>
-  </select>
-  <div class="sb-div"></div>
-  <span class="sb-lbl">Status</span>
-  <div class="sb-item active" onclick="setStat('',this)"><span>All Status</span></div>
-  <div class="sb-item" onclick="setStat('approved',this)"><span>✓ Approved</span><span class="badge" id="c-apr">0</span></div>
-  <div class="sb-item" onclick="setStat('pending',this)"><span>⏳ Pending</span><span class="badge" id="c-pnd">0</span></div>
-  <div class="sb-item" onclick="setStat('flagged',this)"><span>⚑ Flagged</span><span class="badge" id="c-flg">0</span></div>
-  <div class="sb-div"></div>
-  <button class="sb-gen-btn" onclick="location.href='/question-generator'">+ Question Generator</button>
-</div>
-<div class="main">
-  <div class="stats-row">
-    <div class="sc"><div class="sc-num" id="s-tot">0</div><div class="sc-lbl">Total Questions</div></div>
-    <div class="sc apr"><div class="sc-num" id="s-apr">0</div><div class="sc-lbl">Approved</div></div>
-    <div class="sc pnd"><div class="sc-num" id="s-pnd">0</div><div class="sc-lbl">Pending Review</div></div>
-    <div class="sc flg"><div class="sc-num" id="s-flg">0</div><div class="sc-lbl">Flagged</div></div>
+</nav>
+
+<div class="wrap">
+<aside>
+  <div class="aside-sec">
+    <span class="aside-lbl">Subject</span>
+    <div class="aside-row on" id="s-all"  onclick="setSubj('',this)"><span>All Subjects</span><span class="pill" id="c-all">0</span></div>
+    <div class="aside-row"    id="s-math" onclick="setSubj('Math',this)"><span>Math</span><span class="pill" id="c-math">0</span></div>
+    <div class="aside-row"    id="s-en"   onclick="setSubj('English',this)"><span>English</span><span class="pill" id="c-en">0</span></div>
+    <div class="aside-row"    id="s-ur"   onclick="setSubj('Urdu',this)"><span>اردو / Urdu</span><span class="pill" id="c-ur">0</span></div>
   </div>
-  <div class="toolbar">
-    <div class="srch"><span class="srch-ico">🔍</span><input type="text" id="srch-inp" placeholder="Search questions, IDs, topics..." oninput="applyF()"></div>
-    <select class="tb-sel" onchange="sortOrder=this.value;applyF()">
-      <option value="newest">Newest first</option>
-      <option value="oldest">Oldest first</option>
+
+  <div class="aside-sep"></div>
+
+  <div class="aside-sec">
+    <span class="aside-lbl">Grade &amp; Level</span>
+    <select class="aside-select" onchange="setLvl(this.value)">
+      <option value="">All Levels</option>
+      <optgroup label="── Primary (1–12)">
+        <option value="Primary|1">Primary — Level 1</option>
+        <option value="Primary|2">Primary — Level 2</option>
+        <option value="Primary|3">Primary — Level 3</option>
+        <option value="Primary|4">Primary — Level 4</option>
+        <option value="Primary|5">Primary — Level 5</option>
+        <option value="Primary|6">Primary — Level 6</option>
+        <option value="Primary|7">Primary — Level 7</option>
+        <option value="Primary|8">Primary — Level 8</option>
+        <option value="Primary|9">Primary — Level 9</option>
+        <option value="Primary|10">Primary — Level 10</option>
+        <option value="Primary|11">Primary — Level 11</option>
+        <option value="Primary|12">Primary — Level 12</option>
+      </optgroup>
+      <optgroup label="── Grade 6">
+        <option value="Grade 6|1">Grade 6 — Level 1</option>
+        <option value="Grade 6|2">Grade 6 — Level 2</option>
+        <option value="Grade 6|3">Grade 6 — Level 3</option>
+      </optgroup>
+      <optgroup label="── Grade 7">
+        <option value="Grade 7|1">Grade 7 — Level 1</option>
+        <option value="Grade 7|2">Grade 7 — Level 2</option>
+        <option value="Grade 7|3">Grade 7 — Level 3</option>
+      </optgroup>
+      <optgroup label="── Grade 8">
+        <option value="Grade 8|1">Grade 8 — Level 1</option>
+        <option value="Grade 8|2">Grade 8 — Level 2</option>
+        <option value="Grade 8|3">Grade 8 — Level 3</option>
+      </optgroup>
     </select>
-    <button class="tb-btn" onclick="approveAll()">✓ Approve all pending</button>
-    <button class="tb-btn" onclick="exportCSV()">+ Export CSV</button>
-    <button class="tb-btn pri" onclick="document.getElementById('csv-inp').click()">+ Import CSV</button>
-    <input type="file" id="csv-inp" accept=".csv" style="display:none" onchange="importCSV(this)">
-    <button class="tb-btn" onclick="loadAll()">↻ Refresh</button>
-    <span class="q-count-lbl" id="q-lbl">0 questions</span>
   </div>
-  <div class="tbl-wrap">
+
+  <div class="aside-sep"></div>
+
+  <div class="aside-sec">
+    <span class="aside-lbl">Status</span>
+    <div class="aside-row on" id="st-all" onclick="setStat('',this)"><span>All Status</span></div>
+    <div class="aside-row" id="st-apr"   onclick="setStat('approved',this)"><span>✓ Approved</span><span class="pill" id="c-apr">0</span></div>
+    <div class="aside-row" id="st-pnd"   onclick="setStat('pending',this)"><span>⏳ Pending</span><span class="pill" id="c-pnd">0</span></div>
+    <div class="aside-row" id="st-flg"   onclick="setStat('flagged',this)"><span>⚑ Flagged</span><span class="pill" id="c-flg">0</span></div>
+  </div>
+
+  <div class="aside-sep"></div>
+  <a class="gen-btn" href="/question-generator">+ Question Generator</a>
+</aside>
+
+<main>
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="n-tot">0</div><div class="stat-l">Total Questions</div></div>
+    <div class="stat apr"><div class="stat-n" id="n-apr">0</div><div class="stat-l">Approved — Ready</div></div>
+    <div class="stat pnd"><div class="stat-n" id="n-pnd">0</div><div class="stat-l">Pending Review</div></div>
+    <div class="stat flg"><div class="stat-n" id="n-flg">0</div><div class="stat-l">Flagged</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-box"><input type="text" id="srch" placeholder="Search questions, IDs, topics…" oninput="go()"></div>
+    <select class="sort-sel" onchange="sortOrd=this.value;go()">
+      <option value="new">Newest first</option>
+      <option value="old">Oldest first</option>
+    </select>
+    <button class="btn" onclick="approveAll()">✓ Approve pending</button>
+    <button class="btn" onclick="doExport()">↓ Export CSV</button>
+    <button class="btn green" onclick="document.getElementById('fi').click()">↑ Import CSV</button>
+    <input type="file" id="fi" accept=".csv" style="display:none" onchange="doImport(this)">
+    <button class="btn" onclick="load()">↻ Refresh</button>
+    <span class="q-lbl" id="qlbl">0 questions</span>
+  </div>
+
+  <div class="card">
     <table>
       <thead><tr>
-        <th style="width:130px">#</th>
+        <th style="width:120px">#</th>
         <th style="width:80px">Subject</th>
-        <th style="width:120px">Level</th>
+        <th style="width:120px">Grade / Level</th>
         <th>Question &amp; Answer</th>
         <th style="width:90px">Status</th>
         <th style="width:110px">Actions</th>
       </tr></thead>
-      <tbody id="q-tbody"><tr class="empty"><td colspan="6">⏳ Loading...</td></tr></tbody>
+      <tbody id="tb"><tr class="empty-row"><td colspan="6">⏳ Loading questions…</td></tr></tbody>
     </table>
   </div>
+</main>
 </div>
-</div>
+
 <script>
-let QS=[],filtered=[],activeSubj='',activeLvlVal='',activeStat='',sortOrder='newest';
+'use strict';
+let QS=[], filt=[], fSubj='', fLvl='', fStat='', sortOrd='new';
 
-function parseLvl(v){
-  if(!v) return {grade:'',lvl:0};
-  const p=v.split(':');
-  return {grade:p[0]||'',lvl:parseInt(p[1])||0};
-}
+// Parse dropdown value  "Primary|7"  or  "Grade 6|2"
+function parseLvl(v){ if(!v)return{g:'',n:0}; const p=v.split('|'); return{g:p[0],n:parseInt(p[1])||0}; }
 
-async function loadAll(){
-  document.getElementById('q-tbody').innerHTML='<tr class="empty"><td colspan="6">⏳ Loading...</td></tr>';
+async function load(){
+  tb('⏳ Loading…');
   try{
     const r=await fetch('/api/questions/bank?limit=5000');
     if(!r.ok) throw new Error('HTTP '+r.status);
     const d=await r.json();
     QS=(d.questions||d||[]).map(q=>({
-      id:      q.question_id||q.id,
-      subj:    q.subject||'—',
-      lvl:     parseInt(q.level)||0,
-      grade:   q.grade_label||'Primary',
-      q:       q.q_text_english||q.question_text||q.question||'—',
-      ans:     q.correct_option||q.correct_answer||q.answer||'',
-      oa:      q.option_a||'', ob:q.option_b||'', oc:q.option_c||'', od:q.option_d||'',
-      qt:      q.question_type||'text',
-      topic:   q.topic_tag||q.topic||'',
-      status:  q.active===1?'approved':q.active===-1?'flagged':'pending',
-      ts:      q.created_at||''
+      id:    q.question_id||q.id||'',
+      subj:  (q.subject||'').trim(),
+      lvl:   parseInt(q.level)||0,
+      grade: (q.grade_label||'Primary').trim(),
+      text:  q.q_text_english||q.question_text||q.question||'',
+      ans:   q.correct_option||q.correct_answer||q.answer||'',
+      oa:q.option_a||'',ob:q.option_b||'',oc:q.option_c||'',od:q.option_d||'',
+      qt:    (q.question_type||'text').toUpperCase(),
+      topic: q.topic_tag||q.topic||'',
+      stat:  q.active===1?'approved':q.active===-1?'flagged':'pending',
+      ts:    q.created_at||''
     }));
-    applyF(); updateCounts();
-  }catch(e){
-    document.getElementById('q-tbody').innerHTML='<tr class="empty"><td colspan="6">❌ '+e.message+'</td></tr>';
-  }
+    go(); counts();
+  }catch(e){ tb('❌ Failed to load: '+e.message); }
 }
 
-function applyF(){
-  const s=document.getElementById('srch-inp').value.toLowerCase();
-  const lp=parseLvl(activeLvlVal);
-  filtered=QS.filter(q=>{
-    if(activeSubj && q.subj!==activeSubj) return false;
-    if(activeLvlVal){
-      if(q.lvl!==lp.lvl) return false;
-      if(lp.grade && q.grade && !q.grade.startsWith(lp.grade)) return false;
+function go(){
+  const s=document.getElementById('srch').value.toLowerCase();
+  const lp=parseLvl(fLvl);
+  filt=QS.filter(q=>{
+    if(fSubj && q.subj!==fSubj) return false;
+    if(fLvl){
+      // Level number must match
+      if(q.lvl!==lp.n) return false;
+      // Grade must match (if question has grade_label)
+      if(q.grade && lp.g && !q.grade.startsWith(lp.g)) return false;
     }
-    if(activeStat && q.status!==activeStat) return false;
-    if(s && !q.q.toLowerCase().includes(s) && !String(q.id).toLowerCase().includes(s) && !q.topic.toLowerCase().includes(s)) return false;
+    if(fStat && q.stat!==fStat) return false;
+    if(s && !q.text.toLowerCase().includes(s) && !q.id.toLowerCase().includes(s) && !q.topic.toLowerCase().includes(s)) return false;
     return true;
   });
-  if(sortOrder==='oldest') filtered.sort((a,b)=>a.ts.localeCompare(b.ts));
-  else filtered.sort((a,b)=>b.ts.localeCompare(a.ts));
-  renderT();
+  if(sortOrd==='old') filt.sort((a,b)=>a.ts.localeCompare(b.ts));
+  else filt.sort((a,b)=>b.ts.localeCompare(a.ts));
+  render();
 }
 
 function ansHtml(q){
   const a=q.ans; if(!a) return '';
-  const qt=(q.qt||'text').toUpperCase().replace(/[^A-Z]/g,'');
+  const qt=q.qt.replace(/[^A-Z]/g,'');
   if(qt==='MCQ'||qt==='TEXT'||qt==='PICTURE'){
-    const m={A:q.oa,B:q.ob,C:q.oc,D:q.od};
-    const t=m[a]||'';
-    return `<div class="q-ans">\u2713 ${a}${t?' \u2014 '+t:''}</div>`;
+    const m={A:q.oa,B:q.ob,C:q.oc,D:q.od}, t=m[a]||'';
+    return `<div class="q-ans">✓ ${a}${t?' — '+t:''}</div>`;
   }
-  return `<div class="q-ans">\u2713 ${a}</div>`;
+  return `<div class="q-ans">✓ ${a}</div>`;
 }
 
 function lvlHtml(q){
-  const g=q.grade||'Primary';
-  const isElem=g.startsWith('Grade');
-  return `<span class="lvl-badge">${isElem?g+' L'+q.lvl:'L'+q.lvl}</span>`;
+  const isElem=q.grade.startsWith('Grade');
+  return `<span class="lvl-tag">${isElem?q.grade+' · L'+q.lvl:'L'+q.lvl}</span>`;
 }
 
-function renderT(){
-  document.getElementById('q-lbl').textContent=filtered.length+' questions';
-  const tb=document.getElementById('q-tbody');
-  if(!filtered.length){tb.innerHTML='<tr class="empty"><td colspan="6">No questions found</td></tr>';return;}
-  const show=filtered.slice(0,300);
-  tb.innerHTML=show.map(q=>`
+function subjHtml(s){
+  const k=s.toLowerCase();
+  return `<span class="subj-tag t-${k}">${s}</span>`;
+}
+
+function render(){
+  document.getElementById('qlbl').textContent=filt.length+' questions';
+  const show=filt.slice(0,300);
+  if(!show.length){ tb('No questions found'); return; }
+  document.getElementById('tb').innerHTML=show.map(q=>`
     <tr>
-      <td class="id-cell" title="${q.id}">#${q.id.slice(-8)}</td>
-      <td><span class="stag ${(q.subj||'').toLowerCase()}">${q.subj}</span></td>
+      <td class="id-col" title="${q.id}">#${q.id.slice(-10)}</td>
+      <td>${subjHtml(q.subj)}</td>
       <td>${lvlHtml(q)}</td>
-      <td class="q-cell"><div class="q-text">${q.q}</div>${ansHtml(q)}</td>
-      <td><span class="sp sp-${q.status}">${q.status}</span></td>
-      <td><div class="acts">
-        ${q.status!=='approved'?`<button class="act act-ok" onclick="approveQ('${q.id}',event)">\u2713</button>`:''}
-        <button class="act act-ed" onclick="editQ('${q.id}',event)">\u270e Edit</button>
+      <td class="q-wrap">
+        <div class="q-main">${q.text}</div>
+        ${ansHtml(q)}
+      </td>
+      <td><span class="status-tag s-${q.stat}">${q.stat}</span></td>
+      <td><div class="row-acts">
+        ${q.stat!=='approved'?`<button class="act a-ok" onclick="approve('${q.id}',event)">✓</button>`:''}
+        <button class="act a-ed" onclick="editQ('${q.id}',event)">✎ Edit</button>
       </div></td>
     </tr>`).join('');
-  if(filtered.length>300) tb.innerHTML+=`<tr class="empty"><td colspan="6">Showing 300 of ${filtered.length} — refine filters to see more</td></tr>`;
+  if(filt.length>300){
+    document.getElementById('tb').innerHTML+=`<tr class="empty-row"><td colspan="6">Showing 300 of ${filt.length} — use filters to narrow down</td></tr>`;
+  }
 }
 
-function updateCounts(){
-  const tot=QS.length, apr=QS.filter(q=>q.status==='approved').length,
-        pnd=QS.filter(q=>q.status==='pending').length, flg=QS.filter(q=>q.status==='flagged').length,
-        math=QS.filter(q=>q.subj==='Math').length, en=QS.filter(q=>q.subj==='English').length,
-        ur=QS.filter(q=>q.subj==='Urdu').length;
-  ['tot','apr','pnd','flg'].forEach((k,i)=>['tb-tot','tb-apr','tb-pnd','tb-flg'].forEach(()=>{}));
-  document.getElementById('tb-tot').textContent=tot;
-  document.getElementById('tb-apr').textContent=apr;
-  document.getElementById('tb-pnd').textContent=pnd;
-  document.getElementById('tb-flg').textContent=flg;
-  document.getElementById('s-tot').textContent=tot;
-  document.getElementById('s-apr').textContent=apr;
-  document.getElementById('s-pnd').textContent=pnd;
-  document.getElementById('s-flg').textContent=flg;
+function tb(msg){ document.getElementById('tb').innerHTML=`<tr class="empty-row"><td colspan="6">${msg}</td></tr>`; }
+
+function counts(){
+  const tot=QS.length, apr=QS.filter(q=>q.stat==='approved').length,
+        pnd=QS.filter(q=>q.stat==='pending').length, flg=QS.filter(q=>q.stat==='flagged').length;
+  ['tot','apr','pnd','flg'].forEach(k=>document.getElementById('n-'+k).textContent={tot,apr,pnd,flg}[k]);
   document.getElementById('c-all').textContent=tot;
-  document.getElementById('c-math').textContent=math;
-  document.getElementById('c-en').textContent=en;
-  document.getElementById('c-ur').textContent=ur;
+  document.getElementById('c-math').textContent=QS.filter(q=>q.subj==='Math').length;
+  document.getElementById('c-en').textContent=QS.filter(q=>q.subj==='English').length;
+  document.getElementById('c-ur').textContent=QS.filter(q=>q.subj==='Urdu').length;
   document.getElementById('c-apr').textContent=apr;
   document.getElementById('c-pnd').textContent=pnd;
   document.getElementById('c-flg').textContent=flg;
 }
 
 function setSubj(s,el){
-  activeSubj=s;
-  document.querySelectorAll('.sidebar .sb-item').forEach(x=>x.classList.remove('active'));
-  if(el) el.classList.add('active');
-  applyF();
-}
-function setLvl(v){activeLvlVal=v;applyF();}
-function setStat(s,el){
-  activeStat=s;
-  el.closest('.sidebar').querySelectorAll('.sb-item').forEach(x=>{
-    if(['All Status','✓ Approved','⏳ Pending','⚑ Flagged'].some(t=>x.textContent.includes(t.split(' ')[1]||t))) x.classList.remove('active');
+  fSubj=s;
+  document.querySelectorAll('aside .aside-row').forEach(x=>{
+    if(['s-all','s-math','s-en','s-ur'].includes(x.id)) x.classList.remove('on');
   });
-  el.classList.add('active'); applyF();
+  el.classList.add('on'); go();
 }
 
-async function approveQ(id,e){
+function setLvl(v){ fLvl=v; go(); }
+
+function setStat(s,el){
+  fStat=s;
+  ['st-all','st-apr','st-pnd','st-flg'].forEach(id=>{
+    const x=document.getElementById(id); if(x) x.classList.remove('on');
+  });
+  el.classList.add('on'); go();
+}
+
+async function approve(id,e){
   e.stopPropagation();
   const q=QS.find(x=>x.id===id); if(!q) return;
-  q.status='approved';
-  try{await fetch('/api/questions/'+id+'/approve',{method:'POST'});}catch(_){}
-  applyF(); updateCounts();
+  q.stat='approved';
+  try{ await fetch('/api/questions/'+id+'/approve',{method:'POST'}); }catch(_){}
+  go(); counts();
 }
+
 async function editQ(id,e){
   e.stopPropagation();
   const q=QS.find(x=>x.id===id); if(!q) return;
-  const nq=prompt('Edit question:',q.q);
-  if(nq&&nq.trim()){q.q=nq.trim();applyF();}
+  const nq=prompt('Edit question:',q.text);
+  if(nq&&nq.trim()){ q.text=nq.trim(); go(); }
 }
+
 async function approveAll(){
-  QS.filter(q=>q.status==='pending').forEach(q=>q.status='approved');
-  try{await fetch('/api/questions/approve-all',{method:'POST'});}catch(_){}
-  applyF(); updateCounts();
+  QS.filter(q=>q.stat==='pending').forEach(q=>q.stat='approved');
+  try{ await fetch('/api/questions/approve-all',{method:'POST'}); }catch(_){}
+  go(); counts();
 }
-function exportCSV(){
+
+function doExport(){
   const rows=[['ID','Subject','Level','Grade','Question','Answer','Status','Topic']];
-  filtered.forEach(q=>rows.push([q.id,q.subj,q.lvl,q.grade,'"'+q.q.replace(/"/g,'""')+'"','"'+q.ans.replace(/"/g,'""')+'"',q.status,q.topic]));
+  filt.forEach(q=>rows.push([q.id,q.subj,q.lvl,q.grade,'"'+q.text.replace(/"/g,'""')+'"','"'+q.ans.replace(/"/g,'""')+'"',q.stat,q.topic]));
   const b=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='questions.csv';a.click();
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='questions.csv'; a.click();
 }
-async function importCSV(input){
-  const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=async e=>{
-    const lines=e.target.result.split('\n').filter(l=>l.trim());
-    const headers=lines[0].split(',').map(h=>h.trim().toLowerCase());
-    const col=(...ns)=>{for(const n of ns){const i=headers.indexOf(n);if(i>=0)return i;}return -1;};
-    const qi=col('q_text_english','question_text','question');
-    if(qi<0){alert('No question column found');return;}
-    const rows=[];
-    for(let i=1;i<lines.length;i++){
-      const vals=lines[i].split(',');
-      const row={};
-      headers.forEach((h,j)=>row[h]=(vals[j]||'').replace(/^"|"$/g,'').trim());
-      if(row[headers[qi]]) rows.push(row);
-    }
-    try{
-      const r=await fetch('/api/questions/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questions:rows})});
-      const d=await r.json();
-      alert('Imported: '+d.imported+', Skipped: '+d.skipped+', Errors: '+d.errors+(d.lastError?'\n'+d.lastError:''));
-      loadAll();
-    }catch(err){alert('Import failed: '+err.message);}
-  };
-  reader.readAsText(file);
-  input.value='';
+
+async function doImport(inp){
+  const file=inp.files[0]; if(!file) return;
+  const text=await file.text();
+  const lines=text.split('\n').filter(l=>l.trim());
+  const hdrs=lines[0].split(',').map(h=>h.trim().toLowerCase());
+  const ci=(...ns)=>{ for(const n of ns){ const i=hdrs.indexOf(n); if(i>=0)return i; } return -1; };
+  const qi=ci('q_text_english','question_text','question');
+  if(qi<0){ alert('No question column found in CSV'); inp.value=''; return; }
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    const vals=lines[i].split(',');
+    const row={};
+    hdrs.forEach((h,j)=>row[h]=(vals[j]||'').replace(/^"|"$/g,'').trim());
+    if(row[hdrs[qi]]) rows.push(row);
+  }
+  try{
+    const r=await fetch('/api/questions/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questions:rows})});
+    const d=await r.json();
+    alert('Imported: '+d.imported+'\nSkipped: '+d.skipped+'\nErrors: '+d.errors+(d.lastError?'\n'+d.lastError:''));
+    load();
+  }catch(err){ alert('Import failed: '+err.message); }
+  inp.value='';
 }
-loadAll();
+
+load();
 </script>
 </body>
 </html>
