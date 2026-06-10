@@ -518,17 +518,13 @@ function setSubject(s,el){
   });
   el.classList.add('active'); applyFilters();
 }
-function setLevel(val){
-  activeLevel = val;
-  // Parse "P|7" => level=7, grade=Primary  OR  "G6|1" => level=1, grade=Grade 6
-  if(!val) { window._filterLevel=''; window._filterGrade=''; }
-  else {
-    const parts = val.split('|');
-    window._filterLevel = parts[1] || '';
-    window._filterGrade = parts[0]==='P' ? 'Primary' : 'Grade '+parts[0].replace('G','');
-  }
-  loading = false;
-  loadFromAPI();
+function setLevel(l){
+  activeLevel = l;
+  // Extract level number: "P|7" -> 7, "G6|1" -> 1, "L7" -> 7, "" -> 0
+  if(!l) { window._lvlNum = 0; }
+  else if(l.includes('|')) { window._lvlNum = parseInt(l.split('|')[1]); }
+  else { window._lvlNum = parseInt(l.replace('L','')); }
+  applyFilters();
 }
 function setStatus(s,el){
   activeStatus=s;
