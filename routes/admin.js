@@ -6,6 +6,16 @@ const router = require('express').Router();
 const db     = require('../database');
 const path   = require('path');
 
+// ── grade_label helper ────────────────────────────────────────────────────────
+// Derives "Primary|6" / "Elementary|7" from a numeric level.
+// Primary = 1-6,  Elementary = 7-11
+function gradeLabel(level) {
+  const n = parseInt(level);
+  if (!n) return null;
+  return (n <= 6 ? 'Primary' : 'Elementary') + '|' + n;
+}
+
+
 // ── HTML pages ────────────────────────────────────────────────────────────────
 router.get('/dashboard',     (req, res) => res.sendFile(path.join(__dirname, '../dashboard.html')));
 router.get('/import',        (req, res) => res.sendFile(path.join(__dirname, '../import.html')));
@@ -119,18 +129,19 @@ router.post('/api/questions/save', async (req, res) => {
       if (!qLevel) { continue; } // skip if no level at all
       await db.pool.query(`
         INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
-          option_a, option_b, option_c, option_d, correct_option, question_type, active, created_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,1,NOW())
+          option_a, option_b, option_c, option_d, correct_option, question_type, grade_label, active, created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,1,NOW())
         ON CONFLICT (question_id) DO UPDATE SET
           level=$2, subject=$3, topic_tag=$4,
           q_text_english=COALESCE(NULLIF($5,''), questions.q_text_english),
           q_text_urdu=COALESCE(NULLIF($6,''), questions.q_text_urdu),
           option_a=$7, option_b=$8, option_c=$9, option_d=$10,
-          correct_option=$11, question_type=$12, active=1`,
+          correct_option=$11, question_type=$12, grade_label=$13, active=1`,
         [q.question_id, qLevel, q.subject || subject, q.topic_tag || topic || null,
          q.question_text || q.q_text_english || null, q.q_text_urdu || null,
          q.option_a, q.option_b, q.option_c, q.option_d,
-         q.correct_option, q.question_type || 'MCQ']);
+         q.correct_option, q.question_type || 'MCQ',
+         gradeLabel(qLevel)]);
       saved++;
     }
     res.json({ saved, message: `${saved} questions saved to database` });
@@ -194,18 +205,34 @@ router.get('/api/questions/export', async (req, res) => {
 // ── Question Bank dashboard route ─────────────────────────────────────────────
 router.get('/api/questions/bank', async (req, res) => {
   try {
-    const { subject, level, status, limit = 2000 } = req.query;
     let query = `SELECT
       question_id AS id, subject, level, topic_tag,
       COALESCE(q_text_english, q_text_urdu) AS question,
       q_text_english, q_text_urdu, image_url,
-      option_a, option_b, option_c, option_d, correct_option,
+      option_a, option_b, option_c, option_d, correct_option, question_type,
+      grade_label,
       CASE WHEN active=1 THEN 'approved' WHEN active=-1 THEN 'flagged' ELSE 'pending' END AS status,
       active, created_at
       FROM questions WHERE 1=1`;
     const params = [];
-    if (subject) { params.push(subject);         query += ` AND subject=$${params.length}`; }
-    if (level)   { params.push(parseInt(level)); query += ` AND level=$${params.length}`; }
+    const { subject, level, grade_label, status, limit = 2000 } = req.query;
+    if (subject)     { params.push(subject);         query += ` AND subject=${params.length}`; }
+    // Accept both numeric level ("6") and grade_label format ("Primary|6")
+    if (grade_label) {
+      const parts = grade_label.split('|');
+      const gl    = grade_label;
+      const lvl   = parts.length === 2 ? parseInt(parts[1]) : null;
+      if (lvl) {
+        // Match rows by grade_label string OR by integer level (covers legacy rows without grade_label)
+        params.push(gl); params.push(lvl);
+        query += ` AND (grade_label=${params.length - 1} OR (grade_label IS NULL AND level=${params.length}))`;
+      } else {
+        params.push(gl);
+        query += ` AND grade_label=${params.length}`;
+      }
+    } else if (level) {
+      params.push(parseInt(level)); query += ` AND level=${params.length}`;
+    }
     if (status === 'approved') query += ` AND active=1`;
     if (status === 'pending')  query += ` AND (active=0 OR active IS NULL)`;
     if (status === 'flagged')  query += ` AND active=-1`;
@@ -245,7 +272,9 @@ router.post('/api/questions/import', async (req, res) => {
             (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
              image_url, question_type, option_a, option_b, option_c, option_d,
              correct_option, active, created_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,NOW())
+          VALUES ($1,$2,$3,$4,$5,$6,$7::text,
+            COALESCE(NULLIF($14,''), CASE WHEN $7::text IS NOT NULL AND $7::text!='' THEN 'picture' ELSE 'text' END),
+            $8,$9,$10,$11,$12,$13,$15,NOW())
           ON CONFLICT (question_id) DO UPDATE SET
             level          = $2,
             subject        = $3,
