@@ -542,7 +542,7 @@ function applyFilters(){
   const search=document.getElementById('search-inp').value.toLowerCase();
   filtered=QUESTIONS.filter(q=>
     (!activeSubject||q.subject===activeSubject)&&
-    (!activeLevel||q.level===activeLevel)&&
+    (!activeLevel||(parseInt(q.level)===window._lvlNum && (!window._lvlGrade||!q.grade_label||(q.grade_label||"").startsWith(window._lvlGrade))))&&
     (!activeStatus||q.status===activeStatus)&&
     (!search||q.question.toLowerCase().includes(search)||String(q.id).includes(search)||(q.topic||'').toLowerCase().includes(search))
   );
