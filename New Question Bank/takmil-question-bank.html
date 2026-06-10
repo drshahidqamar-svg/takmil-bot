@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL / Question Bank</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f5f5f3;color:#1a1c18;min-height:100vh}
+.topbar{background:#1c4a2e;color:#fff;padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-brand{font-weight:800;font-size:15px;letter-spacing:0.5px;display:flex;align-items:center;gap:10px}
+.topbar-brand span{opacity:0.5;font-weight:400}
+.topbar-stats{display:flex;gap:16px;font-size:12px}
+.topbar-stat{display:flex;align-items:center;gap:5px}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot-g{background:#4ade80}.dot-a{background:#fbbf24}.dot-r{background:#f87171}
+.topbar-btn{background:rgba(255,255,255,0.12);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600}
+.topbar-btn:hover{background:rgba(255,255,255,0.2)}
+.layout{display:flex;height:calc(100vh - 52px)}
+.sidebar{width:220px;background:#fff;border-right:1px solid #e5e5e0;overflow-y:auto;padding:16px 0;flex-shrink:0}
+.sb-lbl{font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;padding:8px 12px 4px;display:block}
+.sb-item{padding:7px 12px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:#374151;border-radius:8px;margin:0 6px}
+.sb-item:hover{background:#f3f2ee}
+.sb-item.active{background:#1c4a2e;color:#fff;font-weight:600}
+.sb-item.active .badge{background:rgba(255,255,255,0.2);color:#fff}
+.badge{font-size:11px;background:#f3f2ee;color:#6b7280;padding:1px 7px;border-radius:10px;font-weight:600}
+.sb-div{height:1px;background:#f0f0ec;margin:8px 12px}
+.sb-select{width:calc(100% - 24px);margin:0 12px;padding:7px 10px;background:#f5f5f3;border:1.5px solid #e5e5e0;border-radius:8px;font-size:12px;color:#374151;outline:none;cursor:pointer;display:block}
+.sb-select:focus{border-color:#1c4a2e}
+.sb-gen-btn{width:calc(100% - 24px);margin:8px 12px 4px;padding:9px;background:#1c4a2e;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+.sb-gen-btn:hover{background:#256038}
+.main{flex:1;overflow:auto;padding:20px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.sc{background:#fff;border-radius:12px;padding:16px 20px;border:1px solid #e5e5e0}
+.sc-num{font-size:28px;font-weight:900;line-height:1}
+.sc-lbl{font-size:12px;color:#9ca3af;margin-top:4px}
+.sc.apr .sc-num{color:#1c4a2e}
+.sc.pnd .sc-num{color:#b45309}
+.sc.flg .sc-num{color:#dc2626}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.srch{flex:1;min-width:200px;position:relative}
+.srch input{width:100%;padding:8px 12px 8px 34px;border:1.5px solid #e5e5e0;border-radius:8px;font-size:13px;outline:none;background:#fff}
+.srch input:focus{border-color:#1c4a2e}
+.srch-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af}
+.tb-btn{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid #e5e5e0;background:#fff;color:#374151}
+.tb-btn:hover{background:#f5f5f3}
+.tb-btn.pri{background:#1c4a2e;color:#fff;border-color:#1c4a2e}
+.tb-btn.pri:hover{background:#256038}
+.tb-sel{padding:8px 10px;border:1.5px solid #e5e5e0;border-radius:8px;font-size:12px;background:#fff;color:#374151;outline:none}
+.q-count-lbl{font-size:12px;color:#9ca3af;white-space:nowrap}
+.tbl-wrap{background:#fff;border-radius:12px;border:1px solid #e5e5e0;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{background:#f9f9f7;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #e5e5e0}
+tbody tr{border-bottom:1px solid #f0f0ec}
+tbody tr:hover{background:#fafaf8}
+tbody tr:last-child{border-bottom:none}
+td{padding:10px 14px;font-size:13px;vertical-align:middle}
+.id-cell{font-size:10px;color:#9ca3af;font-family:monospace;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stag{font-size:10px;font-weight:800;padding:2px 8px;border-radius:5px;text-transform:uppercase}
+.stag.math{background:#FEF3C7;color:#92400E}
+.stag.english{background:#DBEAFE;color:#1E40AF}
+.stag.urdu{background:#FCE7F3;color:#831843}
+.lvl-badge{background:#f3f2ee;color:#374151;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px}
+.q-text{font-size:13px;color:#1a1c18;line-height:1.4}
+.q-ans{margin-top:3px;font-size:11px;color:#15803d;font-weight:600}
+.q-cell{max-width:480px}
+.sp{font-size:10px;font-weight:800;padding:3px 9px;border-radius:5px;text-transform:uppercase}
+.sp-approved{background:#dcfce7;color:#166534}
+.sp-pending{background:#FEF3C7;color:#92400E}
+.sp-flagged{background:#fee2e2;color:#991b1b}
+.acts{display:flex;gap:6px}
+.act{font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;border:1px solid;font-weight:600}
+.act-ok{background:#dcfce7;color:#166534;border-color:#86efac}
+.act-ok:hover{background:#bbf7d0}
+.act-ed{background:#f3f2ee;color:#374151;border-color:#e5e5e0}
+.act-ed:hover{background:#e5e5e0}
+.empty td{text-align:center;padding:40px;color:#9ca3af;font-size:13px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-brand">TAKMIL <span>/</span> QUESTION BANK</div>
+  <div class="topbar-stats">
+    <div class="topbar-stat"><div class="dot dot-g"></div><span id="tb-tot">0</span> Total</div>
+    <div class="topbar-stat"><div class="dot dot-g"></div><span id="tb-apr">0</span> Approved</div>
+    <div class="topbar-stat"><div class="dot dot-a"></div><span id="tb-pnd">0</span> Pending</div>
+    <div class="topbar-stat"><div class="dot dot-r"></div><span id="tb-flg">0</span> Flagged</div>
+  </div>
+  <button class="topbar-btn" onclick="location.href='/'">⌂ Home</button>
+</div>
+<div class="layout">
+<div class="sidebar">
+  <span class="sb-lbl">Subject</span>
+  <div class="sb-item active" onclick="setSubj('',this)"><span>All Subjects</span><span class="badge" id="c-all">0</span></div>
+  <div class="sb-item" onclick="setSubj('Math',this)"><span>Math</span><span class="badge" id="c-math">0</span></div>
+  <div class="sb-item" onclick="setSubj('English',this)"><span>English</span><span class="badge" id="c-en">0</span></div>
+  <div class="sb-item" onclick="setSubj('Urdu',this)"><span>اردو / Urdu</span><span class="badge" id="c-ur">0</span></div>
+  <div class="sb-div"></div>
+  <span class="sb-lbl">Grade / Level</span>
+  <select class="sb-select" onchange="setLvl(this.value)">
+    <option value="">All Levels</option>
+    <optgroup label="Primary (1–12)">
+      <option value="Primary:1">Primary — Level 1</option>
+      <option value="Primary:2">Primary — Level 2</option>
+      <option value="Primary:3">Primary — Level 3</option>
+      <option value="Primary:4">Primary — Level 4</option>
+      <option value="Primary:5">Primary — Level 5</option>
+      <option value="Primary:6">Primary — Level 6</option>
+      <option value="Primary:7">Primary — Level 7</option>
+      <option value="Primary:8">Primary — Level 8</option>
+      <option value="Primary:9">Primary — Level 9</option>
+      <option value="Primary:10">Primary — Level 10</option>
+      <option value="Primary:11">Primary — Level 11</option>
+      <option value="Primary:12">Primary — Level 12</option>
+    </optgroup>
+    <optgroup label="Elementary Grade 6">
+      <option value="Grade 6:1">Grade 6 — Level 1</option>
+      <option value="Grade 6:2">Grade 6 — Level 2</option>
+      <option value="Grade 6:3">Grade 6 — Level 3</option>
+    </optgroup>
+    <optgroup label="Elementary Grade 7">
+      <option value="Grade 7:1">Grade 7 — Level 1</option>
+      <option value="Grade 7:2">Grade 7 — Level 2</option>
+      <option value="Grade 7:3">Grade 7 — Level 3</option>
+    </optgroup>
+    <optgroup label="Elementary Grade 8">
+      <option value="Grade 8:1">Grade 8 — Level 1</option>
+      <option value="Grade 8:2">Grade 8 — Level 2</option>
+      <option value="Grade 8:3">Grade 8 — Level 3</option>
+    </optgroup>
+  </select>
+  <div class="sb-div"></div>
+  <span class="sb-lbl">Status</span>
+  <div class="sb-item active" onclick="setStat('',this)"><span>All Status</span></div>
+  <div class="sb-item" onclick="setStat('approved',this)"><span>✓ Approved</span><span class="badge" id="c-apr">0</span></div>
+  <div class="sb-item" onclick="setStat('pending',this)"><span>⏳ Pending</span><span class="badge" id="c-pnd">0</span></div>
+  <div class="sb-item" onclick="setStat('flagged',this)"><span>⚑ Flagged</span><span class="badge" id="c-flg">0</span></div>
+  <div class="sb-div"></div>
+  <button class="sb-gen-btn" onclick="location.href='/question-generator'">+ Question Generator</button>
+</div>
+<div class="main">
+  <div class="stats-row">
+    <div class="sc"><div class="sc-num" id="s-tot">0</div><div class="sc-lbl">Total Questions</div></div>
+    <div class="sc apr"><div class="sc-num" id="s-apr">0</div><div class="sc-lbl">Approved</div></div>
+    <div class="sc pnd"><div class="sc-num" id="s-pnd">0</div><div class="sc-lbl">Pending Review</div></div>
+    <div class="sc flg"><div class="sc-num" id="s-flg">0</div><div class="sc-lbl">Flagged</div></div>
+  </div>
+  <div class="toolbar">
+    <div class="srch"><span class="srch-ico">🔍</span><input type="text" id="srch-inp" placeholder="Search questions, IDs, topics..." oninput="applyF()"></div>
+    <select class="tb-sel" onchange="sortOrder=this.value;applyF()">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+    </select>
+    <button class="tb-btn" onclick="approveAll()">✓ Approve all pending</button>
+    <button class="tb-btn" onclick="exportCSV()">+ Export CSV</button>
+    <button class="tb-btn pri" onclick="document.getElementById('csv-inp').click()">+ Import CSV</button>
+    <input type="file" id="csv-inp" accept=".csv" style="display:none" onchange="importCSV(this)">
+    <button class="tb-btn" onclick="loadAll()">↻ Refresh</button>
+    <span class="q-count-lbl" id="q-lbl">0 questions</span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:130px">#</th>
+        <th style="width:80px">Subject</th>
+        <th style="width:120px">Level</th>
+        <th>Question &amp; Answer</th>
+        <th style="width:90px">Status</th>
+        <th style="width:110px">Actions</th>
+      </tr></thead>
+      <tbody id="q-tbody"><tr class="empty"><td colspan="6">⏳ Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+</div>
+<script>
+let QS=[],filtered=[],activeSubj='',activeLvlVal='',activeStat='',sortOrder='newest';
+
+function parseLvl(v){
+  if(!v) return {grade:'',lvl:0};
+  const p=v.split(':');
+  return {grade:p[0]||'',lvl:parseInt(p[1])||0};
+}
+
+async function loadAll(){
+  document.getElementById('q-tbody').innerHTML='<tr class="empty"><td colspan="6">⏳ Loading...</td></tr>';
+  try{
+    const r=await fetch('/api/questions/bank?limit=5000');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    QS=(d.questions||d||[]).map(q=>({
+      id:      q.question_id||q.id,
+      subj:    q.subject||'—',
+      lvl:     parseInt(q.level)||0,
+      grade:   q.grade_label||'Primary',
+      q:       q.q_text_english||q.question_text||q.question||'—',
+      ans:     q.correct_option||q.correct_answer||q.answer||'',
+      oa:      q.option_a||'', ob:q.option_b||'', oc:q.option_c||'', od:q.option_d||'',
+      qt:      q.question_type||'text',
+      topic:   q.topic_tag||q.topic||'',
+      status:  q.active===1?'approved':q.active===-1?'flagged':'pending',
+      ts:      q.created_at||''
+    }));
+    applyF(); updateCounts();
+  }catch(e){
+    document.getElementById('q-tbody').innerHTML='<tr class="empty"><td colspan="6">❌ '+e.message+'</td></tr>';
+  }
+}
+
+function applyF(){
+  const s=document.getElementById('srch-inp').value.toLowerCase();
+  const lp=parseLvl(activeLvlVal);
+  filtered=QS.filter(q=>{
+    if(activeSubj && q.subj!==activeSubj) return false;
+    if(activeLvlVal){
+      if(q.lvl!==lp.lvl) return false;
+      if(lp.grade && q.grade && !q.grade.startsWith(lp.grade)) return false;
+    }
+    if(activeStat && q.status!==activeStat) return false;
+    if(s && !q.q.toLowerCase().includes(s) && !String(q.id).toLowerCase().includes(s) && !q.topic.toLowerCase().includes(s)) return false;
+    return true;
+  });
+  if(sortOrder==='oldest') filtered.sort((a,b)=>a.ts.localeCompare(b.ts));
+  else filtered.sort((a,b)=>b.ts.localeCompare(a.ts));
+  renderT();
+}
+
+function ansHtml(q){
+  const a=q.ans; if(!a) return '';
+  const qt=(q.qt||'text').toUpperCase().replace(/[^A-Z]/g,'');
+  if(qt==='MCQ'||qt==='TEXT'||qt==='PICTURE'){
+    const m={A:q.oa,B:q.ob,C:q.oc,D:q.od};
+    const t=m[a]||'';
+    return `<div class="q-ans">\u2713 ${a}${t?' \u2014 '+t:''}</div>`;
+  }
+  return `<div class="q-ans">\u2713 ${a}</div>`;
+}
+
+function lvlHtml(q){
+  const g=q.grade||'Primary';
+  const isElem=g.startsWith('Grade');
+  return `<span class="lvl-badge">${isElem?g+' L'+q.lvl:'L'+q.lvl}</span>`;
+}
+
+function renderT(){
+  document.getElementById('q-lbl').textContent=filtered.length+' questions';
+  const tb=document.getElementById('q-tbody');
+  if(!filtered.length){tb.innerHTML='<tr class="empty"><td colspan="6">No questions found</td></tr>';return;}
+  const show=filtered.slice(0,300);
+  tb.innerHTML=show.map(q=>`
+    <tr>
+      <td class="id-cell" title="${q.id}">#${q.id.slice(-8)}</td>
+      <td><span class="stag ${(q.subj||'').toLowerCase()}">${q.subj}</span></td>
+      <td>${lvlHtml(q)}</td>
+      <td class="q-cell"><div class="q-text">${q.q}</div>${ansHtml(q)}</td>
+      <td><span class="sp sp-${q.status}">${q.status}</span></td>
+      <td><div class="acts">
+        ${q.status!=='approved'?`<button class="act act-ok" onclick="approveQ('${q.id}',event)">\u2713</button>`:''}
+        <button class="act act-ed" onclick="editQ('${q.id}',event)">\u270e Edit</button>
+      </div></td>
+    </tr>`).join('');
+  if(filtered.length>300) tb.innerHTML+=`<tr class="empty"><td colspan="6">Showing 300 of ${filtered.length} — refine filters to see more</td></tr>`;
+}
+
+function updateCounts(){
+  const tot=QS.length, apr=QS.filter(q=>q.status==='approved').length,
+        pnd=QS.filter(q=>q.status==='pending').length, flg=QS.filter(q=>q.status==='flagged').length,
+        math=QS.filter(q=>q.subj==='Math').length, en=QS.filter(q=>q.subj==='English').length,
+        ur=QS.filter(q=>q.subj==='Urdu').length;
+  ['tot','apr','pnd','flg'].forEach((k,i)=>['tb-tot','tb-apr','tb-pnd','tb-flg'].forEach(()=>{}));
+  document.getElementById('tb-tot').textContent=tot;
+  document.getElementById('tb-apr').textContent=apr;
+  document.getElementById('tb-pnd').textContent=pnd;
+  document.getElementById('tb-flg').textContent=flg;
+  document.getElementById('s-tot').textContent=tot;
+  document.getElementById('s-apr').textContent=apr;
+  document.getElementById('s-pnd').textContent=pnd;
+  document.getElementById('s-flg').textContent=flg;
+  document.getElementById('c-all').textContent=tot;
+  document.getElementById('c-math').textContent=math;
+  document.getElementById('c-en').textContent=en;
+  document.getElementById('c-ur').textContent=ur;
+  document.getElementById('c-apr').textContent=apr;
+  document.getElementById('c-pnd').textContent=pnd;
+  document.getElementById('c-flg').textContent=flg;
+}
+
+function setSubj(s,el){
+  activeSubj=s;
+  document.querySelectorAll('.sidebar .sb-item').forEach(x=>x.classList.remove('active'));
+  if(el) el.classList.add('active');
+  applyF();
+}
+function setLvl(v){activeLvlVal=v;applyF();}
+function setStat(s,el){
+  activeStat=s;
+  el.closest('.sidebar').querySelectorAll('.sb-item').forEach(x=>{
+    if(['All Status','✓ Approved','⏳ Pending','⚑ Flagged'].some(t=>x.textContent.includes(t.split(' ')[1]||t))) x.classList.remove('active');
+  });
+  el.classList.add('active'); applyF();
+}
+
+async function approveQ(id,e){
+  e.stopPropagation();
+  const q=QS.find(x=>x.id===id); if(!q) return;
+  q.status='approved';
+  try{await fetch('/api/questions/'+id+'/approve',{method:'POST'});}catch(_){}
+  applyF(); updateCounts();
+}
+async function editQ(id,e){
+  e.stopPropagation();
+  const q=QS.find(x=>x.id===id); if(!q) return;
+  const nq=prompt('Edit question:',q.q);
+  if(nq&&nq.trim()){q.q=nq.trim();applyF();}
+}
+async function approveAll(){
+  QS.filter(q=>q.status==='pending').forEach(q=>q.status='approved');
+  try{await fetch('/api/questions/approve-all',{method:'POST'});}catch(_){}
+  applyF(); updateCounts();
+}
+function exportCSV(){
+  const rows=[['ID','Subject','Level','Grade','Question','Answer','Status','Topic']];
+  filtered.forEach(q=>rows.push([q.id,q.subj,q.lvl,q.grade,'"'+q.q.replace(/"/g,'""')+'"','"'+q.ans.replace(/"/g,'""')+'"',q.status,q.topic]));
+  const b=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='questions.csv';a.click();
+}
+async function importCSV(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    const lines=e.target.result.split('\n').filter(l=>l.trim());
+    const headers=lines[0].split(',').map(h=>h.trim().toLowerCase());
+    const col=(...ns)=>{for(const n of ns){const i=headers.indexOf(n);if(i>=0)return i;}return -1;};
+    const qi=col('q_text_english','question_text','question');
+    if(qi<0){alert('No question column found');return;}
+    const rows=[];
+    for(let i=1;i<lines.length;i++){
+      const vals=lines[i].split(',');
+      const row={};
+      headers.forEach((h,j)=>row[h]=(vals[j]||'').replace(/^"|"$/g,'').trim());
+      if(row[headers[qi]]) rows.push(row);
+    }
+    try{
+      const r=await fetch('/api/questions/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questions:rows})});
+      const d=await r.json();
+      alert('Imported: '+d.imported+', Skipped: '+d.skipped+', Errors: '+d.errors+(d.lastError?'\n'+d.lastError:''));
+      loadAll();
+    }catch(err){alert('Import failed: '+err.message);}
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+loadAll();
+</script>
+</body>
+</html>
