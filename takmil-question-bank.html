@@ -296,20 +296,37 @@ tbody tr{animation:fade-in 0.25s ease both}
   <div class="sb-divider"></div>
   <div class="sb-sec">
     <div class="sb-lbl">Level</div>
-    <select class="sb-select" onchange="setLevel(this.value, null)">
+    <select class="sb-select" onchange="setLevel(this.value)">
       <option value="">All Levels</option>
-      <option value="L1">Level 1</option>
-      <option value="L2">Level 2</option>
-      <option value="L3">Level 3</option>
-      <option value="L4">Level 4</option>
-      <option value="L5">Level 5</option>
-      <option value="L6">Level 6</option>
-      <option value="L7">Level 7</option>
-      <option value="L8">Level 8</option>
-      <option value="L9">Level 9</option>
-      <option value="L10">Level 10</option>
-      <option value="L11">Level 11</option>
-      <option value="L12">Level 12</option>
+      <optgroup label="Primary (1–12)">
+        <option value="L1">Level 1</option>
+        <option value="L2">Level 2</option>
+        <option value="L3">Level 3</option>
+        <option value="L4">Level 4</option>
+        <option value="L5">Level 5</option>
+        <option value="L6">Level 6</option>
+        <option value="L7">Level 7</option>
+        <option value="L8">Level 8</option>
+        <option value="L9">Level 9</option>
+        <option value="L10">Level 10</option>
+        <option value="L11">Level 11</option>
+        <option value="L12">Level 12</option>
+      </optgroup>
+      <optgroup label="Elementary Grade 6">
+        <option value="L1g6">Grade 6 — Level 1</option>
+        <option value="L2g6">Grade 6 — Level 2</option>
+        <option value="L3g6">Grade 6 — Level 3</option>
+      </optgroup>
+      <optgroup label="Elementary Grade 7">
+        <option value="L1g7">Grade 7 — Level 1</option>
+        <option value="L2g7">Grade 7 — Level 2</option>
+        <option value="L3g7">Grade 7 — Level 3</option>
+      </optgroup>
+      <optgroup label="Elementary Grade 8">
+        <option value="L1g8">Grade 8 — Level 1</option>
+        <option value="L2g8">Grade 8 — Level 2</option>
+        <option value="L3g8">Grade 8 — Level 3</option>
+      </optgroup>
     </select>
   </div>
   <div class="sb-divider"></div>
@@ -448,17 +465,13 @@ let filtered  = [];
 let activeSubject='', activeLevel='', activeStatus='';
 let loading = false;
 
-async function loadFromAPI(subjectFilter, levelFilter){
+async function loadFromAPI(){
   if(loading) return;
   loading = true;
   document.getElementById('q-tbody').innerHTML =
     '<tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8">⏳ Loading questions...</td></tr>';
   try {
-    // Build URL with server-side filters
-    const params = new URLSearchParams({ limit: 500 });
-    if(subjectFilter) params.set('subject', subjectFilter);
-    if(levelFilter) params.set('level', levelFilter.replace('L',''));
-    const resp = await fetch('/api/questions/bank?' + params.toString());
+    const resp = await fetch('/api/questions/bank?limit=2000');
     if(!resp.ok) throw new Error('Server error ' + resp.status);
     const data = await resp.json();
     QUESTIONS = (data.questions || data || []).map(q => ({
@@ -473,8 +486,7 @@ async function loadFromAPI(subjectFilter, levelFilter){
       source:   q.source || '',
     }));
     applyFilters();
-    const filterDesc = [activeSubject, activeLevel ? 'Level '+activeLevel.replace('L','') : ''].filter(Boolean).join(' · ') || 'All';
-showBanner('✅ Loaded ' + QUESTIONS.length + ' questions — ' + filterDesc, '#dcfce7', '#15803d');
+    showBanner('✅ Loaded ' + QUESTIONS.length + ' questions', '#dcfce7', '#15803d');
   } catch(e) {
     QUESTIONS = Array.from({length:10},(_,i)=>({
       id:i+1, subject:['English','Math','Urdu'][i%3],
@@ -501,14 +513,12 @@ function setSubject(s,el){
   document.querySelectorAll('.sb-item').forEach(x=>{
     if(x.closest('.sb-sec')===el.closest('.sb-sec')) x.classList.remove('active');
   });
-  el.classList.add('active');
-  loading = false;
-  loadFromAPI(activeSubject, activeLevel);
+  el.classList.add('active'); applyFilters();
 }
-function setLevel(l,el){
+function setLevel(l){
   activeLevel=l;
-  // Strip "L" prefix for API call — API expects plain integer
-  const levelNum = l ? l.replace('L','') : '';
+  // Strip grade suffix for API call (L1g6 -> L1, L1 -> L1)
+  const levelNum = l ? l.replace(/g\d+$/,'').replace('L','') : '';
   loading = false;
   loadFromAPI(activeSubject, levelNum);
 }
@@ -742,9 +752,7 @@ function parseCSVRow(row){
   return result;
 }
 
-// Show prompt on load — user selects subject/level to fetch questions
-document.getElementById('q-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:48px;color:#94a3b8;font-size:13px">👈 Select a subject and level from the sidebar to load questions</td></tr>';
-document.getElementById('q-count').textContent = 'Select a filter to load';
+loadFromAPI();
 loadBreakdown();
 </script>
 </body>
