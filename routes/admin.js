@@ -7,12 +7,14 @@ const db     = require('../database');
 const path   = require('path');
 
 // ── grade_label helper ────────────────────────────────────────────────────────
-// Derives "Primary|6" / "Elementary|7" from a numeric level.
-// Primary = 1-6,  Elementary = 7-11
-function gradeLabel(level) {
-  const n = parseInt(level);
-  if (!n) return null;
-  return (n <= 6 ? 'Primary' : 'Elementary') + '|' + n;
+// Matches Question Generator's mapToQuestionBank format:
+//   grade_label = "Primary" or "Grade 6" / "Grade 7" / "Grade 8"
+//   level       = integer (1-12 for Primary, 1-3 for Elementary)
+function gradeLabel(gradeStr, level) {
+  // gradeStr is the first part of the dropdown value e.g. "Primary" or "Grade 6"
+  if (gradeStr) return gradeStr;
+  // fallback: derive from level integer alone (legacy)
+  return (parseInt(level) <= 6 ? 'Primary' : 'Grade ' + level);
 }
 
 
@@ -127,6 +129,8 @@ router.post('/api/questions/save', async (req, res) => {
     for (const q of questions) {
       const qLevel = parseInt(q.level || level);
       if (!qLevel) { continue; } // skip if no level at all
+      // Ensure grade_label column exists
+      try { await db.pool.query(`ALTER TABLE questions ADD COLUMN IF NOT EXISTS grade_label TEXT`); } catch(e) {}
       await db.pool.query(`
         INSERT INTO questions (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
           option_a, option_b, option_c, option_d, correct_option, question_type, grade_label, active, created_at)
@@ -141,7 +145,7 @@ router.post('/api/questions/save', async (req, res) => {
          q.question_text || q.q_text_english || null, q.q_text_urdu || null,
          q.option_a, q.option_b, q.option_c, q.option_d,
          q.correct_option, q.question_type || 'MCQ',
-         gradeLabel(qLevel)]);
+         q.grade_label || gradeLabel(null, qLevel)]);
       saved++;
     }
     res.json({ saved, message: `${saved} questions saved to database` });
@@ -216,22 +220,18 @@ router.get('/api/questions/bank', async (req, res) => {
       FROM questions WHERE 1=1`;
     const params = [];
     const { subject, level, grade_label, status, limit = 2000 } = req.query;
-    if (subject)     { params.push(subject);         query += ` AND subject=${params.length}`; }
-    // Accept both numeric level ("6") and grade_label format ("Primary|6")
+    if (subject)     { params.push(subject);         query += ` AND subject=$${params.length}`; }
+    // grade_label filter: sent as "Primary|6" from the UI dropdown
+    // Split into grade_label="Primary" and level=6 to match DB columns
     if (grade_label) {
       const parts = grade_label.split('|');
-      const gl    = grade_label;
-      const lvl   = parts.length === 2 ? parseInt(parts[1]) : null;
-      if (lvl) {
-        // Match rows by grade_label string OR by integer level (covers legacy rows without grade_label)
-        params.push(gl); params.push(lvl);
-        query += ` AND (grade_label=${params.length - 1} OR (grade_label IS NULL AND level=${params.length}))`;
-      } else {
-        params.push(gl);
-        query += ` AND grade_label=${params.length}`;
-      }
+      const gl  = parts[0];   // "Primary" or "Grade 6"
+      const lvl = parts[1] ? parseInt(parts[1]) : null;
+      params.push(gl);
+      query += ` AND grade_label=$${params.length}`;
+      if (lvl) { params.push(lvl); query += ` AND level=$${params.length}`; }
     } else if (level) {
-      params.push(parseInt(level)); query += ` AND level=${params.length}`;
+      params.push(parseInt(level)); query += ` AND level=$${params.length}`;
     }
     if (status === 'approved') query += ` AND active=1`;
     if (status === 'pending')  query += ` AND (active=0 OR active IS NULL)`;
