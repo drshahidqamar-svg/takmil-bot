@@ -298,34 +298,34 @@ tbody tr{animation:fade-in 0.25s ease both}
     <div class="sb-lbl">Level</div>
     <select class="sb-select" onchange="setLevel(this.value)">
       <option value="">All Levels</option>
-      <optgroup label="Primary (1–12)">
-        <option value="L1">Level 1</option>
-        <option value="L2">Level 2</option>
-        <option value="L3">Level 3</option>
-        <option value="L4">Level 4</option>
-        <option value="L5">Level 5</option>
-        <option value="L6">Level 6</option>
-        <option value="L7">Level 7</option>
-        <option value="L8">Level 8</option>
-        <option value="L9">Level 9</option>
-        <option value="L10">Level 10</option>
-        <option value="L11">Level 11</option>
-        <option value="L12">Level 12</option>
+      <optgroup label="Primary (1-12)">
+        <option value="P|1">Primary — Level 1</option>
+        <option value="P|2">Primary — Level 2</option>
+        <option value="P|3">Primary — Level 3</option>
+        <option value="P|4">Primary — Level 4</option>
+        <option value="P|5">Primary — Level 5</option>
+        <option value="P|6">Primary — Level 6</option>
+        <option value="P|7">Primary — Level 7</option>
+        <option value="P|8">Primary — Level 8</option>
+        <option value="P|9">Primary — Level 9</option>
+        <option value="P|10">Primary — Level 10</option>
+        <option value="P|11">Primary — Level 11</option>
+        <option value="P|12">Primary — Level 12</option>
       </optgroup>
       <optgroup label="Elementary Grade 6">
-        <option value="L1g6">Grade 6 — Level 1</option>
-        <option value="L2g6">Grade 6 — Level 2</option>
-        <option value="L3g6">Grade 6 — Level 3</option>
+        <option value="G6|1">Grade 6 — Level 1</option>
+        <option value="G6|2">Grade 6 — Level 2</option>
+        <option value="G6|3">Grade 6 — Level 3</option>
       </optgroup>
       <optgroup label="Elementary Grade 7">
-        <option value="L1g7">Grade 7 — Level 1</option>
-        <option value="L2g7">Grade 7 — Level 2</option>
-        <option value="L3g7">Grade 7 — Level 3</option>
+        <option value="G7|1">Grade 7 — Level 1</option>
+        <option value="G7|2">Grade 7 — Level 2</option>
+        <option value="G7|3">Grade 7 — Level 3</option>
       </optgroup>
       <optgroup label="Elementary Grade 8">
-        <option value="L1g8">Grade 8 — Level 1</option>
-        <option value="L2g8">Grade 8 — Level 2</option>
-        <option value="L3g8">Grade 8 — Level 3</option>
+        <option value="G8|1">Grade 8 — Level 1</option>
+        <option value="G8|2">Grade 8 — Level 2</option>
+        <option value="G8|3">Grade 8 — Level 3</option>
       </optgroup>
     </select>
   </div>
@@ -471,7 +471,7 @@ async function loadFromAPI(){
   document.getElementById('q-tbody').innerHTML =
     '<tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8">⏳ Loading questions...</td></tr>';
   try {
-    const resp = await fetch('/api/questions/bank?limit=2000');
+    const resp = await fetch('/api/questions/bank?limit=500'+(activeSubject?'&subject='+encodeURIComponent(activeSubject):'')+(window._filterLevel?'&level='+window._filterLevel:'')+(window._filterGrade?'&grade_label='+encodeURIComponent(window._filterGrade):''));
     if(!resp.ok) throw new Error('Server error ' + resp.status);
     const data = await resp.json();
     QUESTIONS = (data.questions || data || []).map(q => ({
@@ -480,6 +480,9 @@ async function loadFromAPI(){
       level:    q.level ? 'L'+q.level : (q.level_tag || '—'),
       question: q.question_text || q.question || '—',
       answer:   q.correct_answer || q.answer || '',
+      grade_label: q.grade_label||'',
+      option_a: q.option_a||'', option_b: q.option_b||'', option_c: q.option_c||'', option_d: q.option_d||'',
+      question_type: q.question_type||'text',
       options:  q.options || [],
       topic:    q.topic || '',
       status:   q.status || 'pending',
@@ -515,12 +518,17 @@ function setSubject(s,el){
   });
   el.classList.add('active'); applyFilters();
 }
-function setLevel(l){
-  activeLevel=l;
-  // Strip grade suffix for API call (L1g6 -> L1, L1 -> L1)
-  const levelNum = l ? l.replace(/g\d+$/,'').replace('L','') : '';
+function setLevel(val){
+  activeLevel = val;
+  // Parse "P|7" => level=7, grade=Primary  OR  "G6|1" => level=1, grade=Grade 6
+  if(!val) { window._filterLevel=''; window._filterGrade=''; }
+  else {
+    const parts = val.split('|');
+    window._filterLevel = parts[1] || '';
+    window._filterGrade = parts[0]==='P' ? 'Primary' : 'Grade '+parts[0].replace('G','');
+  }
   loading = false;
-  loadFromAPI(activeSubject, levelNum);
+  loadFromAPI();
 }
 function setStatus(s,el){
   activeStatus=s;
@@ -541,6 +549,16 @@ function applyFilters(){
   renderTable(); renderPipeline(); updateCounts();
 }
 
+function getAnswerHtml(q){
+  const ans=q.answer||''; if(!ans) return '';
+  const qt=(q.question_type||'text').toUpperCase().replace(/[^A-Z]/g,'');
+  if(qt==='MCQ'||qt==='TEXT'||qt==='PICTURE'){
+    const map={A:q.option_a,B:q.option_b,C:q.option_c,D:q.option_d};
+    const txt=map[ans]||'';
+    return '<div style="margin-top:3px;font-size:11px;color:#15803d;font-weight:600">✓ '+ans+(txt?' — '+txt:'')+'</div>';
+  }
+  return '<div style="margin-top:3px;font-size:11px;color:#15803d;font-weight:600">✓ '+ans+'</div>';
+}
 function renderTable(){
   document.getElementById('q-count').textContent=filtered.length+' questions';
   if(!filtered.length){
@@ -552,7 +570,7 @@ function renderTable(){
       <td class="num">#${String(q.id).padStart(3,'0')}</td>
       <td><span class="tag tag-${(q.subject||'').toLowerCase()}">${q.subject}</span></td>
       <td><span class="lvl">${q.level}</span></td>
-      <td class="question-cell">${q.question}</td>
+      <td class="question-cell"><div>${q.question}</div>${getAnswerHtml(q)}</td>
       <td><span class="status-pill sp-${q.status}">${q.status.charAt(0).toUpperCase()+q.status.slice(1)}</span></td>
       <td><div class="acts">
         ${q.status!=='approved'?`<button class="act act-ok" onclick="approveQ(${q.id},event)">✓ Approve</button>`:''}
