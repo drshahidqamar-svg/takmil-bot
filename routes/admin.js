@@ -249,6 +249,7 @@ router.post('/api/questions/import', async (req, res) => {
   try {
     const { questions } = req.body;
     if (!questions || !Array.isArray(questions)) return res.status(400).json({ error: 'questions array required' });
+    try { await db.pool.query(`ALTER TABLE questions ADD COLUMN IF NOT EXISTS grade_label TEXT`); } catch(e) {}
     let imported = 0, skipped = 0, errors = 0, lastError = '';
     for (const row of questions) {
       try {
@@ -267,14 +268,13 @@ router.post('/api/questions/import', async (req, res) => {
         const activeVal   = row.active !== undefined ? parseInt(row.active) : 0;
         const qType       = String(row.question_type || (imageUrl ? 'picture' : 'MCQ')).trim();
         if (!qText) { skipped++; continue; }
+        const glabel = String(row.grade_label || '').trim() || gradeLabel(null, level);
         await db.pool.query(`
           INSERT INTO questions
             (question_id, level, subject, topic_tag, q_text_english, q_text_urdu,
              image_url, question_type, option_a, option_b, option_c, option_d,
-             correct_option, active, created_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7::text,
-            COALESCE(NULLIF($14,''), CASE WHEN $7::text IS NOT NULL AND $7::text!='' THEN 'picture' ELSE 'text' END),
-            $8,$9,$10,$11,$12,$13,$15,NOW())
+             correct_option, grade_label, active, created_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,NOW())
           ON CONFLICT (question_id) DO UPDATE SET
             level          = $2,
             subject        = $3,
@@ -284,9 +284,9 @@ router.post('/api/questions/import', async (req, res) => {
             image_url      = COALESCE(NULLIF($7,''), questions.image_url),
             question_type  = $8,
             option_a=$9, option_b=$10, option_c=$11, option_d=$12,
-            correct_option=$13, active=$14`,
+            correct_option=$13, grade_label=$14, active=$15`,
           [questionId, level, subject, topicTag, qText, qTextUrdu,
-           imageUrl, qType, optA, optB, optC, optD, correctOpt, activeVal]);
+           imageUrl, qType, optA, optB, optC, optD, correctOpt, glabel, activeVal]);
         imported++;
       } catch(err) { lastError = err.message; errors++; }
     }
