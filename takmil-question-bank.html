@@ -296,20 +296,13 @@ tbody tr{animation:fade-in 0.25s ease both}
   <div class="sb-divider"></div>
   <div class="sb-sec">
     <div class="sb-lbl">Level</div>
-    <select class="sb-select" onchange="setLevel(this.value, null)">
+    <select class="sb-select" onchange="setLevel(this.value)">
       <option value="">All Levels</option>
       <option value="L1">Level 1</option>
       <option value="L2">Level 2</option>
       <option value="L3">Level 3</option>
       <option value="L4">Level 4</option>
       <option value="L5">Level 5</option>
-      <option value="L6">Level 6</option>
-      <option value="L7">Level 7</option>
-      <option value="L8">Level 8</option>
-      <option value="L9">Level 9</option>
-      <option value="L10">Level 10</option>
-      <option value="L11">Level 11</option>
-      <option value="L12">Level 12</option>
     </select>
   </div>
   <div class="sb-divider"></div>
@@ -448,17 +441,13 @@ let filtered  = [];
 let activeSubject='', activeLevel='', activeStatus='';
 let loading = false;
 
-async function loadFromAPI(subjectFilter, levelFilter){
+async function loadFromAPI(){
   if(loading) return;
   loading = true;
   document.getElementById('q-tbody').innerHTML =
     '<tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8">⏳ Loading questions...</td></tr>';
   try {
-    // Build URL with server-side filters
-    const params = new URLSearchParams({ limit: 500 });
-    if(subjectFilter) params.set('subject', subjectFilter);
-    if(levelFilter) params.set('level', levelFilter.replace('L',''));
-    const resp = await fetch('/api/questions/bank?' + params.toString());
+    const resp = await fetch('/api/questions/bank?limit=2000');
     if(!resp.ok) throw new Error('Server error ' + resp.status);
     const data = await resp.json();
     QUESTIONS = (data.questions || data || []).map(q => ({
@@ -468,13 +457,15 @@ async function loadFromAPI(subjectFilter, levelFilter){
       question: q.question_text || q.question || '—',
       answer:   q.correct_answer || q.answer || '',
       options:  q.options || [],
+      option_a: q.option_a||'', option_b: q.option_b||'',
+      option_c: q.option_c||'', option_d: q.option_d||'',
+      question_type: q.question_type||'text',
       topic:    q.topic || '',
       status:   q.status || 'pending',
       source:   q.source || '',
     }));
     applyFilters();
-    const filterDesc = [activeSubject, activeLevel ? 'Level '+activeLevel.replace('L','') : ''].filter(Boolean).join(' · ') || 'All';
-showBanner('✅ Loaded ' + QUESTIONS.length + ' questions — ' + filterDesc, '#dcfce7', '#15803d');
+    showBanner('✅ Loaded ' + QUESTIONS.length + ' questions', '#dcfce7', '#15803d');
   } catch(e) {
     QUESTIONS = Array.from({length:10},(_,i)=>({
       id:i+1, subject:['English','Math','Urdu'][i%3],
@@ -501,17 +492,9 @@ function setSubject(s,el){
   document.querySelectorAll('.sb-item').forEach(x=>{
     if(x.closest('.sb-sec')===el.closest('.sb-sec')) x.classList.remove('active');
   });
-  el.classList.add('active');
-  loading = false;
-  loadFromAPI(activeSubject, activeLevel);
+  el.classList.add('active'); applyFilters();
 }
-function setLevel(l,el){
-  activeLevel=l;
-  // Strip "L" prefix for API call — API expects plain integer
-  const levelNum = l ? l.replace('L','') : '';
-  loading = false;
-  loadFromAPI(activeSubject, levelNum);
-}
+function setLevel(l){activeLevel=l;applyFilters();}
 function setStatus(s,el){
   activeStatus=s;
   document.querySelectorAll('.sb-item').forEach(x=>{
@@ -531,6 +514,17 @@ function applyFilters(){
   renderTable(); renderPipeline(); updateCounts();
 }
 
+function getAnswerHtml(q){
+  const ans = q.answer || '';
+  if(!ans) return '';
+  const qtype = (q.question_type||'text').toUpperCase().replace(/[^A-Z]/g,'');
+  if(qtype==='MCQ'||qtype==='TEXT'||qtype==='PICTURE'){
+    const opts={A:q.option_a,B:q.option_b,C:q.option_c,D:q.option_d};
+    const txt=opts[ans]||'';
+    return '<div style="margin-top:3px;font-size:11px;color:#15803d;font-weight:600">✓ '+ans+(txt?' — '+txt:'')+'</div>';
+  }
+  return '<div style="margin-top:3px;font-size:11px;color:#15803d;font-weight:600">✓ '+ans+'</div>';
+}
 function renderTable(){
   document.getElementById('q-count').textContent=filtered.length+' questions';
   if(!filtered.length){
@@ -542,7 +536,7 @@ function renderTable(){
       <td class="num">#${String(q.id).padStart(3,'0')}</td>
       <td><span class="tag tag-${(q.subject||'').toLowerCase()}">${q.subject}</span></td>
       <td><span class="lvl">${q.level}</span></td>
-      <td class="question-cell">${q.question}</td>
+      <td class="question-cell"><div>${q.question}</div>${getAnswerHtml(q)}</td>
       <td><span class="status-pill sp-${q.status}">${q.status.charAt(0).toUpperCase()+q.status.slice(1)}</span></td>
       <td><div class="acts">
         ${q.status!=='approved'?`<button class="act act-ok" onclick="approveQ(${q.id},event)">✓ Approve</button>`:''}
@@ -742,9 +736,7 @@ function parseCSVRow(row){
   return result;
 }
 
-// Show prompt on load — user selects subject/level to fetch questions
-document.getElementById('q-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:48px;color:#94a3b8;font-size:13px">👈 Select a subject and level from the sidebar to load questions</td></tr>';
-document.getElementById('q-count').textContent = 'Select a filter to load';
+loadFromAPI();
 loadBreakdown();
 </script>
 </body>
