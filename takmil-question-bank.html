@@ -298,35 +298,11 @@ tbody tr{animation:fade-in 0.25s ease both}
     <div class="sb-lbl">Level</div>
     <select class="sb-select" onchange="setLevel(this.value)">
       <option value="">All Levels</option>
-      <optgroup label="Primary (1–12)">
-        <option value="L1">Level 1</option>
-        <option value="L2">Level 2</option>
-        <option value="L3">Level 3</option>
-        <option value="L4">Level 4</option>
-        <option value="L5">Level 5</option>
-        <option value="L6">Level 6</option>
-        <option value="L7">Level 7</option>
-        <option value="L8">Level 8</option>
-        <option value="L9">Level 9</option>
-        <option value="L10">Level 10</option>
-        <option value="L11">Level 11</option>
-        <option value="L12">Level 12</option>
-      </optgroup>
-      <optgroup label="Elementary Grade 6">
-        <option value="L1g6">Grade 6 — Level 1</option>
-        <option value="L2g6">Grade 6 — Level 2</option>
-        <option value="L3g6">Grade 6 — Level 3</option>
-      </optgroup>
-      <optgroup label="Elementary Grade 7">
-        <option value="L1g7">Grade 7 — Level 1</option>
-        <option value="L2g7">Grade 7 — Level 2</option>
-        <option value="L3g7">Grade 7 — Level 3</option>
-      </optgroup>
-      <optgroup label="Elementary Grade 8">
-        <option value="L1g8">Grade 8 — Level 1</option>
-        <option value="L2g8">Grade 8 — Level 2</option>
-        <option value="L3g8">Grade 8 — Level 3</option>
-      </optgroup>
+      <option value="L1">Level 1</option>
+      <option value="L2">Level 2</option>
+      <option value="L3">Level 3</option>
+      <option value="L4">Level 4</option>
+      <option value="L5">Level 5</option>
     </select>
   </div>
   <div class="sb-divider"></div>
@@ -462,7 +438,7 @@ tbody tr{animation:fade-in 0.25s ease both}
 // ── Live data from API ────────────────────────────────────────────
 let QUESTIONS = [];
 let filtered  = [];
-let activeSubject='', activeLevel='', activeStatus='';
+let activeSubject='', activeLevel='', activeStatus='', activeGrade='', activeLevelNum='';
 let loading = false;
 
 async function loadFromAPI(){
@@ -471,7 +447,7 @@ async function loadFromAPI(){
   document.getElementById('q-tbody').innerHTML =
     '<tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8">⏳ Loading questions...</td></tr>';
   try {
-    const resp = await fetch('/api/questions/bank?limit=2000');
+    const resp = await fetch('/api/questions/bank?limit=2000'+(activeSubject?'&subject='+encodeURIComponent(activeSubject):'')+(activeLevelNum?'&level='+activeLevelNum:'')+(activeGrade?'&grade_label='+encodeURIComponent(activeGrade):''));
     if(!resp.ok) throw new Error('Server error ' + resp.status);
     const data = await resp.json();
     QUESTIONS = (data.questions || data || []).map(q => ({
@@ -480,6 +456,7 @@ async function loadFromAPI(){
       level:    q.level ? 'L'+q.level : (q.level_tag || '—'),
       question: q.question_text || q.question || '—',
       answer:   q.correct_answer || q.answer || '',
+      grade_label: q.grade_label || '',
       options:  q.options || [],
       topic:    q.topic || '',
       status:   q.status || 'pending',
@@ -516,11 +493,17 @@ function setSubject(s,el){
   el.classList.add('active'); applyFilters();
 }
 function setLevel(l){
-  activeLevel=l;
-  // Strip grade suffix for API call (L1g6 -> L1, L1 -> L1)
-  const levelNum = l ? l.replace(/g\d+$/,'').replace('L','') : '';
+  activeLevel = l;
+  // Parse level value: "L9" = Primary level 9, "L1g6" = Grade 6 level 1
+  if(l && l.includes('g')) {
+    const parts = l.match(/L(\d+)g(\d+)/);
+    if(parts) { activeGrade = 'Grade '+parts[2]; activeLevelNum = parts[1]; }
+  } else {
+    activeGrade = l ? 'Primary' : '';
+    activeLevelNum = l ? l.replace('L','') : '';
+  }
   loading = false;
-  loadFromAPI(activeSubject, levelNum);
+  loadFromAPI();
 }
 function setStatus(s,el){
   activeStatus=s;
