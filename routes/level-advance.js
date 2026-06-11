@@ -140,20 +140,21 @@ router.get('/api/auth/pending-registrations', async (req, res) => {
 // ── Tablet Assessment PIN ─────────────────────────────────────────────────────
 router.post('/api/assess/generate-pin', async (req, res) => {
   try {
-    const { school_identifier, level, subjects, subject, created_by } = req.body;
+    const { school_identifier, level, grade_label: gradeLabel, subjects, subject, created_by } = req.body;
     if (!school_identifier || !level) return res.status(400).json({ error: 'school_identifier and level required' });
     const subjectList = subjects || (subject ? [subject] : ['Math','English','Urdu']);
     const subjectStr  = Array.isArray(subjectList) ? subjectList.join(',') : subjectList;
     const pin_code    = Math.floor(100000 + Math.random() * 900000).toString();
     const expires_at  = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+    try { await db.pool.query(`ALTER TABLE tablet_sessions ADD COLUMN IF NOT EXISTS grade_label TEXT DEFAULT 'Primary'`); } catch(e) {}
     await db.pool.query(`UPDATE tablet_sessions SET active=FALSE WHERE school_identifier=$1 AND level=$2`,
       [school_identifier, parseInt(level)]);
 
     const r = await db.pool.query(`
-      INSERT INTO tablet_sessions (pin_code, school_identifier, level, subject, created_by, expires_at)
-      VALUES ($1,$2,$3,$4,$5,$6) RETURNING id
-    `, [pin_code, school_identifier, parseInt(level), subjectStr, created_by||'coordinator', expires_at]);
+      INSERT INTO tablet_sessions (pin_code, school_identifier, level, grade_label, subject, created_by, expires_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id
+    `, [pin_code, school_identifier, parseInt(level), gradeLabel||'Primary', subjectStr, created_by||'coordinator', expires_at]);
 
     res.json({ pin_code, expires_at, session_id: r.rows[0].id, level, school_identifier, subjects: subjectList });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -345,8 +346,8 @@ router.post('/portal/session/start', async (req, res) => {
       // FIX: if subject is 'All', query all three subjects at this level
       const sf = subjectFilter(effectiveSubject, 2);
       const r  = await db.pool.query(
-        `SELECT * FROM questions WHERE ${sf.clause} AND level=$1 AND active=1 ORDER BY RANDOM() LIMIT 10`,
-        [parseInt(pinRec.level), ...sf.params]
+        `SELECT * FROM questions WHERE ${sf.clause} AND level=$1 AND (grade_label IS NULL OR grade_label=$${sf.params.length+2}) AND active=1 ORDER BY RANDOM() LIMIT 10`,
+        [parseInt(pinRec.level), ...sf.params, pinRec.grade_label||'Primary']
       );
       questions = r.rows;
     }

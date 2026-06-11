@@ -186,13 +186,38 @@ body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
           <select id="sc-select" onchange="loadSchools()"><option value="">-- Select Coordinator --</option></select></div>
         <div class="field"><label>School</label>
           <select id="school-select"><option value="">-- Select School --</option></select></div>
-        <div class="field"><label>Level (1-12)</label>
+        <div class="field"><label>Grade &amp; Level</label>
           <select id="level-select">
             <option value="">-- Select Level --</option>
-            <option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option>
-            <option value="4">Level 4</option><option value="5">Level 5</option><option value="6">Level 6</option>
-            <option value="7">Level 7</option><option value="8">Level 8</option><option value="9">Level 9</option>
-            <option value="10">Level 10</option><option value="11">Level 11</option><option value="12">Level 12</option>
+            <optgroup label="Primary (Levels 1–12)">
+              <option value="Primary|1">Primary — Level 1</option>
+              <option value="Primary|2">Primary — Level 2</option>
+              <option value="Primary|3">Primary — Level 3</option>
+              <option value="Primary|4">Primary — Level 4</option>
+              <option value="Primary|5">Primary — Level 5</option>
+              <option value="Primary|6">Primary — Level 6</option>
+              <option value="Primary|7">Primary — Level 7</option>
+              <option value="Primary|8">Primary — Level 8</option>
+              <option value="Primary|9">Primary — Level 9</option>
+              <option value="Primary|10">Primary — Level 10</option>
+              <option value="Primary|11">Primary — Level 11</option>
+              <option value="Primary|12">Primary — Level 12</option>
+            </optgroup>
+            <optgroup label="Elementary Grade 6">
+              <option value="Grade 6|1">Grade 6 — Level 1</option>
+              <option value="Grade 6|2">Grade 6 — Level 2</option>
+              <option value="Grade 6|3">Grade 6 — Level 3</option>
+            </optgroup>
+            <optgroup label="Elementary Grade 7">
+              <option value="Grade 7|1">Grade 7 — Level 1</option>
+              <option value="Grade 7|2">Grade 7 — Level 2</option>
+              <option value="Grade 7|3">Grade 7 — Level 3</option>
+            </optgroup>
+            <optgroup label="Elementary Grade 8">
+              <option value="Grade 8|1">Grade 8 — Level 1</option>
+              <option value="Grade 8|2">Grade 8 — Level 2</option>
+              <option value="Grade 8|3">Grade 8 — Level 3</option>
+            </optgroup>
           </select></div>
         <div class="field"><label>Assessment Date</label><input type="date" id="assessment-date"></div>
         <div class="field"><label>Teacher WhatsApp</label><input type="text" id="teacher-phone" placeholder="+92300xxxxxxx"></div>
@@ -401,23 +426,28 @@ function loadSchools(){
 async function generatePIN(){
   const sc=document.getElementById('sc-select').value;
   const school=document.getElementById('school-select').value;
-  const level=document.getElementById('level-select').value;
+  const levelVal=document.getElementById('level-select').value;
   const date=document.getElementById('assessment-date').value;
   const phone=document.getElementById('teacher-phone').value;
   const errDiv=document.getElementById('gen-error');
-  if(!sc||!school||!level||!date){errDiv.style.display='block';errDiv.textContent='Please fill in all fields.';return;}
+  if(!sc||!school||!levelVal||!date){errDiv.style.display='block';errDiv.textContent='Please fill in all fields.';return;}
   const today=new Date().toISOString().split('T')[0];
   if(date!==today){errDiv.style.display='block';errDiv.textContent='PINs can only be generated on the assessment date ('+date+'). Today is '+today+'.';return;}
   errDiv.style.display='none';
+  // Parse "Primary|7" or "Grade 6|2"
+  const lvlParts   = levelVal.split('|');
+  const gradeLabel = lvlParts[0]; // "Primary" or "Grade 6"
+  const level      = parseInt(lvlParts[1]);
+  const levelDisplay = gradeLabel === 'Primary' ? 'Primary — Level ' + level : gradeLabel + ' — Level ' + level;
   const btn=document.getElementById('gen-btn');
   btn.disabled=true;btn.textContent='Generating...';
   try{
     const resp=await fetch(BASE+'/admin/pins/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({schoolId:1,level:parseInt(level),subject:'All',cohortSize:30,issuedBy:currentRC.name,teacherPhone:phone||null})});
+      body:JSON.stringify({schoolId:1,level,gradeLabel,subject:'All',cohortSize:30,issuedBy:currentRC.name,teacherPhone:phone||null})});
     const data=await resp.json();
     if(!resp.ok) throw new Error(data.error||'Failed');
     document.getElementById('pin-display').textContent=data.pin;
-    document.getElementById('pin-label').textContent=school+' — Level '+level+' — All Subjects';
+    document.getElementById('pin-label').textContent=school+' — '+levelDisplay+' — All Subjects';
     document.getElementById('pin-meta').textContent='Valid until: '+new Date(data.expiresAt).toLocaleString();
     const waDiv=document.getElementById('wa-status');
     waDiv.className='wa-status '+(phone?'wa-sent':'wa-pending');
