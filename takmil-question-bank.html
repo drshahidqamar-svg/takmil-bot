@@ -523,7 +523,7 @@ function setSubject(s,el){
   document.querySelectorAll('.sb-item').forEach(x=>{
     if(x.closest('.sb-sec')===el.closest('.sb-sec')) x.classList.remove('active');
   });
-  el.classList.add('active'); applyFilters();
+  el.classList.add('active'); loadFromAPI(); // re-fetch with subject filter
 }
 function setLevel(l){
   activeLevel = l;
@@ -542,7 +542,7 @@ function setLevel(l){
     window._filterLevel = lvlNum;      // sent to API as level
     window._lvlGrade    = gradeStr;    // used by applyFilters()
   }
-  loadQuestions();  // re-fetch from server with correct filters
+  loadFromAPI(); // re-fetch from server with correct filters
 }
 function setStatus(s,el){
   activeStatus=s;
