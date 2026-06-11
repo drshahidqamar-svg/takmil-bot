@@ -583,7 +583,7 @@ function renderTable(){
     <tr style="animation-delay:${i*8}ms">
       <td class="num">#${String(q.id).padStart(3,'0')}</td>
       <td><span class="tag tag-${(q.subject||'').toLowerCase()}">${q.subject}</span></td>
-      <td><span class="lvl">${q.level}</span></td>
+      <td><span class="lvl">${(q.grade_label||'Primary')==='Primary'?'P'+q.level:(q.grade_label||'G')+'-L'+q.level}</span></td>
       <td class="question-cell"><div>${q.question}</div>${getAnswerHtml(q)}</td>
       <td><span class="status-pill sp-${q.status}">${q.status.charAt(0).toUpperCase()+q.status.slice(1)}</span></td>
       <td><div class="acts">
