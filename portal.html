@@ -726,10 +726,26 @@ function renderFillBlank(q, opts) {
 
 function renderMatchColumns(q, opts) {
   let pairs = [];
+  // Try JSON first (future-proof)
   try { pairs = JSON.parse(q.option_a || '[]'); } catch(e) { pairs = []; }
+  // Try pipe + arrow format: "Hands → To walk | Legs → To run"
+  if (!pairs.length && q.option_a) {
+    pairs = q.option_a.split('|').map(p => {
+      const s = p.split('→');
+      return { left: (s[0]||'').trim(), right: (s[1]||'').trim() };
+    }).filter(p => p.left && p.right);
+  }
+  // Try correct_option format: "JAPAN-TOKYO, THAILAND-BANGKOK" — comma-separated ITEM-VALUE pairs
   if (!pairs.length) {
-    const raw = q.option_a || '';
-    pairs = raw.split('|').map(p => { const s = p.split('→'); return { left: (s[0]||'').trim(), right: (s[1]||'').trim() }; }).filter(p => p.left);
+    const raw = q.correct || q.correct_option || '';
+    if (raw && raw.includes('-') && !raw.includes('→')) {
+      pairs = raw.split(',').map(p => {
+        const dash = p.indexOf('-');
+        return dash > 0
+          ? { left: p.slice(0, dash).trim(), right: p.slice(dash + 1).trim() }
+          : null;
+      }).filter(Boolean);
+    }
   }
   if (!pairs.length) { opts.innerHTML = '<p style="color:#9ca3af">No pairs available</p>'; document.getElementById('q-next').disabled = false; return; }
 

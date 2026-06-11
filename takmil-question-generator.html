@@ -836,8 +836,11 @@ function mapToQuestionBank(q, i, formGrade) {
     q_text_english: qText,
     q_text_urdu:    (q.subject === 'Urdu') ? qText : '',
     image_url:      q.image_base64 ? 'data:' + (q.image_media_type || 'image/jpeg') + ';base64,' + q.image_base64 : '',
-    // For SentenceBuilder, store ALL words pipe-separated in option_a
-    option_a:       q.type === 'SentenceBuilder' ? (q.words ? q.words.join('|') : '') : stripLetter(opts[0]),
+    // For SentenceBuilder, store words pipe-separated in option_a
+    // For MatchTheColumns, store pairs as 'Left → Right | Left → Right' in option_a
+    option_a:       q.type === 'SentenceBuilder' ? (q.words ? q.words.join('|') : '')
+                  : q.type === 'MatchTheColumns'  ? (q.pairs ? q.pairs.map(p => p.left + ' → ' + p.right).join(' | ') : '')
+                  : stripLetter(opts[0]),
     option_b:       stripLetter(opts[1]),
     option_c:       stripLetter(opts[2]),
     option_d:       stripLetter(opts[3]),
