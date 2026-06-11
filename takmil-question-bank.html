@@ -481,14 +481,15 @@ async function loadFromAPI(){
     if(!resp.ok) throw new Error('Server error ' + resp.status);
     const data = await resp.json();
     QUESTIONS = (data.questions || data || []).map(q => ({
-      id:       q.id || q.question_id,
-      subject:  q.subject || '—',
-      level:    q.level ? 'L'+q.level : (q.level_tag || '—'),
-      question: q.question_text || q.question || '—',
-      answer:   q.correct_answer || q.answer || '',
-      grade_label: q.grade_label||'',
-      option_a: q.option_a||'', option_b: q.option_b||'', option_c: q.option_c||'', option_d: q.option_d||'',
-      question_type: q.question_type||'text',
+      id:           q.id || q.question_id,
+      subject:      q.subject || '—',
+      level:        q.level || '',
+      grade_label:  q.grade_label || '',
+      question:     q.question_text || q.question || '—',
+      answer:       q.correct_option || q.correct_answer || q.answer || '',
+      option_a:     q.option_a||'', option_b: q.option_b||'', option_c: q.option_c||'', option_d: q.option_d||'',
+      question_type: q.question_type || 'MCQ',
+      difficulty:   q.difficulty || '',
       options:  q.options || [],
       topic:    q.topic || '',
       status:   q.status || 'pending',
@@ -663,12 +664,32 @@ function updateCounts(){
 function exportCSV(){
   const src = (filtered.length && filtered.length < QUESTIONS.length) ? filtered : QUESTIONS;
   if(!src.length){ alert('No questions to export'); return; }
-  const headers=['ID','Subject','Level','Question','Answer','Topic','Status','Source'];
-  const rows=src.map(q=>[q.id,q.subject,q.level,q.question,q.answer||'',q.topic||'',q.status,q.source||'']);
-  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
-  a.download='takmil-questions-'+new Date().toISOString().split('T')[0]+'.csv';
+  const diffMap = {1:'easy', 2:'medium', 3:'hard'};
+  const formatGrade = q => {
+    const gl  = q.grade_label || 'Primary';
+    const lvl = q.level || '';
+    return gl === 'Primary' ? 'Primary ' + lvl : gl + ' Level ' + lvl;
+  };
+  // Columns match Question Generator CSV exactly
+  const headers = ['type','question','option_a','option_b','option_c','option_d','correct_answer','difficulty','subject','grade','topic'];
+  const rows = src.map(q => [
+    q.question_type || 'MCQ',
+    q.question,
+    q.option_a || '',
+    q.option_b || '',
+    q.option_c || '',
+    q.option_d || '',
+    q.answer   || '',
+    diffMap[q.difficulty] || 'medium',
+    q.subject,
+    formatGrade(q),
+    q.topic    || ''
+  ]);
+  const esc = v => '"' + String(v==null?'':v).replace(/"/g,'""') + '"';
+  const csv = [headers,...rows].map(r=>r.map(esc).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download = 'takmil-questions-'+new Date().toISOString().split('T')[0]+'.csv';
   a.click();
   showBanner('✅ Exported '+src.length+' questions','#dcfce7','#15803d');
 }
