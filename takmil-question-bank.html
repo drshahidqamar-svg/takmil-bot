@@ -298,34 +298,34 @@ tbody tr{animation:fade-in 0.25s ease both}
     <div class="sb-lbl">Level</div>
     <select class="sb-select" onchange="setLevel(this.value)">
       <option value="">All Levels</option>
-      <optgroup label="Primary (1-12)">
-        <option value="P|1">Primary — Level 1</option>
-        <option value="P|2">Primary — Level 2</option>
-        <option value="P|3">Primary — Level 3</option>
-        <option value="P|4">Primary — Level 4</option>
-        <option value="P|5">Primary — Level 5</option>
-        <option value="P|6">Primary — Level 6</option>
-        <option value="P|7">Primary — Level 7</option>
-        <option value="P|8">Primary — Level 8</option>
-        <option value="P|9">Primary — Level 9</option>
-        <option value="P|10">Primary — Level 10</option>
-        <option value="P|11">Primary — Level 11</option>
-        <option value="P|12">Primary — Level 12</option>
+      <optgroup label="Primary (Levels 1–12)">
+        <option value="Primary|1">Primary — Level 1</option>
+        <option value="Primary|2">Primary — Level 2</option>
+        <option value="Primary|3">Primary — Level 3</option>
+        <option value="Primary|4">Primary — Level 4</option>
+        <option value="Primary|5">Primary — Level 5</option>
+        <option value="Primary|6">Primary — Level 6</option>
+        <option value="Primary|7">Primary — Level 7</option>
+        <option value="Primary|8">Primary — Level 8</option>
+        <option value="Primary|9">Primary — Level 9</option>
+        <option value="Primary|10">Primary — Level 10</option>
+        <option value="Primary|11">Primary — Level 11</option>
+        <option value="Primary|12">Primary — Level 12</option>
       </optgroup>
       <optgroup label="Elementary Grade 6">
-        <option value="G6|1">Grade 6 — Level 1</option>
-        <option value="G6|2">Grade 6 — Level 2</option>
-        <option value="G6|3">Grade 6 — Level 3</option>
+        <option value="Grade 6|1">Grade 6 — Level 1</option>
+        <option value="Grade 6|2">Grade 6 — Level 2</option>
+        <option value="Grade 6|3">Grade 6 — Level 3</option>
       </optgroup>
       <optgroup label="Elementary Grade 7">
-        <option value="G7|1">Grade 7 — Level 1</option>
-        <option value="G7|2">Grade 7 — Level 2</option>
-        <option value="G7|3">Grade 7 — Level 3</option>
+        <option value="Grade 7|1">Grade 7 — Level 1</option>
+        <option value="Grade 7|2">Grade 7 — Level 2</option>
+        <option value="Grade 7|3">Grade 7 — Level 3</option>
       </optgroup>
       <optgroup label="Elementary Grade 8">
-        <option value="G8|1">Grade 8 — Level 1</option>
-        <option value="G8|2">Grade 8 — Level 2</option>
-        <option value="G8|3">Grade 8 — Level 3</option>
+        <option value="Grade 8|1">Grade 8 — Level 1</option>
+        <option value="Grade 8|2">Grade 8 — Level 2</option>
+        <option value="Grade 8|3">Grade 8 — Level 3</option>
       </optgroup>
     </select>
   </div>
@@ -471,7 +471,13 @@ async function loadFromAPI(){
   document.getElementById('q-tbody').innerHTML =
     '<tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8">⏳ Loading questions...</td></tr>';
   try {
-    const resp = await fetch('/api/questions/bank?limit=500'+(activeSubject?'&subject='+encodeURIComponent(activeSubject):'')+(window._filterLevel?'&level='+window._filterLevel:'')+(window._filterGrade?'&grade_label='+encodeURIComponent(window._filterGrade):''));
+    // Build filter: send grade_label as "Primary|7" so admin.js can split it
+    const gradeParam = window._filterGrade && window._filterLevel
+      ? '&grade_label=' + encodeURIComponent(window._filterGrade + '|' + window._filterLevel)
+      : '';
+    const resp = await fetch('/api/questions/bank?limit=500'
+      + (activeSubject ? '&subject=' + encodeURIComponent(activeSubject) : '')
+      + gradeParam);
     if(!resp.ok) throw new Error('Server error ' + resp.status);
     const data = await resp.json();
     QUESTIONS = (data.questions || data || []).map(q => ({
@@ -520,11 +526,22 @@ function setSubject(s,el){
 }
 function setLevel(l){
   activeLevel = l;
-  // Extract level number: "P|7" -> 7, "G6|1" -> 1, "L7" -> 7, "" -> 0
-  if(!l) { window._lvlNum = 0; }
-  else if(l.includes('|')) { window._lvlNum = parseInt(l.split('|')[1]); }
-  else { window._lvlNum = parseInt(l.replace('L','')); }
-  applyFilters();
+  if (!l) {
+    window._lvlNum      = 0;
+    window._filterGrade = '';
+    window._filterLevel = '';
+    window._lvlGrade    = '';
+  } else {
+    // Values are "Primary|7" or "Grade 6|1"
+    const parts = l.split('|');
+    const gradeStr = parts[0]; // "Primary" or "Grade 6"
+    const lvlNum   = parseInt(parts[1]);
+    window._lvlNum      = lvlNum;
+    window._filterGrade = gradeStr;    // sent to API as grade_label
+    window._filterLevel = lvlNum;      // sent to API as level
+    window._lvlGrade    = gradeStr;    // used by applyFilters()
+  }
+  loadQuestions();  // re-fetch from server with correct filters
 }
 function setStatus(s,el){
   activeStatus=s;
@@ -538,7 +555,7 @@ function applyFilters(){
   const search=document.getElementById('search-inp').value.toLowerCase();
   filtered=QUESTIONS.filter(q=>
     (!activeSubject||q.subject===activeSubject)&&
-    (!activeLevel||(parseInt(q.level)===window._lvlNum && (!window._lvlGrade||!q.grade_label||(q.grade_label||"").startsWith(window._lvlGrade))))&&
+    (!activeLevel||(parseInt(q.level)===window._lvlNum && (!window._lvlGrade||(q.grade_label||'')===window._lvlGrade)))&&
     (!activeStatus||q.status===activeStatus)&&
     (!search||q.question.toLowerCase().includes(search)||String(q.id).includes(search)||(q.topic||'').toLowerCase().includes(search))
   );
