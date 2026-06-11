@@ -177,32 +177,59 @@ router.post('/api/questions/csv-update', async (req, res) => {
 
 router.get('/api/questions/export', async (req, res) => {
   try {
-    const { subject, level, status } = req.query;
-    let query = `SELECT question_id, subject, level, topic_tag, COALESCE(q_text_english,q_text_urdu) as question_text, q_text_urdu, image_url, option_a, option_b, option_c, option_d, correct_option, active, created_at FROM questions WHERE 1=1`;
+    const { subject, level, grade_label, status } = req.query;
+    let query = `SELECT question_id, subject, level, grade_label, topic_tag,
+      COALESCE(q_text_english,q_text_urdu) AS question_text,
+      question_type, difficulty,
+      option_a, option_b, option_c, option_d, correct_option, active
+      FROM questions WHERE 1=1`;
     const params = [];
-    if (subject) { params.push(subject);         query += ` AND subject=$${params.length}`; }
-    if (level)   { params.push(parseInt(level)); query += ` AND level=$${params.length}`; }
+    if (subject) { params.push(subject); query += ` AND subject=$${params.length}`; }
+    if (grade_label) {
+      const parts = grade_label.split('|');
+      const gl  = parts[0];
+      const lvl = parts[1] ? parseInt(parts[1]) : null;
+      params.push(gl); query += ` AND grade_label=$${params.length}`;
+      if (lvl) { params.push(lvl); query += ` AND level=$${params.length}`; }
+    } else if (level) {
+      params.push(parseInt(level)); query += ` AND level=$${params.length}`;
+    }
     if (status === 'approved') query += ` AND active=1`;
     if (status === 'pending')  query += ` AND (active=0 OR active IS NULL)`;
-    query += ` ORDER BY subject,level,question_id`;
+    query += ` ORDER BY subject, level, question_id`;
     const r = await db.pool.query(query, params);
 
-    const escape = v => v == null ? '' : '"' + String(v).replace(/"/g, '""') + '"';
-    const headers = ['question_id','subject','level','topic_tag','question_text','question_urdu','image_url','option_a','option_b','option_c','option_d','correct_option','status','created_at'];
+    const formatGrade = (row) => {
+      const gl  = row.grade_label || 'Primary';
+      const lvl = row.level || '';
+      return gl === 'Primary' ? 'Primary ' + lvl : gl + ' Level ' + lvl;
+    };
+    const diffMap = { 1:'easy', 2:'medium', 3:'hard' };
+    const escape  = v => v == null ? '' : '"' + String(v).replace(/"/g, '""') + '"';
+
+    // Columns match Question Generator CSV exactly
+    const headers = ['type','question','option_a','option_b','option_c','option_d','correct_answer','difficulty','subject','grade','topic'];
     let csv = headers.join(',') + '\n';
     r.rows.forEach(row => {
-      csv += [escape(row.question_id), escape(row.subject), escape(row.level), escape(row.topic_tag),
-        escape(row.question_text), escape(row.q_text_urdu), escape(row.image_url),
-        escape(row.option_a), escape(row.option_b), escape(row.option_c), escape(row.option_d),
+      csv += [
+        escape(row.question_type || 'MCQ'),
+        escape(row.question_text),
+        escape(row.option_a),
+        escape(row.option_b),
+        escape(row.option_c),
+        escape(row.option_d),
         escape(row.correct_option),
-        escape(row.active===1?'approved':row.active===-1?'flagged':'pending'),
-        escape(row.created_at?row.created_at.toISOString().split('T')[0]:'')
+        escape(diffMap[row.difficulty] || 'medium'),
+        escape(row.subject),
+        escape(formatGrade(row)),
+        escape(row.topic_tag)
       ].join(',') + '\n';
     });
-    const filename = 'TAKMIL_Questions_' + new Date().toISOString().split('T')[0] + '.csv';
+
+    const filename = 'takmil-questions-' + new Date().toISOString().split('T')[0] + '.csv';
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send('\uFEFF' + csv);
+    res.send('﻿' + csv);
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
