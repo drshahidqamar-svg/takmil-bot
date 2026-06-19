@@ -525,7 +525,8 @@ async function startAssessment() {
     return;
   }
 
-  session.level = result.level;
+  session.level      = result.level;
+  session.grade_label = result.grade_label || null;
   session.subjectIdx = 0;
   session.subjectResults = [];
   session.gps = null;
@@ -538,7 +539,7 @@ async function startAssessment() {
   }
 
   document.getElementById('subj-welcome-name').textContent = 'Hello, ' + session.name + '!';
-  document.getElementById('subj-welcome-level').textContent = 'Level ' + session.level + ' — Choose a subject';
+  document.getElementById('subj-welcome-level').textContent = (session.grade_label ? session.grade_label + ' · ' : '') + 'Level ' + session.level + ' — Choose a subject';
   showScreen('s-subject');
 }
 
@@ -572,7 +573,7 @@ async function loadSubject(subject) {
   session.currentSubject = subject;
 
   document.getElementById('q-name').textContent    = session.name;
-  document.getElementById('q-subject').textContent = subject + ' • L' + session.level;
+  document.getElementById('q-subject').textContent = subject + ' • ' + (session.grade_label ? session.grade_label + ' L' : 'L') + session.level;
   showQuestion(0);
   showScreen('s-question');
 }
@@ -581,7 +582,7 @@ function showQuestion(idx) {
   const q     = session.currentQuestions[idx];
   const total = session.currentQuestions.length;
   document.getElementById('q-prog-label').textContent = 'Question ' + (idx + 1) + ' of ' + total;
-  document.getElementById('q-level-badge').textContent = 'Level ' + session.level;
+  document.getElementById('q-level-badge').textContent = (session.grade_label ? session.grade_label + ' — ' : '') + 'Level ' + session.level;
   document.getElementById('q-prog-fill').style.width = ((idx / total) * 100) + '%';
 
   const text = q.question_text || q.q_text_english || '';

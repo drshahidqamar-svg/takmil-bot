@@ -311,11 +311,17 @@ router.post('/portal/session/start', async (req, res) => {
     const pinRec = await db.validatePin(pin);
     if (!pinRec) return res.status(401).json({ error: 'Invalid or expired PIN. Please ask your teacher.' });
 
+    // Also fetch grade_label from pins table (not always in pinRec from db.validatePin)
+    const pinExtra = await db.pool.query(
+      `SELECT grade_label FROM pins WHERE pin=$1 LIMIT 1`, [pin]
+    ).catch(() => ({ rows: [] }));
+    const gradeLabel = pinExtra.rows[0]?.grade_label || pinRec.grade_label || null;
+
     const isFinal        = parseInt(pinRec.level) === 0;
     const isMultiSubject = pinRec.subject === 'All' && !subject;
     let effectiveSubject = subject || pinRec.subject;
 
-    if (isMultiSubject) return res.json({ isMultiSubject: true, level: pinRec.level, isFinal });
+    if (isMultiSubject) return res.json({ isMultiSubject: true, level: pinRec.level, grade_label: gradeLabel, isFinal });
 
     let questions = [];
     if (isFinal) {
@@ -327,11 +333,30 @@ router.post('/portal/session/start', async (req, res) => {
         questions = questions.concat(r.rows);
       }
     } else {
-      const r = await db.pool.query(
-        `SELECT * FROM questions WHERE subject=$1 AND level=$2 AND active=1 ORDER BY RANDOM() LIMIT 10`,
-        [effectiveSubject, pinRec.level]
-      );
-      questions = r.rows;
+      // Filter by grade_label when available for accurate question selection
+      if (gradeLabel) {
+        const r = await db.pool.query(
+          `SELECT * FROM questions WHERE subject=$1 AND level=$2 AND active=1
+           AND (grade_label=$3 OR grade_label IS NULL OR grade_label='')
+           ORDER BY RANDOM() LIMIT 10`,
+          [effectiveSubject, pinRec.level, gradeLabel]
+        );
+        questions = r.rows;
+        // Fallback: if no grade-specific questions, use any at this level
+        if (!questions.length) {
+          const r2 = await db.pool.query(
+            `SELECT * FROM questions WHERE subject=$1 AND level=$2 AND active=1 ORDER BY RANDOM() LIMIT 10`,
+            [effectiveSubject, pinRec.level]
+          );
+          questions = r2.rows;
+        }
+      } else {
+        const r = await db.pool.query(
+          `SELECT * FROM questions WHERE subject=$1 AND level=$2 AND active=1 ORDER BY RANDOM() LIMIT 10`,
+          [effectiveSubject, pinRec.level]
+        );
+        questions = r.rows;
+      }
     }
 
     if (!questions.length) return res.status(404).json({ error: 'No questions found for this assessment. Please contact your coordinator.' });
@@ -364,7 +389,7 @@ router.post('/portal/session/start', async (req, res) => {
       VALUES ($1,$2,'portal',$3,$4,$5,'[]'::jsonb) RETURNING id
     `, [pinRec.id, pinRec.school_id, studentName, pinRec.level, effectiveSubject]);
 
-    res.json({ sessionId: saRec.rows[0].id, subject: effectiveSubject, level: pinRec.level, isFinal, questions: shuffled });
+    res.json({ sessionId: saRec.rows[0].id, subject: effectiveSubject, level: pinRec.level, grade_label: gradeLabel, isFinal, questions: shuffled });
   } catch(err) {
     console.error('Portal start error:', err);
     res.status(500).json({ error: 'Server error. Please try again.' });
