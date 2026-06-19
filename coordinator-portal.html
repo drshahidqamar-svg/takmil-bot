@@ -470,7 +470,7 @@ async function loadRecentPins(){
         const expired=new Date(p.expires_at)<new Date();
         const badge=expired?'badge-grey':p.activated_at?'badge-blue':'badge-green';
         const label=expired?'Expired':p.activated_at?'Used':'Active';
-        return`<tr><td><strong style="font-family:monospace">${p.pin}</strong></td><td>L${p.level}</td>
+        return`<tr><td><strong style="font-family:monospace">${p.pin}</strong></td><td>${p.grade_label ? p.grade_label + ' · L' + p.level : 'L'+p.level}</td>
           <td>${p.issued_by||'—'}</td><td><span class="badge ${badge}">${label}</span></td>
           <td>${new Date(p.created_at).toLocaleDateString()}</td></tr>`;
       }).join('')}</table>`;

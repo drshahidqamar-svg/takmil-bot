@@ -467,10 +467,25 @@ router.post('/api/questions/generate-ai', async (req, res) => {
 
 // ── Admin: schools, ops, pins ─────────────────────────────────────────────────
 router.post('/admin/pins/generate', async (req, res) => {
-  const { schoolId, level, subject, cohortSize, issuedBy, teacherPhone } = req.body;
+  const { schoolId, level, gradeLabel, subject, cohortSize, issuedBy, teacherPhone } = req.body;
   if (!schoolId || level === undefined || !subject) return res.status(400).json({ error: 'schoolId, level, subject required' });
   try {
+    // Ensure grade_label column exists on pins table
+    try { await db.pool.query(`ALTER TABLE pins ADD COLUMN IF NOT EXISTS grade_label TEXT`); } catch(e) {}
+
     const pin = await db.generatePin(schoolId, parseInt(level), subject, cohortSize || 0, issuedBy || 'admin');
+
+    // Save grade_label to pins table — this is what the bundle endpoint uses for question filtering
+    if (gradeLabel && pin.pin) {
+      await db.pool.query(
+        `UPDATE pins SET grade_label=$1 WHERE pin=$2`,
+        [gradeLabel, pin.pin]
+      ).catch(e => console.log('[pins/generate] grade_label update note:', e.message));
+    }
+
+    // Also backfill tablet_sessions for backward compatibility
+    try { await db.pool.query(`ALTER TABLE tablet_sessions ADD COLUMN IF NOT EXISTS grade_label TEXT DEFAULT 'Primary'`); } catch(e) {}
+    if (gradeLabel) await db.pool.query(`UPDATE tablet_sessions SET grade_label=$1 WHERE pin_code=$2`, [gradeLabel, pin.pin]).catch(()=>{});
     if (teacherPhone) {
       const { sendWhatsApp: sw, twilioClient: tc, FROM_NUMBER: fn } = require('../helpers/whatsapp');
       const schoolRes = await db.pool.query('SELECT name FROM schools WHERE id=$1', [schoolId]);
