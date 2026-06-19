@@ -646,11 +646,16 @@ function renderTrueFalse(q, opts) {
       session.answers[session.currentQ] = val.toUpperCase();
       document.querySelectorAll('.tf-btn').forEach(b => b.style.pointerEvents = 'none');
       const correct = (q.correct || q.correct_option || '').toUpperCase();
-      btn.style.borderColor = val.toUpperCase() === correct ? 'var(--green2)' : 'var(--red)';
-      btn.style.background  = val.toUpperCase() === correct ? '#dcfce7' : '#fef2f2';
-      if (val.toUpperCase() !== correct) {
+      // correct can be 'TRUE'/'FALSE' or 'A'/'B' depending on source
+      const correctIsTrue = correct === 'TRUE' || correct === 'A';
+      const selectedIsTrue = val === 'True';
+      const isCorrect = selectedIsTrue === correctIsTrue;
+      btn.style.borderColor = isCorrect ? 'var(--green2)' : 'var(--red)';
+      btn.style.background  = isCorrect ? '#dcfce7'       : '#fef2f2';
+      if (!isCorrect) {
         document.querySelectorAll('.tf-btn').forEach(b => {
-          if (b.textContent.includes(correct === 'TRUE' ? 'True' : 'False')) {
+          if ((b.textContent.includes('True') && correctIsTrue) ||
+              (b.textContent.includes('False') && !correctIsTrue)) {
             b.style.borderColor = 'var(--green2)'; b.style.background = '#dcfce7';
           }
         });
