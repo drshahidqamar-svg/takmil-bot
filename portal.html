@@ -403,12 +403,14 @@ async function validatePin(pin, name) {
       const data = await resp.json();
       if (!resp.ok || data.error) return { valid: false, error: data.error || 'Invalid PIN' };
 
+      // Also cache grade_label for offline use
       await dbPut('pins', {
-        pin:        upperPin,
-        level:      data.level,
-        is_active:  true,
-        expires_at: new Date(Date.now() + 24*60*60*1000).toISOString(),
-        cached_at:  new Date().toISOString(),
+        pin:         upperPin,
+        level:       data.level,
+        grade_label: data.grade_label || null,
+        is_active:   true,
+        expires_at:  new Date(Date.now() + 24*60*60*1000).toISOString(),
+        cached_at:   new Date().toISOString(),
       });
 
       const subjects = ['English', 'Math', 'Urdu'];
@@ -438,8 +440,8 @@ async function validatePin(pin, name) {
         } catch(e) {}
       }
 
-      if (data.isMultiSubject) return { valid: true, level: data.level, online: true, multiSubject: true };
-      return { valid: true, level: data.level, online: true, sessionId: data.sessionId };
+      if (data.isMultiSubject) return { valid: true, level: data.level, grade_label: data.grade_label || null, online: true, multiSubject: true };
+      return { valid: true, level: data.level, grade_label: data.grade_label || null, online: true, sessionId: data.sessionId };
 
     } catch(e) {
       console.warn('[Portal] Server error, trying cache:', e.message);
@@ -450,7 +452,7 @@ async function validatePin(pin, name) {
   if (!pinRec) return { valid: false, error: 'PIN not found. Please connect to internet first to cache this PIN.' };
   if (!pinRec.is_active) return { valid: false, error: 'PIN is not active.' };
   if (new Date(pinRec.expires_at) < new Date()) return { valid: false, error: 'Cached PIN has expired. Ask teacher to generate a new one.' };
-  return { valid: true, level: pinRec.level, online: false };
+  return { valid: true, level: pinRec.level, grade_label: pinRec.grade_label || null, online: false };
 }
 
 // ══ QUESTION LOADING ══════════════════════════════════════════════════════════
