@@ -362,28 +362,42 @@ router.post('/portal/session/start', async (req, res) => {
     if (!questions.length) return res.status(404).json({ error: 'No questions found for this assessment. Please contact your coordinator.' });
 
     const shuffled = questions.map(q => {
+      const qtype = (q.question_type || 'MCQ').toUpperCase().replace(/[^A-Z]/g,'');
       const correctOption = (q.correct_option || 'A').toUpperCase();
+
+      // Non-MCQ types: pass through without shuffling to preserve structure
+      if (qtype !== 'MCQ') {
+        return {
+          id: q.question_id || q.id, level: q.level,
+          question_type: q.question_type || 'MCQ',
+          question_text: q.q_text_english || q.question_text || '',
+          q_text_urdu: q.q_text_urdu || '', image_url: q.image_url || null,
+          option_a: q.option_a || null, option_b: q.option_b || null,
+          option_c: q.option_c || null, option_d: q.option_d || null,
+          correct: correctOption,
+        };
+      }
+
+      // MCQ: shuffle non-null options only
       const opts = [
-        { label: 'A', text: q.option_a }, { label: 'B', text: q.option_b },
-        { label: 'C', text: q.option_c }, { label: 'D', text: q.option_d },
-      ];
+        { label: 'A', text: q.option_a },
+        { label: 'B', text: q.option_b },
+        { label: 'C', text: q.option_c },
+        { label: 'D', text: q.option_d },
+      ].filter(o => o.text != null && o.text !== '');
       const correctText = opts.find(o => o.label === correctOption)?.text;
       for (let i = opts.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [opts[i], opts[j]] = [opts[j], opts[i]];
       }
       return {
-        id:             q.question_id || q.id,
-        level:          q.level,
-        question_type:  q.question_type || 'MCQ',
-        question_text:  q.q_text_english || q.question_text || '',
-        q_text_urdu:    q.q_text_urdu || '',
-        image_url:      q.image_url || null,
-        option_a:       opts[0].text,
-        option_b:       opts[1].text,
-        option_c:       opts[2].text || null,
-        option_d:       opts[3].text || null,
-        correct:        ['A','B','C','D'][opts.findIndex(o => o.text === correctText)] || 'A',
+        id: q.question_id || q.id, level: q.level,
+        question_type: 'MCQ',
+        question_text: q.q_text_english || q.question_text || '',
+        q_text_urdu: q.q_text_urdu || '', image_url: q.image_url || null,
+        option_a: opts[0]?.text || null, option_b: opts[1]?.text || null,
+        option_c: opts[2]?.text || null, option_d: opts[3]?.text || null,
+        correct: ['A','B','C','D'][opts.findIndex(o => o.text === correctText)] || 'A',
       };
     });
 
