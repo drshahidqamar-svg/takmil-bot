@@ -400,9 +400,11 @@ function renderTable(rows) {
   const tbody = rows.map((r, i) => {
     const pct   = Math.round(parseFloat(r.score_pct || 0));
     const color = pct >= 80 ? '#059669' : pct >= 60 ? '#d97706' : '#dc2626';
-    const grade = r.grade === 'Primary'
-      ? '<span class="badge badge-primary">Primary</span>'
-      : '<span class="badge badge-elem">Elementary</span>';
+    const isElem = r.level && parseInt(r.level) > 5;
+    const gradeLabel = r.grade || (isElem ? 'Elementary' : 'Primary');
+    const grade = isElem
+      ? `<span class="badge badge-elem">${gradeLabel}</span>`
+      : `<span class="badge badge-primary">${gradeLabel}</span>`;
     const result = r.passed
       ? '<span class="badge badge-pass">✓ Pass</span>'
       : '<span class="badge badge-fail">✗ Fail</span>';
