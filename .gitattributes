@@ -1,0 +1,3 @@
+# Prevent git from converting line endings or encoding
+*.html binary
+*.js text eol=lf
