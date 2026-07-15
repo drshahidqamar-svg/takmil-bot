@@ -807,7 +807,7 @@ router.get('/api/assessment-dashboard', async (req, res) => {
           COALESCE(sc.name,'—')                         AS coordinator_name,
           COALESCE(sa.subject,'—')                      AS subject,
           sa.level,
-          CASE WHEN sa.level BETWEEN 1 AND 5 THEN 'Primary' ELSE 'Elementary' END AS grade,
+          COALESCE(p.grade_label, CASE WHEN sa.level BETWEEN 1 AND 5 THEN 'Primary' ELSE 'Elementary' END) AS grade,
           NULL::text                                    AS semester,
           sa.score_pct,
           sa.passed,
@@ -816,7 +816,9 @@ router.get('/api/assessment-dashboard', async (req, res) => {
           sa.completed_at,
           'portal'                                      AS source
         FROM student_assessments sa
+        FROM student_assessments sa
         LEFT JOIN schools s ON s.id = sa.school_id
+        LEFT JOIN pins p ON p.id = sa.pin_id
         LEFT JOIN regional_coordinators rc ON rc.id = s.regional_coordinator_id
         LEFT JOIN school_coordinators   sc ON sc.id = s.school_coordinator_id
         WHERE sa.completed_at::date BETWEEN $1::date AND $2::date
@@ -938,7 +940,7 @@ router.post('/portal/offline/submit', async (req, res) => {
     let pinId    = null;
     try {
       const r = await db.pool.query(
-        `SELECT id, school_id FROM pins WHERE pin_code = $1 LIMIT 1`,
+        `SELECT id, school_id FROM pins WHERE pin = $1 LIMIT 1`,
         [pin.toUpperCase()]
       );
       if (r.rows.length) { pinId = r.rows[0].id; schoolId = r.rows[0].school_id; }
