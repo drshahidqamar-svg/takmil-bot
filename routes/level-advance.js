@@ -787,9 +787,9 @@ router.get('/api/assessment-dashboard', async (req, res) => {
     // ── Portal assessments (student_assessments table) ──
     let portalParams = [dateFrom, dateTo];
     let portalWhere  = gradeWhere;
-    if (level)   { portalParams.push(parseInt(level));  portalWhere += ` AND level=$${portalParams.length}`; }
-    if (subject) { portalParams.push(subject);           portalWhere += ` AND subject ILIKE $${portalParams.length}`; }
-    if (student) { portalParams.push('%'+student+'%');   portalWhere += ` AND student_name ILIKE $${portalParams.length}`; }
+    if (level)   { portalParams.push(parseInt(level));  portalWhere += ` AND sa.level=$${portalParams.length}`; }
+    if (subject) { portalParams.push(subject);           portalWhere += ` AND sa.subject ILIKE $${portalParams.length}`; }
+    if (student) { portalParams.push('%'+student+'%');   portalWhere += ` AND sa.student_name ILIKE $${portalParams.length}`; }
     if (school)  { portalParams.push('%'+school+'%');    portalWhere += ` AND s.name ILIKE $${portalParams.length}`; }
 
     let portalRows = [];
@@ -815,7 +815,6 @@ router.get('/api/assessment-dashboard', async (req, res) => {
           sa.correct_answers,
           sa.completed_at,
           'portal'                                      AS source
-        FROM student_assessments sa
         FROM student_assessments sa
         LEFT JOIN schools s ON s.id = sa.school_id
         LEFT JOIN pins p ON p.id = sa.pin_id
