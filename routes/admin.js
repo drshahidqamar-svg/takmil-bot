@@ -467,13 +467,22 @@ router.post('/api/questions/generate-ai', async (req, res) => {
 
 // ── Admin: schools, ops, pins ─────────────────────────────────────────────────
 router.post('/admin/pins/generate', async (req, res) => {
-  const { schoolId, level, gradeLabel, subject, cohortSize, issuedBy, teacherPhone } = req.body;
-  if (!schoolId || level === undefined || !subject) return res.status(400).json({ error: 'schoolId, level, subject required' });
+  const { schoolId, schoolIdentifier, level, gradeLabel, subject, cohortSize, issuedBy, teacherPhone } = req.body;
+
+  let resolvedSchoolId = schoolId;
+  if (!resolvedSchoolId && schoolIdentifier) {
+    try {
+      const sr = await db.pool.query('SELECT id FROM schools WHERE identifier=$1', [schoolIdentifier]);
+      if (sr.rows.length) resolvedSchoolId = sr.rows[0].id;
+    } catch(e) { console.log('[pins/generate] identifier lookup error:', e.message); }
+  }
+
+  if (!resolvedSchoolId || level === undefined || !subject) return res.status(400).json({ error: 'schoolId/schoolIdentifier, level, subject required' });
   try {
     // Ensure grade_label column exists on pins table
     try { await db.pool.query(`ALTER TABLE pins ADD COLUMN IF NOT EXISTS grade_label TEXT`); } catch(e) {}
 
-    const pin = await db.generatePin(schoolId, parseInt(level), subject, cohortSize || 0, issuedBy || 'admin');
+    const pin = await db.generatePin(resolvedSchoolId, parseInt(level), subject, cohortSize || 0, issuedBy || 'admin');
 
     // Save grade_label to pins table — this is what the bundle endpoint uses for question filtering
     if (gradeLabel && pin.pin) {
@@ -488,7 +497,7 @@ router.post('/admin/pins/generate', async (req, res) => {
     if (gradeLabel) await db.pool.query(`UPDATE tablet_sessions SET grade_label=$1 WHERE pin_code=$2`, [gradeLabel, pin.pin]).catch(()=>{});
     if (teacherPhone) {
       const { sendWhatsApp: sw, twilioClient: tc, FROM_NUMBER: fn } = require('../helpers/whatsapp');
-      const schoolRes = await db.pool.query('SELECT name FROM schools WHERE id=$1', [schoolId]);
+      const schoolRes = await db.pool.query('SELECT name FROM schools WHERE id=$1', [resolvedSchoolId]);
       const schoolName = schoolRes.rows[0]?.name || 'your school';
       try {
         const toNum = teacherPhone.startsWith('whatsapp:') ? teacherPhone : `whatsapp:${teacherPhone}`;

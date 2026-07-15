@@ -443,7 +443,7 @@ async function generatePIN(){
   btn.disabled=true;btn.textContent='Generating...';
   try{
     const resp=await fetch(BASE+'/admin/pins/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({schoolId:1,level,gradeLabel,subject:'All',cohortSize:30,issuedBy:currentRC.name,teacherPhone:phone||null})});
+      body:JSON.stringify({schoolIdentifier:school,level,gradeLabel,subject:'All',cohortSize:30,issuedBy:currentRC.name,teacherPhone:phone||null})});
     const data=await resp.json();
     if(!resp.ok) throw new Error(data.error||'Failed');
     document.getElementById('pin-display').textContent=data.pin;
