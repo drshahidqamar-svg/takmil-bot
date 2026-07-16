@@ -1061,7 +1061,8 @@ router.get('/api/admin/school-students/:identifier', async (req, res) => {
     const { identifier } = req.params;
     const r = await db.pool.query(`
       SELECT id, roll_number, student_name, gender, level,
-             teacher_name, active, created_at
+             teacher_name, regional_coordinator, school_coordinator,
+             active, created_at
       FROM students_register
       WHERE LOWER(school_identifier) = LOWER($1)
       ORDER BY roll_number
@@ -1144,12 +1145,13 @@ router.post('/api/admin/add-student', async (req, res) => {
     // Auto-generate roll number if not provided
     let roll = roll_number;
     if (!roll) {
+      const prefix = school_identifier.substring(0,6).toUpperCase();
       const maxRoll = await db.pool.query(`
         SELECT MAX(CAST(REGEXP_REPLACE(roll_number, '[^0-9]', '', 'g') AS INTEGER)) AS max_num
-        FROM students_register WHERE school_identifier ILIKE $1
-      `, [school_identifier]);
+        FROM students_register WHERE roll_number LIKE $1
+      `, [`${prefix}-%`]);
       const seq = (maxRoll.rows[0]?.max_num || 0) + 1;
-      roll = `${school_identifier.substring(0,6).toUpperCase()}-${String(seq).padStart(3,'0')}`;
+      roll = `${prefix}-${String(seq).padStart(3,'0')}`;
     }
 
     await db.pool.query(`
@@ -1173,17 +1175,18 @@ router.post('/api/admin/bulk-add-students', async (req, res) => {
       return res.status(400).json({ error: 'school_identifier and students[] required' });
     }
 
+    const prefix = school_identifier.substring(0,6).toUpperCase();
     const maxRoll = await db.pool.query(`
       SELECT MAX(CAST(REGEXP_REPLACE(roll_number, '[^0-9]', '', 'g') AS INTEGER)) AS max_num
-      FROM students_register WHERE school_identifier ILIKE $1
-    `, [school_identifier]);
+      FROM students_register WHERE roll_number LIKE $1
+    `, [`${prefix}-%`]);
     let seq = maxRoll.rows[0]?.max_num || 0;
 
     let added = 0, skipped = 0;
     for (const s of students) {
       if (!s.name || !s.name.trim()) { skipped++; continue; }
       seq++;
-      const roll = `${school_identifier.substring(0,6).toUpperCase()}-${String(seq).padStart(3,'0')}`;
+      const roll = `${prefix}-${String(seq).padStart(3,'0')}`;
       try {
         await db.pool.query(`
           INSERT INTO students_register
@@ -1226,4 +1229,90 @@ router.delete('/api/admin/student/:roll', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// PUT /api/admin/student/:roll — full edit of a student's details
+router.put('/api/admin/student/:roll', async (req, res) => {
+  try {
+    const { student_name, teacher_name, regional_coordinator, school_coordinator, gender, level } = req.body;
+    if (!student_name || !student_name.trim()) {
+      return res.status(400).json({ error: 'student_name required' });
+    }
+    const r = await db.pool.query(`
+      UPDATE students_register
+      SET student_name=$1, teacher_name=$2, regional_coordinator=$3,
+          school_coordinator=$4, gender=$5, level=$6
+      WHERE roll_number=$7
+      RETURNING *
+    `, [student_name.trim(), teacher_name || null, regional_coordinator || null,
+        school_coordinator || null, gender || null, parseInt(level) || null, req.params.roll]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Student not found' });
+    res.json({ saved: true, student: r.rows[0] });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/students-register/import-csv — bulk import with scoped replace
+// For each school_identifier present in the uploaded rows, existing active roster
+// rows for that school are deactivated first (soft delete, preserves history for
+// past assessment joins), then the new rows are upserted by roll_number and
+// marked active. Schools NOT present in the upload are left untouched.
+router.post('/api/admin/students-register/import-csv', async (req, res) => {
+  try {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || !rows.length) {
+      return res.status(400).json({ error: 'rows[] required' });
+    }
+
+    const requiredFields = ['school_identifier', 'roll_number', 'student_name'];
+    const validRows = [];
+    let skipped = 0;
+    for (const r of rows) {
+      if (requiredFields.every(f => r[f] && String(r[f]).trim())) {
+        validRows.push(r);
+      } else {
+        skipped++;
+      }
+    }
+
+    const schoolsInFile = [...new Set(validRows.map(r => r.school_identifier.trim()))];
+
+    // Deactivate existing rows for schools present in this upload
+    for (const sid of schoolsInFile) {
+      await db.pool.query(
+        `UPDATE students_register SET active=false WHERE school_identifier=$1`,
+        [sid]
+      );
+    }
+
+    let imported = 0, failed = 0;
+    for (const r of validRows) {
+      try {
+        await db.pool.query(`
+          INSERT INTO students_register
+            (school_identifier, roll_number, student_name, teacher_name,
+             regional_coordinator, school_coordinator, active, created_at)
+          VALUES ($1,$2,$3,$4,$5,$6,TRUE,NOW())
+          ON CONFLICT (roll_number) DO UPDATE SET
+            school_identifier=EXCLUDED.school_identifier,
+            student_name=EXCLUDED.student_name,
+            teacher_name=EXCLUDED.teacher_name,
+            regional_coordinator=EXCLUDED.regional_coordinator,
+            school_coordinator=EXCLUDED.school_coordinator,
+            active=TRUE
+        `, [r.school_identifier.trim(), r.roll_number.trim(), r.student_name.trim(),
+            r.teacher_name || null, r.regional_coordinator || null, r.school_coordinator || null]);
+        imported++;
+      } catch(e) { failed++; }
+    }
+
+    res.json({
+      schoolsProcessed: schoolsInFile.length,
+      imported, failed, skipped,
+      total: rows.length
+    });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = { router, isFeedbackMessage, parseFeedback, saveFeedback };
