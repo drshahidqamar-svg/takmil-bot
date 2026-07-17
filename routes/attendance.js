@@ -1277,36 +1277,49 @@ router.post('/api/admin/students-register/import-csv', async (req, res) => {
     const schoolsInFile = [...new Set(validRows.map(r => r.school_identifier.trim()))];
 
     // Resolve each identifier to its canonical casing from the schools table,
-    // so repeated imports never drift into mixed-case duplicates for the same school
+    // using ONE query for all schools instead of one query per school
+    // (avoids hundreds of sequential round trips that were causing request timeouts)
+    const allSchools = await db.pool.query('SELECT identifier FROM schools WHERE identifier IS NOT NULL');
+    const realIdentifiers = new Map(allSchools.rows.map(r => [r.identifier.toLowerCase(), r.identifier]));
     const canonicalMap = {};
-    for (const sid of schoolsInFile) {
-      const sr = await db.pool.query(
-        `SELECT identifier FROM schools WHERE LOWER(identifier)=LOWER($1) LIMIT 1`,
-        [sid]
-      );
-      canonicalMap[sid.toLowerCase()] = sr.rows.length ? sr.rows[0].identifier : sid;
-    }
     for (const r of validRows) {
-      r.school_identifier = canonicalMap[r.school_identifier.trim().toLowerCase()];
+      const key = r.school_identifier.trim().toLowerCase();
+      canonicalMap[key] = realIdentifiers.get(key) || r.school_identifier.trim();
+      r.school_identifier = canonicalMap[key];
     }
     const canonicalSchools = [...new Set(Object.values(canonicalMap))];
 
-    // Deactivate existing rows for schools present in this upload
-    for (const sid of canonicalSchools) {
+    // Deactivate existing rows for ALL schools in this upload in a single query
+    if (canonicalSchools.length) {
       await db.pool.query(
-        `UPDATE students_register SET active=false WHERE LOWER(school_identifier)=LOWER($1)`,
-        [sid]
+        `UPDATE students_register SET active=false
+         WHERE LOWER(school_identifier) = ANY($1::text[])`,
+        [canonicalSchools.map(s => s.toLowerCase())]
       );
     }
 
+    // Insert in batches of 300 rows per statement (multi-row VALUES),
+    // instead of one INSERT per row, to cut round trips from thousands to a handful
+    const BATCH_SIZE = 300;
     let imported = 0, failed = 0;
-    for (const r of validRows) {
+    for (let i = 0; i < validRows.length; i += BATCH_SIZE) {
+      const batch = validRows.slice(i, i + BATCH_SIZE);
+      const values = [];
+      const placeholders = batch.map((r, idx) => {
+        const base = idx * 6;
+        values.push(
+          r.school_identifier, r.roll_number.trim(), r.student_name.trim(),
+          r.teacher_name || null, r.regional_coordinator || null, r.school_coordinator || null
+        );
+        return `($${base+1},$${base+2},$${base+3},$${base+4},$${base+5},$${base+6},TRUE,NOW())`;
+      }).join(',');
+
       try {
         await db.pool.query(`
           INSERT INTO students_register
             (school_identifier, roll_number, student_name, teacher_name,
              regional_coordinator, school_coordinator, active, created_at)
-          VALUES ($1,$2,$3,$4,$5,$6,TRUE,NOW())
+          VALUES ${placeholders}
           ON CONFLICT (roll_number) DO UPDATE SET
             school_identifier=EXCLUDED.school_identifier,
             student_name=EXCLUDED.student_name,
@@ -1314,10 +1327,31 @@ router.post('/api/admin/students-register/import-csv', async (req, res) => {
             regional_coordinator=EXCLUDED.regional_coordinator,
             school_coordinator=EXCLUDED.school_coordinator,
             active=TRUE
-        `, [r.school_identifier, r.roll_number.trim(), r.student_name.trim(),
-            r.teacher_name || null, r.regional_coordinator || null, r.school_coordinator || null]);
-        imported++;
-      } catch(e) { failed++; }
+        `, values);
+        imported += batch.length;
+      } catch(e) {
+        // Fall back to row-by-row only for the failed batch, so one bad row
+        // doesn't silently drop the other 299 good ones in that batch
+        for (const r of batch) {
+          try {
+            await db.pool.query(`
+              INSERT INTO students_register
+                (school_identifier, roll_number, student_name, teacher_name,
+                 regional_coordinator, school_coordinator, active, created_at)
+              VALUES ($1,$2,$3,$4,$5,$6,TRUE,NOW())
+              ON CONFLICT (roll_number) DO UPDATE SET
+                school_identifier=EXCLUDED.school_identifier,
+                student_name=EXCLUDED.student_name,
+                teacher_name=EXCLUDED.teacher_name,
+                regional_coordinator=EXCLUDED.regional_coordinator,
+                school_coordinator=EXCLUDED.school_coordinator,
+                active=TRUE
+            `, [r.school_identifier, r.roll_number.trim(), r.student_name.trim(),
+                r.teacher_name || null, r.regional_coordinator || null, r.school_coordinator || null]);
+            imported++;
+          } catch(e2) { failed++; }
+        }
+      }
     }
 
     res.json({
