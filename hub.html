@@ -380,9 +380,9 @@ body{
     <div class="page-header">
       <div>
         <h1>System Overview</h1>
-        <p>Real-time status across all 177 schools · 4 Provinces · Pakistan</p>
+        <p id="overview-subtitle">Real-time status across all schools · Pakistan</p>
       </div>
-      <a href="javascript:location.reload()" class="refresh-btn">
+      <a href="javascript:loadSystemOverview()" class="refresh-btn">
         <i class="ti ti-refresh"></i> Refresh
       </a>
     </div>
@@ -396,12 +396,12 @@ body{
         <div class="pc-stripe"></div>
         <div>
           <div class="pc-name">Total Schools</div>
-          <div class="pc-num">177</div>
-          <div class="pc-lbl">Across 4 Provinces</div>
+          <div class="pc-num" id="stat-total-schools">—</div>
+          <div class="pc-lbl" id="stat-province-count-lbl">Across schools</div>
         </div>
         <div class="pc-foot">
           <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
-          <span class="pc-ac">4 RC · 18 Area Coordinators</span>
+          <span class="pc-ac" id="stat-coord-summary">—</span>
         </div>
       </div>
 
@@ -409,7 +409,7 @@ body{
         <div class="pc-stripe"></div>
         <div>
           <div class="pc-name">Schools in Primary</div>
-          <div class="pc-num">89</div>
+          <div class="pc-num" id="stat-primary-schools">—</div>
           <div class="pc-lbl">Primary Level Schools</div>
         </div>
         <div class="pc-foot">
@@ -422,7 +422,7 @@ body{
         <div class="pc-stripe"></div>
         <div>
           <div class="pc-name">Schools in Elementary</div>
-          <div class="pc-num">88</div>
+          <div class="pc-num" id="stat-elementary-schools">—</div>
           <div class="pc-lbl">Elementary Level Schools</div>
         </div>
         <div class="pc-foot">
@@ -436,11 +436,11 @@ body{
         <div>
           <div class="pc-name">Total Students</div>
           <div class="pc-num" id="stat-students">—</div>
-          <div class="pc-lbl">Registered in System</div>
+          <div class="pc-lbl">Active in Roster</div>
         </div>
         <div class="pc-foot">
           <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
-          <span class="pc-ac">Via WhatsApp Assessment</span>
+          <span class="pc-ac">Via CSV Import + Portal</span>
         </div>
       </div>
 
@@ -448,61 +448,9 @@ body{
 
     <div class="sec-lbl">Province Breakdown</div>
 
-    <!-- 4 province cards -->
-    <div class="prov-row">
-
-      <div class="pc pc-blue">
-        <div class="pc-stripe" style="background:#2563eb"></div>
-        <div>
-          <div class="pc-name">Punjab</div>
-          <div class="pc-num">51</div>
-          <div class="pc-lbl">Community Schools</div>
-        </div>
-        <div class="pc-foot">
-          <div class="pc-dot" style="background:#2563eb"></div>
-          <span class="pc-ac">5 Area Coordinators · 1 RC</span>
-        </div>
-      </div>
-
-      <div class="pc pc-green">
-        <div class="pc-stripe" style="background:#059669"></div>
-        <div>
-          <div class="pc-name">Sindh</div>
-          <div class="pc-num">48</div>
-          <div class="pc-lbl">Community Schools</div>
-        </div>
-        <div class="pc-foot">
-          <div class="pc-dot" style="background:#059669"></div>
-          <span class="pc-ac">3 Area Coordinators · 1 RC</span>
-        </div>
-      </div>
-
-      <div class="pc pc-purple">
-        <div class="pc-stripe" style="background:#7c3aed"></div>
-        <div>
-          <div class="pc-name">Baluchistan – GB</div>
-          <div class="pc-num">36</div>
-          <div class="pc-lbl">Community Schools</div>
-        </div>
-        <div class="pc-foot">
-          <div class="pc-dot" style="background:#7c3aed"></div>
-          <span class="pc-ac">5 Area Coordinators · 1 RC</span>
-        </div>
-      </div>
-
-      <div class="pc pc-amber">
-        <div class="pc-stripe"></div>
-        <div>
-          <div class="pc-name">KPK</div>
-          <div class="pc-num">42</div>
-          <div class="pc-lbl">Community Schools</div>
-        </div>
-        <div class="pc-foot">
-          <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
-          <span class="pc-ac">5 Area Coordinators · 1 RC</span>
-        </div>
-      </div>
-
+    <!-- Dynamically populated based on real province data -->
+    <div class="prov-row" id="province-breakdown-grid">
+      <div style="color:#94a3b8;padding:20px">Loading...</div>
     </div>
 
 
@@ -514,12 +462,12 @@ body{
         <div class="pc-stripe"></div>
         <div>
           <div class="pc-name">Total Coordinators</div>
-          <div class="pc-num">22</div>
+          <div class="pc-num" id="stat-total-coordinators">—</div>
           <div class="pc-lbl">All Active Coordinators</div>
         </div>
         <div class="pc-foot">
           <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
-          <span class="pc-ac">4 Regional · 18 Area Coordinators</span>
+          <span class="pc-ac" id="stat-coord-breakdown">—</span>
         </div>
       </div>
 
@@ -527,12 +475,12 @@ body{
         <div class="pc-stripe"></div>
         <div>
           <div class="pc-name">Regional Coordinators</div>
-          <div class="pc-num">4</div>
-          <div class="pc-lbl">One per Province</div>
+          <div class="pc-num" id="stat-regional-coordinators">—</div>
+          <div class="pc-lbl">Active Regions</div>
         </div>
         <div class="pc-foot">
           <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
-          <span class="pc-ac">Sindh · Punjab · KPK · Baluchistan–GB</span>
+          <span class="pc-ac" id="stat-rc-names">—</span>
         </div>
       </div>
 
@@ -638,20 +586,51 @@ body{
   }
   loadStats(); setInterval(loadStats,5*60*1000);
 
-  async function loadStudentCount(){
+  const PROV_COLORS = ['#2563eb','#059669','#7c3aed','#b45309','#be185d','#0284c7'];
+
+  async function loadSystemOverview(){
     try{
-      const r = await fetch('/admin/analytics');
+      const r = await fetch('/api/hub/system-overview');
       const d = await r.json();
-      const total = d.summary?.total_assessments;
-      if(total!==undefined) document.getElementById('stat-students').textContent = total;
-    }catch(e){}
-    try{
-      const r2 = await fetch('/admin/students/results');
-      const d2 = await r2.json();
-      if(Array.isArray(d2)) document.getElementById('stat-students').textContent = d2.length;
-    }catch(e){}
+      if(d.error){ console.error('system-overview error:', d.error); return; }
+
+      document.getElementById('stat-total-schools').textContent = d.totalSchools;
+      document.getElementById('stat-primary-schools').textContent = d.primarySchools;
+      document.getElementById('stat-elementary-schools').textContent = d.elementarySchools;
+      document.getElementById('stat-students').textContent = d.totalStudents.toLocaleString();
+      document.getElementById('stat-total-coordinators').textContent = d.totalCoordinators;
+      document.getElementById('stat-regional-coordinators').textContent = d.totalRegionalCoordinators;
+
+      document.getElementById('overview-subtitle').textContent =
+        `Real-time status across ${d.totalSchools} active schools · ${d.provinceCount} Provinces · Pakistan`;
+      document.getElementById('stat-province-count-lbl').textContent = `Across ${d.provinceCount} Provinces`;
+      document.getElementById('stat-coord-summary').textContent =
+        `${d.totalRegionalCoordinators} RC · ${d.totalCoordinators} Area Coordinators`;
+      document.getElementById('stat-coord-breakdown').textContent =
+        `${d.totalRegionalCoordinators} Regional · ${d.totalCoordinators} Area Coordinators`;
+      document.getElementById('stat-rc-names').textContent = d.regionalCoordinatorNames.join(' · ') || '—';
+
+      const grid = document.getElementById('province-breakdown-grid');
+      if(!d.provinces.length){
+        grid.innerHTML = '<div style="color:#94a3b8;padding:20px">No active schools found.</div>';
+      } else {
+        grid.innerHTML = d.provinces.map((p,i) => {
+          const color = PROV_COLORS[i % PROV_COLORS.length];
+          return `
+          <div class="pc" style="background:${color};color:#fff">
+            <div class="pc-stripe" style="background:${color}"></div>
+            <div>
+              <div class="pc-name">${p.province}</div>
+              <div class="pc-num">${p.schools}</div>
+              <div class="pc-lbl">Community Schools</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }catch(e){ console.error('Failed to load system overview:', e); }
   }
-  loadStudentCount();
+  loadSystemOverview();
+  setInterval(loadSystemOverview, 5*60*1000);
 
   const path = window.location.pathname;
   document.querySelectorAll('.sidebar-item').forEach(a=>{

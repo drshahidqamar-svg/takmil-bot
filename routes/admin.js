@@ -5,6 +5,7 @@
 const router = require('express').Router();
 const db     = require('../database');
 const path   = require('path');
+const { requireRole } = require('../helpers/auth');
 
 // ── grade_label helper ────────────────────────────────────────────────────────
 // Matches Question Generator's mapToQuestionBank format:
@@ -979,6 +980,71 @@ router.get('/api/schools-by-coordinator/:coordinatorName', async (req, res) => {
     `, params);
     res.json({ schools: r.rows });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// -- Live System Overview stats for the hub page (admin-only) -----------------
+// Replaces hardcoded numbers that went stale (e.g. still counting a removed
+// Regional Coordinator, or counting assessment rows instead of roster size).
+router.get('/api/hub/system-overview', requireRole(['admin']), async (req, res) => {
+  try {
+    const schoolStats = await db.pool.query(`
+      WITH per_school AS (
+        SELECT sr.school_identifier,
+               MAX(s.province) AS province,
+               AVG(sr.level) AS avg_level
+        FROM students_register sr
+        LEFT JOIN schools s ON LOWER(s.identifier) = LOWER(sr.school_identifier)
+        WHERE sr.active = true
+        GROUP BY sr.school_identifier
+      )
+      SELECT
+        COUNT(*) AS total_schools,
+        COUNT(*) FILTER (WHERE avg_level <= 5) AS primary_schools,
+        COUNT(*) FILTER (WHERE avg_level > 5) AS elementary_schools,
+        COUNT(DISTINCT province) AS province_count
+      FROM per_school
+    `);
+
+    const provinceBreakdown = await db.pool.query(`
+      SELECT COALESCE(s.province, 'Unknown') AS province, COUNT(DISTINCT sr.school_identifier) AS school_count
+      FROM students_register sr
+      LEFT JOIN schools s ON LOWER(s.identifier) = LOWER(sr.school_identifier)
+      WHERE sr.active = true
+      GROUP BY s.province
+      ORDER BY school_count DESC
+    `);
+
+    const studentCount = await db.pool.query(
+      `SELECT COUNT(*) AS total FROM students_register WHERE active = true`
+    );
+
+    const coordinators = await db.pool.query(`
+      SELECT
+        COUNT(DISTINCT school_coordinator) FILTER (WHERE school_coordinator IS NOT NULL AND school_coordinator != '') AS total_coordinators,
+        COUNT(DISTINCT regional_coordinator) FILTER (WHERE regional_coordinator IS NOT NULL AND regional_coordinator != '') AS total_rcs
+      FROM students_register WHERE active = true
+    `);
+
+    const rcNames = await db.pool.query(`
+      SELECT DISTINCT regional_coordinator FROM students_register
+      WHERE active = true AND regional_coordinator IS NOT NULL AND regional_coordinator != ''
+      ORDER BY regional_coordinator
+    `);
+
+    res.json({
+      totalSchools: parseInt(schoolStats.rows[0].total_schools) || 0,
+      primarySchools: parseInt(schoolStats.rows[0].primary_schools) || 0,
+      elementarySchools: parseInt(schoolStats.rows[0].elementary_schools) || 0,
+      provinceCount: parseInt(schoolStats.rows[0].province_count) || 0,
+      totalStudents: parseInt(studentCount.rows[0].total) || 0,
+      totalCoordinators: parseInt(coordinators.rows[0].total_coordinators) || 0,
+      totalRegionalCoordinators: parseInt(coordinators.rows[0].total_rcs) || 0,
+      regionalCoordinatorNames: rcNames.rows.map(r => r.regional_coordinator),
+      provinces: provinceBreakdown.rows.map(r => ({ province: r.province, schools: parseInt(r.school_count) })),
+    });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 
