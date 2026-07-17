@@ -1006,11 +1006,22 @@ router.get('/api/hub/system-overview', requireRole(['admin']), async (req, res) 
     `);
 
     const provinceBreakdown = await db.pool.query(`
-      SELECT COALESCE(s.province, 'Unknown') AS province, COUNT(DISTINCT sr.school_identifier) AS school_count
-      FROM students_register sr
-      LEFT JOIN schools s ON LOWER(s.identifier) = LOWER(sr.school_identifier)
-      WHERE sr.active = true
-      GROUP BY s.province
+      WITH per_school AS (
+        SELECT sr.school_identifier,
+               MAX(s.province) AS province,
+               BOOL_OR(sr.school_identifier ILIKE '%W26%') AS is_primary
+        FROM students_register sr
+        LEFT JOIN schools s ON LOWER(s.identifier) = LOWER(sr.school_identifier)
+        WHERE sr.active = true
+        GROUP BY sr.school_identifier
+      )
+      SELECT
+        COALESCE(province, 'Unknown') AS province,
+        COUNT(*) AS school_count,
+        COUNT(*) FILTER (WHERE is_primary) AS primary_count,
+        COUNT(*) FILTER (WHERE NOT is_primary) AS elementary_count
+      FROM per_school
+      GROUP BY province
       ORDER BY school_count DESC
     `);
 
@@ -1049,7 +1060,12 @@ router.get('/api/hub/system-overview', requireRole(['admin']), async (req, res) 
       totalCoordinators: parseInt(coordinators.rows[0].total_coordinators) || 0,
       totalRegionalCoordinators: parseInt(coordinators.rows[0].total_rcs) || 0,
       regionalCoordinatorNames: rcNames.rows.map(r => r.regional_coordinator),
-      provinces: provinceBreakdown.rows.map(r => ({ province: r.province, schools: parseInt(r.school_count) })),
+      provinces: provinceBreakdown.rows.map(r => ({
+        province: r.province,
+        schools: parseInt(r.school_count),
+        primary: parseInt(r.primary_count) || 0,
+        elementary: parseInt(r.elementary_count) || 0,
+      })),
       totalQuestions: parseInt(questionCount.rows[0].total) || 0,
       totalVideos: parseInt(videoCount.rows[0].total) || 0,
     });
