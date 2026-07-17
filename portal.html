@@ -386,8 +386,15 @@ async function updatePendingUI() {
   if (cnt)  cnt.textContent = pending.length;
 }
 
-window.addEventListener('online',  () => { updateStatusUI(); syncPending(); });
+window.addEventListener('online',  () => { updateStatusUI(); });
 window.addEventListener('offline', () => { updateStatusUI(); });
+
+// Global lock: only one sync operation (immediate submit-sync or pending-sync)
+// may run at a time. Without this, the 'online' event, page-load check, and
+// the manual "Sync Pending" button could all fire syncPending() concurrently,
+// each reading the same not-yet-marked-synced record and resubmitting it —
+// producing duplicate rows in the database for a single real assessment.
+let syncInProgress = false;
 
 // ══ PIN VALIDATION ══════════════════════════════════════════════════════════════
 async function validatePin(pin, name) {
@@ -1006,7 +1013,8 @@ async function showFinalResults() {
 
   const localId = await dbPut('results', resultRecord);
 
-  if (isOnline()) {
+  if (isOnline() && !syncInProgress) {
+    syncInProgress = true;
     syncBadge.textContent = '↑ Syncing...'; syncBadge.className = 'sync-badge syncing';
     const ok = await syncResult(resultRecord);
     if (ok) {
@@ -1017,6 +1025,12 @@ async function showFinalResults() {
       syncBadge.textContent = '⚠ Saved Offline'; syncBadge.className = 'sync-badge offline';
       syncMsg.textContent   = 'Saved offline — will sync when internet returns.';
     }
+    syncInProgress = false;
+  } else if (isOnline() && syncInProgress) {
+    // A sync is already running (e.g. pending-sync fired at the same moment) —
+    // leave this record unsynced; the running sync (or the next trigger) will pick it up.
+    syncBadge.textContent = '⚠ Saved Offline'; syncBadge.className = 'sync-badge offline';
+    syncMsg.textContent   = 'Saved — will sync momentarily.';
   } else {
     syncBadge.textContent = '● Offline'; syncBadge.className = 'sync-badge offline';
     syncMsg.textContent   = '📵 No internet — saved on tablet. Tap "Sync" when connected.';
@@ -1067,6 +1081,9 @@ async function syncResult(record) {
 
 async function syncPending() {
   if (!isOnline()) { showToast('Connect to internet first'); return; }
+  if (syncInProgress) { showToast('Sync already in progress...'); return; }
+  syncInProgress = true;
+
   const btn = document.getElementById('sync-pending-btn');
   if (btn) { btn.disabled = true; btn.innerHTML = '⟳ Syncing...'; }
 
@@ -1080,6 +1097,7 @@ async function syncPending() {
   }
 
   if (btn) { btn.disabled = false; }
+  syncInProgress = false;
   await updatePendingUI();
   if (synced > 0) {
     showToast('✅ ' + synced + ' result' + (synced > 1 ? 's' : '') + ' synced to server!', 3000);
