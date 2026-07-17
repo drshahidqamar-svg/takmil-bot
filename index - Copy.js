@@ -19,7 +19,6 @@ require('dotenv').config();
 const express = require('express');
 const path    = require('path');
 const fs      = require('fs');
-const cookieParser = require('cookie-parser');
 const db      = require('./database');
 const app     = express();
 
@@ -28,34 +27,12 @@ const PHOTOS_DIR = path.join(__dirname, 'public', 'photos');
 if (!fs.existsSync(PHOTOS_DIR)) fs.mkdirSync(PHOTOS_DIR, { recursive: true });
 app.use('/photos', express.static(path.join(__dirname, 'public', 'photos')));
 
-const ICONS_DIR = path.join(__dirname, 'public', 'icons');
-if (!fs.existsSync(ICONS_DIR)) fs.mkdirSync(ICONS_DIR, { recursive: true });
-app.use('/icons', express.static(path.join(__dirname, 'public', 'icons'), { maxAge: '30d' }));
-
 // ── Service Worker & Manifest (must be served from root with correct headers) ─
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.setHeader('Service-Worker-Allowed', '/teacher-feedback');
+  res.setHeader('Service-Worker-Allowed', '/');
   res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(path.join(__dirname, 'sw.js'));
-});
-app.get('/assess-sw.js', (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript');
-  res.setHeader('Service-Worker-Allowed', '/assess');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.sendFile(path.join(__dirname, 'assess-sw.js'));
-});
-app.get('/attendance-sw.js', (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript');
-  res.setHeader('Service-Worker-Allowed', '/teacher-attendance');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.sendFile(path.join(__dirname, 'attendance-sw.js'));
-});
-app.get('/lessons-sw.js', (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript');
-  res.setHeader('Service-Worker-Allowed', '/teacher-lessons');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.sendFile(path.join(__dirname, 'lessons-sw.js'));
 });
 app.get('/register-sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
@@ -66,18 +43,6 @@ app.get('/register-sw.js', (req, res) => {
 app.get('/manifest.json', (req, res) => {
   res.setHeader('Content-Type', 'application/manifest+json');
   res.sendFile(path.join(__dirname, 'manifest.json'));
-});
-app.get('/manifest-portal.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/manifest+json');
-  res.sendFile(path.join(__dirname, 'manifest-portal.json'));
-});
-app.get('/manifest-attendance.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/manifest+json');
-  res.sendFile(path.join(__dirname, 'manifest-attendance.json'));
-});
-app.get('/manifest-lessons.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/manifest+json');
-  res.sendFile(path.join(__dirname, 'manifest-lessons.json'));
 });
 app.get('/offline-portal', (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=86400');
@@ -92,14 +57,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.urlencoded({ extended: false, limit: '15mb' }));
-app.use(express.json({ limit: '15mb' }));
-app.use(cookieParser());
-
-// ── Auth (login/logout/user management) ────────────────────────────────────
-const { router: authRouter } = require('./routes/auth');
-const { requireRole } = require('./helpers/auth');
-app.use('/', authRouter); // /login, /admin-users, /api/auth/*, /api/admin/users*
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 // ── Load route modules ────────────────────────────────────────────────────────
 const { router: chatbotRouter, registerHandlers } = require('./routes/chatbot');
@@ -121,22 +80,21 @@ app.use('/', levelAdvanceRouter); // /assess, /portal, /teacher-portal, /lessons
 app.use('/', adminRouter);        // /dashboard, /import, /question-bank, /admin/*, /api/questions/*, /api/generate-questions
 
 // ── Root/hub ──────────────────────────────────────────────────────────────────
-app.get('/', requireRole(['admin']), (req, res) => res.sendFile(path.join(__dirname, 'hub.html')));
-app.get('/hub', requireRole(['admin']), (req, res) => res.sendFile(path.join(__dirname, 'hub.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'hub.html')));
+app.get('/hub', (req, res) => res.sendFile(path.join(__dirname, 'hub.html')));
 app.get('/classroom', (req, res) => res.sendFile(path.join(__dirname, 'takmil-classroom.html')));
 
 // ── Portal Routes (auto-added) ──
-app.get('/coordinator',          requireRole(['admin','regional_coordinator','coordinator']), (req, res) => res.sendFile(path.join(__dirname, 'coordinator-portal.html')));
+app.get('/coordinator',          (req, res) => res.sendFile(path.join(__dirname, 'coordinator-portal.html')));
 app.get('/portal',               (req, res) => res.sendFile(path.join(__dirname, 'portal.html')));
 app.get('/offline-portal',       (req, res) => res.sendFile(path.join(__dirname, 'offline-portal.html')));
 app.get('/student-portal',       (req, res) => res.sendFile(path.join(__dirname, 'student-portal.html')));
 app.get('/teacher-portal',       (req, res) => res.sendFile(path.join(__dirname, 'teacher-portal.html')));
-app.get('/lessons-admin',        requireRole(['admin']), (req, res) => res.sendFile(path.join(__dirname, 'lessons-admin.html')));
-app.get('/admin-portal',         requireRole(['admin']), (req, res) => res.sendFile(path.join(__dirname, 'takmil-ops-console.html')));
-app.get('/dashboard',            requireRole(['admin']), (req, res) => res.sendFile(path.join(__dirname, 'assessment-dashboard.html')));
-app.get('/assessment-dashboard', requireRole(['admin']), (req, res) => res.sendFile(path.join(__dirname, 'assessment-dashboard.html')));
-app.get('/question-generator',   requireRole(['admin']), (req, res) => res.sendFile(path.join(__dirname, 'takmil-question-generator.html')));
-app.get('/question-bank',        requireRole(['admin']), (req, res) => res.sendFile(path.join(__dirname, 'takmil-question-bank.html')));
+app.get('/lessons-admin',        (req, res) => res.sendFile(path.join(__dirname, 'lessons-admin.html')));
+app.get('/admin-portal', (req, res) => res.sendFile(path.join(__dirname, 'takmil-ops-console.html')));
+app.get('/dashboard',            (req, res) => res.sendFile(path.join(__dirname, 'assessment-dashboard.html')));
+app.get('/assessment-dashboard', (req, res) => res.sendFile(path.join(__dirname, 'assessment-dashboard.html')));
+app.get('/question-bank',        (req, res) => res.sendFile(path.join(__dirname, 'takmil-question-bank.html')));
 app.get('/register',             (req, res) => res.sendFile(path.join(__dirname, 'register.html')));
 app.get('/results',              (req, res) => res.sendFile(path.join(__dirname, 'results.html')));
 app.get('/attendance',           (req, res) => res.sendFile(path.join(__dirname, 'attendance.html')));
@@ -151,12 +109,6 @@ app.get('/feedback-table',       (req, res) => res.sendFile(path.join(__dirname,
 app.get('/level-advancement',    (req, res) => res.sendFile(path.join(__dirname, 'level-advancement.html')));
 app.get('/image-portal',         (req, res) => res.sendFile(path.join(__dirname, 'image-portal.html')));
 app.get('/picture-questions',    (req, res) => res.sendFile(path.join(__dirname, 'picture-questions.html')));
-app.get('/teacher-feedback',     (req, res) => res.sendFile(path.join(__dirname, 'takmil-feedback.html')));
-app.get('/teacher-attendance',   (req, res) => res.sendFile(path.join(__dirname, 'teacher-attendance.html')));
-app.get('/students-admin',       requireRole(['admin']), (req, res) => res.sendFile(path.join(__dirname, 'students-admin.html')));
-app.get('/attendance-results',   (req, res) => res.sendFile(path.join(__dirname, 'attendance-results.html')));
-app.get('/teacher-lessons',      (req, res) => res.sendFile(path.join(__dirname, 'teacher-lessons.html')));
-app.get('/video-lessons-dashboard', (req, res) => res.sendFile(path.join(__dirname, 'video-lessons-dashboard.html')));
 app.get('/takmil-classroom',     (req, res) => res.sendFile(path.join(__dirname, 'takmil-classroom.html')));
 
 

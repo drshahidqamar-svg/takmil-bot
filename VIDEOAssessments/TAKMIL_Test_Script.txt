@@ -1,0 +1,337 @@
+# TAKMIL Video Session — Complete Test Script
+# Phone: +16024305897 (WhatsApp sandbox: join gone-dawn)
+# Run all messages in ORDER. Wait for bot reply before next message.
+# ════════════════════════════════════════════════════════════════
+
+STEP 0 — ONE-TIME SETUP
+════════════════════════
+Run the SQL file first in Railway:
+  1. Go to railway.app → your project → PostgreSQL
+  2. Click "Query" tab
+  3. Paste contents of takmil_video_tables.sql
+  4. Click Run
+  5. You should see: INSERT 0 1 (for each seed row)
+
+Then deploy the new index.js code:
+  1. Open your index.js
+  2. Paste the entire takmil_video_module.js content before app.listen()
+  3. Also find your webhook handler and add:
+       const handled = await handleVideoCommands(from, body, res);
+       if (handled) return;
+  4. git add index.js
+  5. git commit -m "Add video session tracking module"
+  6. git push origin main
+  7. Wait for Railway deploy success
+
+════════════════════════════════════════════════════════════════
+STEP 1 — Check who you are (ADMIN role)
+════════════════════════════════════════
+
+Send this WhatsApp message:
+────────────────────────────
+WHOAMI
+────────────────────────────
+Expected reply:
+  👤 You are currently acting as: FACILITATOR
+  Shahid (Facilitator) | SCH-047
+  [facilitator help menu]
+
+════════════════════════════════════════════════════════════════
+STEP 2 — Switch to ADMIN and check system
+════════════════════════════════════════════
+
+Send:
+────────────────────────────
+ROLE ADMIN
+────────────────────────────
+Expected: ✅ Role switched to ADMIN
+
+Send:
+────────────────────────────
+ADMIN STATUS
+────────────────────────────
+Expected:
+  🏢 Admin Overview — 2026-04-XX
+  Total schools: 1
+  Section status:
+    in_progress: 1
+  Today's submissions:
+    (empty — nothing submitted yet)
+
+════════════════════════════════════════════════════════════════
+STEP 3 — Open the video player on your laptop
+════════════════════════════════════════════════
+
+1. Open takmil-session-player.html in Chrome
+2. Enter:
+   School Code:    SCH-047
+   Facilitator:    Shahid Test
+   Topic:          Multiplication
+   Level/Subject:  Level 5 — Math
+3. Click "Start Session"
+
+4. For Video 1:
+   - Click "Browse USB" → select ANY video file from your computer
+   - Play it (or skip to 86% using the 10s forward button repeatedly)
+   - Wait for GREEN completion code to appear
+   - NOTE DOWN the 6-digit code (e.g. 847293)
+
+5. For Video 2:
+   - Select a SECOND video file (or same file — it uses filename for code)
+   - Play/skip to 86%
+   - Note the code (e.g. 563821)
+
+6. For Video 3:
+   - Select a THIRD video file
+   - Play/skip to 86%
+   - Note the code (e.g. 192847)
+
+7. All 3 done → player shows the WhatsApp report message
+   → Click "Copy Message"
+
+════════════════════════════════════════════════════════════════
+STEP 4 — Switch to FACILITATOR and submit the daily report
+════════════════════════════════════════════════════════════════
+
+Send:
+────────────────────────────
+ROLE FACILITATOR
+────────────────────────────
+Expected: ✅ Role switched to FACILITATOR
+
+Now send the daily report (use YOUR actual codes from Step 3):
+────────────────────────────
+DAILY SCH-047 847293 563821 192847
+────────────────────────────
+(replace the 3 numbers with your actual codes)
+
+Expected reply:
+  ✅ Daily report received!
+  School: SCH-047
+  Topic: Multiplication
+  Date: 2026-04-XX
+  Codes: 847293 | 563821 | 192847
+  ⏳ Awaiting coordinator approval.
+
+  📌 [TEST MODE] Switch to COORDINATOR role to approve
+  Send: ROLE COORDINATOR
+  Then: APPROVE SCH-047
+
+════════════════════════════════════════════════════════════════
+STEP 5 — Check facilitator's own status
+════════════════════════════════════════
+
+Send:
+────────────────────────────
+MY STATUS
+────────────────────────────
+Expected:
+  📊 SCH-047 Progress
+  Section: Multiplication
+  ░░░░░░░░░░ 0%
+  Days approved: 0 / 5
+  Status: IN_PROGRESS
+  (0 approved because coordinator hasn't approved yet)
+
+════════════════════════════════════════════════════════════════
+STEP 6 — Switch to COORDINATOR and see pending reports
+════════════════════════════════════════════════════════════════
+
+Send:
+────────────────────────────
+ROLE COORDINATOR
+────────────────────────────
+
+Send:
+────────────────────────────
+MY SCHOOLS
+────────────────────────────
+Expected:
+  📋 My Schools — 2026-04-XX
+  ⏳ SCH-047: 0/5 days (0%)
+  Legend: ✅ today approved  ⏳ pending  ❌ rejected  ○ not submitted
+
+Send:
+────────────────────────────
+STATUS SCH-047
+────────────────────────────
+Expected:
+  📊 SCH-047 Status
+  Section: Multiplication
+  Days approved: 0/5
+  Last 7 days:
+  ⏳ 2026-04-XX — pending
+
+════════════════════════════════════════════════════════════════
+STEP 7 — Approve today's session
+════════════════════════════════════════════════════════════════
+
+Send:
+────────────────────────────
+APPROVE SCH-047
+────────────────────────────
+Expected:
+  ✅ APPROVED — SCH-047
+  Date: 2026-04-XX
+  ██░░░░░░░░ 20%
+  Section progress: 1/5 days
+  [TEST MODE] Facilitator would receive approval notification.
+
+Send again to check:
+────────────────────────────
+MY SCHOOLS
+────────────────────────────
+Expected:
+  ✅ SCH-047: 1/5 days (20%)
+
+════════════════════════════════════════════════════════════════
+STEP 8 — Test REJECT flow
+════════════════════════════════════════════════════════════════
+
+First, reset today's data as ADMIN:
+────────────────────────────
+ROLE ADMIN
+────────────────────────────
+────────────────────────────
+RESET TEST
+────────────────────────────
+Expected: 🔄 Test data reset for SCH-047.
+
+Switch back to facilitator and resubmit:
+────────────────────────────
+ROLE FACILITATOR
+────────────────────────────
+────────────────────────────
+DAILY SCH-047 111111 222222 333333
+────────────────────────────
+(use dummy codes — coordinator will reject anyway)
+
+Switch to coordinator and reject:
+────────────────────────────
+ROLE COORDINATOR
+────────────────────────────
+────────────────────────────
+REJECT SCH-047 Video 2 code does not match
+────────────────────────────
+Expected:
+  ❌ Rejected SCH-047. Reason: Video 2 code does not match
+  [TEST MODE] Facilitator would receive rejection message.
+
+════════════════════════════════════════════════════════════════
+STEP 9 — Complete all 5 days and unlock assessment
+════════════════════════════════════════════════════════════════
+
+You need 5 approved days for this test section.
+Run STEP 4 + STEP 7 sequence 5 times (reset between each if needed,
+OR just fast-track by running the ADMIN shortcut below):
+
+FAST TRACK — Simulate 5 days as Admin:
+────────────────────────────
+ROLE ADMIN
+────────────────────────────
+────────────────────────────
+RESET TEST
+────────────────────────────
+
+Then manually insert 5 approved days in Railway query:
+  INSERT INTO daily_sessions
+    (school_code, section_code, session_date, status, v1_code, v2_code, v3_code, submitted_at, submitted_by, approved_by, approved_at, topic)
+  VALUES
+    ('SCH-047','SEC-L5-MATH-01', CURRENT_DATE - 4, 'approved','847293','563821','192847',NOW(),'Shahid Test','+16024305897',NOW(),'Multiplication'),
+    ('SCH-047','SEC-L5-MATH-01', CURRENT_DATE - 3, 'approved','847293','563821','192847',NOW(),'Shahid Test','+16024305897',NOW(),'Multiplication'),
+    ('SCH-047','SEC-L5-MATH-01', CURRENT_DATE - 2, 'approved','847293','563821','192847',NOW(),'Shahid Test','+16024305897',NOW(),'Multiplication'),
+    ('SCH-047','SEC-L5-MATH-01', CURRENT_DATE - 1, 'approved','847293','563821','192847',NOW(),'Shahid Test','+16024305897',NOW(),'Multiplication'),
+    ('SCH-047','SEC-L5-MATH-01', CURRENT_DATE,     'approved','847293','563821','192847',NOW(),'Shahid Test','+16024305897',NOW(),'Multiplication')
+  ON CONFLICT (school_code, session_date) DO NOTHING;
+
+  UPDATE section_completions
+  SET approved_days=5, status='complete', completed_at=NOW()
+  WHERE school_code='SCH-047';
+
+Now switch to coordinator and unlock:
+────────────────────────────
+ROLE COORDINATOR
+────────────────────────────
+────────────────────────────
+UNLOCK ASSESS SCH-047
+────────────────────────────
+Expected:
+  🎉 Assessment UNLOCKED — SCH-047
+  PIN: 658327
+  Portal: https://takmil-bot-production-0f51.up.railway.app/level5
+  [TEST MODE] Facilitator would receive PIN.
+
+Switch to FACILITATOR to see what they'd receive:
+────────────────────────────
+ROLE FACILITATOR
+────────────────────────────
+Then check:
+────────────────────────────
+MY STATUS
+────────────────────────────
+Expected:
+  📊 SCH-047 Progress
+  ██████████ 100%
+  Days approved: 5 / 5
+  Status: ASSESSMENT_UNLOCKED
+
+════════════════════════════════════════════════════════════════
+STEP 10 — Check regional and admin views
+════════════════════════════════════════════════════════════════
+
+────────────────────────────
+ROLE REGIONAL
+────────────────────────────
+────────────────────────────
+REGION STATUS
+────────────────────────────
+Expected:
+  📊 Regional Status — 2026-04-XX
+  Schools: 1 | On track: 1 | Submitted today: 1
+
+────────────────────────────
+ROLE ADMIN
+────────────────────────────
+────────────────────────────
+ADMIN STATUS
+────────────────────────────
+Expected:
+  🏢 Admin Overview
+  Total schools: 1
+  Section status:
+    assessment_unlocked: 1
+  Today's submissions:
+    approved: 1
+
+════════════════════════════════════════════════════════════════
+WHAT TO LOOK FOR — Signs the system is working
+════════════════════════════════════════════════
+✅ ROLE switching works — each role sees different commands
+✅ DAILY report saves to database — visible in Railway query
+✅ APPROVE increments approved_days correctly
+✅ REJECT stores reason — facilitator gets notified
+✅ UNLOCK ASSESS blocked until all days approved
+✅ Assessment PIN sent only after UNLOCK command
+✅ ADMIN STATUS shows correct counts
+✅ REGION STATUS shows percentage correctly
+
+════════════════════════════════════════════════════════════════
+TROUBLESHOOTING
+════════════════════════════════════════════════
+Bot not responding?
+  → Check Railway logs for errors
+  → Make sure you added handleVideoCommands() call in webhook
+
+"School SCH-047 not found"?
+  → SQL seed didn't run — check Railway query tab
+
+"No active section found"?
+  → section_completions table not seeded — re-run SQL
+
+Role not switching?
+  → user_roles table not seeded — re-run SQL
+
+Codes not verifying?
+  → The simplified version accepts codes as-is (coordinator does human check)
+  → Full code verification requires video filename in the DAILY message
+════════════════════════════════════════════════════════════════

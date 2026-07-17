@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a3a2a">
+<title>TAKMIL — Student Assessment</title>
+<link rel="manifest" href="/manifest-portal.json">
+<meta name="theme-color" content="#1a3a2a">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Noto+Nastaliq+Urdu&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --green:#1a5c36;--green2:#16a34a;--green3:#4ade80;
+  --amber:#d97706;--red:#dc2626;--blue:#2563eb;
+  --bg:#f0f7f3;--card:#ffffff;--text:#0f2419;--muted:#6b7280;
+  --border:#e2e8f0;--shadow:0 2px 16px rgba(0,0,0,0.08);--r:16px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Nunito',sans-serif;color:var(--text)}
+.screen{display:none;position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-top:20px;background:var(--bg)}
+.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+/* HEADER */
+.app-header{width:100%;max-width:480px;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--green);border-radius:var(--r);margin-bottom:16px;color:white;}
+.app-header .logo{font-size:20px;font-weight:900;letter-spacing:1px;color:var(--green3)}
+.sync-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,0.15)}
+.sync-badge.online{background:#dcfce7;color:#15803d}
+.sync-badge.offline{background:#fef2f2;color:#dc2626}
+.sync-badge.syncing{background:#dbeafe;color:#1d4ed8}
+/** CARDS */
+.card{width:100%;max-width:480px;background:var(--card);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);margin-bottom:16px;}
+.card-title{font-size:18px;font-weight:800;color:var(--green);margin-bottom:4px}
+.card-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+/* BUTTONS */
+.btn{width:100%;padding:16px;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;letter-spacing:0.3px;}
+.btn-green{background:var(--green2);color:white}
+.btn-green:active{background:var(--green);transform:scale(0.98)}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+/* INPUTS */
+.input{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:12px;font-size:16px;font-family:'Nunito',sans-serif;color:var(--text);outline:none;background:white;margin-bottom:12px;transition:border-color 0.2s;}
+.input:focus{border-color:var(--green2)}
+.label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block}
+/* PROGRESS */
+.progress-wrap{margin-bottom:16px}
+.progress-label{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px}
+.progress-bar{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green3));border-radius:4px;transition:width 0.4s ease}
+/* QUESTION */
+.question-img{width:100%;height:200px;object-fit:cover;border-radius:12px;margin-bottom:16px;border:2px solid var(--border);display:none;}
+.question-text{font-size:20px;font-weight:800;line-height:1.4;margin-bottom:20px;color:var(--text)}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.opt-btn{padding:16px 12px;border:2px solid var(--border);border-radius:12px;background:white;cursor:pointer;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;color:var(--text);transition:all 0.15s;text-align:left;}
+.opt-btn .opt-letter{display:inline-block;width:26px;height:26px;border-radius:50%;background:var(--bg);font-size:13px;font-weight:800;text-align:center;line-height:26px;margin-right:8px;color:var(--green)}
+.opt-btn:active{transform:scale(0.97)}
+.opt-btn.selected{border-color:var(--green2);background:#f0fdf4}
+.opt-btn.selected .opt-letter{background:var(--green2);color:white}
+.opt-btn.correct{border-color:var(--green2);background:#dcfce7}
+.opt-btn.wrong{border-color:var(--red);background:#fef2f2}
+/* SUBJECT TRANSITION */
+.subject-transition{text-align:center;padding:20px 0}
+.subject-emoji{font-size:64px;margin-bottom:16px}
+.subject-done{font-size:22px;font-weight:900;color:var(--green);margin-bottom:8px}
+.subject-next{font-size:15px;color:var(--muted);margin-bottom:28px}
+/* RESULTS */
+.result-circle{width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--green2) var(--pct),#e2e8f0 0);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;position:relative;}
+.result-circle::before{content:'';position:absolute;inset:12px;border-radius:50%;background:white;}
+.result-pct{font-size:26px;font-weight:900;color:var(--green);position:relative;z-index:1}
+.result-badge{padding:8px 20px;border-radius:20px;font-size:14px;font-weight:800;display:inline-block;margin-bottom:20px;}
+.result-badge.pass{background:#dcfce7;color:#15803d}
+.result-badge.fail{background:#fef9c3;color:#854d0e}
+.subjects-breakdown{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.subj-card{padding:12px;border-radius:12px;text-align:center;background:var(--bg)}
+.subj-name{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase}
+.subj-score{font-size:20px;font-weight:900;color:var(--green)}
+.subj-pct{font-size:12px;color:var(--muted)}
+/* SYNC */
+.sync-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:var(--bg);margin-bottom:8px;font-size:13px;font-weight:600;}
+.sync-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.sync-dot.pending{background:var(--amber)}
+.sync-dot.done{background:var(--green2)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a3a2a;color:white;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;display:none;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:340px;text-align:center;}
+/* INSTALL BANNER */
+#install-banner{display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:480px;z-index:9999;background:#1a3a2a;border:2px solid #4ade80;border-radius:16px;padding:16px 20px;box-shadow:0 8px 32px rgba(0,0,0,0.3);align-items:center;gap:12px;}
+#install-banner .ib-icon{font-size:28px;flex-shrink:0}
+#install-banner .ib-text{flex:1;color:white}
+#install-banner .ib-title{font-size:14px;font-weight:800;margin-bottom:2px}
+#install-banner .ib-sub{font-size:11px;color:#86efac;line-height:1.4}
+#install-banner .ib-btns{display:flex;gap:8px;flex-shrink:0}
+#install-banner .ib-install{background:#4ade80;color:#0f2419;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif}
+#install-banner .ib-dismiss{background:transparent;border:1px solid rgba(255,255,255,0.3);color:white;border-radius:10px;padding:8px 10px;font-size:13px;cursor:pointer;font-family:'Nunito',sans-serif}
+
+  /* ── New question type styles ── */
+  .tf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+  .tf-btn{padding:18px;border:2px solid var(--border);border-radius:12px;background:white;cursor:pointer;font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;text-align:center}
+  .tf-btn:hover{border-color:var(--green2);background:#f0fdf4}
+  .sa-textarea{width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:15px;resize:vertical;min-height:90px;outline:none}
+  .sa-textarea:focus{border-color:var(--green2)}
+  .sa-model{background:#f0fdf4;border:1.5px solid var(--green2);border-radius:10px;padding:12px;font-size:14px;color:#15803d;margin-top:10px;display:none}
+  .fitb-input{border:none;border-bottom:2px solid var(--green2);background:transparent;font-family:'Nunito',sans-serif;font-size:16px;width:130px;text-align:center;outline:none;padding:2px 6px}
+  .fitb-wrap{font-size:17px;line-height:2.2;margin-bottom:12px}
+  .match-table{width:100%;border-collapse:collapse;margin-bottom:8px}
+  .match-table td{padding:10px 12px;border:1.5px solid var(--border);font-size:14px;vertical-align:middle}
+  .match-table .col-a{background:#EFF6FF;font-weight:700;width:40%}
+  .match-sel{width:100%;padding:7px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:14px;background:white}
+  .sb-pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;min-height:44px}
+  .sb-chip{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border:2px solid var(--border);border-radius:20px;background:white;cursor:pointer;font-size:15px;font-family:'Nunito',sans-serif;transition:all 0.12s}
+  .sb-chip:hover{border-color:var(--green2);background:#f0fdf4}
+  .sb-chip.used{opacity:0.25;pointer-events:none}
+  .sb-chip-num{font-size:11px;color:#9ca3af;font-weight:700}
+  .sb-sentence{min-height:50px;border:2px solid var(--border);border-radius:12px;padding:10px 14px;background:#f8fafc;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+  .sb-placed{display:inline-flex;align-items:center;gap:5px;background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:16px;padding:5px 12px;font-size:15px;cursor:pointer;font-family:'Nunito',sans-serif}
+  .sb-placed:hover{opacity:0.7}
+  .sb-empty-hint{font-size:13px;color:#9ca3af;pointer-events:none}
+  .seq-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .seq-chip{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border:2px solid var(--border);border-radius:20px;background:white;font-size:15px;font-family:'Nunito',sans-serif}
+  .seq-input{width:100%;padding:12px;border:2px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:16px;outline:none;margin-bottom:8px}
+  .seq-input:focus{border-color:var(--green2)}
+</style>
+</head>
+<body>
+
+<!-- ── SCREEN: HOME ── -->
+<div class="screen active" id="s-home">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <div id="home-status-badge" class="sync-badge">Checking...</div>
+  </div>
+  <div id="offline-info-bar" style="display:none;width:100%;max-width:480px;
+    background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;
+    padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:700;color:#dc2626">
+    📵 Offline — Enter your PIN to load from cache
+    <span id="pending-sync-msg" style="display:none;color:#d97706;margin-left:6px"></span>
+  </div>
+  <div id="online-preload-bar" style="display:none;width:100%;max-width:480px;
+    background:#dcfce7;border:1.5px solid #86efac;border-radius:12px;
+    padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:700;color:#15803d">
+    🟢 Online — Enter PIN and tap Start to cache questions for offline use
+  </div>
+  <div class="card">
+    <div class="card-title">Student Assessment</div>
+    <div class="card-sub">طالب علم امتحان — Enter PIN from your teacher</div>
+    <label class="label">Assessment PIN</label>
+    <input class="input" id="pin-input" type="text" maxlength="10"
+      placeholder="e.g. X4K9MN" autocomplete="off"
+      style="text-transform:uppercase;font-size:22px;letter-spacing:4px;font-weight:900;text-align:center">
+    <label class="label">Your Full Name — اپنا نام</label>
+    <input class="input" id="name-input" type="text" placeholder="Student name">
+    <label class="label">Student ID (optional)</label>
+    <input class="input" id="id-input" type="text" placeholder="Roll number or ID">
+    <div style="height:4px"></div>
+    <button class="btn btn-green" onclick="startAssessment()">Start Assessment — شروع کریں ▶</button>
+    <div id="home-err" style="color:#dc2626;font-size:13px;font-weight:700;text-align:center;margin-top:12px;display:none"></div>
+    <div id="sync-pending-wrap" style="display:none;margin-top:12px">
+      <button class="btn btn-outline" onclick="syncPending()" id="sync-pending-btn"
+        style="font-size:13px;padding:12px">
+        ⟳ Sync Pending Results (<span id="pending-count">0</span>)
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCREEN: LOADING ── -->
+<div class="screen" id="s-loading">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <div class="sync-badge" id="load-badge">Loading...</div>
+  </div>
+  <div class="card" style="text-align:center;padding:40px">
+    <div style="font-size:48px;margin-bottom:16px">📚</div>
+    <div style="font-size:18px;font-weight:800;color:var(--green)" id="load-msg">Loading questions...</div>
+    <div style="font-size:14px;color:var(--muted);margin-top:8px" id="load-sub">Please wait</div>
+  </div>
+</div>
+
+<!-- ── SCREEN: QUESTION ── -->
+<div class="screen" id="s-question">
+  <div class="app-header">
+    <div class="logo" id="q-name" style="font-size:14px;font-weight:700;color:white"></div>
+    <div style="font-size:13px;font-weight:700;color:var(--green3)" id="q-subject"></div>
+  </div>
+  <div style="width:100%;max-width:480px">
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span id="q-prog-label">Question 1 of 10</span>
+        <span id="q-level-badge" style="color:var(--green2)"></span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="q-prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="card">
+      <img class="question-img" id="q-img" src="" alt="">
+      <div class="question-text" id="q-text"></div>
+      <div class="options-grid" id="q-opts"></div>
+      <button class="btn btn-green" id="q-next" onclick="nextQuestion()" disabled>Next — اگلا ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCREEN: SUBJECT TRANSITION ── -->
+<div class="screen" id="s-transition">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <div class="sync-badge online">✓ Great job!</div>
+  </div>
+  <div class="card" style="text-align:center">
+    <div class="subject-transition">
+      <div class="subject-emoji" id="tr-emoji">✅</div>
+      <div class="subject-done" id="tr-done"></div>
+      <div class="subject-next" id="tr-next"></div>
+      <button class="btn btn-green" onclick="loadNextSubject()">Continue — جاری رکھیں ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCREEN: RESULTS ── -->
+<div class="screen" id="s-results">
+  <div class="app-header">
+    <div class="logo">TAKMIL</div>
+    <div class="sync-badge" id="res-sync-badge">Saving...</div>
+  </div>
+  <div class="card" style="text-align:center">
+    <div style="font-size:22px;font-weight:900;color:var(--green);margin-bottom:4px" id="res-name"></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="res-level"></div>
+    <div class="result-circle" id="res-circle">
+      <div class="result-pct" id="res-pct">0%</div>
+    </div>
+    <div class="result-badge" id="res-badge">Calculating...</div>
+    <div class="subjects-breakdown" id="res-breakdown"></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="res-sync-msg">
+      Results saved offline. Will sync when internet available.
+    </div>
+    <button class="btn btn-green" onclick="newStudent()" style="margin-bottom:10px">
+      Next Student — اگلا طالب علم
+    </button>
+    <button class="btn btn-outline" onclick="showScreen('s-home')">Home</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="install-banner">
+  <div class="ib-icon">📲</div>
+  <div class="ib-text">
+    <div class="ib-title">Install TAKMIL Student App</div>
+    <div class="ib-sub">Works offline — open from home screen without internet</div>
+  </div>
+  <div class="ib-btns">
+    <button class="ib-install" onclick="installApp()">Install</button>
+    <button class="ib-dismiss" onclick="dismissInstallBanner()">✕</button>
+  </div>
+</div>
+
+<script>
+const BASE = '';
+const DB_NAME = 'takmil_offline';
+let db;
+
+// Session state
+let session = {
+  pin:'', name:'', studentId:'', level:1,
+  subjects:['English','Math','Urdu'],
+  subjectIdx:0, subjectResults:[],
+  currentQuestions:[], answers:[],
+  currentQ:0, currentSubject:'', gps:null
+};
+
+// ══ IndexedDB ══════════════════════════════════════════════════════════════════
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, 5);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('questions'))
+        d.createObjectStore('questions', { keyPath: 'question_id' });
+      if (!d.objectStoreNames.contains('pins'))
+        d.createObjectStore('pins', { keyPath: 'pin' });
+      if (!d.objectStoreNames.contains('results'))
+        d.createObjectStore('results', { autoIncrement: true, keyPath: 'local_id' });
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror   = () => rej(req.error);
+  });
+}
+function dbGet(store, key) {
+  return new Promise((res,rej) => {
+    const tx  = db.transaction(store,'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+function dbPut(store, val) {
+  return new Promise((res,rej) => {
+    const tx  = db.transaction(store,'readwrite');
+    const req = tx.objectStore(store).put(val);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+function dbGetAll(store) {
+  return new Promise((res,rej) => {
+    const tx  = db.transaction(store,'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => res([]);
+  });
+}
+function dbUpdate(key, updates) {
+  return new Promise(async (res) => {
+    try {
+      const existing = await dbGet('results', key);
+      if (existing) { Object.assign(existing, updates); await dbPut('results', existing); }
+      res();
+    } catch(e) { res(); }
+  });
+}
+
+function isOnline() { return navigator.onLine; }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showToast(msg, ms=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', ms);
+}
+
+// ══ Online/Offline UI ══════════════════════════════════════════════════════════
+function updateStatusUI() {
+  const badge   = document.getElementById('home-status-badge');
+  const offBar  = document.getElementById('offline-info-bar');
+  const onBar   = document.getElementById('online-preload-bar');
+  if (!badge) return;
+  if (isOnline()) {
+    badge.textContent = '🟢 Online'; badge.className = 'sync-badge online';
+    if (offBar) offBar.style.display = 'none';
+    if (onBar)  onBar.style.display  = 'block';
+  } else {
+    badge.textContent = '📵 Offline'; badge.className = 'sync-badge offline';
+    if (offBar) offBar.style.display = 'block';
+    if (onBar)  onBar.style.display  = 'none';
+  }
+  updatePendingUI();
+}
+
+async function updatePendingUI() {
+  const all     = await dbGetAll('results');
+  const pending = all.filter(r => !r.synced);
+  const wrap    = document.getElementById('sync-pending-wrap');
+  const cnt     = document.getElementById('pending-count');
+  if (wrap) wrap.style.display  = pending.length > 0 ? 'block' : 'none';
+  if (cnt)  cnt.textContent = pending.length;
+}
+
+window.addEventListener('online',  () => { updateStatusUI(); syncPending(); });
+window.addEventListener('offline', () => { updateStatusUI(); });
+
+// ══ PIN VALIDATION — with caching ══════════════════════════════════════════════
+// When online: validates, then caches PIN + questions for offline use
+// When offline: loads from IndexedDB cache
+async function validatePin(pin, name) {
+  const upperPin = pin.toUpperCase();
+
+  if (isOnline()) {
+    try {
+      // Call server — this both validates AND returns questions
+      const payload  = { pin: upperPin, studentName: name, subject: null };
+      const resp     = await fetch(BASE + '/portal/session/start', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (!resp.ok || data.error) return { valid: false, error: data.error || 'Invalid PIN' };
+
+      // ── CACHE PIN for offline use ──────────────────────────────────────────
+      await dbPut('pins', {
+        pin:        upperPin,
+        level:      data.level,
+        is_active:  true,
+        expires_at: new Date(Date.now() + 24*60*60*1000).toISOString(),
+        cached_at:  new Date().toISOString(),
+      });
+
+      // ── CACHE questions for all subjects ────────────────────────────────────
+      // Pre-load questions for all 3 subjects at this level while online
+      const subjects = ['English', 'Math', 'Urdu'];
+      for (const subj of subjects) {
+        try {
+          const qResp = await fetch(BASE + '/portal/session/start', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin: upperPin, studentName: name, subject: subj })
+          });
+          const qData = await qResp.json();
+          if (qData.questions && qData.questions.length > 0) {
+            for (const q of qData.questions) {
+              // Normalise to a consistent shape with a stable key
+              await dbPut('questions', {
+                question_id:    q.id || (q.question_id + '_' + subj + '_' + data.level),
+                question_text:  q.question_text || '',
+                q_text_urdu:    q.q_text_urdu   || '',
+                q_text_english: q.q_text_english || q.question_text || '',
+                image_url:      q.image_url || null,
+                option_a: q.option_a, option_b: q.option_b,
+                option_c: q.option_c, option_d: q.option_d,
+                correct_option: q.correct || q.correct_option || 'A',
+                subject: subj, level: data.level,
+              });
+            }
+          }
+        } catch(e) { /* non-fatal — this subject won't be available offline */ }
+      }
+      console.log(`[Portal] PIN ${upperPin} and questions cached for offline use`);
+
+      if (data.isMultiSubject) return { valid: true, level: data.level, online: true, multiSubject: true };
+      return { valid: true, level: data.level, online: true, sessionId: data.sessionId };
+
+    } catch(e) {
+      console.warn('[Portal] Server error, trying cache:', e.message);
+      // Fall through to offline check
+    }
+  }
+
+  // ── OFFLINE: try cached PIN ────────────────────────────────────────────────
+  const pinRec = await dbGet('pins', upperPin);
+  if (!pinRec) {
+    return { valid: false, error: 'PIN not found. Please connect to internet first to cache this PIN.' };
+  }
+  if (!pinRec.is_active) return { valid: false, error: 'PIN is not active.' };
+  if (new Date(pinRec.expires_at) < new Date()) {
+    return { valid: false, error: 'Cached PIN has expired. Ask teacher to generate a new one.' };
+  }
+  return { valid: true, level: pinRec.level, online: false };
+}
+
+// ══ QUESTION LOADING — online first, cache fallback ════════════════════════════
+async function getQuestions(subject, level, name, pin) {
+  if (isOnline()) {
+    try {
+      const resp = await fetch(BASE + '/portal/session/start', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pin.toUpperCase(), studentName: name, subject })
+      });
+      const data = await resp.json();
+      if (data.questions && data.questions.length > 0) {
+        // Cache the questions while we have them
+        for (const q of data.questions) {
+          await dbPut('questions', {
+            question_id:   q.id || (Math.random().toString(36).slice(2)),
+            question_text: q.question_text || '',
+            q_text_urdu:   q.q_text_urdu   || '',
+            image_url:     q.image_url || null,
+            option_a: q.option_a, option_b: q.option_b,
+            option_c: q.option_c, option_d: q.option_d,
+            correct_option: q.correct || q.correct_option || 'A',
+            subject, level,
+          });
+        }
+        return data.questions;
+      }
+    } catch(e) { console.warn('[Portal] Fetching questions failed, using cache'); }
+  }
+
+  // ── Offline fallback: read from IndexedDB ──────────────────────────────────
+  const all      = await dbGetAll('questions');
+  const filtered = all.filter(q => q.subject === subject && parseInt(q.level) === parseInt(level));
+  if (filtered.length === 0) {
+    return [];
+  }
+  // Shuffle
+  for (let i = filtered.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+  }
+  return filtered.slice(0, 10).map(q => ({
+    id:            q.question_id,
+    level:         q.level,
+    question_text: q.q_text_english || q.question_text || '',
+    q_text_urdu:   q.q_text_urdu   || '',
+    image_url:     q.image_url || null,
+    option_a: q.option_a, option_b: q.option_b,
+    option_c: q.option_c, option_d: q.option_d,
+    correct:  q.correct || q.correct_option || 'A',
+  }));
+}
+
+// ══ ASSESSMENT FLOW ═══════════════════════════════════════════════════════════
+async function startAssessment() {
+  const pin  = document.getElementById('pin-input').value.trim().toUpperCase();
+  const name = document.getElementById('name-input').value.trim();
+  const sid  = document.getElementById('id-input').value.trim();
+  const err  = document.getElementById('home-err');
+  err.style.display = 'none';
+  if (pin.length < 4) { err.textContent = 'Please enter a valid PIN.'; err.style.display = 'block'; return; }
+  if (name.length < 2) { err.textContent = 'Please enter your name.'; err.style.display = 'block'; return; }
+
+  session.pin = pin; session.name = name; session.studentId = sid;
+
+  showScreen('s-loading');
+  document.getElementById('load-msg').textContent = 'Validating PIN...';
+  document.getElementById('load-sub').textContent  = isOnline() ? 'Caching questions for offline use...' : 'Loading from cache...';
+
+  const result = await validatePin(pin, name);
+  if (!result.valid) {
+    err.textContent = result.error;
+    err.style.display = 'block';
+    showScreen('s-home');
+    return;
+  }
+
+  session.level = result.level;
+  session.subjectIdx = 0;
+  session.subjectResults = [];
+  session.gps = null;
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => { session.gps = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }; },
+      () => {}
+    );
+  }
+
+  await loadSubject(session.subjects[0]);
+}
+
+async function loadSubject(subject) {
+  showScreen('s-loading');
+  document.getElementById('load-msg').textContent  = 'Loading ' + subject + ' questions...';
+  document.getElementById('load-sub').textContent  = 'Subject ' + (session.subjectIdx + 1) + ' of 3';
+
+  const questions = await getQuestions(subject, session.level, session.name, session.pin);
+  if (!questions || questions.length === 0) {
+    showToast('No ' + subject + ' questions for Level ' + session.level + '. Skipping...');
+    session.subjectResults.push({ subject, score: 0, total: 0, pct: 0 });
+    session.subjectIdx++;
+    if (session.subjectIdx < session.subjects.length) {
+      await loadSubject(session.subjects[session.subjectIdx]);
+    } else {
+      showFinalResults();
+    }
+    return;
+  }
+
+  session.currentQuestions = questions;
+  session.answers = new Array(questions.length).fill(null);
+  session.currentQ = 0;
+  session.currentSubject = subject;
+
+  document.getElementById('q-name').textContent    = session.name;
+  document.getElementById('q-subject').textContent = subject + ' • L' + session.level;
+  showQuestion(0);
+  showScreen('s-question');
+}
+
+function showQuestion(idx) {
+  const q     = session.currentQuestions[idx];
+  const total = session.currentQuestions.length;
+  document.getElementById('q-prog-label').textContent = 'Question ' + (idx + 1) + ' of ' + total;
+  document.getElementById('q-level-badge').textContent = 'Level ' + session.level;
+  document.getElementById('q-prog-fill').style.width = ((idx / total) * 100) + '%';
+
+  const text = q.question_text || q.q_text_english || '';
+  document.getElementById('q-text').textContent = text;
+
+  const img = document.getElementById('q-img');
+  if (q.image_url) { img.src = q.image_url; img.style.display = 'block'; }
+  else { img.style.display = 'none'; img.src = ''; }
+
+  const opts = document.getElementById('q-opts');
+  opts.innerHTML = '';
+  document.getElementById('q-next').disabled = true;
+
+  // Detect type — use question_type field if set, otherwise infer from data
+  let qtype = (q.question_type || '').toUpperCase().replace(/[^A-Z]/g, '');
+  if (!qtype || qtype === 'TEXT' || qtype === 'PICTURE') {
+    // Legacy questions — infer type from data shape
+    const hasOptions = ['a','b','c','d'].some(l => q['option_' + l]);
+    const correctOpt = (q.correct_option || q.correct || '').toUpperCase();
+    if (hasOptions) qtype = 'MCQ';
+    else if (correctOpt === 'TRUE' || correctOpt === 'FALSE') qtype = 'TRUEFALSE';
+    else qtype = 'MCQ';
+  }
+
+  if (qtype === 'TRUEFALSE') {
+    renderTrueFalse(q, opts);
+  } else if (qtype === 'SHORTANSWER') {
+    renderShortAnswer(q, opts);
+  } else if (qtype === 'FILLINTHEBLANK') {
+    renderFillBlank(q, opts);
+  } else if (qtype === 'MATCHTHECOLUMNS') {
+    renderMatchColumns(q, opts);
+  } else if (qtype === 'SENTENCEBUILDER') {
+    renderSentenceBuilder(q, opts);
+  } else {
+    // MCQ (default)
+    ['a','b','c','d'].forEach(l => {
+      const text = q['option_' + l] || '';
+      if (!text) return;
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.innerHTML = '<span class="opt-letter">' + l.toUpperCase() + '</span>' + text;
+      btn.onclick = () => selectOption(l.toUpperCase(), btn);
+      opts.appendChild(btn);
+    });
+  }
+}
+
+function renderTrueFalse(q, opts) {
+  const row = document.createElement('div');
+  row.className = 'tf-row';
+  ['True','False'].forEach(val => {
+    const btn = document.createElement('button');
+    btn.className = 'tf-btn';
+    btn.textContent = val === 'True' ? '✓ True — سچ' : '✗ False — جھوٹ';
+    btn.onclick = () => {
+      session.answers[session.currentQ] = val.toUpperCase();
+      document.querySelectorAll('.tf-btn').forEach(b => b.style.pointerEvents = 'none');
+      const correct = (q.correct || q.correct_option || '').toUpperCase();
+      btn.style.borderColor = val.toUpperCase() === correct ? 'var(--green2)' : 'var(--red)';
+      btn.style.background  = val.toUpperCase() === correct ? '#dcfce7' : '#fef2f2';
+      if (val.toUpperCase() !== correct) {
+        document.querySelectorAll('.tf-btn').forEach(b => {
+          if (b.textContent.includes(correct === 'TRUE' ? 'True' : 'False')) {
+            b.style.borderColor = 'var(--green2)'; b.style.background = '#dcfce7';
+          }
+        });
+      }
+      document.getElementById('q-next').disabled = false;
+    };
+    row.appendChild(btn);
+  });
+  opts.appendChild(row);
+}
+
+function renderShortAnswer(q, opts) {
+  const ta = document.createElement('textarea');
+  ta.className = 'sa-textarea';
+  ta.placeholder = 'Write your answer here... / اپنا جواب یہاں لکھیں';
+  ta.oninput = () => {
+    session.answers[session.currentQ] = ta.value;
+    document.getElementById('q-next').disabled = ta.value.trim().length === 0;
+  };
+  const modelDiv = document.createElement('div');
+  modelDiv.className = 'sa-model';
+  modelDiv.id = 'sa-model-ans';
+  opts.appendChild(ta);
+  opts.appendChild(modelDiv);
+  // Show model answer on Next click — override next button
+  const nextBtn = document.getElementById('q-next');
+  nextBtn._origOnclick = nextBtn.onclick;
+  nextBtn.onclick = () => {
+    if (!session._saRevealed) {
+      session._saRevealed = true;
+      modelDiv.style.display = 'block';
+      modelDiv.innerHTML = '<strong>Model answer:</strong> ' + (q.correct || q.correct_option || '');
+      nextBtn.textContent = 'Next — اگلا ▶';
+    } else {
+      session._saRevealed = false;
+      nextQuestion();
+    }
+  };
+}
+
+function renderFillBlank(q, opts) {
+  const text = q.q_text_english || '';
+  const correct = q.correct || q.correct_option || '';
+  const wrap = document.createElement('div');
+  wrap.className = 'fitb-wrap';
+  const parts = text.split('___');
+  let html = parts[0];
+  html += `<input class="fitb-input" id="fitb-inp" type="text" placeholder="?" autocomplete="off">`;
+  if (parts[1]) html += parts[1];
+  wrap.innerHTML = html;
+  opts.appendChild(wrap);
+  const inp = document.getElementById('fitb-inp');
+  inp.oninput = () => {
+    session.answers[session.currentQ] = inp.value;
+    document.getElementById('q-next').disabled = inp.value.trim().length === 0;
+  };
+  const nextBtn = document.getElementById('q-next');
+  nextBtn.onclick = () => {
+    if (!session._fitbChecked) {
+      session._fitbChecked = true;
+      const ans = inp.value.trim().toLowerCase();
+      const cor = correct.toLowerCase();
+      inp.style.borderBottomColor = ans === cor ? 'var(--green2)' : 'var(--red)';
+      inp.readOnly = true;
+      if (ans !== cor) {
+        const hint = document.createElement('div');
+        hint.style.cssText = 'color:#15803d;font-size:14px;margin-top:8px;';
+        hint.textContent = '✓ Correct answer: ' + correct;
+        opts.appendChild(hint);
+      }
+      nextBtn.textContent = 'Next — اگلا ▶';
+    } else {
+      session._fitbChecked = false;
+      nextQuestion();
+    }
+  };
+}
+
+function renderMatchColumns(q, opts) {
+  let pairs = [];
+  try { pairs = JSON.parse(q.option_a || '[]'); } catch(e) { pairs = []; }
+  if (!pairs.length) {
+    const raw = q.option_a || '';
+    pairs = raw.split('|').map(p => { const s = p.split('→'); return { left: (s[0]||'').trim(), right: (s[1]||'').trim() }; }).filter(p => p.left);
+  }
+  if (!pairs.length) { opts.innerHTML = '<p style="color:#9ca3af">No pairs available</p>'; document.getElementById('q-next').disabled = false; return; }
+
+  const rights = [...pairs.map(p => p.right)].sort(() => Math.random() - 0.5);
+  const table = document.createElement('table');
+  table.className = 'match-table';
+  pairs.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    const tdA = document.createElement('td'); tdA.className = 'col-a'; tdA.textContent = p.left;
+    const tdB = document.createElement('td');
+    const sel = document.createElement('select'); sel.className = 'match-sel'; sel.id = 'match-' + i;
+    sel.innerHTML = '<option value="">-- select --</option>' + rights.map(r => `<option value="${r}">${r}</option>`).join('');
+    sel.onchange = () => {
+      const allFilled = pairs.every((_, j) => document.getElementById('match-' + j)?.value);
+      document.getElementById('q-next').disabled = !allFilled;
+      if (!session.answers[session.currentQ]) session.answers[session.currentQ] = {};
+      session.answers[session.currentQ][p.left] = sel.value;
+    };
+    tdB.appendChild(sel); tr.appendChild(tdA); tr.appendChild(tdB); table.appendChild(tr);
+  });
+  opts.appendChild(table);
+
+  const nextBtn = document.getElementById('q-next');
+  nextBtn.onclick = () => {
+    if (!session._matchChecked) {
+      session._matchChecked = true;
+      let allCorrect = true;
+      pairs.forEach((p, i) => {
+        const sel = document.getElementById('match-' + i);
+        if (sel) {
+          const isCorrect = sel.value.trim() === (p.right || '').trim();
+          sel.style.borderColor = isCorrect ? 'var(--green2)' : 'var(--red)';
+          sel.style.background  = isCorrect ? '#dcfce7' : '#fef2f2';
+          sel.disabled = true;
+          if (!isCorrect) allCorrect = false;
+        }
+      });
+      session.answers[session.currentQ] = { _allCorrect: allCorrect };
+      nextBtn.textContent = 'Next — اگلا ▶';
+    } else {
+      session._matchChecked = false;
+      nextQuestion();
+    }
+  };
+}
+
+function renderSentenceBuilder(q, opts) {
+  let words = [];
+  // Words stored as pipe-separated in option_a: "dog|the|in|lived"
+  const raw = q.option_a || q.option_b || '';
+  if (raw.includes('|')) {
+    words = raw.split('|').map(w => w.trim()).filter(Boolean);
+  } else if (raw) {
+    words = raw.split(' ').map(w => w.trim()).filter(Boolean);
+  }
+  if (!words.length) { opts.innerHTML = '<p style="color:#9ca3af">No words available</p>'; document.getElementById('q-next').disabled = false; return; }
+
+  const shuffled = [...words].sort(() => Math.random() - 0.5);
+  let placed = [];
+  const correct = (q.correct || q.correct_option || '').toLowerCase();
+
+  const pool = document.createElement('div'); pool.className = 'sb-pool'; pool.id = 'sb-pool';
+  const box  = document.createElement('div'); box.className  = 'sb-sentence'; box.id = 'sb-box';
+  const hint = document.createElement('span'); hint.className = 'sb-empty-hint'; hint.textContent = 'Tap words to build your sentence...';
+  box.appendChild(hint);
+  opts.appendChild(pool);
+  opts.appendChild(box);
+
+  function renderPool() {
+    pool.innerHTML = '';
+    shuffled.forEach((w, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'sb-chip' + (placed.includes(i) ? ' used' : '');
+      chip.innerHTML = `<span class="sb-chip-num">${i+1}</span>${w}`;
+      chip.onclick = () => { if (!placed.includes(i)) { placed.push(i); renderAll(); } };
+      pool.appendChild(chip);
+    });
+  }
+
+  function renderBox() {
+    box.innerHTML = '';
+    if (placed.length === 0) { box.appendChild(hint); return; }
+    placed.forEach((idx, pos) => {
+      const chip = document.createElement('span');
+      chip.className = 'sb-placed';
+      chip.innerHTML = shuffled[idx] + ' <span style="font-size:11px;opacity:0.5">✕</span>';
+      chip.onclick = () => { placed.splice(pos, 1); renderAll(); };
+      box.appendChild(chip);
+    });
+  }
+
+  function renderAll() {
+    renderPool(); renderBox();
+    session.answers[session.currentQ] = placed.map(i => shuffled[i]).join(' ');
+    document.getElementById('q-next').disabled = placed.length === 0;
+  }
+
+  renderPool();
+
+  const nextBtn = document.getElementById('q-next');
+  nextBtn.onclick = () => {
+    if (!session._sbChecked) {
+      session._sbChecked = true;
+      const attempt = placed.map(i => shuffled[i]).join(' ').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff\s]/g, '').trim();
+      const correctClean = correct.replace(/[^a-z0-9\u0600-\u06ff\s]/g, '').trim();
+      box.style.border = '2px solid ' + (attempt === correctClean ? 'var(--green2)' : 'var(--red)');
+      box.style.background = attempt === correctClean ? '#dcfce7' : '#fef2f2';
+      if (attempt !== correctClean) {
+        const corDiv = document.createElement('div');
+        corDiv.style.cssText = 'color:#15803d;font-size:14px;margin-top:8px;';
+        corDiv.textContent = '✓ Correct: ' + (q.correct || q.correct_option || '');
+        opts.appendChild(corDiv);
+      }
+      nextBtn.textContent = 'Next — اگلا ▶';
+    } else {
+      session._sbChecked = false;
+      nextQuestion();
+    }
+  };
+
+  renderAll();
+}
+
+function selectOption(letter, btn) {
+  if (session.answers[session.currentQ] !== null) return;
+  session.answers[session.currentQ] = letter;
+  document.querySelectorAll('.opt-btn').forEach(b => b.style.pointerEvents = 'none');
+  btn.classList.add('selected');
+  const q       = session.currentQuestions[session.currentQ];
+  const correct = (q.correct || q.correct_option || '').toUpperCase();
+  if (letter === correct) {
+    btn.classList.add('correct');
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.opt-btn').forEach(b => {
+      const l = b.querySelector('.opt-letter');
+      if (l && l.textContent === correct) b.classList.add('correct');
+    });
+  }
+  document.getElementById('q-next').disabled = false;
+}
+
+function nextQuestion() {
+  // Reset custom type state
+  session._saRevealed = false;
+  session._fitbChecked = false;
+  session._matchChecked = false;
+  session._sbChecked = false;
+  // Restore next button text and handler
+  const nb = document.getElementById('q-next');
+  nb.textContent = 'Next — اگلا ▶';
+  nb.onclick = nextQuestion;
+  const next = session.currentQ + 1;
+  if (next < session.currentQuestions.length) {
+    session.currentQ = next;
+    showQuestion(next);
+  } else {
+    finishSubject();
+  }
+}
+
+function finishSubject() {
+  const qs = session.currentQuestions;
+  let score = 0;
+  qs.forEach((q, i) => {
+    const qtype = (q.question_type || 'text').toUpperCase().replace(/[^A-Z]/g,'');
+    const ans = session.answers[i];
+    const correct = (q.correct || q.correct_option || '').trim();
+    if (qtype === 'SHORTANSWER') {
+      if (ans && String(ans).trim().length > 0) score++;
+    } else if (qtype === 'FILLINTHEBLANK') {
+      if (String(ans || '').trim().toLowerCase() === correct.toLowerCase()) score++;
+    } else if (qtype === 'SENTENCEBUILDER') {
+      const strip = s => String(s||'').toLowerCase().replace(/[.,!?;:]/g,'').trim();
+      if (strip(ans) === strip(correct)) score++;
+    } else if (qtype === 'MATCHTHECOLUMNS') {
+      if (ans && ans._allCorrect === true) score++;
+    } else {
+      if (String(ans || '').toUpperCase() === correct.toUpperCase()) score++;
+    }
+  });
+  const pct = Math.round((score / qs.length) * 100);
+  session.subjectResults.push({ subject: session.currentSubject, score, total: qs.length, pct });
+  session.subjectIdx++;
+
+  if (session.subjectIdx < session.subjects.length) {
+    const next = session.subjects[session.subjectIdx];
+    const emojis = { Math: '🔢', English: '📖', Urdu: '✍️' };
+    document.getElementById('tr-emoji').textContent = emojis[session.currentSubject] || '✅';
+    document.getElementById('tr-done').textContent  = session.currentSubject + ' Complete! (' + score + '/' + qs.length + ')';
+    document.getElementById('tr-next').textContent  = 'Next: ' + next + ' Assessment (' + (session.subjectIdx + 1) + '/3)';
+    showScreen('s-transition');
+  } else {
+    showFinalResults();
+  }
+}
+
+async function loadNextSubject() {
+  await loadSubject(session.subjects[session.subjectIdx]);
+}
+
+// ══ RESULTS + SYNC ════════════════════════════════════════════════════════════
+async function showFinalResults() {
+  const results    = session.subjectResults;
+  const totalScore = results.reduce((s, r) => s + r.score, 0);
+  const totalQ     = results.reduce((s, r) => s + r.total, 0);
+  const overallPct = totalQ ? Math.round((totalScore / totalQ) * 100) : 0;
+  const passed     = overallPct >= 80;
+
+  document.getElementById('res-name').textContent    = session.name;
+  document.getElementById('res-level').textContent   = 'Level ' + session.level + (session.studentId ? ' • ' + session.studentId : '');
+  document.getElementById('res-pct').textContent     = overallPct + '%';
+  document.getElementById('res-circle').style.setProperty('--pct', overallPct + '%');
+
+  const badge = document.getElementById('res-badge');
+  badge.textContent = passed ? '✅ Passed — کامیاب' : '📚 Needs Review — دوبارہ کوشش';
+  badge.className   = 'result-badge ' + (passed ? 'pass' : 'fail');
+
+  document.getElementById('res-breakdown').innerHTML = results.map(r =>
+    `<div class="subj-card">
+      <div class="subj-name">${r.subject}</div>
+      <div class="subj-score">${r.score}/${r.total}</div>
+      <div class="subj-pct">${r.pct}%</div>
+    </div>`
+  ).join('');
+
+  const resultRecord = {
+    synced:      false,
+    timestamp:   new Date().toISOString(),
+    gps:         session.gps,
+    pin:         session.pin,
+    student_name:session.name,
+    student_id:  session.studentId,
+    level:       session.level,
+    overall_pct: overallPct,
+    passed,
+    subjects:    results,
+    submission_mode: isOnline() ? 'online' : 'offline',
+  };
+
+  const syncBadge = document.getElementById('res-sync-badge');
+  const syncMsg   = document.getElementById('res-sync-msg');
+
+  // Save to IndexedDB first (always)
+  const localId = await dbPut('results', resultRecord);
+
+  if (isOnline()) {
+    syncBadge.textContent = '↑ Syncing...'; syncBadge.className = 'sync-badge syncing';
+    const ok = await syncResult(resultRecord);
+    if (ok) {
+      await dbUpdate(localId, { synced: true });
+      syncBadge.textContent = '✓ Saved'; syncBadge.className = 'sync-badge online';
+      syncMsg.textContent   = 'Results saved to server ✓';
+    } else {
+      syncBadge.textContent = '⚠ Saved Offline'; syncBadge.className = 'sync-badge offline';
+      syncMsg.textContent   = 'Saved offline — will sync when internet returns.';
+    }
+  } else {
+    syncBadge.textContent = '● Offline'; syncBadge.className = 'sync-badge offline';
+    syncMsg.textContent   = '📵 No internet — saved on tablet. Tap "Sync" when connected.';
+  }
+
+  await updatePendingUI();
+  showScreen('s-results');
+}
+
+// Submit one result record to server
+async function syncResult(record) {
+  try {
+    for (const subj of record.subjects) {
+      if (subj.total === 0) continue;
+      const resp = await fetch(BASE + '/portal/offline/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pin:            record.pin,
+          student_name:   record.student_name,
+          student_id:     record.student_id,
+          subject:        subj.subject,
+          level:          record.level,
+          score:          subj.score,
+          total:          subj.total,
+          pct:            subj.pct,
+          passed:         subj.pct >= 80,
+          overall_pct:    record.overall_pct,
+          overall_passed: record.passed,
+          timestamp:      record.timestamp,
+          submission_mode: record.submission_mode || 'offline',
+          gps_lat:        record.gps?.lat || null,
+          gps_lng:        record.gps?.lng || null,
+          gps_accuracy:   record.gps?.acc || null,
+        })
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || data.saved === false) {
+        console.error('[syncResult] Server error:', data.error || resp.status);
+        return false;
+      }
+    }
+    return true;
+  } catch(e) {
+    console.error('[syncResult] Network error:', e.message);
+    return false;
+  }
+}
+
+// Sync all pending (unsynced) results from IndexedDB
+async function syncPending() {
+  if (!isOnline()) { showToast('Connect to internet first'); return; }
+  const btn = document.getElementById('sync-pending-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '⟳ Syncing...'; }
+
+  const all     = await dbGetAll('results');
+  const pending = all.filter(r => !r.synced);
+  let synced    = 0;
+
+  for (const record of pending) {
+    const ok = await syncResult(record);
+    if (ok) {
+      await dbUpdate(record.local_id, { synced: true });
+      synced++;
+    }
+  }
+
+  if (btn) { btn.disabled = false; }
+  await updatePendingUI();
+  if (synced > 0) {
+    showToast(`✅ ${synced} result${synced > 1 ? 's' : ''} synced to server!`, 3000);
+  } else if (pending.length === 0) {
+    showToast('No pending results to sync');
+  } else {
+    showToast('⚠ Sync failed — check connection');
+  }
+}
+
+function newStudent() {
+  session = {
+    pin:'', name:'', studentId:'', level:1,
+    subjects:['English','Math','Urdu'],
+    subjectIdx:0, subjectResults:[],
+    currentQuestions:[], answers:[],
+    currentQ:0, currentSubject:'', gps:null,
+  };
+  document.getElementById('pin-input').value  = '';
+  document.getElementById('name-input').value = '';
+  document.getElementById('id-input').value   = '';
+  showScreen('s-home');
+  updatePendingUI();
+}
+
+window.addEventListener('online',  () => { showToast('Back online ✓ — syncing results...', 2000); updateStatusUI(); syncPending(); });
+window.addEventListener('offline', () => { showToast('Offline — assessment still works from cache'); updateStatusUI(); });
+
+// ══ PWA INSTALL ══════════════════════════════════════════════════════════════
+let _deferredPrompt = null;
+function setupInstallPrompt() {
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) return;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); _deferredPrompt = e;
+    setTimeout(() => showInstallBanner(), 3000);
+  });
+  const isIOS    = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if (isIOS && isSafari) setTimeout(() => showInstallBanner(true), 3000);
+  window.addEventListener('appinstalled', () => {
+    document.getElementById('install-banner').style.display = 'none';
+    showToast('✅ App installed! Open from home screen anytime.');
+  });
+}
+function showInstallBanner(ios=false) {
+  const dismissed = localStorage.getItem('install_dismissed_student');
+  if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 60 * 60 * 1000) return;
+  const banner = document.getElementById('install-banner');
+  if (!banner) return;
+  if (ios) {
+    banner.querySelector('.ib-sub').textContent    = 'Tap Share → "Add to Home Screen" to install';
+    banner.querySelector('.ib-install').textContent = 'Got it';
+    banner.querySelector('.ib-install').onclick     = dismissInstallBanner;
+  }
+  banner.style.display = 'flex';
+}
+async function installApp() {
+  if (_deferredPrompt) {
+    _deferredPrompt.prompt();
+    const { outcome } = await _deferredPrompt.userChoice;
+    _deferredPrompt = null;
+    document.getElementById('install-banner').style.display = 'none';
+    if (outcome === 'accepted') showToast('✅ Installing app...');
+  } else { dismissInstallBanner(); }
+}
+function dismissInstallBanner() {
+  document.getElementById('install-banner').style.display = 'none';
+  localStorage.setItem('install_dismissed_student', Date.now().toString());
+}
+
+// ══ SERVICE WORKER ════════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    .then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const w = reg.installing;
+        w.addEventListener('statechange', () => {
+          if (w.state === 'activated') showToast('✅ App updated — works offline now!');
+        });
+      });
+    })
+    .catch(err => console.log('SW error:', err));
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+openDB()
+  .then(() => {
+    updateStatusUI();
+    updatePendingUI();
+    setupInstallPrompt();
+    // Auto-sync pending results on page load if online
+    if (isOnline()) syncPending();
+  })
+  .catch(console.error);
+
+// ── Register Service Worker ───────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    .then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const w = reg.installing;
+        w.addEventListener('statechange', () => {
+          if (w.state === 'activated') showToast('✅ App ready — works offline now!');
+        });
+      });
+      if (reg.active) showToast('✅ App cached — works offline');
+    })
+    .catch(err => console.log('SW error:', err));
+}
+</script>
+</body>
+</html>

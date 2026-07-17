@@ -1,0 +1,12 @@
+Option 2 — Run in Background via PowerShell (Best)
+
+This runs the script in the background even if you close the window:
+
+powershellStart-Process python -ArgumentList '"C:\Users\qamar\OneDrive\Desktop\takmil_transcribe.py"' -WindowStyle Normal -PassThru
+
+Or to log everything to a file so you can check progress later:
+
+powershellStart-Process python -ArgumentList '"C:\Users\qamar\OneDrive\Desktop\takmil_transcribe.py"' -RedirectStandardOutput "C:\Users\qamar\OneDrive\Desktop\transcribe_log.txt" -RedirectStandardError "C:\Users\qamar\OneDrive\Desktop\transcribe_err.txt" -WindowStyle Hidden
+
+Check progress anytime:
+powershellGet-Content "C:\Users\qamar\OneDrive\Desktop\transcribe_log.txt" -Tail 20

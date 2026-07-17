@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Question Bank · Grove</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Epilogue:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fafaf8;
+  --bg2:#ffffff;
+  --bg3:#f3f2ee;
+  --bg4:#eceae4;
+  --forest:#1c4a2e;
+  --forest2:#256038;
+  --forest3:rgba(28,74,46,0.07);
+  --forest4:rgba(28,74,46,0.03);
+  --olive:#6b7c5a;
+  --sage:#a8b89a;
+  --terr:#c2623f;
+  --terr2:rgba(194,98,63,0.09);
+  --gold:#b8892a;
+  --gold2:rgba(184,137,42,0.09);
+  --sky:#3b82f6;
+  --sky2:rgba(59,130,246,0.09);
+  --rose:#e05c7a;
+  --rose2:rgba(224,92,122,0.09);
+  --text:#1a1c18;
+  --text2:#5a5e52;
+  --text3:#9a9e90;
+  --border:#e4e2db;
+  --border2:#cccab8;
+  --ok:#1c6b38;
+  --ok2:rgba(28,107,56,0.09);
+  --serif:'Newsreader',serif;
+  --sans:'Epilogue',sans-serif;
+  --r:10px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;overflow:hidden}
+
+/* LAYOUT */
+.shell{display:grid;grid-template-columns:200px 1fr;grid-template-rows:52px 1fr;height:100vh}
+
+/* TOP BAR */
+.topbar{
+  grid-column:1/-1;background:var(--forest);
+  display:flex;align-items:center;padding:0 22px;gap:16px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.15);
+}
+.tb-logo{font-family:var(--serif);font-size:20px;font-weight:600;color:#fff;letter-spacing:0.5px;font-style:italic}
+.tb-slash{color:rgba(255,255,255,0.3);font-size:18px;margin:0 2px}
+.tb-section{font-size:11px;font-weight:600;color:rgba(255,255,255,0.55);letter-spacing:1.5px;text-transform:uppercase}
+.tb-pills{margin-left:auto;display:flex;gap:8px;flex-shrink:1;overflow:hidden}
+.tb-pill{
+  font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:0.3px;
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;
+}
+.tb-pill.green{background:rgba(167,243,208,0.15);color:#6ee7b7;border-color:rgba(167,243,208,0.2)}
+.tb-pill.amber{background:rgba(252,211,77,0.12);color:#fde68a;border-color:rgba(252,211,77,0.2)}
+.tb-pill.red{background:rgba(252,165,165,0.12);color:#fca5a5;border-color:rgba(252,165,165,0.2)}
+.tb-conn{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#6ee7b7;letter-spacing:1px;margin-left:8px}
+.tb-conn-dot{width:6px;height:6px;border-radius:50%;background:#6ee7b7;box-shadow:0 0 6px #6ee7b7;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* SIDEBAR */
+.sidebar{
+  background:var(--bg2);border-right:2px solid var(--border);
+  padding:18px 0;display:flex;flex-direction:column;overflow-y:auto;
+}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.sb-sec{padding:0 14px;margin-bottom:18px}
+.sb-lbl{font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;padding-left:2px}
+.sb-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 8px;border-radius:7px;cursor:pointer;
+  font-size:12px;font-weight:500;color:var(--text2);
+  transition:all 0.15s;margin-bottom:1px;border:1px solid transparent;
+}
+.sb-item:hover{background:var(--forest3);color:var(--forest)}
+.sb-item.active{background:var(--forest3);color:var(--forest);font-weight:700;border-color:rgba(28,74,46,0.15)}
+.sb-count{font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;background:var(--bg3);color:var(--text3)}
+.sb-item.active .sb-count{background:var(--forest);color:#fff}
+
+.sb-select{
+  width:100%;padding:7px 10px;background:var(--bg3);border:1.5px solid var(--border);
+  border-radius:7px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;
+  appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9e90' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+  transition:border-color 0.2s;
+}
+.sb-select:focus{border-color:var(--forest);outline:none}
+
+.sb-divider{height:1px;background:var(--border);margin:4px 14px 18px}
+
+.sb-btn-group{padding:0 14px;display:flex;flex-direction:column;gap:6px;margin-top:auto;padding-top:10px}
+.sb-btn{
+  padding:9px 14px;border-radius:8px;border:none;
+  font-size:11px;font-weight:700;font-family:var(--sans);cursor:pointer;
+  display:flex;align-items:center;gap:7px;transition:all 0.2s;
+}
+.sb-primary{background:var(--forest);color:#fff}
+.sb-primary:hover{background:var(--forest2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(28,74,46,0.25)}
+.sb-secondary{background:var(--bg3);color:var(--text2);border:1.5px solid var(--border2)}
+.sb-secondary:hover{border-color:var(--forest);color:var(--forest)}
+.sb-tertiary{background:var(--terr2);color:var(--terr);border:1.5px solid rgba(194,98,63,0.2)}
+.sb-tertiary:hover{background:rgba(194,98,63,0.15)}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:2px solid var(--border)}
+.stat-card{
+  padding:20px 22px;position:relative;overflow:hidden;
+  border-right:1px solid var(--border);background:var(--bg2);
+  transition:background 0.15s;
+}
+.stat-card:last-child{border-right:none}
+.stat-card:hover{background:var(--bg3)}
+.stat-accent{position:absolute;top:0;left:0;width:3px;height:100%;border-radius:0 3px 3px 0}
+.stat-label{font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px}
+.stat-num{font-family:var(--serif);font-size:40px;font-weight:300;line-height:1;letter-spacing:-2px}
+.stat-sub{font-size:10px;color:var(--text3);margin-top:6px;font-weight:500}
+
+/* MID ROW */
+.mid-row{display:grid;grid-template-columns:220px 1fr;border-bottom:2px solid var(--border)}
+
+/* BREAKDOWN */
+.breakdown{background:var(--bg2);border-right:1px solid var(--border);padding:18px 20px}
+.section-head{font-family:var(--serif);font-size:14px;font-weight:600;font-style:italic;color:var(--text);margin-bottom:14px}
+.subj-item{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.subj-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.subj-name{font-size:11px;font-weight:600;color:var(--text2);flex:1}
+.subj-bar-bg{width:90px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;flex-shrink:0}
+.subj-bar-fill{height:100%;border-radius:3px}
+.subj-count{font-size:11px;font-weight:700;color:var(--text);width:26px;text-align:right;flex-shrink:0}
+
+/* PIPELINE */
+.pipeline{background:var(--bg2);padding:18px 20px}
+.pipe-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.pipe-note{font-size:10px;color:var(--text3);font-weight:600}
+.pipe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;max-height:180px;overflow-y:auto}
+.pipe-grid::-webkit-scrollbar{width:3px}
+.pipe-grid::-webkit-scrollbar-thumb{background:var(--border2)}
+.pipe-item{
+  display:flex;flex-direction:column;gap:5px;padding:10px 12px;
+  background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;
+  cursor:pointer;transition:all 0.15s;
+}
+.pipe-item:hover{border-color:var(--forest);background:var(--forest4);transform:translateY(-1px)}
+.pipe-tags{display:flex;gap:5px;align-items:center}
+.pipe-tag{font-size:8px;font-weight:800;padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:0.5px}
+.pipe-q{font-size:11px;color:var(--text2);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.pipe-acts{display:flex;gap:4px;margin-top:3px}
+.pipe-btn{font-size:9px;font-weight:700;padding:2px 9px;border-radius:5px;cursor:pointer;border:none;transition:all 0.15s;font-family:var(--sans)}
+.pipe-ok{background:var(--ok2);color:var(--ok)}
+.pipe-ok:hover{background:rgba(28,107,56,0.2)}
+.pipe-no{background:var(--rose2);color:var(--rose)}
+.pipe-no:hover{background:rgba(224,92,122,0.2)}
+
+/* TOOLBAR */
+.toolbar{
+  display:flex;align-items:center;gap:8px;padding:10px 18px;
+  background:var(--bg2);border-bottom:1.5px solid var(--border);flex-wrap:wrap;
+}
+.search-wrap{flex:1;position:relative;min-width:200px}
+.search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text3)}
+.search-inp{
+  width:100%;padding:8px 12px 8px 30px;background:var(--bg3);border:1.5px solid var(--border);
+  border-radius:8px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color 0.2s;
+}
+.search-inp:focus{border-color:var(--forest);background:var(--bg2)}
+.search-inp::placeholder{color:var(--text3)}
+.sort-sel{
+  padding:8px 28px 8px 10px;background:var(--bg3);border:1.5px solid var(--border);
+  border-radius:8px;font-size:11px;color:var(--text);font-family:var(--sans);outline:none;
+  appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9e90' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;
+}
+.sort-sel:focus{outline:none;border-color:var(--forest)}
+.tb-btn{
+  padding:8px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;
+  font-family:var(--sans);cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;gap:5px;
+}
+.btn-approve-all{background:var(--ok2);color:var(--ok);border:1.5px solid rgba(28,107,56,0.15)}
+.btn-approve-all:hover{background:rgba(28,107,56,0.18)}
+.btn-export{background:var(--gold2);color:var(--gold);border:1.5px solid rgba(184,137,42,0.15)}
+.btn-export:hover{background:rgba(184,137,42,0.18)}
+.btn-import{background:var(--forest);color:#fff}
+.btn-import:hover{background:var(--forest2);transform:translateY(-1px);box-shadow:0 3px 12px rgba(28,74,46,0.2)}
+.btn-refresh{background:var(--bg3);color:var(--text2);border:1.5px solid var(--border2)}
+.btn-refresh:hover{border-color:var(--forest);color:var(--forest)}
+.q-count-badge{
+  font-size:11px;font-weight:700;color:var(--text3);
+  background:var(--bg3);border:1px solid var(--border);border-radius:20px;
+  padding:3px 12px;white-space:nowrap;
+}
+
+/* TABLE */
+.table-scroll{flex:1;overflow:auto;padding:0 18px 18px}
+.table-scroll::-webkit-scrollbar{height:4px;width:4px}
+.table-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+table{width:100%;border-collapse:separate;border-spacing:0;margin-top:12px}
+thead th{
+  font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;
+  padding:8px 14px;text-align:left;border-bottom:2px solid var(--border);
+  position:sticky;top:0;background:var(--bg);z-index:1;white-space:nowrap;
+}
+tbody tr{transition:background 0.1s;cursor:pointer}
+tbody tr:hover{background:var(--forest3)}
+tbody tr:hover td:first-child{border-left:3px solid var(--forest)}
+tbody td{
+  padding:10px 14px;font-size:12px;color:var(--text2);
+  border-bottom:1px solid var(--border);transition:border-left 0.1s;
+  border-left:3px solid transparent;
+}
+tbody tr:not(:hover) td:first-child{border-left:3px solid transparent}
+td.num{font-family:var(--serif);font-size:12px;color:var(--text3);font-style:italic}
+td.question-cell{color:var(--text);font-size:12px;max-width:440px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.tag{font-size:9px;font-weight:800;padding:3px 9px;border-radius:6px;display:inline-block;text-transform:uppercase;letter-spacing:0.5px}
+.tag-english{background:var(--sky2);color:var(--sky)}
+.tag-math{background:var(--gold2);color:var(--gold)}
+.tag-urdu{background:var(--rose2);color:var(--rose)}
+.tag-videos{background:rgba(167,139,250,0.1);color:#7c3aed}
+
+.lvl{
+  font-size:9px;font-weight:800;padding:3px 7px;border-radius:6px;
+  background:var(--bg3);color:var(--text3);border:1.5px solid var(--border2);
+}
+
+.status-pill{font-size:9px;font-weight:800;padding:3px 11px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap}
+.sp-pending{background:rgba(217,119,6,0.1);color:#b45309}
+.sp-approved{background:var(--ok2);color:var(--ok)}
+.sp-flagged{background:var(--rose2);color:var(--rose)}
+
+.acts{display:flex;gap:5px;justify-content:flex-end}
+.act{font-size:10px;font-weight:700;padding:4px 12px;border-radius:6px;cursor:pointer;border:none;transition:all 0.15s;font-family:var(--sans)}
+.act-ok{background:var(--ok2);color:var(--ok)}
+.act-ok:hover{background:rgba(28,107,56,0.2)}
+.act-edit{background:var(--bg3);color:var(--text2);border:1.5px solid var(--border2)}
+.act-edit:hover{border-color:var(--forest);color:var(--forest)}
+
+/* ANIMATIONS */
+@keyframes slide-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.stat-card{animation:slide-in 0.35s ease both}
+.stat-card:nth-child(1){animation-delay:0.04s}
+.stat-card:nth-child(2){animation-delay:0.08s}
+.stat-card:nth-child(3){animation-delay:0.12s}
+.stat-card:nth-child(4){animation-delay:0.16s}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+tbody tr{animation:fade-in 0.25s ease both}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <span class="tb-logo">TAKMIL</span>
+  <span class="tb-slash">/</span>
+  <span class="tb-section">Question Bank</span>
+  <div class="tb-pills">
+    <span class="tb-pill">Total: <strong id="hdr-total">500</strong></span>
+    <span class="tb-pill green">✓ Approved: <strong id="hdr-approved">0</strong></span>
+    <span class="tb-pill amber">⏳ Pending: <strong id="hdr-pending">500</strong></span>
+  </div>
+  <div class="tb-conn"><div class="tb-conn-dot"></div>Connected</div>
+  <a href="/" style="
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.25);
+    color:#fff;text-decoration:none;font-family:var(--sans);
+    font-size:10px;font-weight:700;padding:6px 16px;border-radius:20px;
+    letter-spacing:0.5px;transition:background 0.15s;margin-left:12px;
+    white-space:nowrap;flex-shrink:0;
+  " onmouseover="this.style.background='rgba(255,255,255,0.28)'"
+     onmouseout="this.style.background='rgba(255,255,255,0.13)'">⌂ Home</a>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-sec">
+    <div class="sb-lbl">Subject</div>
+    <div class="sb-item active" onclick="setSubject('',this)"><span>All Subjects</span><span class="sb-count" id="cnt-all">500</span></div>
+    <div class="sb-item" onclick="setSubject('Math',this)"><span>Math</span><span class="sb-count" id="cnt-math">45</span></div>
+    <div class="sb-item" onclick="setSubject('English',this)"><span>English</span><span class="sb-count" id="cnt-english">56</span></div>
+    <div class="sb-item" onclick="setSubject('Urdu',this)"><span>اردو / Urdu</span><span class="sb-count" id="cnt-urdu">168</span></div>
+    <div class="sb-item" onclick="setSubject('Videos',this)"><span>Videos</span><span class="sb-count" id="cnt-videos">0</span></div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Level</div>
+    <select class="sb-select" onchange="setLevel(this.value, null)">
+      <option value="">All Levels</option>
+      <option value="L1">Level 1</option>
+      <option value="L2">Level 2</option>
+      <option value="L3">Level 3</option>
+      <option value="L4">Level 4</option>
+      <option value="L5">Level 5</option>
+    </select>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Status</div>
+    <div class="sb-item" onclick="setStatus('',this)"><span>All Status</span></div>
+    <div class="sb-item" onclick="setStatus('approved',this)"><span>✓ Approved</span><span class="sb-count" id="cnt-approved" style="background:var(--ok2);color:var(--ok)">0</span></div>
+    <div class="sb-item" onclick="setStatus('pending',this)"><span>⏳ Pending</span><span class="sb-count" id="cnt-pending" style="background:rgba(217,119,6,0.1);color:#b45309">500</span></div>
+    <div class="sb-item" onclick="setStatus('flagged',this)"><span>⚑ Flagged</span><span class="sb-count" id="cnt-flagged">0</span></div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Source</div>
+    <div class="sb-item active"><span>All Sources</span></div>
+    <div class="sb-item"><span>▶ YouTube Video</span></div>
+    <div class="sb-item"><span>📄 Curriculum PDF</span></div>
+    <div class="sb-item"><span>📝 Paper Assessment</span></div>
+  </div>
+  <div class="sb-btn-group">
+    <button class="sb-btn sb-primary">＋ Add New Question</button>
+    <button class="sb-btn sb-secondary">⚡ Import from Claude</button>
+    <button class="sb-btn sb-tertiary">▶ Video Bank</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-accent" style="background:var(--forest)"></div>
+      <div class="stat-label">Total Questions</div>
+      <div class="stat-num" style="color:var(--forest)" id="s-total">500</div>
+      <div class="stat-sub">All time</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-accent" style="background:var(--ok)"></div>
+      <div class="stat-label">Approved</div>
+      <div class="stat-num" style="color:var(--ok)" id="s-approved">0</div>
+      <div class="stat-sub">Ready to use</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-accent" style="background:#b45309"></div>
+      <div class="stat-label">Pending Review</div>
+      <div class="stat-num" style="color:#b45309" id="s-pending">500</div>
+      <div class="stat-sub">Awaiting approval</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-accent" style="background:var(--rose)"></div>
+      <div class="stat-label">Flagged</div>
+      <div class="stat-num" style="color:var(--rose)" id="s-flagged">0</div>
+      <div class="stat-sub">Needs attention</div>
+    </div>
+  </div>
+
+  <!-- MID ROW -->
+  <div class="mid-row">
+    <div class="breakdown">
+      <div class="section-head">Subject Breakdown</div>
+      <div class="subj-item">
+        <div class="subj-dot" style="background:#b45309"></div>
+        <div class="subj-name">Math</div>
+        <div class="subj-bar-bg"><div class="subj-bar-fill" style="width:27%;background:#b45309"></div></div>
+        <div class="subj-count">45</div>
+      </div>
+      <div class="subj-item">
+        <div class="subj-dot" style="background:var(--sky)"></div>
+        <div class="subj-name">English</div>
+        <div class="subj-bar-bg"><div class="subj-bar-fill" style="width:33%;background:var(--sky)"></div></div>
+        <div class="subj-count">56</div>
+      </div>
+      <div class="subj-item">
+        <div class="subj-dot" style="background:var(--rose)"></div>
+        <div class="subj-name">Urdu</div>
+        <div class="subj-bar-bg"><div class="subj-bar-fill" style="width:100%;background:var(--rose)"></div></div>
+        <div class="subj-count">168</div>
+      </div>
+      <div class="subj-item">
+        <div class="subj-dot" style="background:#7c3aed"></div>
+        <div class="subj-name">Videos</div>
+        <div class="subj-bar-bg"><div class="subj-bar-fill" style="width:0%;background:#7c3aed"></div></div>
+        <div class="subj-count">0</div>
+      </div>
+    </div>
+    <div class="pipeline">
+      <div class="pipe-hdr">
+        <div class="section-head" style="margin-bottom:0">Approval Pipeline</div>
+        <div class="pipe-note" id="pipe-note">8 of 500 pending</div>
+      </div>
+      <div class="pipe-grid" id="pipeline-grid"></div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-ico">🔍</span>
+      <input class="search-inp" placeholder="Search questions, IDs, topics..." id="search-inp" oninput="applyFilters()">
+    </div>
+    <select class="sort-sel">
+      <option>Newest first</option>
+      <option>Oldest first</option>
+      <option>A → Z</option>
+    </select>
+    <button class="tb-btn btn-approve-all" onclick="approveAll()">✓ Approve all pending</button>
+    <button class="tb-btn btn-export" onclick="exportCSV()">↓ Export CSV</button>
+    <button class="tb-btn btn-import" onclick="document.getElementById('import-file-input').click()">↑ Import CSV</button>
+    <input type="file" id="import-file-input" accept=".csv" style="display:none" onchange="importCSV(this)">
+    <button class="tb-btn btn-refresh" onclick="loadFromAPI()">↻ Refresh</button>
+    <span class="q-count-badge" id="q-count">500 questions</span>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Subject</th>
+          <th>Level</th>
+          <th>Question</th>
+          <th>Status</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="q-tbody"></tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<script>
+// ── Live data from API ────────────────────────────────────────────
+let QUESTIONS = [];
+let filtered  = [];
+let activeSubject='', activeLevel='', activeStatus='';
+let loading = false;
+
+async function loadFromAPI(subjectFilter, levelFilter){
+  if(loading) return;
+  loading = true;
+  document.getElementById('q-tbody').innerHTML =
+    '<tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8">⏳ Loading questions...</td></tr>';
+  try {
+    // Build URL with server-side filters
+    const params = new URLSearchParams({ limit: 500 });
+    if(subjectFilter) params.set('subject', subjectFilter);
+    if(levelFilter) params.set('level', levelFilter.replace('L',''));
+    const resp = await fetch('/api/questions/bank?' + params.toString());
+    if(!resp.ok) throw new Error('Server error ' + resp.status);
+    const data = await resp.json();
+    QUESTIONS = (data.questions || data || []).map(q => ({
+      id:       q.id || q.question_id,
+      subject:  q.subject || '—',
+      level:    q.level ? 'L'+q.level : (q.level_tag || '—'),
+      question: q.question_text || q.question || '—',
+      answer:   q.correct_answer || q.answer || '',
+      options:  q.options || [],
+      topic:    q.topic || '',
+      status:   q.status || 'pending',
+      source:   q.source || '',
+    }));
+    applyFilters();
+    const filterDesc = [activeSubject, activeLevel ? 'Level '+activeLevel.replace('L','') : ''].filter(Boolean).join(' · ') || 'All';
+showBanner('✅ Loaded ' + QUESTIONS.length + ' questions — ' + filterDesc, '#dcfce7', '#15803d');
+  } catch(e) {
+    QUESTIONS = Array.from({length:10},(_,i)=>({
+      id:i+1, subject:['English','Math','Urdu'][i%3],
+      level:'L'+(i%5+1),
+      question:'[Sample] Connect to server to load real questions ('+e.message+')',
+      status:'pending', answer:'', options:[], topic:'', source:''
+    }));
+    applyFilters();
+    showBanner('⚠️ Using sample data — ' + e.message, '#fef9c3', '#92400e');
+  } finally { loading = false; }
+}
+
+function showBanner(msg, bg, color){
+  let b = document.getElementById('api-banner');
+  if(!b){ b=document.createElement('div'); b.id='api-banner';
+    b.style.cssText='width:100%;padding:8px 18px;font-size:12px;font-weight:700;text-align:center;position:sticky;top:0;z-index:50';
+    document.body.prepend(b); }
+  b.style.background=bg; b.style.color=color; b.textContent=msg;
+  setTimeout(()=>{ if(b) b.remove(); }, 4000);
+}
+
+function setSubject(s,el){
+  activeSubject=s;
+  document.querySelectorAll('.sb-item').forEach(x=>{
+    if(x.closest('.sb-sec')===el.closest('.sb-sec')) x.classList.remove('active');
+  });
+  el.classList.add('active');
+  loading = false;
+  loadFromAPI(activeSubject, activeLevel);
+}
+function setLevel(l,el){
+  activeLevel=l;
+  loading = false;
+  loadFromAPI(activeSubject, activeLevel);
+}
+function setStatus(s,el){
+  activeStatus=s;
+  document.querySelectorAll('.sb-item').forEach(x=>{
+    if(x.closest('.sb-sec')===el.closest('.sb-sec')) x.classList.remove('active');
+  });
+  el.classList.add('active'); applyFilters();
+}
+
+function applyFilters(){
+  const search=document.getElementById('search-inp').value.toLowerCase();
+  filtered=QUESTIONS.filter(q=>
+    (!activeSubject||q.subject===activeSubject)&&
+    (!activeLevel||q.level===activeLevel)&&
+    (!activeStatus||q.status===activeStatus)&&
+    (!search||q.question.toLowerCase().includes(search)||String(q.id).includes(search)||(q.topic||'').toLowerCase().includes(search))
+  );
+  renderTable(); renderPipeline(); updateCounts();
+}
+
+function renderTable(){
+  document.getElementById('q-count').textContent=filtered.length+' questions';
+  if(!filtered.length){
+    document.getElementById('q-tbody').innerHTML='<tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8">No questions found</td></tr>';
+    return;
+  }
+  document.getElementById('q-tbody').innerHTML=filtered.slice(0,200).map((q,i)=>`
+    <tr style="animation-delay:${i*8}ms">
+      <td class="num">#${String(q.id).padStart(3,'0')}</td>
+      <td><span class="tag tag-${(q.subject||'').toLowerCase()}">${q.subject}</span></td>
+      <td><span class="lvl">${q.level}</span></td>
+      <td class="question-cell">${q.question}</td>
+      <td><span class="status-pill sp-${q.status}">${q.status.charAt(0).toUpperCase()+q.status.slice(1)}</span></td>
+      <td><div class="acts">
+        ${q.status!=='approved'?`<button class="act act-ok" onclick="approveQ(${q.id},event)">✓ Approve</button>`:''}
+        <button class="act act-edit" onclick="editQ(${q.id},event)">✎ Edit</button>
+      </div></td>
+    </tr>`).join('')+
+    (filtered.length>200?`<tr><td colspan="6" style="text-align:center;padding:10px;color:#94a3b8;font-size:12px">Showing 200 of ${filtered.length} — use filters to narrow</td></tr>`:'');
+}
+
+function renderPipeline(){
+  const pending=QUESTIONS.filter(q=>q.status==='pending').slice(0,8);
+  document.getElementById('pipe-note').textContent=`${Math.min(8,pending.length)} of ${QUESTIONS.filter(q=>q.status==='pending').length} pending`;
+  document.getElementById('pipeline-grid').innerHTML=pending.map(q=>`
+    <div class="pipe-item">
+      <div class="pipe-tags">
+        <span class="pipe-tag tag-${(q.subject||'').toLowerCase()}">${q.subject}</span>
+        <span class="lvl" style="font-size:8px">${q.level}</span>
+      </div>
+      <div class="pipe-q">${q.question}</div>
+      <div class="pipe-acts">
+        <button class="pipe-btn pipe-ok" onclick="approveQ(${q.id},event)">✓ Approve</button>
+        <button class="pipe-btn pipe-no">✕ Skip</button>
+      </div>
+    </div>`).join('');
+}
+
+async function approveQ(id,e){
+  e.stopPropagation();
+  const q=QUESTIONS.find(x=>x.id===id); if(!q) return;
+  q.status='approved';
+  try{ await fetch('/api/questions/'+id+'/approve',{method:'POST'}); }catch(_){}
+  applyFilters();
+}
+async function approveAll(){
+  QUESTIONS.filter(q=>q.status==='pending').forEach(q=>q.status='approved');
+  try{ await fetch('/api/questions/approve-all',{method:'POST'}); }catch(_){}
+  applyFilters();
+}
+async function loadBreakdown(){
+  try{
+    const r=await fetch('/api/questions/breakdown');
+    const data=await r.json();
+    const counts={Math:0,English:0,Urdu:0,Videos:0};
+    Object.entries(data).forEach(([subj,levels])=>{
+      const total=levels.reduce((s,l)=>s+l.total,0);
+      if(subj==='Math') counts.Math=total;
+      else if(subj==='English') counts.English=total;
+      else if(subj==='Urdu') counts.Urdu=total;
+      else if(subj==='Videos') counts.Videos=total;
+    });
+    const el=id=>document.getElementById(id);
+    if(el('cnt-math'))    el('cnt-math').textContent=counts.Math;
+    if(el('cnt-english')) el('cnt-english').textContent=counts.English;
+    if(el('cnt-urdu'))    el('cnt-urdu').textContent=counts.Urdu;
+    if(el('cnt-videos'))  el('cnt-videos').textContent=counts.Videos;
+    if(el('cnt-all'))     el('cnt-all').textContent=Object.values(counts).reduce((a,b)=>a+b,0);
+  }catch(_){}
+}
+function editQ(id,e){
+  e.stopPropagation();
+  const q=QUESTIONS.find(x=>x.id===id); if(!q) return;
+  const newQ=prompt('Edit question:', q.question);
+  if(newQ&&newQ.trim()){ q.question=newQ.trim(); applyFilters(); }
+}
+
+function updateCounts(){
+  const approved=QUESTIONS.filter(q=>q.status==='approved').length;
+  const pending =QUESTIONS.filter(q=>q.status==='pending').length;
+  const flagged =QUESTIONS.filter(q=>q.status==='flagged').length;
+  ['s-total','hdr-total'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=QUESTIONS.length;});
+  ['s-approved','hdr-approved','cnt-approved'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=approved;});
+  ['s-pending','hdr-pending','cnt-pending'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=pending;});
+  ['s-flagged','cnt-flagged'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=flagged;});
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────
+function exportCSV(){
+  const src = (filtered.length && filtered.length < QUESTIONS.length) ? filtered : QUESTIONS;
+  if(!src.length){ alert('No questions to export'); return; }
+  const headers=['ID','Subject','Level','Question','Answer','Topic','Status','Source'];
+  const rows=src.map(q=>[q.id,q.subject,q.level,q.question,q.answer||'',q.topic||'',q.status,q.source||'']);
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='takmil-questions-'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  showBanner('✅ Exported '+src.length+' questions','#dcfce7','#15803d');
+}
+
+// ── IMPORT CSV ────────────────────────────────────────────────────
+function importCSV(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    const text=e.target.result.replace(/^\uFEFF/,'');
+    const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+    if(!lines.length){ alert('Empty file'); return; }
+
+    // Parse headers — support both old and new DB column names
+    const headers=parseCSVRow(lines[0]).map(h=>h.toLowerCase().trim());
+    const col=(...names)=>{ for(const n of names){ const i=headers.indexOf(n); if(i>=0) return i; } return -1; };
+
+    // Map every known column name variant to the correct DB field
+    const qIdx  = col('q_text_english','question_text','question text','question');
+    const sIdx  = col('subject');
+    const lIdx  = col('level');
+    const aIdx  = col('correct_option','correct answer','answer');
+    const tIdx  = col('topic_tag','topic');
+    const uIdx  = col('q_text_urdu','question_urdu','urdu');
+    const imgIdx= col('image_url','image');
+    const idIdx = col('question_id','id');
+    const oaIdx = col('option_a');
+    const obIdx = col('option_b');
+    const ocIdx = col('option_c');
+    const odIdx = col('option_d');
+    const stIdx = col('active','status');
+
+    if(qIdx<0){
+      alert('Could not find question column.\nMake sure your CSV has one of these headers:\nq_text_english, question_text, or question');
+      input.value=''; return;
+    }
+
+    const imported=[];
+    for(let i=1;i<lines.length;i++){
+      const cols=parseCSVRow(lines[i]);
+      const qText=(cols[qIdx]||'').trim();
+      if(!qText) continue;
+
+      // level: strip "L" prefix if present, store as integer string e.g. "1"
+      let lvl=(lIdx>=0?cols[lIdx]||'':'').trim().replace(/^L/i,'');
+
+      // active/status: map "pending"→1, "approved"→2, number stays as-is
+      let activeVal=1;
+      if(stIdx>=0){
+        const sv=(cols[stIdx]||'').trim().toLowerCase();
+        if(sv==='approved'||sv==='2') activeVal=2;
+        else if(sv==='flagged'||sv==='3') activeVal=3;
+        else if(!isNaN(sv)&&sv!=='') activeVal=parseInt(sv);
+      }
+
+      imported.push({
+        question_id:  idIdx>=0?(cols[idIdx]||'').trim()||('IMPORT-'+Date.now()+'-'+i) : 'IMPORT-'+Date.now()+'-'+i,
+        subject:      sIdx>=0?(cols[sIdx]||'').trim():'',
+        level:        lvl,
+        topic_tag:    tIdx>=0?(cols[tIdx]||'').trim():'',
+        q_text_english: qText,
+        q_text_urdu:  uIdx>=0?(cols[uIdx]||'').trim():'',
+        image_url:    imgIdx>=0?(cols[imgIdx]||'').trim():'',
+        option_a:     oaIdx>=0?(cols[oaIdx]||'').trim():'',
+        option_b:     obIdx>=0?(cols[obIdx]||'').trim():'',
+        option_c:     ocIdx>=0?(cols[ocIdx]||'').trim():'',
+        option_d:     odIdx>=0?(cols[odIdx]||'').trim():'',
+        correct_option: aIdx>=0?(cols[aIdx]||'').trim():'',
+        active:       activeVal,
+        // keep display fields for local rendering
+        question:     qText,
+        answer:       aIdx>=0?(cols[aIdx]||'').trim():'',
+        topic:        tIdx>=0?(cols[tIdx]||'').trim():'',
+        status:       activeVal===2?'approved':activeVal===3?'flagged':'pending',
+        source:       'csv-import'
+      });
+    }
+
+    if(!imported.length){
+      alert('No valid questions found in CSV.\nMake sure your CSV has a question column:\nq_text_english, question_text, or question');
+      input.value=''; return;
+    }
+    if(!window.confirm('Import '+imported.length+' questions?')){ input.value=''; return; }
+
+    try{
+      const resp=await fetch('/api/questions/import',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({questions:imported})
+      });
+      const data=await resp.json();
+      showBanner('✅ Imported '+(data.imported||imported.length)+' questions to server','#dcfce7','#15803d');
+      await loadFromAPI();
+    }catch(_){
+      QUESTIONS.push(...imported); applyFilters();
+      showBanner('⚠️ Added '+imported.length+' locally (server save failed)','#fef9c3','#92400e');
+    }
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVRow(row){
+  const result=[],re=/("(?:[^"]|"")*"|[^,]*)(,|$)/g;
+  let m;
+  while((m=re.exec(row))!==null){
+    let v=m[1];
+    if(v.startsWith('"')&&v.endsWith('"')) v=v.slice(1,-1).replace(/""/g,'"');
+    result.push(v.trim());
+    if(m[2]==='') break;
+  }
+  return result;
+}
+
+// Show prompt on load — user selects subject/level to fetch questions
+document.getElementById('q-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:48px;color:#94a3b8;font-size:13px">👈 Select a subject and level from the sidebar to load questions</td></tr>';
+document.getElementById('q-count').textContent = 'Select a filter to load';
+loadBreakdown();
+</script>
+</body>
+</html>

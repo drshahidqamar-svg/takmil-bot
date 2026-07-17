@@ -1,0 +1,215 @@
+================================================================
+TAKMIL ATTENDANCE SYSTEM — TESTING GUIDE FOR FIELD TEAM
+================================================================
+Prepared: April 29, 2026
+================================================================
+
+
+================================================================
+WHAT ARE WE TESTING?
+================================================================
+
+Two things:
+  1. REGISTER  — Teacher marks who is present/absent on their phone
+  2. DASHBOARD — Coordinator sees all school attendance in one place
+
+
+================================================================
+BEFORE YOU START — SETUP (Admin does this once in DBeaver)
+================================================================
+
+STEP A — Link teacher phone to their school:
+
+  UPDATE schools SET teacher_phone = '+923XXXXXXXXX' WHERE id = 54;
+
+  Replace +923XXXXXXXXX with the teacher's actual phone number.
+  Replace 54 with the correct school ID.
+
+STEP B — Add test students if school has none:
+
+  First check if students exist:
+  SELECT COUNT(*) FROM students_register
+  WHERE school_identifier = 'HajiPirBakshRajhir_A_W24S';
+
+  If count = 0, add test students:
+  INSERT INTO students_register (school_identifier, roll_number, student_name, active)
+  VALUES
+    ('HajiPirBakshRajhir_A_W24S', 'HPB-001', 'Ahmed Ali', true),
+    ('HajiPirBakshRajhir_A_W24S', 'HPB-002', 'Fatima Bibi', true),
+    ('HajiPirBakshRajhir_A_W24S', 'HPB-003', 'Usman Khan', true);
+
+  Replace school_identifier and roll numbers with real values.
+
+STEP C — Push the new code to Railway:
+  (Tech team does this — register.html + index.js must be deployed)
+
+
+================================================================
+TEST 1 — TEACHER MARKS ATTENDANCE
+================================================================
+
+URL: https://takmil-bot-production-0f51.up.railway.app/register
+
+STEP 1 — Open the link on teacher's phone
+
+STEP 2 — Enter phone number
+  - Type the teacher's phone number (same one added in Setup Step A)
+  - Example: +923001234567
+  - Select today's date
+  - Tap "Load Students"
+
+STEP 3 — Check what appears
+  Expected: Student list shows with names and P / A / L buttons
+  If error: "Phone number not found" — phone not linked to school yet (redo Setup Step A)
+  If error: "No students found" — no students imported (redo Setup Step B)
+
+STEP 4 — Mark attendance
+  - Tap P (green)  = Present
+  - Tap A (red)    = Absent
+  - Tap L (yellow) = On Leave
+  - Mark every student — Submit button only activates when all are marked
+  - Use "Mark All Present" button to mark everyone present quickly
+
+STEP 5 — Submit
+  - Tap "Submit Attendance"
+  - Success screen shows: Present / Absent / Leave counts
+  - If no internet: Shows "Saved Offline" — will sync automatically later
+
+STEP 6 — Verify it saved in database:
+  SELECT * FROM student_attendance
+  WHERE school_identifier = 'HajiPirBakshRajhir_A_W24S'
+  ORDER BY created_at DESC LIMIT 5;
+
+  You should see one row per student with status P, A, or L.
+
+
+================================================================
+TEST 2 — COORDINATOR VIEWS ATTENDANCE DASHBOARD
+================================================================
+
+URL: https://takmil-bot-production-0f51.up.railway.app/attendance
+
+STEP 1 — Open the link on any phone or computer
+
+STEP 2 — Check the top stats bar
+  Should show:
+  - Total schools
+  - How many submitted today
+  - Total present across all schools
+  - Total absent
+  - Average attendance %
+
+STEP 3 — Find the school you just tested
+  - Use the search box and type the school name
+  - Should show GREEN card with "Submitted" badge
+  - Shows Present / Absent / Leave count and a color bar
+
+STEP 4 — Click the student count to expand
+  - Tap "X students" at the bottom of the card
+  - Individual student names and their status should appear
+
+STEP 5 — Check the Absent Students section
+  - Scroll to the bottom of the page
+  - Should list all absent students across all schools today
+  - Includes student name, school, and roll number
+
+STEP 6 — Test filters
+  - Filter by Region: select Sindh or Punjab
+  - Filter by Status: select "Submitted" — only green cards show
+  - Filter by Status: select "Not Submitted" — only red cards show
+  - Search: type part of a school name
+
+
+================================================================
+TEST 3 — OFFLINE MODE (no internet test)
+================================================================
+
+STEP 1 — Load students normally (with internet)
+  - Open /register, enter phone, load students
+  - This saves student list to phone memory
+
+STEP 2 — Turn off mobile data AND WiFi
+
+STEP 3 — Reload the page
+  - Should show yellow banner: "Offline mode"
+  - Student list should still appear from memory
+
+STEP 4 — Mark attendance and tap Submit
+  - Should show "Saved Offline" result screen
+  - NOT an error
+
+STEP 5 — Turn internet back on
+  - App automatically uploads the saved attendance
+  - Banner changes to "Back online — syncing..."
+
+STEP 6 — Check dashboard
+  - Go to /attendance
+  - School should now show as Submitted
+
+
+================================================================
+PASS / FAIL CHECKLIST
+================================================================
+
+TEST 1 — TEACHER REGISTER
+  [ ] Phone login works (correct phone loads correct school)
+  [ ] Wrong phone shows clear error message
+  [ ] Student list loads with all names
+  [ ] P / A / L buttons work and highlight correctly
+  [ ] Mark All Present button works
+  [ ] Submit button disabled until all students marked
+  [ ] Submit saves successfully
+  [ ] Success screen shows correct counts
+
+TEST 2 — ATTENDANCE DASHBOARD
+  [ ] Dashboard loads with school cards
+  [ ] Submitted school shows green card with correct counts
+  [ ] Missing school shows red card
+  [ ] Expanding card shows individual student status
+  [ ] Absent students list populates at bottom
+  [ ] Date filter works
+  [ ] Region filter works
+  [ ] Status filter works
+  [ ] Search box works
+
+TEST 3 — OFFLINE
+  [ ] Student list loads from memory when offline
+  [ ] Offline banner appears
+  [ ] Attendance saves locally when offline
+  [ ] Auto-syncs when internet returns
+
+
+================================================================
+COMMON ERRORS AND FIXES
+================================================================
+
+Error: "Phone number not found"
+Fix:   Admin needs to add teacher phone to schools table in DBeaver
+       UPDATE schools SET teacher_phone = '+923XXXXXXXXX' WHERE id = XX;
+
+Error: "No students found"
+Fix:   Admin needs to import students into students_register table
+       Use the INSERT command from Setup Step B above
+
+Error: Dashboard shows school as "Not Submitted" even after submitting
+Fix:   Refresh the page. If still missing, check that school_identifier
+       in students_register matches exactly with schools.identifier
+
+Error: Offline sync not working
+Fix:   Make sure internet is fully restored and wait 10 seconds.
+       The sync happens automatically — no button needed.
+
+
+================================================================
+LINKS
+================================================================
+
+Teacher Attendance Register:
+https://takmil-bot-production-0f51.up.railway.app/register
+
+Coordinator Attendance Dashboard:
+https://takmil-bot-production-0f51.up.railway.app/attendance
+
+================================================================
+For help, contact the TAKMIL Technology Team
+================================================================

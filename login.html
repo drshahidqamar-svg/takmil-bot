@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#1C1308 0%,#3d2a12 100%);
+  padding:20px;
+}
+.card{
+  background:#fff;border-radius:20px;padding:40px 36px;width:100%;max-width:400px;
+  box-shadow:0 24px 70px rgba(0,0,0,0.35);
+}
+.logo{font-size:22px;font-weight:800;color:#1C1308;text-align:center;margin-bottom:4px}
+.logo span{color:#C9A84C}
+.subtitle{text-align:center;color:#64748b;font-size:13px;margin-bottom:28px}
+.field{margin-bottom:16px}
+.field label{font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px}
+.field input{
+  width:100%;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:10px;
+  font-size:14px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border-color .15s
+}
+.field input:focus{border-color:#C9A84C}
+.btn{
+  width:100%;padding:13px;border:none;border-radius:10px;background:#1C1308;color:#fff;
+  font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;transition:background .15s
+}
+.btn:hover{background:#3d2a12}
+.btn:disabled{opacity:0.6;cursor:not-allowed}
+.error{
+  background:#fef2f2;border:1.5px solid #fecaca;color:#b91c1c;border-radius:8px;
+  padding:10px 14px;font-size:13px;margin-bottom:16px;display:none
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">TAK<span>MIL</span></div>
+  <div class="subtitle">Sign in to continue</div>
+  <div class="error" id="error"></div>
+  <form id="login-form">
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="username" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="btn" id="submit-btn">Sign In</button>
+  </form>
+</div>
+
+<script>
+const form = document.getElementById('login-form');
+const errEl = document.getElementById('error');
+const btn = document.getElementById('submit-btn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Signing in...';
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get('next');
+    window.location.href = next || data.redirectTo || '/';
+  } catch(err) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+});
+</script>
+</body>
+</html>

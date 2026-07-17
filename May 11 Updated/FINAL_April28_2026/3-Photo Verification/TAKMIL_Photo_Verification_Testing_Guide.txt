@@ -1,0 +1,322 @@
+================================================================
+TAKMIL PHOTO VERIFICATION — TESTING GUIDE FOR FIELD TEAM
+================================================================
+Prepared: April 29, 2026
+================================================================
+
+
+================================================================
+WHAT IS PICTURE VERIFICATION?
+================================================================
+
+Every day, after marking students present, the teacher sends
+a photo of the classroom to the TAKMIL WhatsApp bot.
+
+The system then:
+  1. Counts heads in the photo using AI (Claude Vision)
+  2. Compares the count to what the teacher reported
+  3. Checks if a projector or whiteboard is visible
+  4. Verifies the lesson is actually happening
+  5. Replies to the teacher instantly on WhatsApp
+  6. If mismatch found — alerts the school coordinator
+
+This prevents false reporting and confirms lessons are live.
+
+
+================================================================
+HOW IT WORKS (simple flow)
+================================================================
+
+  TEACHER reports: "25 students present today"
+       ↓
+  TEACHER sends classroom photo on WhatsApp
+       ↓
+  AI counts people in photo: 24
+       ↓
+  Difference = 1 student (within acceptable range)
+       ↓
+  Bot replies: "✅ MATCH — Thank you!"
+       ↓
+  Coordinator dashboard updates: Photo Verified ✅
+
+  -------------------------------------------------------
+
+  IF MISMATCH:
+  TEACHER reports: "25 students present today"
+       ↓
+  TEACHER sends classroom photo on WhatsApp
+       ↓
+  AI counts people in photo: 10
+       ↓
+  Difference = 15 students (too large — flagged)
+       ↓
+  Bot replies: "⚠️ MISMATCH — coordinator notified"
+       ↓
+  School coordinator gets WhatsApp alert automatically
+
+
+================================================================
+BEFORE YOU TEST — SETUP (Admin checks this)
+================================================================
+
+STEP A — Confirm teacher phone is linked to a school:
+
+  SELECT name, identifier, teacher_phone
+  FROM schools
+  WHERE teacher_phone IS NOT NULL
+  LIMIT 10;
+
+  If teacher phone is missing:
+  UPDATE schools SET teacher_phone = '+923XXXXXXXXX'
+  WHERE id = XX;
+
+STEP B — Confirm TAKMIL WhatsApp bot number is working:
+  The bot number is your registered Twilio WhatsApp number.
+  Teacher must send messages TO this number.
+  Contact tech team if you don't have the bot number.
+
+STEP C — Confirm today's date is correct on the server:
+  SELECT NOW();
+  Should show today's date and time in UTC.
+
+
+================================================================
+TEST STEP 1 — TEACHER SUBMITS DAILY FEEDBACK FIRST
+================================================================
+
+IMPORTANT: The photo only works AFTER the teacher submits
+their daily report. The system needs a number to compare
+the photo head count against.
+
+From the teacher's WhatsApp, send the daily report to the
+TAKMIL bot. The exact format depends on your bot setup.
+Common formats:
+
+  PRESENT 25
+  or
+  Teacher submits via the feedback form at /feedback
+
+After sending, verify the report was received:
+
+  SELECT teacher_phone, school_name, present, created_at
+  FROM daily_feedback
+  ORDER BY created_at DESC
+  LIMIT 5;
+
+  You should see a row with:
+  - teacher_phone = teacher's number
+  - present = number they reported
+  - created_at = today's date
+
+
+================================================================
+TEST STEP 2 — TEACHER SENDS CLASS PHOTO ON WHATSAPP
+================================================================
+
+From the SAME teacher WhatsApp number:
+  1. Open WhatsApp
+  2. Go to the TAKMIL bot chat
+  3. Take a photo of the classroom (or send any test photo
+     with people visible)
+  4. Send the photo — no caption needed
+
+TIPS FOR A GOOD TEST PHOTO:
+  - Photo should show students sitting in class
+  - Make sure faces/heads are visible
+  - Better lighting = more accurate count
+  - If projector is on, make sure it is in the frame
+
+
+================================================================
+TEST STEP 3 — CHECK BOT REPLY
+================================================================
+
+The teacher should receive a WhatsApp reply within 30 seconds.
+
+POSSIBLE REPLIES:
+
+REPLY 1 — Match (good):
+  "📸 Photo verified — ✅ MATCH
+   Photo head count: 24
+   Reported present: 25
+   Difference: -1 (within acceptable range)
+   Thank you! 🎉"
+
+REPLY 2 — Mismatch (flagged):
+  "📸 Photo verified — ⚠️ MISMATCH DETECTED
+   Photo head count: 10
+   Reported present: 25
+   Difference: -15 (60%)
+   Your coordinator has been notified."
+
+REPLY 3 — Photo unclear:
+  "📸 Photo received but couldn't count people clearly.
+   Please send a clearer photo."
+
+WHEN IS IT FLAGGED?
+  The system flags a mismatch when BOTH of these are true:
+  - Difference is more than 3 students  AND
+  - Difference is more than 15%
+  Small differences (1-2 students) are accepted as normal.
+
+
+================================================================
+TEST STEP 4 — CHECK DATABASE
+================================================================
+
+Run this in DBeaver to confirm everything saved:
+
+  SELECT
+    school_name,
+    present,
+    photo_url,
+    photo_head_count,
+    head_count_diff,
+    photo_verified,
+    photo_flag,
+    projector_visible,
+    lesson_verified,
+    created_at
+  FROM daily_feedback
+  ORDER BY created_at DESC
+  LIMIT 3;
+
+WHAT TO LOOK FOR:
+  photo_url         = /photos/photo_XXXXX.jpg  (not null)
+  photo_head_count  = number AI counted
+  head_count_diff   = difference (positive or negative)
+  photo_verified    = true (match) or false (mismatch)
+  photo_flag        = null if ok, text description if mismatch
+  projector_visible = true if AI saw a projector
+  lesson_verified   = true if students present + content visible
+
+
+================================================================
+TEST STEP 5 — VIEW THE ACTUAL PHOTO
+================================================================
+
+Take the photo_url from Step 4 (e.g. /photos/photo_123.jpg)
+and open in browser:
+
+  https://takmil-bot-production-0f51.up.railway.app/photos/photo_123.jpg
+
+You should see the actual classroom photo the teacher sent.
+This is how coordinators can view photos without needing
+WhatsApp access.
+
+
+================================================================
+TEST STEP 6 — CHECK COORDINATOR DASHBOARD
+================================================================
+
+URL:
+  https://takmil-bot-production-0f51.up.railway.app/feedback
+
+Find today's entry for the school you tested.
+Should show:
+  - Photo icon or verified badge
+  - Head count from AI
+  - Match or mismatch status
+  - Projector visible: yes/no
+  - Lesson verified: yes/no
+
+
+================================================================
+TEST STEP 7 — TEST MISMATCH ALERT (coordinator notification)
+================================================================
+
+To test that coordinator gets notified on mismatch:
+
+STEP 1 — Set a very different number in feedback:
+  UPDATE daily_feedback
+  SET present = 50
+  WHERE id = (SELECT id FROM daily_feedback ORDER BY created_at DESC LIMIT 1);
+
+STEP 2 — Send a photo that clearly has fewer than 50 people
+
+STEP 3 — Check that:
+  a) Bot replies with MISMATCH message to teacher
+  b) School coordinator receives WhatsApp alert
+
+  Alert will say:
+  "⚠️ Attendance Mismatch — [School Name]
+   Photo count: XX
+   Reported: 50
+   Difference: -XX
+   Please follow up."
+
+STEP 4 — Restore the correct number after testing:
+  UPDATE daily_feedback
+  SET present = [correct number]
+  WHERE id = (SELECT id FROM daily_feedback ORDER BY created_at DESC LIMIT 1);
+
+
+================================================================
+PASS / FAIL CHECKLIST
+================================================================
+
+BASIC FLOW
+  [ ] Teacher submits daily feedback (present count recorded)
+  [ ] Teacher sends photo on WhatsApp
+  [ ] Bot replies within 30 seconds
+  [ ] Reply shows correct head count
+  [ ] Reply shows match or mismatch correctly
+
+DATABASE
+  [ ] photo_url saved (not null)
+  [ ] photo_head_count saved correctly
+  [ ] photo_verified = true when counts match
+  [ ] photo_flag = null when no mismatch
+  [ ] projector_visible updated
+  [ ] lesson_verified updated
+
+MISMATCH ALERT
+  [ ] Mismatch triggers coordinator WhatsApp notification
+  [ ] Coordinator message shows correct numbers
+  [ ] Dashboard shows mismatch flag
+
+PHOTO ACCESS
+  [ ] Photo URL opens correctly in browser
+  [ ] Image is clear and viewable
+
+
+================================================================
+COMMON ERRORS AND FIXES
+================================================================
+
+Error: No bot reply after sending photo
+Fix:   Check Twilio webhook is active. Railway must be running.
+       Check Railway logs for "photo handler error"
+
+Error: "No feedback report found for today"
+Fix:   Teacher must submit daily report BEFORE sending photo.
+       The system needs a number to compare against.
+
+Error: Head count seems wrong
+Fix:   Send a clearer photo with better lighting.
+       AI works best when heads/faces are clearly visible.
+
+Error: Coordinator did not receive mismatch alert
+Fix:   Check school_coordinators table has correct phone number:
+       SELECT sc.phone FROM school_coordinators sc
+       JOIN schools s ON s.school_coordinator_id = sc.id
+       WHERE s.teacher_phone = '+923XXXXXXXXX';
+
+Error: Photo URL not accessible in browser
+Fix:   Check that public/photos folder exists on Railway server.
+       Tech team may need to create the folder.
+
+
+================================================================
+LINKS
+================================================================
+
+Feedback Dashboard (Coordinators):
+https://takmil-bot-production-0f51.up.railway.app/feedback
+
+View Photos:
+https://takmil-bot-production-0f51.up.railway.app/photos/[filename]
+
+================================================================
+For help, contact the TAKMIL Technology Team
+================================================================

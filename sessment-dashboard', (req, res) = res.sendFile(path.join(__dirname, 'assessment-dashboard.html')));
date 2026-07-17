@@ -1,0 +1,50 @@
+[33mf1749b8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add assessment dashboard HTML
+[33m09f5825[m attendace date
+[33mf87ee59[m Add head counts to feedbackV5
+[33mf8da21c[m Add head counts to feedbackV4
+[33me4a3670[m Add head counts to feedbackV3
+[33m087c7a8[m Add head counts to feedbackV2
+[33m2cb0f09[m Add head counts to feedback
+[33mbd0ac8f[m Photo Verify v2
+[33mce99489[m Photo Verify
+[33m897b5bd[m Feedback table added
+[33m8ea1347[m Add feedback table page and API
+[33m27cde62[m Feedback table
+[33mb83a591[m Sync Video Data
+[33m4a2deb9[m Level Advance
+[33m1c9afc7[m Redirect /dashboard to new assessment dashboard
+[33m0b28c5e[m update Assessment dashboard
+[33mc34c514[m new level advancment
+[33m93aead9[m New Assessement Analytics UI V2
+[33m18bd49b[m New attendace fix
+[33ma65881b[m New Assessement Analytics UI
+[33mea92785[m New Question Bank UI v2
+[33m5fb561d[m New Question Bank UI
+[33ma45f733[m Remove dups from Service pages
+[33m4c3191d[m Video runs online
+[33mb6c2fe2[m Fix status dropdown - match other filter styles
+[33mfd6f5a2[m Redesign feedback - Forest Command theme
+[33m1d98726[m Apply new UI to feedback page
+[33mdc845c5[m Feedback New UI
+[33m4097762[m Feedback page - default to submitted schools only
+[33m657f423[m Redesign level advancement - dropdown-based flow
+[33m00c17e3[m Fix dashboard layout - move Home button to topbar
+[33ma1de8c3[m Move Home button to top bar on all pages
+[33mfb7f7fb[m Rename Admin Portal to Admin Bot Portal
+[33ma6c4bf3[m Admin portal - light color theme
+[33mc9bb25b[m Add /admin-portal route
+[33m5f7dcd5[m Add Generate a PIN text to login screen
+[33mae773f7[m RC portal: rename labels, filter PINs by logged-in RC
+[33maa9c188[m Add 3rd row with coordinator cards
+[33m96bd70e[m Blue sidebar section labels
+[33mf1ccd1b[m Attendance: pre-load students from server by school code
+[33m84246fd[m Auto-load yesterday if no attendance data today
+[33mbe95ccd[m Fix attendance submit payload to match backend format
+[33m480f884[m Add WhatsApp-style attendance form to teacher portal
+[33maf5da34[m Add Student Attendance to hub sidebar and quick access
+[33m6a9bddf[m Fix duplicate admin routes - student results now working
+[33m8ea4cff[m Add missing dashboard and analytics API routes
+[33ma942e2c[m Redesign analytics - Slate & Gold
+[33md254163[m Redesign question bank - Warm Executive
+[33m196de49[m Redesign dashboard - Clean Emerald
+[33m9bf6636[m Fix home button position

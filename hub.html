@@ -344,6 +344,8 @@ body{
   <div class="sidebar-section">Management</div>
   <a href="/coordinator"          class="sidebar-item"><i class="ti ti-users-group"></i><span>Coordinator Portal</span></a>
   <a href="/admin-portal"         class="sidebar-item"><i class="ti ti-shield-check"></i><span>Admin Bot Portal</span></a>
+  <a href="/admin-users"          class="sidebar-item"><i class="ti ti-users"></i><span>Manage Users</span></a>
+  <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).then(()=>location.href='/login')" class="sidebar-item"><i class="ti ti-logout"></i><span>Logout</span></a>
   <a href="/assessment-dashboard"            class="sidebar-item"><i class="ti ti-chart-bar"></i><span>Assessment Dashboard</span></a>
   <a href="/question-bank"        class="sidebar-item"><i class="ti ti-list-check"></i><span>Question Bank</span></a>
   <a href="/lessons-admin"        class="sidebar-item"><i class="ti ti-book-2"></i><span>Lessons Monitor</span></a>
@@ -592,6 +594,8 @@ body{
   <div class="sidebar-section" style="display:block">Management</div>
   <a href="/coordinator"          class="sidebar-item"><i class="ti ti-users-group"></i><span>Coordinator Portal</span></a>
   <a href="/admin-portal"         class="sidebar-item"><i class="ti ti-shield-check"></i><span>Admin Bot Portal</span></a>
+  <a href="/admin-users"          class="sidebar-item"><i class="ti ti-users"></i><span>Manage Users</span></a>
+  <a href="#" onclick="fetch('/api/auth/logout',{method:'POST'}).then(()=>location.href='/login')" class="sidebar-item"><i class="ti ti-logout"></i><span>Logout</span></a>
   <a href="/assessment-dashboard" class="sidebar-item"><i class="ti ti-chart-bar"></i><span>Assessment Dashboard</span></a>
   <a href="/question-bank"        class="sidebar-item"><i class="ti ti-list-check"></i><span>Question Bank</span></a>
   <a href="/lessons-admin"        class="sidebar-item"><i class="ti ti-book-2"></i><span>Lessons Monitor</span></a>

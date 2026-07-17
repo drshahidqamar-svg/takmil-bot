@@ -1,0 +1,321 @@
+================================================================
+TAKMIL CLASSROOM VIDEO PLAYER — TESTING GUIDE FOR FIELD TEAM
+================================================================
+Prepared: April 29, 2026
+================================================================
+
+
+================================================================
+WHAT ARE WE TESTING?
+================================================================
+
+The TAKMIL Classroom Player lets the teacher play lesson videos
+from a USB drive or laptop folder. The system automatically:
+
+  - Records when the lesson started and ended
+  - Tracks exactly how much of the video was watched
+  - Captures GPS location of the teacher at start and end
+  - Detects if the lesson was too short or skipped
+  - Saves results even without internet (syncs later)
+  - Alerts Ops team on WhatsApp when lesson starts/ends
+
+
+================================================================
+WHAT YOU NEED BEFORE TESTING
+================================================================
+
+  1. A USB drive OR laptop with a video file (mp4, mkv, avi, mov)
+
+  2. Your video must be in this folder structure:
+
+     USB or Desktop
+       📁 Math              ← folder named Math / English / Urdu
+          📁 Level 1        ← optional subfolder for level
+             📄 lesson.mp4  ← your video file here
+
+     OR simply:
+
+     USB or Desktop
+       📁 Math
+          📄 lesson.mp4     ← video directly in subject folder
+
+  3. The school must be set up in the system with a school code
+     (e.g. HajiPirBakshRajhir_A_W24S)
+
+  4. Internet connection for first-time setup
+     (after setup it works offline too)
+
+
+================================================================
+STEP 1 — OPEN THE CLASSROOM PLAYER
+================================================================
+
+URL:
+  https://takmil-bot-production-0f51.up.railway.app/classroom
+
+Open this on the classroom laptop or tablet (not phone).
+You will see a setup screen on first use.
+
+
+================================================================
+STEP 2 — FIRST TIME SETUP (only done once per device)
+================================================================
+
+Fill in three fields:
+
+  School Code:   Enter your school identifier
+                 Example: HajiPirBakshRajhir_A_W24S
+
+  School Name:   Enter your school name in full
+                 Example: Haji Pir Baksh Rajhir School
+
+  Server URL:    Always enter this exactly:
+                 https://takmil-bot-production-0f51.up.railway.app
+
+Tap "Save and Continue"
+
+NOTE: This setup is saved on the device permanently.
+      You will not need to do it again next time.
+
+
+================================================================
+STEP 3 — LOAD VIDEOS FROM USB OR LAPTOP
+================================================================
+
+  1. Plug in your USB drive  OR  navigate to your video folder
+
+  2. Tap the green button "Load Videos (USB or Laptop)"
+
+  3. A file picker opens — navigate to your Math/English/Urdu
+     folder and SELECT the folder (do not open it)
+
+  4. Browser will ask "Upload a file to this site?" — tap UPLOAD
+
+  5. Your videos will appear in the list on the left side
+
+  WHAT YOU SHOULD SEE:
+  - Video name
+  - Subject (Math / English / Urdu)
+  - Level (1-11)
+  - Duration
+
+  IF NO VIDEOS APPEAR:
+  - Check your folder has the right structure (Math > video.mp4)
+  - Make sure the video file is .mp4, .mkv, .avi, or .mov
+  - Check the filter dropdowns at top — set both to "All"
+
+
+================================================================
+STEP 4 — SELECT A VIDEO
+================================================================
+
+  1. Click/tap any video from the list on the left
+
+  2. The video will load in the main area on the right
+
+  3. You will see the video preview and the "Start Lesson" button
+
+  4. Do NOT tap Start Lesson yet — make sure the projector is
+     connected and students are seated first
+
+
+================================================================
+STEP 5 — START THE LESSON
+================================================================
+
+  1. Tap "Start Lesson — سبق شروع کریں"
+
+  2. The system will:
+     - Record GPS location of the device automatically
+     - Start a timer showing how long the lesson has run
+     - Show coverage % (how much of the video has been played)
+     - Send a WhatsApp alert to the Ops team:
+       "▶️ Lesson Started — School Name — Math L1"
+
+  3. The video will start playing automatically
+
+  4. Play the video on the projector for students
+
+
+================================================================
+STEP 6 — DURING THE LESSON
+================================================================
+
+  The overlay shows:
+  - ⏱ Timer — how long the lesson has been running
+  - 📊 Coverage % — how much of the video was actually watched
+  - 📍 GPS location status
+
+  DO NOT close the browser tab during the lesson.
+  DO NOT refresh the page.
+
+  Coverage turns colors:
+  - GREEN  = 80% or more watched (good)
+  - ORANGE = 50-79% watched (acceptable)
+  - RED    = less than 50% watched (will be flagged)
+
+
+================================================================
+STEP 7 — END THE LESSON
+================================================================
+
+  1. When the video finishes (or class ends), tap:
+     "End Lesson — سبق ختم کریں"
+
+  2. The system will:
+     - Record final GPS location
+     - Calculate total coverage %
+     - Determine status: Confirmed / Short / Suspicious
+     - Send WhatsApp alert to Ops team with full summary
+     - Save results to the database
+
+  3. You will see a result screen showing:
+     - Video name and subject
+     - Total duration watched
+     - Coverage percentage
+     - Status (Confirmed / Short / Suspicious)
+     - Sync status (Synced or Pending)
+
+
+================================================================
+STEP 8 — CHECK RESULTS ON DASHBOARD
+================================================================
+
+DETAILED LESSON VIEW (every lesson):
+  https://takmil-bot-production-0f51.up.railway.app/lessons-admin
+
+  Shows: Teacher, School, Video, Subject, Start Time,
+         Duration, Coverage %, Status, GPS Map Link
+
+SCHOOL COMPLIANCE VIEW (which schools ran today):
+  https://takmil-bot-production-0f51.up.railway.app/compliance
+
+  Shows: All schools — Ran lesson ✅ vs Did not run ❌
+
+
+VERIFY IN DATABASE (Admin — DBeaver):
+  SELECT
+    school_name, video_name, subject, level,
+    ROUND(actual_duration/60.0, 1) AS minutes_taught,
+    coverage_pct, status, flagged, start_time
+  FROM lessons
+  ORDER BY created_at DESC
+  LIMIT 5;
+
+
+================================================================
+UNDERSTANDING THE STATUS
+================================================================
+
+  ✅ Confirmed   Coverage 80% or more       Lesson ran fully
+  ⚠️  Short       Coverage 50-79%            Lesson ended early
+  🚨 Suspicious  Coverage less than 50%     Too short or skipped
+
+  Flagged lessons are highlighted in the dashboard and the
+  Ops team is notified automatically on WhatsApp.
+
+
+================================================================
+OFFLINE TESTING (no internet)
+================================================================
+
+  The classroom player works without internet.
+
+  STEP 1 — Set up once with internet (Step 2 above)
+  STEP 2 — Load videos from USB (works offline)
+  STEP 3 — Run the lesson (works offline)
+  STEP 4 — Results saved on device automatically
+  STEP 5 — When internet returns, tap "Sync Pending"
+            OR the portal syncs automatically every 60 seconds
+
+  HOW TO CHECK PENDING SYNC:
+  Bottom of the screen shows: "X lessons pending sync"
+  When synced it shows: "All lessons synced ✅"
+
+
+================================================================
+PASS / FAIL CHECKLIST
+================================================================
+
+SETUP
+  [ ] Setup screen appears on first visit
+  [ ] School code, name, server URL saved correctly
+  [ ] After setup, main screen shows school name in top bar
+
+VIDEO LOADING
+  [ ] "Load Videos" button opens file picker
+  [ ] Videos appear in list after selecting folder
+  [ ] Subject detected correctly (Math/English/Urdu)
+  [ ] Level detected correctly from folder name
+  [ ] Filter by subject works
+  [ ] Filter by level works
+
+LESSON TRACKING
+  [ ] Clicking a video selects it and shows preview
+  [ ] Start Lesson button activates after video selected
+  [ ] Timer starts when lesson begins
+  [ ] Coverage % increases as video plays
+  [ ] GPS badge shows location (or "unavailable" if no GPS)
+  [ ] End Lesson saves results
+
+RESULTS
+  [ ] Lesson appears in /lessons-admin immediately
+  [ ] Status shows Confirmed / Short / Suspicious correctly
+  [ ] Coverage % matches how much was watched
+  [ ] GPS map link opens correct location
+  [ ] Compliance dashboard shows school as active today
+  [ ] Ops team received WhatsApp notification
+
+OFFLINE
+  [ ] Lesson saves locally when no internet
+  [ ] Auto-syncs when internet returns
+  [ ] Pending count shows correctly
+
+
+================================================================
+COMMON ERRORS AND FIXES
+================================================================
+
+Error: No videos appear after loading folder
+Fix:   Make sure folder structure is Math > video.mp4
+       Set filter dropdowns to "All" (not Math or Level 1)
+       File must be .mp4, .mkv, .avi, .mov format
+
+Error: Subject shows as "General" instead of Math/English/Urdu
+Fix:   Rename your folder to exactly "Math", "English", or "Urdu"
+       The system reads the folder name to detect subject
+
+Error: Coverage stays at 0%
+Fix:   Make sure video is actually playing (not paused)
+       Do not seek/skip — watch continuously
+
+Error: Lesson not showing in /lessons-admin
+Fix:   Check internet connection. If offline, wait for auto-sync
+       Or tap "Sync Pending" button on the result screen
+
+Error: GPS shows unavailable
+Fix:   Allow location permission in browser
+       On laptop: Windows Settings > Privacy > Location > On
+       GPS is optional — lesson still saves without it
+
+Error: WhatsApp notification not received by Ops team
+Fix:   Check ops_team table has correct phone number:
+       SELECT phone FROM ops_team WHERE is_active = TRUE;
+
+
+================================================================
+LINKS
+================================================================
+
+Classroom Player (Teacher laptop/tablet):
+https://takmil-bot-production-0f51.up.railway.app/classroom
+
+Lessons Admin Dashboard (detailed):
+https://takmil-bot-production-0f51.up.railway.app/lessons-admin
+
+Compliance Dashboard (school-level):
+https://takmil-bot-production-0f51.up.railway.app/compliance
+
+================================================================
+For help, contact the TAKMIL Technology Team
+================================================================

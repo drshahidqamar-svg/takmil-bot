@@ -1,0 +1,253 @@
+================================================================
+TAKMIL ASSESSMENT — SIMPLE GUIDE FOR FIELD TEAM
+================================================================
+Prepared: April 29, 2026
+For: Coordinators, Teachers, Ops Team
+================================================================
+
+
+================================================================
+WHAT IS THIS SYSTEM?
+================================================================
+
+The TAKMIL Assessment System lets teachers test students on
+tablets at school. Here is how the whole thing works:
+
+  COORDINATOR  →  generates a PIN
+  TEACHER      →  gets PIN on WhatsApp, runs the test
+  STUDENTS     →  answer questions on tablets
+  RESULTS      →  automatically saved and visible online
+
+
+================================================================
+STEP 1 — COORDINATOR GENERATES A PIN
+================================================================
+
+WHO DOES THIS: Regional Coordinator or School Coordinator
+
+1. Open this link on any phone or computer:
+   https://takmil-bot-production-0f51.up.railway.app/pin-generator
+
+2. Log in:
+   - Phone: your registered phone number
+   - Password: takmil123
+
+3. You will see a form. Fill it in:
+   - Select School     (only your schools appear)
+   - Select Level      (1 to 11)
+   - Select Subject    Math  OR  English  OR  Urdu
+   - Enter Cohort Size (how many students in the class)
+
+4. Tap "Generate PIN"
+
+5. A 6-digit number appears. Example:  662590
+
+6. Send this PIN to the teacher on WhatsApp.
+   Example message:
+   "Your assessment PIN is 662590 — Math Level 1. Valid 24 hours."
+
+DONE. Your job is finished.
+
+
+================================================================
+STEP 2 — TEACHER PREPARES BEFORE GOING TO CLASS
+================================================================
+
+WHO DOES THIS: Teacher (on their own phone)
+NEEDS: Internet (mobile data or WiFi)
+TIME: 30 seconds
+
+1. Open this link on your phone:
+   https://takmil-bot-production-0f51.up.railway.app/offline-portal
+
+2. Scroll down to the card that says "Download for Offline Use"
+
+3. Type the PIN you received (example: 662590)
+
+4. Tap "Download for Offline"
+
+5. Wait 2-3 seconds. You will see:
+   "Done! 20 questions saved for PIN 662590"
+
+6. Your phone now has all the questions saved.
+   You do NOT need internet anymore for the test.
+
+IMPORTANT: Do this BEFORE leaving for school.
+           Once downloaded, it works without internet.
+
+
+================================================================
+STEP 3 — TEACHER SETS UP TABLETS IN CLASS
+================================================================
+
+WHO DOES THIS: Teacher (in the classroom)
+NEEDS: 5 tablets (no SIM needed)
+
+1. Turn on HOTSPOT on your phone:
+   - Android: Settings → Hotspot → Turn On
+   - iPhone:  Settings → Personal Hotspot → Turn On
+
+2. On each tablet:
+   - Go to WiFi settings
+   - Connect to teacher's phone hotspot
+
+3. On each tablet, open the browser and go to:
+   https://takmil-bot-production-0f51.up.railway.app/offline-portal
+
+4. All 5 tablets are now ready.
+
+NOTE: The tablets connect to the internet THROUGH the teacher's
+      phone. The teacher's phone uses its own mobile data.
+      The tablets themselves do NOT need a SIM card.
+
+
+================================================================
+STEP 4 — STUDENTS TAKE THE TEST
+================================================================
+
+WHO DOES THIS: Each student (on a tablet)
+
+1. Student picks up a tablet
+
+2. Types the 6-digit PIN (teacher writes it on the board)
+   Example: 662590
+
+3. Types their full name
+
+4. Taps "Start Assessment"
+
+5. 5 questions appear one at a time (A, B, C, D choices)
+
+6. Student taps their answer for each question
+
+7. After the last question, the score appears:
+   - GREEN = Passed (scored 60% or more)
+   - RED   = Needs more practice
+
+8. Teacher gives the tablet to the next student
+   (same PIN works for the whole class)
+
+IMPORTANT: If the internet drops during the test, it does NOT
+           matter. The questions are already on the tablet.
+           The student can finish the test normally.
+
+
+================================================================
+STEP 5 — TEACHER SYNCS THE RESULTS
+================================================================
+
+WHO DOES THIS: Teacher (at end of class or when internet available)
+NEEDS: Internet (phone hotspot or any WiFi)
+
+1. On the offline portal, tap "Sync Now"
+
+2. All student results are sent to the server in one go
+
+3. Done. Results are now visible to the coordinator.
+
+NOTE: If you forget to sync at school, you can sync later
+      when you have internet. Results are safe on the tablet
+      until synced.
+
+
+================================================================
+STEP 6 — COORDINATOR VIEWS RESULTS
+================================================================
+
+WHO DOES THIS: Coordinator (any time after sync)
+
+1. Open this link:
+   https://takmil-bot-production-0f51.up.railway.app/results
+
+2. You will see a list of all assessment sessions
+
+3. Click any session to see each student's score
+
+That's it!
+
+
+================================================================
+QUICK SUMMARY (Print This Out)
+================================================================
+
+COORDINATOR
+  Go to:    /pin-generator
+  Login:    phone + password
+  Action:   Select school, level, subject → Generate PIN
+  Then:     Send PIN to teacher on WhatsApp
+
+TEACHER (before class - needs internet)
+  Go to:    /offline-portal
+  Action:   Enter PIN → Tap "Download for Offline"
+  Takes:    30 seconds
+
+TEACHER (in class - no internet needed)
+  Action:   Turn on phone hotspot
+  Tablets:  Connect to hotspot → Open /offline-portal
+
+STUDENT (on tablet)
+  Action:   Enter PIN → Enter name → Answer 5 questions
+  Result:   Score shown immediately
+
+TEACHER (after class)
+  Action:   Tap "Sync Now" on offline portal
+
+COORDINATOR (after sync)
+  Go to:    /results
+  See:      All student scores
+
+
+================================================================
+COMMON QUESTIONS
+================================================================
+
+Q: What if the hotspot drops during a test?
+A: No problem. The student can keep answering. Questions are
+   already saved on the tablet.
+
+Q: What if a student closes the app by mistake?
+A: They need to start again. Their previous answers are lost.
+   Keep the tablet screen on during the test.
+
+Q: Can two students use the same tablet at the same time?
+A: No. One student at a time per tablet.
+
+Q: Can we use the same PIN the next day?
+A: No. Each PIN is valid for 24 hours only.
+   Coordinator must generate a new PIN each day.
+
+Q: What if the teacher forgets to download before class?
+A: They can still use /assess (not /offline-portal).
+   But then the tablets MUST stay connected to hotspot
+   the whole time — no offline protection.
+
+Q: What subjects can we test?
+A: Math, English, and Urdu. Levels 1 to 11.
+   One subject per PIN.
+
+Q: How many questions does each student answer?
+A: Currently 5 (testing mode). Will change to 20 in production.
+
+Q: What score is needed to pass?
+A: Currently 60% (testing mode). Will change to 80% in production.
+
+
+================================================================
+LINKS
+================================================================
+
+PIN Generator (Coordinators):
+https://takmil-bot-production-0f51.up.railway.app/pin-generator
+
+Assessment Portal (Tablets):
+https://takmil-bot-production-0f51.up.railway.app/assess
+
+Offline Portal (Teacher + Tablets):
+https://takmil-bot-production-0f51.up.railway.app/offline-portal
+
+Results Dashboard (Coordinators):
+https://takmil-bot-production-0f51.up.railway.app/results
+
+================================================================
+For help, contact the TAKMIL Technology Team
+================================================================

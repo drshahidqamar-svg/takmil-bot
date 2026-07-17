@@ -1,0 +1,26 @@
+INSERT INTO regional_coordinators (id, name, region) VALUES (1, 'M. Ali', 'Sindh') ON CONFLICT (id) DO NOTHING;
+INSERT INTO regional_coordinators (id, name, region) VALUES (2, 'M. Ali', 'Punjab') ON CONFLICT (id) DO NOTHING;
+INSERT INTO regional_coordinators (id, name, region) VALUES (3, 'M. Ayub', 'Punjab') ON CONFLICT (id) DO NOTHING;
+INSERT INTO regional_coordinators (id, name, region) VALUES (4, 'Qiyanoos Khan', 'KPK') ON CONFLICT (id) DO NOTHING;
+INSERT INTO regional_coordinators (id, name, region) VALUES (5, 'Qiyanoos Khan', 'GB') ON CONFLICT (id) DO NOTHING;
+INSERT INTO regional_coordinators (id, name, region) VALUES (6, 'Shabir khan', 'GB') ON CONFLICT (id) DO NOTHING;
+INSERT INTO regional_coordinators (id, name, region) VALUES (7, 'Shabir khan', 'Baluchistan') ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (1, 'Fateh Khan', 1) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (2, 'Ghulam Mujtaba', 1) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (3, 'Inayat Lashari', 1) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (4, 'Arqam Aftab', 1) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (5, 'Mehrun Nisa', 1) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (6, 'Farhan Haider', 3) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (7, 'Muhammad Ishaq', 3) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (8, 'Raheel Maqbool', 3) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (9, 'Saima Majeed', 3) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (10, 'Abid Afridi', 4) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (11, 'Ishaq Khan', 4) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (12, 'Saddam Hussain', 4) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (13, 'Sundus Jahanzeb', 4) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (14, 'Ghulam Sarwar', 6) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (15, 'M. Younas', 6) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (16, 'Saddam Wali', 6) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (17, 'Saqiba Baloch', 6) ON CONFLICT (id) DO NOTHING;
+INSERT INTO school_coordinators (id, name, regional_coordinator_id) VALUES (18, 'Suman Nazir', 6) ON CONFLICT (id) DO NOTHING;

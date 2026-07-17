@@ -1,0 +1,406 @@
+================================================================
+TAKMIL LEVEL ADVANCEMENT CONSOLE — TESTING GUIDE
+================================================================
+Prepared: April 30, 2026
+For: Ops Team / Admin
+================================================================
+
+
+================================================================
+WHY THIS PAGE EXISTS
+================================================================
+
+TAKMIL runs a cohort model:
+  - All students in a school START at Level 1 together
+  - All students MOVE to the next level together
+  - No student advances alone — the whole class moves as one
+  - This continues Level 1 → 2 → 3 ... → 11 → Grand Assessment
+  - Completing all levels = 5 years of primary education in 12 months
+
+The Ops team monitors Math, English, and Urdu assessment scores.
+When the class shows mastery of the current level's content (SLOs),
+the Ops team advances the whole school to the next level.
+
+THIS PAGE IS WHERE THAT HAPPENS.
+
+Before this page existed:
+  ❌ Ops had to manually update SQL in DBeaver
+  ❌ No record of who advanced which school
+  ❌ No automatic notification to coordinators
+  ❌ Easy to make mistakes
+  ❌ Anyone could advance without seeing assessment data
+
+With this page:
+  ✅ One button advances the whole school
+  ✅ Advance button is LOCKED until assessments exist
+  ✅ Assessment scores visible on every card before deciding
+  ✅ Traffic light system — Green/Amber/Red readiness indicator
+  ✅ All students updated automatically
+  ✅ Regional coordinator gets WhatsApp notification
+  ✅ Full audit trail — who advanced, when, with notes
+
+
+================================================================
+URL
+================================================================
+
+https://takmil-bot-production-0f51.up.railway.app/advance
+
+
+================================================================
+WHAT YOU SEE ON THE PAGE
+================================================================
+
+TOP STATS BAR:
+  177         Total schools in the system
+  122         Total students currently enrolled
+  1.0         Average level across all schools
+  0           Schools that have graduated
+
+FILTERS (all in the main white bar):
+  Search      Type any part of school name
+  Province    Filter by province (auto-populated from real data)
+  Year        Filter by cohort year (W23, W24, W25, W26)
+  Section     Filter by section (A, B, C, O)
+  Level       Filter schools at a specific level
+  X Clear     Reset all filters at once
+  XX schools  Results count shown on right
+
+SCHOOL CARDS (one per school):
+  School name + Province badge (color coded)
+  Current Level badge (L1, L2... L11, or Graduated)
+  Progress bar (shows % of 12 levels completed)
+  Math / English / Urdu average scores (last 30 days)
+  Number of students enrolled + Attendance rate
+  Assessment readiness indicator (see below)
+  Advance button (locked if no assessments)
+  View Level History button
+
+
+================================================================
+ASSESSMENT READINESS INDICATOR (NEW)
+================================================================
+
+Every school card shows one of three states BEFORE the button:
+
+  🔴 RED — "No assessments taken at Level X yet"
+     Button shows: 🔒 Run Assessments First (DISABLED)
+     Action: Generate a PIN and run assessments first
+
+  🟡 AMBER — "Review scores before advancing"
+     Button shows: ⬆️ Advance to Level X (ENABLED)
+     Means: Some assessments done but scores below 60%
+     Action: Review carefully before advancing
+
+  🟢 GREEN — "Ready to advance"
+     Button shows: ⬆️ Advance to Level X (ENABLED)
+     Means: All subjects tested with avg scores above 60%
+     Action: Safe to advance
+
+IMPORTANT: No one can advance a school without assessment
+data. The button is physically disabled (grey, unclickable)
+until at least one subject has been assessed.
+
+
+================================================================
+STEP 1 — OPEN THE PAGE
+================================================================
+
+Go to:
+  https://takmil-bot-production-0f51.up.railway.app/advance
+
+You should see:
+  - 177 schools in the stat bar
+  - School cards organized alphabetically by province
+  - All schools showing L1 (Level 1)
+  - 🔴 Red indicator on all cards (no assessments yet)
+  - Advance button shows 🔒 Run Assessments First
+
+
+================================================================
+STEP 2 — TEST THE FILTERS
+================================================================
+
+TEST A — Filter by Province:
+  1. Click Province dropdown in the filters bar
+  2. Select "Sindh"
+  3. Only Sindh schools show (25 schools)
+  4. Select "Punjab" — only Punjab schools show (61 schools)
+  5. Select "All Provinces" to reset
+
+TEST B — Filter by Year:
+  1. Click Year dropdown
+  2. Select W24
+  3. Cards reduce to only W24 cohort schools
+  4. Results count shows e.g. "45 of 177 schools"
+  5. Select "All Years" to reset
+
+TEST C — Filter by Section:
+  1. Click Section dropdown
+  2. Select "A" — only Section A schools show
+  3. Select "O" — only single-section schools show
+
+TEST D — Search:
+  1. Type "Ali" in search box
+  2. Only schools with "Ali" in name appear
+  3. Clear the text — all schools return
+
+TEST E — Combine filters:
+  1. Select Province = Sindh
+  2. Select Year = W24
+  3. Should show only Sindh W24 schools
+  4. Click "X Clear" — all filters reset at once
+
+TEST F — Filter by Level:
+  1. Select Level = Level 1
+  2. All 177 schools show (all currently at Level 1)
+  3. After advancing a school to Level 2, select Level 2
+     to find it easily
+
+
+================================================================
+STEP 3 — TEST ASSESSMENT LOCK (CRITICAL)
+================================================================
+
+This verifies no one can advance without assessment data.
+
+  1. Find any school that shows 🔴 red indicator
+  2. Check the button — it should say "🔒 Run Assessments First"
+  3. Try clicking the button — nothing should happen (disabled)
+  4. This is correct behavior — assessments must happen first
+
+TO UNLOCK THE BUTTON:
+  1. Go to /pin-generator and generate a Math PIN for that school
+  2. Go to /assess and run at least one student through the test
+  3. Come back to /advance and refresh the page
+  4. The card should now show a score and the button unlocks
+
+
+================================================================
+STEP 4 — TEST LEVEL ADVANCEMENT
+================================================================
+
+BEFORE ADVANCING — check the school's readiness indicator:
+  - 🟢 Green = all tested subjects above 60% avg — safe to advance
+  - 🟡 Amber = scores below 60% — review before advancing
+  - 🔴 Red = no assessments — CANNOT advance
+
+TO ADVANCE A SCHOOL:
+  1. Find AliHassanHingrjo_O_W24S (has 26 real students)
+  2. Run assessments first if button is locked
+  3. Once unlocked, click "⬆️ Advance to Level 2"
+  4. Confirmation popup appears showing:
+     - School name
+     - Current Level → New Level
+     - Number of students affected
+     - Notes text box
+  5. Add a note:
+     e.g. "Students showed strong SLO mastery in all 3 subjects"
+  6. Click "✅ Confirm Advance"
+
+WHAT HAPPENS AUTOMATICALLY:
+  ✅ School updated to Level 2 in database
+  ✅ All 26 students updated to Level 2
+  ✅ Advancement logged with timestamp and your note
+  ✅ Regional Coordinator gets WhatsApp notification:
+     "⬆️ Level Advanced — AliHassanHingrjo School
+      Level 1 → Level 2 — 26 students"
+  ✅ Card on page updates to show L2
+  ✅ Progress bar advances from 8% to 17%
+
+VERIFY IN DATABASE:
+  SELECT identifier, current_level, level_updated_at
+  FROM schools
+  WHERE identifier = 'AliHassanHingrjo_O_W24S';
+
+  Should show: current_level = 2
+
+
+================================================================
+STEP 5 — TEST LEVEL HISTORY
+================================================================
+
+  1. Find the school you just advanced
+  2. Click "📋 View Level History"
+  3. A popup shows the advancement record:
+     - L1 → L2
+     - Date and time
+     - Who advanced it (Ops Team)
+     - Your note
+  4. Close the popup
+
+VERIFY IN DATABASE:
+  SELECT school_identifier, from_level, to_level,
+         advanced_by, notes, advanced_at
+  FROM level_progression
+  ORDER BY advanced_at DESC
+  LIMIT 5;
+
+  Should show your test advancement at the top.
+
+
+================================================================
+STEP 6 — TEST GRAND ASSESSMENT (Level 11 → Graduate)
+================================================================
+
+NOTE: Only test this on a dummy school. It permanently marks
+all students as graduated.
+
+  1. In DBeaver, temporarily set one school to Level 11:
+     UPDATE schools SET current_level = 11
+     WHERE identifier = 'TEST';
+
+  2. Refresh /advance and find TEST school
+
+  3. Button should say: "🏆 Mark Grand Assessment Complete"
+     (button color changes to gold/amber)
+
+  4. Click it — confirmation says "Grand Assessment / Graduated"
+
+  5. After confirming:
+     - Card changes to 🎓 Graduated (green border)
+     - Graduated count in stats bar increases by 1
+
+  6. Reset the test school after:
+     UPDATE schools SET current_level = 1
+     WHERE identifier = 'TEST';
+
+
+================================================================
+PASS / FAIL CHECKLIST
+================================================================
+
+PAGE LOAD
+  [ ] Page loads with 177 schools
+  [ ] Stats bar shows correct numbers (no millions)
+  [ ] All school cards show L1
+  [ ] Province dropdown auto-populates with real provinces
+
+FILTERS
+  [ ] Province dropdown shows Balochistan/GB/KPK/Punjab/Sindh
+  [ ] Province filter reduces cards correctly
+  [ ] Year dropdown shows W23/W24/W25/W26 options
+  [ ] Year filter reduces cards correctly
+  [ ] Section filter works
+  [ ] Search works by school name
+  [ ] Combined filters work together
+  [ ] X Clear resets all filters
+  [ ] Results count updates (e.g. "45 of 177 schools")
+
+ASSESSMENT LOCK
+  [ ] Schools with no assessments show 🔴 red indicator
+  [ ] Button shows "🔒 Run Assessments First" when locked
+  [ ] Locked button is unclickable (disabled/grey)
+  [ ] After running assessment, button unlocks
+  [ ] Schools with all subjects above 60% show 🟢 green
+
+LEVEL ADVANCEMENT
+  [ ] Confirmation popup shows correct school/level/students
+  [ ] Notes field accepts text
+  [ ] Cancel closes popup without changing anything
+  [ ] Confirm Advance updates card to L2
+  [ ] Progress bar advances
+  [ ] Avg Level stat updates
+
+AUDIT TRAIL
+  [ ] View Level History shows the advancement record
+  [ ] Database shows updated current_level
+  [ ] level_progression table has new record with notes
+  [ ] WhatsApp notification sent to regional coordinator
+
+GRAND ASSESSMENT
+  [ ] Level 11 school shows gold "Mark Grand Assessment" button
+  [ ] After confirming, card shows 🎓 Graduated
+  [ ] Graduated count in stats bar increases
+
+
+================================================================
+IMPORTANT RULES FOR OPS TEAM
+================================================================
+
+1. NEVER try to bypass the assessment lock. If the button
+   is grey and says "Run Assessments First" — run assessments.
+   The system will not let you advance without data.
+
+2. Always add a note when advancing. This creates an audit
+   trail for donors, management, and government reporting.
+
+3. Check ALL THREE subjects before advancing:
+   - Math avg should be 60%+ (production: 80%+)
+   - English avg should be 60%+ (production: 80%+)
+   - Urdu avg should be 60%+ (production: 80%+)
+
+4. Grand Assessment advancement is PERMANENT. Only do this
+   after the actual Grand Assessment has been conducted.
+
+5. If you advance a school by mistake, contact the tech
+   team immediately to reverse it in the database.
+
+6. Coordinate with regional coordinators BEFORE advancing.
+   They will receive an automatic WhatsApp notification.
+
+
+================================================================
+DATABASE QUERIES FOR VERIFICATION
+================================================================
+
+See all schools and their current levels:
+  SELECT name, identifier, current_level, province
+  FROM schools WHERE identifier IS NOT NULL
+  ORDER BY current_level DESC, province;
+
+See full advancement history:
+  SELECT school_identifier, from_level, to_level,
+         student_count, advanced_by, notes, advanced_at
+  FROM level_progression
+  ORDER BY advanced_at DESC;
+
+See all graduated students:
+  SELECT student_name, school_identifier, graduated_at
+  FROM students_register
+  WHERE graduated = TRUE
+  ORDER BY graduated_at DESC;
+
+Count students per level:
+  SELECT level, COUNT(*) as students
+  FROM students_register
+  WHERE active = TRUE
+  GROUP BY level ORDER BY level;
+
+Check assessment readiness for all schools:
+  SELECT s.name, s.identifier, s.current_level,
+    ROUND(AVG(CASE WHEN ts.subject='Math'    THEN tr.score_pct END)::numeric,0) AS math_avg,
+    ROUND(AVG(CASE WHEN ts.subject='English' THEN tr.score_pct END)::numeric,0) AS english_avg,
+    ROUND(AVG(CASE WHEN ts.subject='Urdu'    THEN tr.score_pct END)::numeric,0) AS urdu_avg
+  FROM schools s
+  LEFT JOIN tablet_results tr ON tr.school_identifier = s.identifier
+    AND tr.completed_at > NOW() - INTERVAL '30 days'
+  LEFT JOIN tablet_sessions ts ON ts.id = tr.session_id
+  WHERE s.identifier IS NOT NULL
+  GROUP BY s.name, s.identifier, s.current_level
+  HAVING AVG(tr.score_pct) IS NOT NULL
+  ORDER BY s.province, s.name;
+
+
+================================================================
+LINKS
+================================================================
+
+Level Advancement Console (Ops Team):
+https://takmil-bot-production-0f51.up.railway.app/advance
+
+Generate Assessment PINs (before advancing):
+https://takmil-bot-production-0f51.up.railway.app/pin-generator
+
+Assessment Portal (run tests on tablets):
+https://takmil-bot-production-0f51.up.railway.app/assess
+
+Assessment Results Dashboard:
+https://takmil-bot-production-0f51.up.railway.app/results
+
+Compliance Dashboard:
+https://takmil-bot-production-0f51.up.railway.app/compliance
+
+================================================================
+For help, contact the TAKMIL Technology Team
+================================================================

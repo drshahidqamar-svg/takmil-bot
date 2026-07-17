@@ -1,0 +1,374 @@
+================================================================
+TAKMIL WHATSAPP CHATBOT — TESTING GUIDE FOR TEAM
+================================================================
+Prepared: April 30, 2026
+For: Leadership, Ops, M&E, HR, Coordinators
+================================================================
+
+
+================================================================
+WHAT IS THIS CHATBOT?
+================================================================
+
+The TAKMIL WhatsApp bot lets every team member ask questions
+about schools, students, attendance, and assessments in plain
+English — directly on WhatsApp.
+
+The bot knows WHO you are based on your phone number and gives
+you answers relevant to YOUR role only.
+
+  Leadership  → Big picture stats, province comparison, impact
+  Ops Team    → What needs action today, missing submissions
+  M&E Team    → Assessment scores, subject gaps, trends
+  HR Team     → Teacher compliance, lesson completion
+  Coordinators → Their region or province only
+
+
+================================================================
+BEFORE YOU START — SETUP
+================================================================
+
+STEP A — Register your phone number
+Your Ops/Tech team must add your phone to the system.
+Contact tech team with: Your Name + Phone + Role
+
+Or admin runs in DBeaver:
+  INSERT INTO bot_users (phone, name, role)
+  VALUES ('+923XXXXXXXXX', 'Your Name', 'ops');
+
+  Valid roles: leadership / ops / me / hr /
+               coordinator / school_coordinator
+
+STEP B — Get the TAKMIL Bot WhatsApp number
+Contact your tech team for the Twilio WhatsApp number.
+Save it in your contacts as "TAKMIL Bot"
+
+STEP C — Send first message
+WhatsApp the bot: "Hello"
+You should receive a response within 10 seconds.
+
+
+================================================================
+HOW THE BOT WORKS
+================================================================
+
+The bot uses LIVE data from the database — no estimates,
+no guesses. If data does not exist yet, it says so clearly.
+
+Every response includes a DATA HEADER showing:
+  📅 Date of data
+  🏫 Total schools
+  👥 Total students
+  ✅ Attendance submissions today
+  📝 Students tested this week
+
+This lets you verify Claude's answer against real numbers.
+
+If no data exists for your question, the bot replies:
+  "📭 No attendance submissions found for today yet."
+  NOT a made-up number.
+
+
+================================================================
+STEP 1 — TEST THE MENU COMMAND
+================================================================
+
+Send this to the bot:
+  MENU
+
+Expected response — Leadership example:
+  👑 Leadership Commands
+  - SUMMARY — overall stats
+  - PROVINCE — compare provinces
+  - GRADUATES — graduation pipeline
+  - GROWTH — month over month
+  - Or ask any question in plain English
+
+Expected response — Ops example:
+  ⚙️ Ops Commands
+  - PENDING — what needs action today
+  - ATTENDANCE — who hasn't submitted
+  - ADVANCE — schools ready to move up
+  - FLAGS — photo/lesson flags
+  - Or ask any question in plain English
+
+PASS if: Menu matches your role
+FAIL if: Generic message or error
+
+
+================================================================
+STEP 2 — TEST COMMANDS BY ROLE
+================================================================
+
+--- LEADERSHIP TEAM ---
+
+Send these one at a time:
+  SUMMARY
+  PROVINCE
+  How many schools do we have total?
+  Which province has the most schools?
+  How many students have graduated?
+  What is our total reach across Pakistan?
+
+Expected: Answers with real numbers from database.
+Data header shows: total schools, total students.
+If no graduation data: "no data yet" — NOT a fake number.
+
+--- OPS TEAM ---
+
+Send these one at a time:
+  PENDING
+  ATTENDANCE
+  Which schools haven't submitted attendance today?
+  How many schools are ready to advance to next level?
+  Any flagged lessons today?
+  ADVANCE
+
+Expected: Action-oriented answers.
+"23 schools missing attendance today" if real data exists.
+"📭 No attendance submissions found today yet" if none.
+
+--- M&E TEAM ---
+
+Send these one at a time:
+  SCORES
+  WEAK
+  TRENDS
+  Which subject has the lowest average score?
+  How many students were assessed this week?
+  Which level is performing worst in Math?
+
+Expected: Data-driven answers with actual score percentages.
+If no recent assessments: "📭 No assessment data for last 7 days"
+
+--- HR TEAM ---
+
+Send these one at a time:
+  TEACHERS
+  COMPLIANCE
+  How many lessons were completed today?
+  Which teachers ran the shortest lessons?
+  How many lessons were flagged as suspicious today?
+
+Expected: Staff-focused answers about lesson compliance.
+
+--- REGIONAL COORDINATORS ---
+
+Send these one at a time:
+  ATTENDANCE
+  SCORES
+  How many schools in my region submitted today?
+  What are the assessment scores in my region?
+  Which schools in my region are ready to advance?
+
+Expected: Only data for YOUR region — not all 177 schools.
+
+--- SCHOOL COORDINATORS ---
+
+Send these one at a time:
+  ATTENDANCE
+  SCORES
+  How many students were assessed this week?
+
+Expected: Only data for YOUR province.
+
+
+================================================================
+STEP 3 — TEST ANTI-HALLUCINATION (CRITICAL)
+================================================================
+
+This tests that the bot does NOT make up numbers.
+
+TEST A — Ask about today when no data exists yet:
+  Send: "What is the attendance rate today?"
+
+  CORRECT response:
+  "📭 No attendance submissions found for today yet."
+
+  WRONG response (hallucination):
+  "Today's attendance rate is 87%"
+  ← If you see this, report it to tech team immediately
+
+TEST B — Ask about something that doesn't exist:
+  Send: "How many students graduated last year?"
+
+  CORRECT response:
+  "I don't have graduation data for last year yet."
+  OR shows "0 graduated" from data header
+
+  WRONG response (hallucination):
+  "Last year 450 students graduated from TAKMIL schools"
+  ← Report this immediately
+
+TEST C — Ask a very vague question:
+  Send: "How are we doing?"
+
+  CORRECT response:
+  Shows data header with real numbers then summarizes
+  what IS in the database
+
+  WRONG response:
+  Generic praise about TAKMIL with no real numbers
+  ← Report this
+
+REPORT hallucinations to:
+  Tech team with screenshot + exact question you sent
+
+
+================================================================
+STEP 4 — TEST PLAIN ENGLISH QUESTIONS
+================================================================
+
+These are free-form questions — no commands needed:
+
+  "How many schools submitted attendance today?"
+  "Which province has the highest assessment scores?"
+  "Are there any schools ready to move to next level?"
+  "How many students were assessed in Math this week?"
+  "What is the average score in English Level 1?"
+  "Which schools have not run any lessons this week?"
+
+WHAT TO CHECK:
+  ✅ Data header appears at top of every response
+  ✅ Numbers in answer match numbers in data header
+  ✅ No numbers appear that aren't in the data header
+  ✅ Response is under 350 characters (WhatsApp friendly)
+  ✅ Ends with one action item or suggestion
+  ✅ Uses *bold* for key numbers
+
+
+================================================================
+STEP 5 — TEST ROLE ISOLATION
+================================================================
+
+Coordinators should only see their own data — not all 177 schools.
+
+  1. Log in as a School Coordinator (Sindh province)
+  2. Send: "How many schools submitted attendance today?"
+  3. Answer should reference Sindh schools only — NOT 177
+
+  If answer says "177 schools" for a province coordinator
+  → Report to tech team — role filter is broken
+
+
+================================================================
+STEP 6 — TEST ERROR HANDLING
+================================================================
+
+Send these to test edge cases:
+
+  "asdfghjkl" (random text)
+  → Should route to normal assessment bot flow
+  → Should NOT call the AI query system
+
+  "123456" (looks like a PIN)
+  → Should be treated as assessment PIN entry
+  → Should NOT call AI query system
+
+  "HELP"
+  → Should show regular assessment bot help
+  → NOT the coordinator command menu
+
+
+================================================================
+PASS / FAIL CHECKLIST
+================================================================
+
+SETUP
+  [ ] Phone registered in bot_users table
+  [ ] Receives response within 10 seconds
+  [ ] Role matches what was registered
+
+MENU COMMAND
+  [ ] MENU shows role-specific commands
+  [ ] Commands match the role (Ops sees Ops commands)
+
+COMMANDS
+  [ ] SUMMARY / PENDING / SCORES etc return real data
+  [ ] Commands show data header with real numbers
+
+ANTI-HALLUCINATION
+  [ ] Empty data returns "no data yet" — NOT fake numbers
+  [ ] Numbers in answer match data header exactly
+  [ ] Vague questions answered with real data only
+
+PLAIN ENGLISH
+  [ ] Free-form questions answered correctly
+  [ ] Data header appears on every answer
+  [ ] Response stays under 350 characters
+
+ROLE ISOLATION
+  [ ] Province coordinator only sees their province
+  [ ] Regional coordinator only sees their region
+
+ERROR HANDLING
+  [ ] Random text routes to assessment flow
+  [ ] PIN numbers handled as assessments
+  [ ] HELP shows regular help (not coordinator menu)
+
+
+================================================================
+QUICK REFERENCE — QUESTIONS BY ROLE
+================================================================
+
+LEADERSHIP (ask these):
+  "How many schools and students does TAKMIL have?"
+  "Which province is performing best?"
+  "How many students have graduated?"
+  SUMMARY / PROVINCE / GRADUATES
+
+OPS TEAM (ask these):
+  "Which schools haven't submitted attendance today?"
+  "How many schools are ready to advance?"
+  "Any flagged photos or lessons today?"
+  PENDING / ATTENDANCE / ADVANCE / FLAGS
+
+M&E TEAM (ask these):
+  "Which subject has the lowest average score?"
+  "How many students tested this week?"
+  "Which level is weakest in English?"
+  SCORES / WEAK / TRENDS
+
+HR TEAM (ask these):
+  "How many lessons ran today?"
+  "Any suspicious lessons flagged?"
+  TEACHERS / COMPLIANCE
+
+COORDINATORS (ask these):
+  "How many schools in my region submitted today?"
+  "Assessment scores in my region this week?"
+  ATTENDANCE / SCORES
+
+
+================================================================
+HOW TO UPDATE A PHONE NUMBER
+================================================================
+
+When you get a real phone for a placeholder:
+Contact tech team with: Real Name + Real Phone + Role
+
+Or admin runs in DBeaver:
+  UPDATE bot_users
+  SET phone='+923XXXXXXXXX', name='Real Name'
+  WHERE phone='+923001000001';  -- replace placeholder
+
+
+================================================================
+LINKS
+================================================================
+
+Level Advancement Console (Ops/Admin):
+https://takmil-bot-production-0f51.up.railway.app/advance
+
+Assessment Results:
+https://takmil-bot-production-0f51.up.railway.app/results
+
+Attendance Dashboard:
+https://takmil-bot-production-0f51.up.railway.app/attendance
+
+Lessons Dashboard:
+https://takmil-bot-production-0f51.up.railway.app/lessons-admin
+
+================================================================
+For help, contact the TAKMIL Technology Team
+================================================================

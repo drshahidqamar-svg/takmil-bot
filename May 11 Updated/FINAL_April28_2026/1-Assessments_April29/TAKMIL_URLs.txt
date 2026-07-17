@@ -1,0 +1,165 @@
+================================================================
+TAKMIL SYSTEM — COMPLETE URL REFERENCE
+================================================================
+Base URL: https://takmil-bot-production-0f51.up.railway.app
+Last Updated: April 29, 2026
+================================================================
+
+
+----------------------------------------------------------------
+ASSESSMENT & PIN MANAGEMENT
+----------------------------------------------------------------
+
+/pin-generator      Coordinators          Login with phone + password → generate 6-digit PINs
+                                          per school / level / subject. Shows only schools in
+                                          coordinator's region. Levels 1-11. Math, English, Urdu.
+
+/assess             Teachers (tablets)    Students take assessments using a PIN. Shows school,
+                                          level, and subject (Math/English/Urdu) before starting.
+                                          5 questions per test (production: 20). Pass = 60% (production: 80%).
+
+/offline-portal     Teachers + Tablets    Offline-first assessment portal for classrooms with no
+                                          internet. Teacher downloads PIN questions once on mobile
+                                          data. Tablets connect via teacher hotspot. Results sync
+                                          in batch when internet returns. See flow below.
+
+/results            Coordinators / Ops    All assessment sessions. Click any session for
+                                          student-level detail, scores, pass/fail.
+
+/portal             Teachers              Alternative assessment portal (unified portal).
+
+
+----------------------------------------------------------------
+HOW OFFLINE ASSESSMENT WORKS (Teacher Hotspot Setup)
+----------------------------------------------------------------
+
+  BEFORE CLASS (Teacher - needs mobile data, takes ~3 seconds):
+  1. Open /offline-portal on phone
+  2. Enter PIN in "Download for Offline" card at the bottom
+  3. Tap Download - saves only 20 questions for that PIN locally
+  4. Done. Phone is ready.
+
+  IN CLASS (All tablets use teacher hotspot - no SIM needed):
+  5. Teacher turns on phone hotspot
+  6. Each tablet connects to hotspot WiFi
+  7. Each tablet opens /offline-portal in browser
+  8. Student enters PIN + name - questions load instantly
+  9. Student takes test - works even if hotspot drops mid-test
+  10. Result saved locally on tablet automatically
+
+  AFTER CLASS:
+  11. Teacher taps "Sync Now" - all results upload in one batch
+
+  KEY POINTS:
+  - Only teacher's phone needs a SIM / mobile data
+  - Tablets only need WiFi (teacher hotspot)
+  - Questions downloaded once, works for all students on all tablets
+  - Results never lost - saved locally until synced
+  - Portal installable as an app on Android/iOS (tap Install App)
+
+
+----------------------------------------------------------------
+DASHBOARDS & REPORTING
+----------------------------------------------------------------
+
+/analytics          Regional Coordinators  Submission rates, attendance, tech usage by RC/school
+/feedback           Coordinators / Ops     Daily teacher feedback - present/absent, subjects
+/compliance         Coordinators / Ops     School lesson compliance - GPS-verified tracking
+/register           Teachers               Student attendance register - mark P/A/L per student
+/attendance         Teachers               Daily attendance submission portal
+/dashboard          Admin                  Main admin dashboard overview
+
+
+----------------------------------------------------------------
+ADMIN & MANAGEMENT TOOLS
+----------------------------------------------------------------
+
+/hub                Admin / All            Central navigation hub - home page
+/import             Admin                  Bulk import schools, students, questions
+/question-bank      Admin / Curriculum     View, approve, flag, and manage all questions
+/bulk-assess        Admin / Curriculum     AI bulk question generator from video transcripts
+/coordinator        Coordinators           Coordinator portal - sync, progress, results
+/teacher-portal     Teachers               Lesson tracking - GPS-verified start/end
+/lessons-admin      Admin                  View and manage all lesson records
+/console            Ops Team               Approve/reject advancements, STATS, PENDING
+/picture-questions  Curriculum Team        Upload and create picture-based questions
+
+
+----------------------------------------------------------------
+CONTENT & LEARNING PORTALS
+----------------------------------------------------------------
+
+/level2             Teachers / Students    Level 2 learning portal
+/level3             Teachers / Students    Level 3 learning portal
+/jod-tod            Teachers / Students    Jod Tod - Urdu joining letters portal
+/image-portal       Admin / Curriculum     Upload and manage question images
+/pdf-portal         Admin / Curriculum     PDF content management portal
+
+
+----------------------------------------------------------------
+SYSTEM
+----------------------------------------------------------------
+
+/health             DevOps                 Health check - returns {status: ok, time: ...}
+/webhook            Twilio (auto)          WhatsApp webhook - receives teacher messages
+/api/...            System (auto)          REST API - called by portals, not accessed directly
+
+
+================================================================
+QUICK ACCESS - MOST USED
+================================================================
+
+PIN Generator    https://takmil-bot-production-0f51.up.railway.app/pin-generator
+Assessment       https://takmil-bot-production-0f51.up.railway.app/assess
+Offline Portal   https://takmil-bot-production-0f51.up.railway.app/offline-portal
+Results          https://takmil-bot-production-0f51.up.railway.app/results
+Analytics        https://takmil-bot-production-0f51.up.railway.app/analytics
+Feedback         https://takmil-bot-production-0f51.up.railway.app/feedback
+Hub              https://takmil-bot-production-0f51.up.railway.app/hub
+Question Bank    https://takmil-bot-production-0f51.up.railway.app/question-bank
+Ops Console      https://takmil-bot-production-0f51.up.railway.app/console
+
+
+================================================================
+QUESTION BANK STATUS (as of April 29, 2026)
+================================================================
+
+Subject    Levels     Questions per Level    Status
+-------    ------     -------------------    ------
+Math       1 - 11     35 - 117               CLEAN - concept-based only
+English    1 - 11     32 - 36                CLEAN
+Urdu       1 - 11     32 (exact)             CLEAN
+Science    1 - 11     1 - 5                  NOT READY - too few questions
+Level 12   All        0 clean questions      DISABLED - removed from PIN generator
+
+Note: All video-memory questions removed (those asking what teacher wrote/said).
+
+
+================================================================
+CURRENT SETTINGS (change before going to production)
+================================================================
+
+Setting               Current    Production Target
+-------               -------    ----------------
+Questions per test    5          20
+Pass threshold        60%        80%
+Twilio                Basic       WhatsApp Business API (upgrade needed)
+Login protection      PIN only    Add to /results, /analytics, /feedback
+Railway payment       9 days      Add payment method immediately!
+Teacher phones        Test only   Add real phones for all 177 schools
+Student import        5 schools   Import remaining 172 schools
+
+
+================================================================
+COORDINATOR LOGIN
+================================================================
+
+URL:       https://takmil-bot-production-0f51.up.railway.app/pin-generator
+Phone:     +16024305897  (test - replace with real coordinator phones)
+Password:  takmil123     (default - change before production)
+
+Role detection is automatic:
+  Regional Coordinator  sees all schools in their region
+  School Coordinator    sees schools in their RC's region
+
+================================================================

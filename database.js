@@ -153,6 +153,26 @@ async function initializeDatabase() {
       )
     `);
 
+    // ── Platform users (role-based login for hub, dashboard, coordinator portal) ──
+    // role: 'admin' | 'regional_coordinator' | 'coordinator'
+    // linked_name: for RC/coordinator roles, must match the corresponding name in
+    // students_register.regional_coordinator / students_register.school_coordinator,
+    // used to scope what schools/data they can see. NULL for admin (sees everything).
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS platform_users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(150) NOT NULL,
+        username VARCHAR(100) UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role VARCHAR(30) NOT NULL CHECK (role IN ('admin','regional_coordinator','coordinator')),
+        linked_name VARCHAR(150),
+        active BOOLEAN DEFAULT TRUE,
+        created_by INTEGER REFERENCES platform_users(id),
+        created_at TIMESTAMP DEFAULT NOW(),
+        last_login TIMESTAMP
+      )
+    `);
+
     await client.query('COMMIT');
     console.log('✅ Database schema initialized');
   } catch (err) {

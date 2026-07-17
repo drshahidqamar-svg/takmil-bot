@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAKMIL — Question Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F4F1EB;
+    --surface: #FFFFFF;
+    --border: #E0DDD5;
+    --border-strong: #C8C4BB;
+    --text: #1A1917;
+    --text-2: #6B6760;
+    --text-3: #9E9B96;
+    --accent: #1A1917;
+    --accent-fg: #F4F1EB;
+    --green: #2D6A4F;
+    --green-bg: #D8F3DC;
+    --blue: #1B4F8A;
+    --blue-bg: #DBE9FF;
+    --amber: #92400E;
+    --amber-bg: #FEF3C7;
+    --red: #991B1B;
+    --red-bg: #FEE2E2;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  html { font-size: 15px; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* TOP NAV */
+  .nav {
+    background: var(--text);
+    color: var(--accent-fg);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-brand { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9; }
+  .nav-sub { font-size: 12px; opacity: 0.45; font-family: 'DM Mono', monospace; }
+
+  /* LAYOUT */
+  .page { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  .page-header { margin-bottom: 2rem; }
+  .page-header h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 4px; }
+  .page-header p { color: var(--text-2); font-size: 0.9rem; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .card-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-3);
+    margin-bottom: 1rem;
+  }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .form-row { margin-bottom: 1rem; }
+  .form-label { font-size: 0.8rem; font-weight: 500; color: var(--text-2); display: block; margin-bottom: 5px; }
+  select, input[type=text], input[type=number] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  select:focus, input:focus { border-color: var(--text); }
+
+  .checkbox-row { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 6px; }
+  .checkbox-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.875rem; color: var(--text); cursor: pointer;
+  }
+  .checkbox-label input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--text); }
+
+  /* BUTTONS */
+  .btn {
+    padding: 9px 18px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary {
+    background: var(--text);
+    color: var(--accent-fg);
+    width: 100%;
+    justify-content: center;
+    font-size: 0.9rem;
+    padding: 11px;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-outline {
+    background: transparent;
+    border-color: var(--border-strong);
+    color: var(--text);
+  }
+  .btn-outline:hover { background: var(--bg); }
+  .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .actions-row { display: flex; gap: 10px; margin-top: 1.5rem; flex-wrap: wrap; }
+  .actions-row .btn { flex: 1; min-width: 140px; justify-content: center; }
+
+  /* SPINNER */
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: -2px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner-dark {
+    border-color: rgba(0,0,0,0.15);
+    border-top-color: var(--text);
+  }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .stat {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 0.875rem 1rem;
+    text-align: center;
+  }
+  .stat-num { font-size: 1.6rem; font-weight: 600; line-height: 1; margin-bottom: 3px; }
+  .stat-lbl { font-size: 0.75rem; color: var(--text-2); }
+
+  /* QUESTION CARDS */
+  .q-list { display: flex; flex-direction: column; gap: 10px; }
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+  .q-card:hover { border-color: var(--border-strong); }
+  .q-top { display: flex; align-items: flex-start; gap: 10px; }
+  .q-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-3);
+    min-width: 24px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .q-text { font-size: 0.9rem; color: var(--text); line-height: 1.5; flex: 1; padding-right: 2rem; }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin: 6px 0 6px 34px;
+  }
+  .badge-mcq { background: var(--blue-bg); color: var(--blue); }
+  .badge-tf { background: var(--green-bg); color: var(--green); }
+  .badge-sa { background: var(--amber-bg); color: var(--amber); }
+  .badge-easy { background: var(--green-bg); color: var(--green); }
+  .badge-medium { background: var(--amber-bg); color: var(--amber); }
+  .badge-hard { background: var(--red-bg); color: var(--red); }
+
+  .options { margin: 6px 0 0 34px; display: flex; flex-direction: column; gap: 4px; }
+  .opt { font-size: 0.83rem; color: var(--text-2); padding: 3px 0; }
+  .opt.correct { color: var(--green); font-weight: 500; }
+  .answer-box {
+    margin: 8px 0 0 34px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 0.83rem;
+    color: var(--text-2);
+  }
+  .answer-lbl { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); margin-bottom: 2px; }
+
+  .q-del {
+    position: absolute; top: 10px; right: 10px;
+    background: none; border: none; cursor: pointer;
+    font-size: 16px; color: var(--text-3); padding: 3px 6px;
+    border-radius: var(--radius-sm); line-height: 1;
+  }
+  .q-del:hover { background: var(--red-bg); color: var(--red); }
+
+  /* STATUS */
+  .status-msg { text-align: center; font-size: 0.85rem; margin-top: 10px; padding: 8px; border-radius: var(--radius-sm); }
+  .status-msg.success { background: var(--green-bg); color: var(--green); }
+  .status-msg.error { background: var(--red-bg); color: var(--red); }
+
+  .alert { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 0.85rem; margin-top: 1rem; }
+  .alert-error { background: var(--red-bg); color: var(--red); border: 1px solid #FCA5A5; }
+
+  /* DIVIDER */
+  hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+  /* PROGRESS BAR */
+  .progress-wrap { height: 3px; background: var(--border); border-radius: 2px; margin: 10px 0 0; overflow: hidden; }
+  .progress-bar { height: 100%; background: var(--text); width: 0; transition: width 0.4s ease; border-radius: 2px; }
+
+  /* FOOTER */
+  .footer { text-align: center; font-size: 0.75rem; color: var(--text-3); margin-top: 3rem; }
+
+  @media (max-width: 600px) {
+    .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
+    .actions-row { flex-direction: column; }
+    .actions-row .btn { min-width: unset; }
+    .page { padding: 1rem 1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-brand">TAKMIL</span>
+  <span class="nav-sub">question generator</span>
+</nav>
+
+<main class="page">
+  <div class="page-header">
+    <h1>Question Generator</h1>
+    <p>Generate AI-powered assessment questions for any subject, grade, and topic.</p>
+  </div>
+
+  <!-- CONFIG CARD -->
+  <div class="card">
+    <div class="card-title">Configuration</div>
+
+    <div class="form-grid">
+      <div>
+        <label class="form-label">Subject</label>
+        <select id="subject">
+          <option value="English">English</option>
+          <option value="Math">Math</option>
+          <option value="Urdu">Urdu</option>
+          <option value="Science">Science</option>
+          <option value="Social Studies">Social Studies</option>
+          <option value="General Knowledge">General Knowledge</option>
+          <option value="Islamiat">Islamiat</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Grade level</label>
+        <select id="grade">
+          <option value="Primary Grade 1">Primary — Grade 1</option>
+          <option value="Primary Grade 2">Primary — Grade 2</option>
+          <option value="Primary Grade 3">Primary — Grade 3</option>
+          <option value="Primary Grade 4">Primary — Grade 4</option>
+          <option value="Primary Grade 5">Primary — Grade 5</option>
+          <option value="Elementary Grade 6">Elementary — Grade 6</option>
+          <option value="Elementary Grade 7">Elementary — Grade 7</option>
+          <option value="Elementary Grade 8">Elementary — Grade 8</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Topic / Unit <span style="color:var(--text-3);font-weight:400;">(optional — leave blank for general curriculum)</span></label>
+      <input type="text" id="topic" placeholder="e.g. My Homeland, Fractions, Pakistan Studies, نعت..." />
+    </div>
+
+    <div class="form-grid-3">
+      <div>
+        <label class="form-label">Number of questions</label>
+        <select id="count">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+          <option value="30">30</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Difficulty</label>
+        <select id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="mixed" selected>Mixed</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Language</label>
+        <select id="lang">
+          <option value="English">English</option>
+          <option value="Urdu">Urdu</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Question types</label>
+      <div class="checkbox-row">
+        <label class="checkbox-label"><input type="checkbox" id="type-mcq" checked> Multiple choice (MCQ)</label>
+        <label class="checkbox-label"><input type="checkbox" id="type-tf" checked> True / False</label>
+        <label class="checkbox-label"><input type="checkbox" id="type-sa"> Short answer</label>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="gen-btn" onclick="generateQuestions()">
+      ✦ Generate questions
+    </button>
+    <div class="progress-wrap" id="progress-wrap" style="display:none;">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+  </div>
+
+  <div id="error-area"></div>
+
+  <!-- RESULTS -->
+  <div id="results-area" style="display:none;">
+    <div class="card">
+      <div class="card-title">Results</div>
+      <div class="stats-row" id="stats-row"></div>
+      <div class="q-list" id="q-list"></div>
+      <div class="actions-row">
+        <button class="btn btn-outline" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn btn-outline" id="import-btn" onclick="importToDatabase()">⬆ Import to database</button>
+        <button class="btn btn-outline" onclick="regenerate()">↺ Regenerate</button>
+      </div>
+      <div id="status-msg"></div>
+    </div>
+  </div>
+
+  <p class="footer">TAKMIL Foundation · EdTech Platform · Pakistan</p>
+</main>
+
+<script>
+let questions = [];
+let isGenerating = false;
+
+async function generateQuestions() {
+  if (isGenerating) return;
+
+  const useMCQ = document.getElementById('type-mcq').checked;
+  const useTF  = document.getElementById('type-tf').checked;
+  const useSA  = document.getElementById('type-sa').checked;
+  if (!useMCQ && !useTF && !useSA) { showError('Select at least one question type.'); return; }
+
+  const subject    = document.getElementById('subject').value;
+  const grade      = document.getElementById('grade').value;
+  const topic      = document.getElementById('topic').value.trim();
+  const count      = document.getElementById('count').value;
+  const difficulty = document.getElementById('difficulty').value;
+  const lang       = document.getElementById('lang').value;
+
+  isGenerating = true;
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating...';
+  document.getElementById('results-area').style.display = 'none';
+  document.getElementById('error-area').innerHTML = '';
+  document.getElementById('progress-wrap').style.display = 'block';
+  animateProgress();
+
+  const types = [];
+  if (useMCQ) types.push('MCQ (4 options labeled A, B, C, D — one correct)');
+  if (useTF)  types.push('True/False');
+  if (useSA)  types.push('Short Answer (model answer 1-2 sentences)');
+
+  const topicLine = topic ? `Topic/Unit: ${topic}` : `General curriculum topics appropriate for ${grade}`;
+  const langLine  = lang === 'Urdu' ? 'Write all question text and answers in Urdu script.' : 'Write in clear English appropriate for Pakistani school students.';
+
+  const prompt = `You are an expert educational assessment writer for Pakistani schools (curriculum: Punjab/Sindh/KPK/Baluchistan).
+
+Generate exactly ${count} assessment questions for:
+- Subject: ${subject}
+- Grade: ${grade}
+- ${topicLine}
+- Difficulty: ${difficulty}
+- Question types: ${types.join(', ')}
+- ${langLine}
+
+Distribute types as evenly as possible across the ${count} questions.
+
+Return ONLY a JSON array — no preamble, no markdown fences, no explanation. Each item:
+{
+  "type": "MCQ" | "TrueFalse" | "ShortAnswer",
+  "question": "question text",
+  "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+  "correct_answer": "A" | "B" | "C" | "D" | "True" | "False" | "model answer text",
+  "difficulty": "easy" | "medium" | "hard",
+  "subject": "${subject}",
+  "grade": "${grade}",
+  "topic": "${topic || subject + ' general'}"
+}
+For TrueFalse and ShortAnswer, omit the "options" key entirely.`;
+
+  try {
+    const res = await fetch('/api/questions/generate-ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.map(b => b.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    questions = JSON.parse(clean);
+    renderResults(questions);
+  } catch (err) {
+    showError('Generation failed. Check your connection and try again. (' + err.message + ')');
+  } finally {
+    isGenerating = false;
+    btn.disabled = false;
+    btn.innerHTML = '✦ Generate questions';
+    document.getElementById('progress-wrap').style.display = 'none';
+    document.getElementById('progress-bar').style.width = '0';
+  }
+}
+
+function animateProgress() {
+  const bar = document.getElementById('progress-bar');
+  let w = 0;
+  const iv = setInterval(() => {
+    if (!isGenerating) { bar.style.width = '100%'; clearInterval(iv); return; }
+    w = Math.min(w + (Math.random() * 8), 85);
+    bar.style.width = w + '%';
+  }, 300);
+}
+
+function renderResults(qs) {
+  const mcq = qs.filter(q => q.type === 'MCQ').length;
+  const tf  = qs.filter(q => q.type === 'TrueFalse').length;
+  const sa  = qs.filter(q => q.type === 'ShortAnswer').length;
+
+  let statsHtml = `<div class="stat"><div class="stat-num">${qs.length}</div><div class="stat-lbl">Total</div></div>`;
+  if (mcq) statsHtml += `<div class="stat"><div class="stat-num">${mcq}</div><div class="stat-lbl">MCQ</div></div>`;
+  if (tf)  statsHtml += `<div class="stat"><div class="stat-num">${tf}</div><div class="stat-lbl">True / False</div></div>`;
+  if (sa)  statsHtml += `<div class="stat"><div class="stat-num">${sa}</div><div class="stat-lbl">Short answer</div></div>`;
+  document.getElementById('stats-row').innerHTML = statsHtml;
+
+  const list = document.getElementById('q-list');
+  list.innerHTML = '';
+  qs.forEach((q, i) => {
+    const typeClass  = q.type === 'MCQ' ? 'badge-mcq' : q.type === 'TrueFalse' ? 'badge-tf' : 'badge-sa';
+    const typeLabel  = q.type === 'MCQ' ? 'MCQ' : q.type === 'TrueFalse' ? 'True / False' : 'Short answer';
+    const diffClass  = 'badge-' + (q.difficulty || 'medium');
+
+    let extra = '';
+    if (q.type === 'MCQ' && q.options) {
+      extra = '<div class="options">' + q.options.map(opt => {
+        const letter = opt.charAt(0);
+        const isCorrect = letter === q.correct_answer;
+        return `<div class="opt${isCorrect ? ' correct' : ''}">${opt}${isCorrect ? ' ✓' : ''}</div>`;
+      }).join('') + '</div>';
+    } else if (q.type === 'TrueFalse') {
+      extra = `<div class="answer-box"><div class="answer-lbl">Answer</div>${q.correct_answer}</div>`;
+    } else {
+      extra = `<div class="answer-box"><div class="answer-lbl">Model answer</div>${q.correct_answer}</div>`;
+    }
+
+    list.innerHTML += `
+      <div class="q-card" id="qc-${i}">
+        <button class="q-del" onclick="deleteQ(${i})" title="Remove">✕</button>
+        <div class="q-top">
+          <span class="q-num">${i + 1}.</span>
+          <span class="q-text">${q.question}</span>
+        </div>
+        <span class="badge ${typeClass}">${typeLabel}</span>
+        <span class="badge ${diffClass}">${q.difficulty || 'medium'}</span>
+        ${extra}
+      </div>`;
+  });
+
+  document.getElementById('status-msg').innerHTML = '';
+  document.getElementById('results-area').style.display = 'block';
+}
+
+function deleteQ(i) {
+  questions.splice(i, 1);
+  renderResults(questions);
+}
+
+function exportCSV() {
+  if (!questions.length) return;
+  const headers = ['type','question','option_a','option_b','option_c','option_d','correct_answer','difficulty','subject','grade','topic'];
+  const rows = questions.map(q => {
+    const opts = q.options || [];
+    const clean = s => '"' + String(s || '').replace(/"/g, '""') + '"';
+    return [
+      q.type,
+      clean(q.question),
+      clean((opts[0] || '').replace(/^A\.\s*/, '')),
+      clean((opts[1] || '').replace(/^B\.\s*/, '')),
+      clean((opts[2] || '').replace(/^C\.\s*/, '')),
+      clean((opts[3] || '').replace(/^D\.\s*/, '')),
+      clean(q.correct_answer),
+      q.difficulty || 'medium',
+      q.subject,
+      q.grade,
+      clean(q.topic)
+    ].join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'takmil_questions.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importToDatabase() {
+  if (!questions.length) return;
+  const btn = document.getElementById('import-btn');
+  const statusEl = document.getElementById('status-msg');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner spinner-dark"></span> Importing...';
+  statusEl.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/questions/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questions })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      statusEl.innerHTML = `<div class="status-msg success">✓ ${data.inserted || questions.length} questions imported successfully.</div>`;
+    } else {
+      statusEl.innerHTML = `<div class="status-msg error">Import failed: ${data.error || 'Unknown error'}</div>`;
+    }
+  } catch (err) {
+    statusEl.innerHTML = `<div class="status-msg error">Could not reach the server. Try Export CSV instead.</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⬆ Import to database';
+  }
+}
+
+function regenerate() {
+  questions = [];
+  document.getElementById('results-area').style.display = 'none';
+  generateQuestions();
+}
+
+function showError(msg) {
+  document.getElementById('error-area').innerHTML = `<div class="alert alert-error">${msg}</div>`;
+}
+</script>
+</body>
+</html>
