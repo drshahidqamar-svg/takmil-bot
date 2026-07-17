@@ -324,8 +324,8 @@ async function loadRegionalCoordinators(){
     const data=await res.json();
     (data.regionalCoordinators||[]).forEach(rc=>{
       const opt=document.createElement('option');
-      opt.value=`${rc.id}|${rc.name}|${rc.region}`;
-      opt.textContent=`${rc.name} — ${rc.region}`;
+      opt.value=`${rc.name}|${rc.region||''}`;
+      opt.textContent=rc.region ? `${rc.name} — ${rc.region}` : rc.name;
       sel.appendChild(opt);
     });
   }catch(e){ console.error('Failed to load regional coordinators:', e); }
@@ -362,13 +362,13 @@ function doLogin(){
   if(!sel){err.style.display='block';err.textContent='Please select your name.';return;}
   if(pwd!=='takmil123'){err.style.display='block';err.textContent='Incorrect password.';return;}
   err.style.display='none';
-  const [id,name,region]=sel.split('|');
-  currentRC={id,name,region};
+  const [name,region]=sel.split('|');
+  currentRC={name,region};
   document.getElementById('login-screen').style.display='none';
   document.getElementById('dashboard').style.display='block';
   document.getElementById('logout-btn').style.display='block';
   document.getElementById('w-name').textContent=name;
-  document.getElementById('w-region').textContent=region+' Region';
+  document.getElementById('w-region').textContent=(region?region+' Region':'');
   document.getElementById('assessment-date').value=new Date().toISOString().split('T')[0];
   loadCoordinators();
   loadRecentPins();
@@ -399,19 +399,19 @@ async function loadCoordinators(){
   const sel=document.getElementById('sc-select');
   sel.innerHTML='<option value="">-- Select Coordinator --</option>';
   try{
-    const res=await fetch(BASE+'/api/coordinators/'+encodeURIComponent(currentRC.id));
+    const res=await fetch(BASE+'/api/coordinators/'+encodeURIComponent(currentRC.name));
     const data=await res.json();
-    (data.coordinators||[]).forEach(sc=>{sel.innerHTML+=`<option value="${sc.id}">${sc.name}</option>`;});
+    (data.coordinators||[]).forEach(sc=>{sel.innerHTML+=`<option value="${sc.name}">${sc.name}</option>`;});
   }catch(e){ console.error('Failed to load coordinators:', e); }
 }
 
 async function loadSchools(){
-  const scId=document.getElementById('sc-select').value;
+  const scName=document.getElementById('sc-select').value;
   const sel=document.getElementById('school-select');
   sel.innerHTML='<option value="">-- Select School --</option>';
-  if(!scId) return;
+  if(!scName) return;
   try{
-    const res=await fetch(BASE+'/api/schools-by-coordinator/'+encodeURIComponent(scId));
+    const res=await fetch(BASE+'/api/schools-by-coordinator/'+encodeURIComponent(scName)+'?rc='+encodeURIComponent(currentRC.name));
     const data=await res.json();
     (data.schools||[]).forEach(s=>{sel.innerHTML+=`<option value="${s.identifier}">${s.name}</option>`;});
   }catch(e){ console.error('Failed to load schools:', e); }
