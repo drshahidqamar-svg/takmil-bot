@@ -798,13 +798,14 @@ router.get('/api/assessment-dashboard', async (req, res) => {
         SELECT
           sa.id,
           sa.student_name,
+          sa.student_id,
           COALESCE(s.name, 'Unknown School')            AS school_name,
           COALESCE(s.identifier,'—')                    AS school_identifier,
           COALESCE(s.region,'—')                        AS region,
           COALESCE(s.province,'—')                      AS province,
-          COALESCE(sa.teacher_phone,'—')                AS teacher_name,
-          COALESCE(rc.name,'—')                         AS rc_name,
-          COALESCE(sc.name,'—')                         AS coordinator_name,
+          COALESCE(sr.teacher_name, '—')                 AS teacher_name,
+          COALESCE(sr.regional_coordinator, rc.name, '—') AS rc_name,
+          COALESCE(sr.school_coordinator, sc.name, '—')   AS coordinator_name,
           COALESCE(sa.subject,'—')                      AS subject,
           sa.level,
           COALESCE(p.grade_label, CASE WHEN sa.level BETWEEN 1 AND 5 THEN 'Primary' ELSE 'Elementary' END) AS grade,
@@ -820,6 +821,8 @@ router.get('/api/assessment-dashboard', async (req, res) => {
         LEFT JOIN pins p ON p.id = sa.pin_id
         LEFT JOIN regional_coordinators rc ON rc.id = s.regional_coordinator_id
         LEFT JOIN school_coordinators   sc ON sc.id = s.school_coordinator_id
+        LEFT JOIN students_register     sr ON LOWER(sr.school_identifier) = LOWER(s.identifier)
+                                            AND sr.roll_number = sa.student_id
         WHERE sa.completed_at::date BETWEEN $1::date AND $2::date
           AND (sa.score_pct IS NOT NULL AND sa.score_pct > 0)
           ${portalWhere}
@@ -902,6 +905,61 @@ router.get('/api/assessment-dashboard', async (req, res) => {
   } catch(err) {
     console.log('assessment-dashboard error:', err.message);
     res.status(500).json({ error: err.message, results: [], total:0, passed:0, failed:0, avgScore:0, passRate:0, filterOptions:{} });
+  }
+});
+
+// ── /api/assessment-dashboard/student-summary — one row per student with ─────
+// Total Score + a column per subject, plus Teacher/Coordinator/RC from the roster
+router.get('/api/assessment-dashboard/student-summary', async (req, res) => {
+  try {
+    const { from, to, school, rc, coordinator } = req.query;
+    const today = new Date();
+    const fmt   = d => d.toISOString().split('T')[0];
+    let dateFrom, dateTo = fmt(today);
+    if (from) { dateFrom = from; dateTo = to || fmt(today); }
+    else { const d = new Date(today); d.setDate(d.getDate() - 29); dateFrom = fmt(d); }
+
+    let params = [dateFrom, dateTo];
+    let where = '';
+    if (school)      { params.push('%'+school+'%'); where += ` AND s.name ILIKE $${params.length}`; }
+    if (rc)          { params.push(rc);              where += ` AND COALESCE(sr.regional_coordinator, rc2.name) = $${params.length}`; }
+    if (coordinator) { params.push(coordinator);      where += ` AND COALESCE(sr.school_coordinator, sc2.name) = $${params.length}`; }
+
+    const q = await db.pool.query(`
+      SELECT
+        sa.student_id,
+        sa.school_id,
+        MAX(sa.student_name)                             AS student_name,
+        COALESCE(MAX(s.name), 'Unknown School')          AS school_name,
+        COALESCE(MAX(s.identifier), '—')                 AS school_identifier,
+        COALESCE(MAX(sr.teacher_name), '—')              AS teacher_name,
+        COALESCE(MAX(sr.school_coordinator), MAX(sc2.name), '—')     AS coordinator_name,
+        COALESCE(MAX(sr.regional_coordinator), MAX(rc2.name), '—')   AS rc_name,
+        ROUND(MAX(CASE WHEN sa.subject ILIKE 'english' THEN sa.score_pct END)::numeric, 1) AS english_score,
+        ROUND(MAX(CASE WHEN sa.subject ILIKE 'math'    THEN sa.score_pct END)::numeric, 1) AS math_score,
+        ROUND(MAX(CASE WHEN sa.subject ILIKE 'urdu'    THEN sa.score_pct END)::numeric, 1) AS urdu_score,
+        ROUND(AVG(sa.score_pct)::numeric, 1)             AS total_score,
+        COUNT(*)                                         AS subjects_taken,
+        MAX(sa.completed_at)                             AS last_assessment
+      FROM student_assessments sa
+      LEFT JOIN schools s ON s.id = sa.school_id
+      LEFT JOIN students_register sr ON LOWER(sr.school_identifier) = LOWER(s.identifier)
+                                      AND sr.roll_number = sa.student_id
+      LEFT JOIN regional_coordinators rc2 ON rc2.id = s.regional_coordinator_id
+      LEFT JOIN school_coordinators   sc2 ON sc2.id = s.school_coordinator_id
+      WHERE sa.completed_at::date BETWEEN $1::date AND $2::date
+        AND sa.student_id IS NOT NULL
+        AND (sa.score_pct IS NOT NULL AND sa.score_pct > 0)
+        ${where}
+      GROUP BY sa.student_id, sa.school_id
+      ORDER BY MAX(sa.completed_at) DESC
+      LIMIT 1000
+    `, params);
+
+    res.json({ students: q.rows, total: q.rows.length, dateFrom, dateTo });
+  } catch(err) {
+    console.log('student-summary error:', err.message);
+    res.status(500).json({ error: err.message, students: [], total: 0 });
   }
 });
 
