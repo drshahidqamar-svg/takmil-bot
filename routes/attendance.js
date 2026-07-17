@@ -1276,10 +1276,25 @@ router.post('/api/admin/students-register/import-csv', async (req, res) => {
 
     const schoolsInFile = [...new Set(validRows.map(r => r.school_identifier.trim()))];
 
-    // Deactivate existing rows for schools present in this upload
+    // Resolve each identifier to its canonical casing from the schools table,
+    // so repeated imports never drift into mixed-case duplicates for the same school
+    const canonicalMap = {};
     for (const sid of schoolsInFile) {
+      const sr = await db.pool.query(
+        `SELECT identifier FROM schools WHERE LOWER(identifier)=LOWER($1) LIMIT 1`,
+        [sid]
+      );
+      canonicalMap[sid.toLowerCase()] = sr.rows.length ? sr.rows[0].identifier : sid;
+    }
+    for (const r of validRows) {
+      r.school_identifier = canonicalMap[r.school_identifier.trim().toLowerCase()];
+    }
+    const canonicalSchools = [...new Set(Object.values(canonicalMap))];
+
+    // Deactivate existing rows for schools present in this upload
+    for (const sid of canonicalSchools) {
       await db.pool.query(
-        `UPDATE students_register SET active=false WHERE school_identifier=$1`,
+        `UPDATE students_register SET active=false WHERE LOWER(school_identifier)=LOWER($1)`,
         [sid]
       );
     }
@@ -1299,14 +1314,14 @@ router.post('/api/admin/students-register/import-csv', async (req, res) => {
             regional_coordinator=EXCLUDED.regional_coordinator,
             school_coordinator=EXCLUDED.school_coordinator,
             active=TRUE
-        `, [r.school_identifier.trim(), r.roll_number.trim(), r.student_name.trim(),
+        `, [r.school_identifier, r.roll_number.trim(), r.student_name.trim(),
             r.teacher_name || null, r.regional_coordinator || null, r.school_coordinator || null]);
         imported++;
       } catch(e) { failed++; }
     }
 
     res.json({
-      schoolsProcessed: schoolsInFile.length,
+      schoolsProcessed: canonicalSchools.length,
       imported, failed, skipped,
       total: rows.length
     });
