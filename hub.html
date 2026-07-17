@@ -440,7 +440,7 @@ body{
         </div>
         <div class="pc-foot">
           <div class="pc-dot" style="background:rgba(255,255,255,.5)"></div>
-          <span class="pc-ac">Via CSV Import + Portal</span>
+          <span class="pc-ac" id="stat-student-breakdown">—</span>
         </div>
       </div>
 
@@ -598,6 +598,8 @@ body{
       document.getElementById('stat-primary-schools').textContent = d.primarySchools;
       document.getElementById('stat-elementary-schools').textContent = d.elementarySchools;
       document.getElementById('stat-students').textContent = d.totalStudents.toLocaleString();
+      document.getElementById('stat-student-breakdown').textContent =
+        `${d.primaryStudents.toLocaleString()} Primary · ${d.elementaryStudents.toLocaleString()} Elementary`;
       document.getElementById('stat-total-coordinators').textContent = d.totalCoordinators;
       document.getElementById('stat-regional-coordinators').textContent = d.totalRegionalCoordinators;
       document.getElementById('stat-questions').textContent = d.totalQuestions.toLocaleString();

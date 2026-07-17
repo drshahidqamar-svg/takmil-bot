@@ -1014,9 +1014,13 @@ router.get('/api/hub/system-overview', requireRole(['admin']), async (req, res) 
       ORDER BY school_count DESC
     `);
 
-    const studentCount = await db.pool.query(
-      `SELECT COUNT(*) AS total FROM students_register WHERE active = true`
-    );
+    const studentCount = await db.pool.query(`
+      SELECT
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE school_identifier ILIKE '%W26%') AS primary_students,
+        COUNT(*) FILTER (WHERE school_identifier NOT ILIKE '%W26%') AS elementary_students
+      FROM students_register WHERE active = true
+    `);
 
     const coordinators = await db.pool.query(`
       SELECT
@@ -1040,6 +1044,8 @@ router.get('/api/hub/system-overview', requireRole(['admin']), async (req, res) 
       elementarySchools: parseInt(schoolStats.rows[0].elementary_schools) || 0,
       provinceCount: parseInt(schoolStats.rows[0].province_count) || 0,
       totalStudents: parseInt(studentCount.rows[0].total) || 0,
+      primaryStudents: parseInt(studentCount.rows[0].primary_students) || 0,
+      elementaryStudents: parseInt(studentCount.rows[0].elementary_students) || 0,
       totalCoordinators: parseInt(coordinators.rows[0].total_coordinators) || 0,
       totalRegionalCoordinators: parseInt(coordinators.rows[0].total_rcs) || 0,
       regionalCoordinatorNames: rcNames.rows.map(r => r.regional_coordinator),
