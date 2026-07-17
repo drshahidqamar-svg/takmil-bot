@@ -921,6 +921,43 @@ router.get('/api/schools', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── Regional coordinators for the coordinator-portal login dropdown ───────────
+// Only returns RCs that actually have at least one coordinator attached,
+// to exclude orphaned/unused duplicate RC rows.
+router.get('/api/regional-coordinators', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT rc.id, rc.name, rc.region
+      FROM regional_coordinators rc
+      WHERE EXISTS (SELECT 1 FROM school_coordinators sc WHERE sc.regional_coordinator_id = rc.id)
+      ORDER BY rc.name
+    `);
+    res.json({ regionalCoordinators: r.rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── School coordinators under a given regional coordinator ───────────────────
+router.get('/api/coordinators/:rcId', async (req, res) => {
+  try {
+    const r = await db.pool.query(
+      'SELECT id, name FROM school_coordinators WHERE regional_coordinator_id = $1 ORDER BY name',
+      [req.params.rcId]
+    );
+    res.json({ coordinators: r.rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Schools under a given school coordinator ──────────────────────────────────
+router.get('/api/schools-by-coordinator/:coordinatorId', async (req, res) => {
+  try {
+    const r = await db.pool.query(
+      'SELECT id, identifier, name FROM schools WHERE school_coordinator_id = $1 ORDER BY name',
+      [req.params.coordinatorId]
+    );
+    res.json({ schools: r.rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 
 // ── Students API ──────────────────────────────────────────────────────────────
 router.get('/api/students', async (req, res) => {

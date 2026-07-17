@@ -147,10 +147,6 @@ body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
     <label>Your Name</label>
     <select id="rc-select">
       <option value="">-- Select Regional Coordinator --</option>
-      <option value="1|M. Ali|Sindh">M. Ali — Sindh</option>
-      <option value="2|M. Ayub|Punjab">M. Ayub — Punjab</option>
-      <option value="3|Qiyanoos Khan|KPK">Qiyanoos Khan — KPK</option>
-      <option value="4|Shabir khan|Baluchistan / GB">Shabir Khan — Baluchistan / GB</option>
     </select>
   </div>
   <div class="field">
@@ -316,34 +312,24 @@ body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
 <script>
 const BASE='';
 const DB_NAME='takmil_coord';
-const COORDINATORS={
-  '1':{name:'M. Ali',region:'Sindh',scs:[{id:1,name:'Fateh Khan'},{id:2,name:'Ghulam Mujtaba'},{id:3,name:'Inayat Lashari'},{id:4,name:'Arqam Aftab'},{id:5,name:'Mehrun Nisa'}]},
-  '2':{name:'M. Ayub',region:'Punjab',scs:[{id:6,name:'Farhan Haider'},{id:7,name:'Muhammad Ishaq'},{id:8,name:'Raheel Maqbool'},{id:9,name:'Saima Majeed'}]},
-  '3':{name:'Qiyanoos Khan',region:'KPK',scs:[{id:10,name:'Abid Afridi'},{id:11,name:'Ishaq Khan'},{id:12,name:'Saddam Hussain'},{id:13,name:'Sundus Jahanzeb'}]},
-  '4':{name:'Shabir Khan',region:'Baluchistan / GB',scs:[{id:14,name:'Ghulam Sarwar'},{id:15,name:'M. Younas'},{id:16,name:'Saddam Wali'},{id:17,name:'Saqiba Baloch'},{id:18,name:'Suman Nazir'}]}
-};
-const SCHOOLS={
-  1:["AliHassanHingrjo_O_W24S","HajiPirBakshRajhir_A_W24S","MohammedAbbasSolangi_A_W24S","MubeenFaqirRajar_A_W24S","AliHassanKK_A_W24S"],
-  2:["AbdulKarimKhashkeli_O_F23S","AbdulRehmanMallah_O_SP23S","BaghatMehraj_O_W24S","HayatShah_O_W25S","QaziRasoolBux_O_W24S"],
-  3:["AllahWarayoShoro_O_W26S","BubuChana_O_W26S","CrashMountainArea_A_W26S","GhulamMuhammadLashari_A_W26S"],
-  4:["FaizMuhammadSoomro_A_W24S","GhulamHaiderSoomro_A_W24S","GhulamHaiderSoomro_B_W24S","ImtiazSoomro_A_W24S"],
-  5:["AbdulHameedBhatti_O_W24S","AdnanAkbar_O_W24S","ArslanButt_O_W24S","FaisalIqbal_O_W24S"],
-  6:["AliZaman_O_W24S","AmirHussain_O_W24S","ArslanRashid_O_W24S"],
-  7:["AbdulMajeedKhan_O_W24S","AsifNawaz_O_W24S","DaoudKhan_O_W24S"],
-  8:["AdeelAhmad_O_W24S","AliAkbar_O_W24S","ArifHussain_O_W24S"],
-  9:["AbdullahKhan_O_W24S","AdilAli_O_W24S","AhsanRaza_O_W24S"],
-  10:["AbdulKarimAfghan_O_W24S","AsadullahKhan_O_W24S"],
-  11:["AbdullahBaloch_O_W24S","AkramBaloch_O_W24S"],
-  12:["AbdullahShah_O_W24S","AkhtarHussain_O_W24S"],
-  13:["AbdulQadirSundrani_O_W24S","AkramSundrani_O_W24S"],
-  14:["AbdulQadirSarwar_O_W24S","AkramSarwar_O_W24S"],
-  15:["AbdulQadirYounas_O_W24S","AkramYounas_O_W24S"],
-  16:["AbdulWali_O_W24S","AkramWali_O_W24S"],
-  17:["AbdulBaloch_O_W24S","AkramBaloch_B_O_W24S"],
-  18:["AbdulNazir_O_W24S","AkramNazir_O_W24S"]
-};
 
 let currentRC=null,localDB=null;
+
+// Populate the Regional Coordinator dropdown from live data instead of a
+// hardcoded list, so this never goes stale when coordinators/RCs change.
+async function loadRegionalCoordinators(){
+  const sel=document.getElementById('rc-select');
+  try{
+    const res=await fetch(BASE+'/api/regional-coordinators');
+    const data=await res.json();
+    (data.regionalCoordinators||[]).forEach(rc=>{
+      const opt=document.createElement('option');
+      opt.value=`${rc.id}|${rc.name}|${rc.region}`;
+      opt.textContent=`${rc.name} — ${rc.region}`;
+      sel.appendChild(opt);
+    });
+  }catch(e){ console.error('Failed to load regional coordinators:', e); }
+}
 
 function openDB(){
   return new Promise((res,rej)=>{
@@ -409,18 +395,26 @@ function switchTab(tab,btn){
   if(tab==='download') updateDlStats();
 }
 
-function loadCoordinators(){
+async function loadCoordinators(){
   const sel=document.getElementById('sc-select');
   sel.innerHTML='<option value="">-- Select Coordinator --</option>';
-  COORDINATORS[currentRC.id].scs.forEach(sc=>{sel.innerHTML+=`<option value="${sc.id}">${sc.name}</option>`;});
+  try{
+    const res=await fetch(BASE+'/api/coordinators/'+encodeURIComponent(currentRC.id));
+    const data=await res.json();
+    (data.coordinators||[]).forEach(sc=>{sel.innerHTML+=`<option value="${sc.id}">${sc.name}</option>`;});
+  }catch(e){ console.error('Failed to load coordinators:', e); }
 }
 
-function loadSchools(){
-  const scId=parseInt(document.getElementById('sc-select').value);
+async function loadSchools(){
+  const scId=document.getElementById('sc-select').value;
   const sel=document.getElementById('school-select');
   sel.innerHTML='<option value="">-- Select School --</option>';
   if(!scId) return;
-  (SCHOOLS[scId]||[]).forEach(s=>{sel.innerHTML+=`<option value="${s}">${s}</option>`;});
+  try{
+    const res=await fetch(BASE+'/api/schools-by-coordinator/'+encodeURIComponent(scId));
+    const data=await res.json();
+    (data.schools||[]).forEach(s=>{sel.innerHTML+=`<option value="${s.identifier}">${s.name}</option>`;});
+  }catch(e){ console.error('Failed to load schools:', e); }
 }
 
 async function generatePIN(){
@@ -624,6 +618,7 @@ async function loadResults(){
 async function init(){
   await openDB();
   checkConn();
+  await loadRegionalCoordinators();
 }
 init();
 </script>
