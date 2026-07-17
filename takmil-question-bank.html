@@ -287,11 +287,8 @@ tbody tr{animation:fade-in 0.25s ease both}
 <div class="sidebar">
   <div class="sb-sec">
     <div class="sb-lbl">Subject</div>
-    <div class="sb-item active" onclick="setSubject('',this)"><span>All Subjects</span><span class="sb-count" id="cnt-all">500</span></div>
-    <div class="sb-item" onclick="setSubject('Math',this)"><span>Math</span><span class="sb-count" id="cnt-math">45</span></div>
-    <div class="sb-item" onclick="setSubject('English',this)"><span>English</span><span class="sb-count" id="cnt-english">56</span></div>
-    <div class="sb-item" onclick="setSubject('Urdu',this)"><span>اردو / Urdu</span><span class="sb-count" id="cnt-urdu">168</span></div>
-    <div class="sb-item" onclick="setSubject('Videos',this)"><span>Videos</span><span class="sb-count" id="cnt-videos">0</span></div>
+    <div class="sb-item active" onclick="setSubject('',this)"><span>All Subjects</span><span class="sb-count" id="cnt-all">-</span></div>
+    <div id="subject-sidebar-list"></div>
   </div>
   <div class="sb-divider"></div>
   <div class="sb-sec">
@@ -386,29 +383,8 @@ tbody tr{animation:fade-in 0.25s ease both}
   <div class="mid-row">
     <div class="breakdown">
       <div class="section-head">Subject Breakdown</div>
-      <div class="subj-item">
-        <div class="subj-dot" style="background:#b45309"></div>
-        <div class="subj-name">Math</div>
-        <div class="subj-bar-bg"><div class="subj-bar-fill" style="width:27%;background:#b45309"></div></div>
-        <div class="subj-count">45</div>
-      </div>
-      <div class="subj-item">
-        <div class="subj-dot" style="background:var(--sky)"></div>
-        <div class="subj-name">English</div>
-        <div class="subj-bar-bg"><div class="subj-bar-fill" style="width:33%;background:var(--sky)"></div></div>
-        <div class="subj-count">56</div>
-      </div>
-      <div class="subj-item">
-        <div class="subj-dot" style="background:var(--rose)"></div>
-        <div class="subj-name">Urdu</div>
-        <div class="subj-bar-bg"><div class="subj-bar-fill" style="width:100%;background:var(--rose)"></div></div>
-        <div class="subj-count">168</div>
-      </div>
-      <div class="subj-item">
-        <div class="subj-dot" style="background:#7c3aed"></div>
-        <div class="subj-name">Videos</div>
-        <div class="subj-bar-bg"><div class="subj-bar-fill" style="width:0%;background:#7c3aed"></div></div>
-        <div class="subj-count">0</div>
+      <div id="subject-breakdown-matrix">
+        <div style="color:#94a3b8;padding:12px 0;font-size:12px">Loading...</div>
       </div>
     </div>
     <div class="pipeline">
@@ -623,25 +599,59 @@ async function approveAll(){
   try{ await fetch('/api/questions/approve-all',{method:'POST'}); }catch(_){}
   applyFilters();
 }
+const SUBJECT_COLORS = { Math:'#b45309', English:'var(--sky)', Urdu:'var(--rose)', Videos:'#7c3aed' };
+const FALLBACK_COLORS = ['#0891b2','#65a30d','#c026d3','#ea580c','#4338ca','#0d9488'];
+function colorFor(subject, idx){ return SUBJECT_COLORS[subject] || FALLBACK_COLORS[idx % FALLBACK_COLORS.length]; }
+
 async function loadBreakdown(){
   try{
     const r=await fetch('/api/questions/breakdown');
     const data=await r.json();
-    const counts={Math:0,English:0,Urdu:0,Videos:0};
-    Object.entries(data).forEach(([subj,levels])=>{
-      const total=levels.reduce((s,l)=>s+l.total,0);
-      if(subj==='Math') counts.Math=total;
-      else if(subj==='English') counts.English=total;
-      else if(subj==='Urdu') counts.Urdu=total;
-      else if(subj==='Videos') counts.Videos=total;
-    });
-    const el=id=>document.getElementById(id);
-    if(el('cnt-math'))    el('cnt-math').textContent=counts.Math;
-    if(el('cnt-english')) el('cnt-english').textContent=counts.English;
-    if(el('cnt-urdu'))    el('cnt-urdu').textContent=counts.Urdu;
-    if(el('cnt-videos'))  el('cnt-videos').textContent=counts.Videos;
-    if(el('cnt-all'))     el('cnt-all').textContent=Object.values(counts).reduce((a,b)=>a+b,0);
-  }catch(_){}
+    if(data.error){ console.error('breakdown error:', data.error); return; }
+
+    const subjectNames = Object.keys(data.subjects).sort((a,b)=>data.subjects[b].total-data.subjects[a].total);
+
+    // -- Sidebar: one entry per real subject, no hardcoded list --
+    const sidebarList = document.getElementById('subject-sidebar-list');
+    if(sidebarList){
+      sidebarList.innerHTML = subjectNames.map(subj => `
+        <div class="sb-item" onclick="setSubject('${subj.replace(/'/g,"\\'")}',this)">
+          <span>${subj}</span><span class="sb-count">${data.subjects[subj].total}</span>
+        </div>`).join('');
+    }
+    const cntAll = document.getElementById('cnt-all');
+    if(cntAll) cntAll.textContent = data.grandTotal;
+
+    // -- Mid-panel: subject-by-grade matrix, so every subject shows its --
+    // Primary / Grade 6 / Grade 7 / Grade 8 split using real grade_label values
+    const matrixEl = document.getElementById('subject-breakdown-matrix');
+    if(matrixEl){
+      if(!subjectNames.length){
+        matrixEl.innerHTML = '<div style="color:#94a3b8;padding:12px 0;font-size:12px">No questions yet.</div>';
+      } else {
+        const maxTotal = Math.max(...subjectNames.map(s=>data.subjects[s].total));
+        matrixEl.innerHTML = subjectNames.map((subj,i) => {
+          const s = data.subjects[subj];
+          const color = colorFor(subj,i);
+          const pct = maxTotal ? Math.round((s.total/maxTotal)*100) : 0;
+          const gradeChips = data.grades.map(g => {
+            const count = s.grades[g] || 0;
+            return count ? `<span style="font-size:10px;font-weight:700;color:${color};background:${color}18;border-radius:10px;padding:2px 8px;margin-right:4px">${g}: ${count}</span>` : '';
+          }).filter(Boolean).join('');
+          return `
+          <div class="subj-item" style="flex-direction:column;align-items:stretch;gap:4px;padding-bottom:10px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="subj-dot" style="background:${color}"></div>
+              <div class="subj-name" style="flex:1">${subj}</div>
+              <div class="subj-count">${s.total}</div>
+            </div>
+            <div class="subj-bar-bg"><div class="subj-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+            <div style="padding-left:16px">${gradeChips || '<span style="font-size:10px;color:#94a3b8">No grade data</span>'}</div>
+          </div>`;
+        }).join('');
+      }
+    }
+  }catch(e){ console.error('Failed to load breakdown:', e); }
 }
 function editQ(id,e){
   e.stopPropagation();

@@ -340,17 +340,44 @@ router.post('/api/questions/approve-all', async (req, res) => {
 router.get('/api/questions/breakdown', async (req, res) => {
   try {
     const r = await db.pool.query(`
-      SELECT subject, level, COUNT(*) as total,
+      SELECT subject, grade_label, level, COUNT(*) as total,
         SUM(CASE WHEN active=1 THEN 1 ELSE 0 END) as approved,
         SUM(CASE WHEN active=0 OR active IS NULL THEN 1 ELSE 0 END) as pending
-      FROM questions GROUP BY subject,level ORDER BY subject,level
+      FROM questions
+      GROUP BY subject, grade_label, level
+      ORDER BY subject, grade_label, level
     `);
+
+    // Build a subject -> { total, approved, pending, grades: { gradeLabel: total } } structure.
+    // No subject or grade_label is hardcoded here — whatever exists in the data shows up,
+    // so new subjects (or grade labels) added via the Question Generator appear automatically.
     const bySubject = {};
+    let grandTotal = 0;
     r.rows.forEach(row => {
-      if (!bySubject[row.subject]) bySubject[row.subject] = [];
-      bySubject[row.subject].push({ level: row.level, total: parseInt(row.total), approved: parseInt(row.approved), pending: parseInt(row.pending) });
+      const subj = row.subject || 'Unlabeled';
+      const grade = row.grade_label || 'Unlabeled';
+      const total = parseInt(row.total);
+      if (!bySubject[subj]) bySubject[subj] = { total: 0, approved: 0, pending: 0, grades: {} };
+      bySubject[subj].total += total;
+      bySubject[subj].approved += parseInt(row.approved);
+      bySubject[subj].pending += parseInt(row.pending);
+      bySubject[subj].grades[grade] = (bySubject[subj].grades[grade] || 0) + total;
+      grandTotal += total;
     });
-    res.json(bySubject);
+
+    // Also return the full sorted set of grade labels present anywhere,
+    // so the frontend can render consistent matrix columns across all subjects.
+    const allGrades = [...new Set(r.rows.map(row => row.grade_label || 'Unlabeled'))];
+    const gradeOrder = ['Primary','Grade 6','Grade 7','Grade 8'];
+    allGrades.sort((a,b) => {
+      const ai = gradeOrder.indexOf(a), bi = gradeOrder.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+
+    res.json({ subjects: bySubject, grades: allGrades, grandTotal });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
