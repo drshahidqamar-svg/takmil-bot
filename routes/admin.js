@@ -1031,6 +1031,9 @@ router.get('/api/hub/system-overview', requireRole(['admin']), async (req, res) 
       ORDER BY regional_coordinator
     `);
 
+    const questionCount = await db.pool.query(`SELECT COUNT(*) AS total FROM questions`);
+    const videoCount = await db.pool.query(`SELECT COUNT(*) AS total FROM video_catalog`);
+
     res.json({
       totalSchools: parseInt(schoolStats.rows[0].total_schools) || 0,
       primarySchools: parseInt(schoolStats.rows[0].primary_schools) || 0,
@@ -1041,6 +1044,8 @@ router.get('/api/hub/system-overview', requireRole(['admin']), async (req, res) 
       totalRegionalCoordinators: parseInt(coordinators.rows[0].total_rcs) || 0,
       regionalCoordinatorNames: rcNames.rows.map(r => r.regional_coordinator),
       provinces: provinceBreakdown.rows.map(r => ({ province: r.province, schools: parseInt(r.school_count) })),
+      totalQuestions: parseInt(questionCount.rows[0].total) || 0,
+      totalVideos: parseInt(videoCount.rows[0].total) || 0,
     });
   } catch(err) {
     res.status(500).json({ error: err.message });

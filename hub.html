@@ -488,7 +488,7 @@ body{
         <div class="pc-stripe"></div>
         <div>
           <div class="pc-name">Total Questions</div>
-          <div class="pc-num">9,041</div>
+          <div class="pc-num" id="stat-questions">—</div>
           <div class="pc-lbl">Approved in Bank</div>
         </div>
         <div class="pc-foot">
@@ -501,7 +501,7 @@ body{
         <div class="pc-stripe"></div>
         <div>
           <div class="pc-name">Total Videos</div>
-          <div class="pc-num">2,088</div>
+          <div class="pc-num" id="stat-videos">—</div>
           <div class="pc-lbl">Transcribed &amp; Indexed</div>
         </div>
         <div class="pc-foot">
@@ -600,6 +600,8 @@ body{
       document.getElementById('stat-students').textContent = d.totalStudents.toLocaleString();
       document.getElementById('stat-total-coordinators').textContent = d.totalCoordinators;
       document.getElementById('stat-regional-coordinators').textContent = d.totalRegionalCoordinators;
+      document.getElementById('stat-questions').textContent = d.totalQuestions.toLocaleString();
+      document.getElementById('stat-videos').textContent = d.totalVideos.toLocaleString();
 
       document.getElementById('overview-subtitle').textContent =
         `Real-time status across ${d.totalSchools} active schools · ${d.provinceCount} Provinces · Pakistan`;
