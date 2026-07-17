@@ -991,7 +991,7 @@ router.get('/api/hub/system-overview', requireRole(['admin']), async (req, res) 
       WITH per_school AS (
         SELECT sr.school_identifier,
                MAX(s.province) AS province,
-               AVG(sr.level) AS avg_level
+               BOOL_OR(sr.school_identifier ILIKE '%W26%') AS is_primary
         FROM students_register sr
         LEFT JOIN schools s ON LOWER(s.identifier) = LOWER(sr.school_identifier)
         WHERE sr.active = true
@@ -999,8 +999,8 @@ router.get('/api/hub/system-overview', requireRole(['admin']), async (req, res) 
       )
       SELECT
         COUNT(*) AS total_schools,
-        COUNT(*) FILTER (WHERE avg_level <= 5) AS primary_schools,
-        COUNT(*) FILTER (WHERE avg_level > 5) AS elementary_schools,
+        COUNT(*) FILTER (WHERE is_primary) AS primary_schools,
+        COUNT(*) FILTER (WHERE NOT is_primary) AS elementary_schools,
         COUNT(DISTINCT province) AS province_count
       FROM per_school
     `);
