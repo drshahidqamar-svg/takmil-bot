@@ -988,12 +988,17 @@ router.get('/api/coordinators/:rcName', async (req, res) => {
 
 // ── Schools under a given school coordinator (scoped to their RC too, in case ──
 // two different RCs happen to have a coordinator with the same name) ──────────
+// Optional ?type=primary|elementary filters using the same W26-cohort rule
+// used for the hub's Primary/Elementary school split.
 router.get('/api/schools-by-coordinator/:coordinatorName', async (req, res) => {
   try {
-    const { rc } = req.query;
+    const { rc, type } = req.query;
     const params = [req.params.coordinatorName];
     let rcFilter = '';
     if (rc) { params.push(rc); rcFilter = ' AND LOWER(sr.regional_coordinator) = LOWER($2)'; }
+    let typeFilter = '';
+    if (type === 'primary')    typeFilter = ` AND sr.school_identifier ILIKE '%W26%'`;
+    if (type === 'elementary') typeFilter = ` AND sr.school_identifier NOT ILIKE '%W26%'`;
     const r = await db.pool.query(`
       SELECT DISTINCT sr.school_identifier AS identifier,
              COALESCE(MAX(s.name), sr.school_identifier) AS name
@@ -1002,10 +1007,25 @@ router.get('/api/schools-by-coordinator/:coordinatorName', async (req, res) => {
       WHERE sr.active = true
         AND LOWER(sr.school_coordinator) = LOWER($1)
         ${rcFilter}
+        ${typeFilter}
       GROUP BY sr.school_identifier
       ORDER BY sr.school_identifier
     `, params);
     res.json({ schools: r.rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Resolve a Coordinator's own Regional Coordinator, for accounts with ───────
+// role='coordinator' (their user record only stores their own name, not their RC)
+router.get('/api/coordinator-context/:coordinatorName', async (req, res) => {
+  try {
+    const r = await db.pool.query(`
+      SELECT DISTINCT regional_coordinator FROM students_register
+      WHERE active = true AND LOWER(school_coordinator) = LOWER($1)
+        AND regional_coordinator IS NOT NULL AND regional_coordinator != ''
+      LIMIT 1
+    `, [req.params.coordinatorName]);
+    res.json({ regionalCoordinator: r.rows[0]?.regional_coordinator || null });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

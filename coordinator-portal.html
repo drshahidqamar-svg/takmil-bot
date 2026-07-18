@@ -139,22 +139,10 @@ body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
   </div>
 </div>
 
-<div id="login-screen">
-  <h2>Regional Coordinator Login</h2>
-  <p>Regional Coordinator access only</p>
-  <p style="color:#16a34a;font-size:13px;font-weight:600;margin-top:4px;margin-bottom:0">Generate a PIN</p>
-  <div class="field">
-    <label>Your Name</label>
-    <select id="rc-select">
-      <option value="">-- Select Regional Coordinator --</option>
-    </select>
-  </div>
-  <div class="field">
-    <label>Password</label>
-    <input type="password" id="rc-password" placeholder="Enter your password">
-  </div>
-  <div class="error-msg" id="login-err">Incorrect password.</div>
-  <button class="btn btn-green" onclick="doLogin()" style="margin-top:8px">Login — لاگ ان</button>
+<div id="login-screen" style="display:none">
+  <h2>Access Denied</h2>
+  <p>Please log in through the main login page.</p>
+  <button class="btn btn-green" onclick="location.href='/login'" style="margin-top:8px">Go to Login</button>
 </div>
 
 <div id="dashboard" class="container" style="display:none">
@@ -178,8 +166,22 @@ body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
     <div class="grid2">
       <div class="card">
         <h3>Create a PIN — پن بنائیں</h3>
-        <div class="field"><label>Area Coordinator</label>
-          <select id="sc-select" onchange="loadSchools()"><option value="">-- Select Coordinator --</option></select></div>
+        <div class="field" id="rc-select-wrap" style="display:none">
+          <label>Regional Coordinator</label>
+          <select id="rc-select" onchange="onRcChange()"><option value="">-- Select Regional Coordinator --</option></select>
+        </div>
+        <div class="field" id="sc-select-wrap">
+          <label>Area Coordinator</label>
+          <select id="sc-select" onchange="loadSchools()"><option value="">-- Select Coordinator --</option></select>
+        </div>
+        <div class="field">
+          <label>School Type</label>
+          <select id="school-type-select" onchange="loadSchools()">
+            <option value="">-- All Types --</option>
+            <option value="primary">Primary</option>
+            <option value="elementary">Elementary</option>
+          </select>
+        </div>
         <div class="field"><label>School</label>
           <select id="school-select"><option value="">-- Select School --</option></select></div>
         <div class="field"><label>Grade &amp; Level</label>
@@ -313,10 +315,10 @@ body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh}
 const BASE='';
 const DB_NAME='takmil_coord';
 
-let currentRC=null,localDB=null;
+let currentRC=null,currentRole=null,localDB=null;
 
-// Populate the Regional Coordinator dropdown from live data instead of a
-// hardcoded list, so this never goes stale when coordinators/RCs change.
+// Populate the Regional Coordinator dropdown from live data (admin use only —
+// RC/Coordinator accounts are auto-scoped to themselves, no picker needed).
 async function loadRegionalCoordinators(){
   const sel=document.getElementById('rc-select');
   try{
@@ -329,6 +331,14 @@ async function loadRegionalCoordinators(){
       sel.appendChild(opt);
     });
   }catch(e){ console.error('Failed to load regional coordinators:', e); }
+}
+
+function onRcChange(){
+  const sel=document.getElementById('rc-select').value;
+  if(!sel){ currentRC=null; return; }
+  const [name,region]=sel.split('|');
+  currentRC={name,region};
+  loadCoordinators();
 }
 
 function openDB(){
@@ -355,34 +365,66 @@ function checkConn(){
 window.addEventListener('online',checkConn);
 window.addEventListener('offline',checkConn);
 
-function doLogin(){
-  const sel=document.getElementById('rc-select').value;
-  const pwd=document.getElementById('rc-password').value;
-  const err=document.getElementById('login-err');
-  if(!sel){err.style.display='block';err.textContent='Please select your name.';return;}
-  if(pwd!=='takmil123'){err.style.display='block';err.textContent='Incorrect password.';return;}
-  err.style.display='none';
-  const [name,region]=sel.split('|');
-  currentRC={name,region};
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('dashboard').style.display='block';
-  document.getElementById('logout-btn').style.display='block';
-  document.getElementById('w-name').textContent=name;
-  document.getElementById('w-region').textContent=(region?region+' Region':'');
-  document.getElementById('assessment-date').value=new Date().toISOString().split('T')[0];
-  loadCoordinators();
-  loadRecentPins();
-  updateDlStats();
-  updateSyncStats();
+// Real login already happened at /login before reaching this page (enforced
+// server-side too). This just reads who's logged in and sets up the UI for
+// their role: admin gets full RC->Coordinator picking; a Regional Coordinator
+// account is auto-scoped to themselves; a Coordinator account is auto-scoped
+// to both themselves and their RC, skipping straight to School Type + School.
+async function initSession(){
+  try{
+    const res=await fetch(BASE+'/api/auth/me');
+    if(!res.ok){ location.href='/login'; return; }
+    const data=await res.json();
+    const user=data.user;
+    currentRole=user.role;
+
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    document.getElementById('logout-btn').style.display='block';
+    document.getElementById('assessment-date').value=new Date().toISOString().split('T')[0];
+
+    if(user.role==='admin'){
+      document.getElementById('w-name').textContent=user.name+' (Admin)';
+      document.getElementById('w-region').textContent='Full Access';
+      document.getElementById('rc-select-wrap').style.display='block';
+      document.getElementById('sc-select-wrap').style.display='block';
+      await loadRegionalCoordinators();
+    } else if(user.role==='regional_coordinator'){
+      currentRC={name:user.linked_name,region:''};
+      document.getElementById('w-name').textContent=user.name;
+      document.getElementById('w-region').textContent='Regional Coordinator';
+      document.getElementById('rc-select-wrap').style.display='none';
+      document.getElementById('sc-select-wrap').style.display='block';
+      await loadCoordinators();
+    } else if(user.role==='coordinator'){
+      currentRC={name:user.linked_name,region:''}; // reused as "coordinator scope" below
+      document.getElementById('w-name').textContent=user.name;
+      document.getElementById('w-region').textContent='Coordinator';
+      document.getElementById('rc-select-wrap').style.display='none';
+      document.getElementById('sc-select-wrap').style.display='none';
+      document.getElementById('sc-select').innerHTML=`<option value="${user.linked_name}" selected>${user.linked_name}</option>`;
+      // Resolve their RC (needed so schools filter correctly even if another
+      // RC happens to have a same-named coordinator elsewhere)
+      try{
+        const rcRes=await fetch(BASE+'/api/coordinator-context/'+encodeURIComponent(user.linked_name));
+        const rcData=await rcRes.json();
+        currentRC={name: rcData.regionalCoordinator, region:''};
+      }catch(e){}
+      await loadSchools(user.linked_name);
+    }
+
+    loadRecentPins();
+    updateDlStats();
+    updateSyncStats();
+  }catch(e){
+    console.error('Session check failed:', e);
+    location.href='/login';
+  }
 }
 
-function doLogout(){
-  currentRC=null;
-  document.getElementById('login-screen').style.display='block';
-  document.getElementById('dashboard').style.display='none';
-  document.getElementById('logout-btn').style.display='none';
-  document.getElementById('rc-select').value='';
-  document.getElementById('rc-password').value='';
+async function doLogout(){
+  try{ await fetch(BASE+'/api/auth/logout', {method:'POST'}); }catch(e){}
+  location.href='/login';
 }
 
 function switchTab(tab,btn){
@@ -405,13 +447,17 @@ async function loadCoordinators(){
   }catch(e){ console.error('Failed to load coordinators:', e); }
 }
 
-async function loadSchools(){
-  const scName=document.getElementById('sc-select').value;
+async function loadSchools(directCoordinatorName){
+  const scSelect=document.getElementById('sc-select');
+  const scName=directCoordinatorName || scSelect.value;
   const sel=document.getElementById('school-select');
+  const schoolType=document.getElementById('school-type-select').value;
   sel.innerHTML='<option value="">-- Select School --</option>';
   if(!scName) return;
   try{
-    const res=await fetch(BASE+'/api/schools-by-coordinator/'+encodeURIComponent(scName)+'?rc='+encodeURIComponent(currentRC.name));
+    let url=BASE+'/api/schools-by-coordinator/'+encodeURIComponent(scName)+'?rc='+encodeURIComponent(currentRC.name);
+    if(schoolType) url+='&type='+encodeURIComponent(schoolType);
+    const res=await fetch(url);
     const data=await res.json();
     (data.schools||[]).forEach(s=>{sel.innerHTML+=`<option value="${s.identifier}">${s.name}</option>`;});
   }catch(e){ console.error('Failed to load schools:', e); }
@@ -618,7 +664,7 @@ async function loadResults(){
 async function init(){
   await openDB();
   checkConn();
-  await loadRegionalCoordinators();
+  await initSession();
 }
 init();
 </script>
