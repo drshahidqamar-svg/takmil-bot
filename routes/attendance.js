@@ -177,6 +177,8 @@ router.get('/feedback',   (req, res) => res.sendFile(path.join(__dirname, '../fe
 (async () => {
   const migrations = [
     `ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS lms_upload BOOLEAN`,
+    `ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS captured_at TIMESTAMPTZ`,
+    `ALTER TABLE daily_feedback ADD COLUMN IF NOT EXISTS received_at TIMESTAMPTZ DEFAULT NOW()`,
     `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS submission_mode TEXT DEFAULT 'online'`,
     `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ`,
     `ALTER TABLE student_attendance ADD COLUMN IF NOT EXISTS gps_lat NUMERIC(10,7)`,
@@ -288,7 +290,9 @@ router.get('/api/feedback', async (req, res) => {
         f.present, f.absent, f.total_strength,
         f.assembly_conducted, f.technology_used,
         f.cr_media_shared, f.subjects, f.child_of_day,
-        f.teacher_phone AS reporter_phone, f.created_at AS submitted_at,
+        f.teacher_phone AS reporter_phone,
+        COALESCE(f.captured_at, f.created_at) AS submitted_at,
+        COALESCE(f.received_at, f.created_at) AS received_at,
         f.photo_url, f.photo_head_count, f.head_count_diff,
         f.photo_verified, f.photo_flag,
         f.projector_visible, f.lesson_verified,
@@ -337,7 +341,9 @@ router.get('/api/feedback/table', async (req, res) => {
 
     const r = await db.pool.query(`
       SELECT
-        f.id, f.report_date, f.created_at AS submitted_at,
+        f.id, f.report_date,
+        COALESCE(f.captured_at, f.created_at) AS submitted_at,
+        COALESCE(f.received_at, f.created_at) AS received_at,
         s.name AS school_name, s.identifier, s.region, s.province,
         rc.name AS regional_coordinator, sc.name AS school_coordinator,
         f.teacher_phone,
@@ -871,6 +877,12 @@ router.post('/api/web-feedback', async (req, res) => {
     }
   }
 
+  // Client-side capture time (works offline — set the moment the teacher tapped Submit,
+  // NOT when it reaches the server). Falls back to server time if missing/invalid.
+  const parsedCapturedAt = body.submittedAt && !isNaN(new Date(body.submittedAt))
+    ? new Date(body.submittedAt)
+    : new Date();
+
   const values = [
     phone,
     school.name,
@@ -900,6 +912,7 @@ router.post('/api/web-feedback', async (req, res) => {
     body.gpsLat           || null,         // GPS latitude
     body.gpsLng           || null,         // GPS longitude
     body.gpsAccuracy      || null,         // GPS accuracy in metres
+    parsedCapturedAt,                      // captured_at — client-side submit time
   ];
 
   try {
@@ -913,7 +926,8 @@ router.post('/api/web-feedback', async (req, res) => {
         cr_media_shared, tech_media_shared, lms_upload,
         subjects, raw_message, projector_shown,
         photo_data, photo_mime_type, photo_expires_at,
-        submission_mode, gps_lat, gps_lng, gps_accuracy_m
+        submission_mode, gps_lat, gps_lng, gps_accuracy_m,
+        captured_at
       )
       VALUES (
         $1,$2,$3,$4::date,
@@ -923,7 +937,8 @@ router.post('/api/web-feedback', async (req, res) => {
         $16,$17,$18,
         $19,$20,$21,
         $22,$23,$24,
-        $25,$26,$27,$28
+        $25,$26,$27,$28,
+        $29
       )
       ON CONFLICT DO NOTHING
       RETURNING id`,
@@ -958,7 +973,9 @@ router.post('/api/web-feedback', async (req, res) => {
           submission_mode    = $20,
           gps_lat            = COALESCE($21, gps_lat),
           gps_lng            = COALESCE($22, gps_lng),
-          gps_accuracy_m     = COALESCE($23, gps_accuracy_m)
+          gps_accuracy_m     = COALESCE($23, gps_accuracy_m),
+          captured_at        = $26,
+          received_at        = NOW()
         WHERE school_name = $24
           AND report_date::date = $25::date
         RETURNING id`,
@@ -988,6 +1005,7 @@ router.post('/api/web-feedback', async (req, res) => {
           body.gpsAccuracy || null,
           school.name,
           body.date,
+          parsedCapturedAt,
         ]
       );
       feedbackId = updateResult.rows[0]?.id;
