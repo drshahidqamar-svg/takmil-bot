@@ -744,11 +744,12 @@ function handleFiles(event) {
     const parsed = parseFilename(file.name);
     const existing = allVideos.findIndex(v => v.name === file.name);
     const entry = {
-      name:      file.name,
-      title:     parsed.title || file.name.replace(/\.[^.]+$/, '').replace(/[_-]/g,' '),
-      subject:   parsed.subject || 'General',
-      level:     parsed.level  || '',
-      unit:      parsed.unit   || '',
+      name:        file.name,
+      title:       parsed.title || file.name.replace(/\.[^.]+$/, '').replace(/[_-]/g,' '),
+      subject:     parsed.subject || 'General',
+      level:       parsed.level  || '',
+      unit:        parsed.unit   || '',
+      needsReview: !!parsed.needsReview,
       file,
       objectUrl: URL.createObjectURL(file),
       size:      file.size,
@@ -759,25 +760,75 @@ function handleFiles(event) {
 
   onFilterChange(); // repopulates unit dropdown filtered by subject+level, then applies filter
   document.getElementById('upload-zone').style.display = 'none';
-  showToast(`✅ ${files.length} video${files.length>1?'s':''} loaded`);
+  const flagged = files.filter(f => {
+    const v = allVideos.find(x => x.name === f.name);
+    return v && v.needsReview;
+  }).length;
+  showToast(
+    flagged
+      ? `✅ ${files.length} video${files.length>1?'s':''} loaded — ${flagged} need${flagged>1?'':'s'} a title`
+      : `✅ ${files.length} video${files.length>1?'s':''} loaded`
+  );
   event.target.value = '';
 }
 
 function parseFilename(name) {
   // Patterns: "English_L3_U2_Title.mp4" or "Math-Level5-Unit1-Lesson.mp4"
+  // Also handles device-export names that carry no lesson info, e.g.
+  // "WhatsApp Video 2024-05-01 at 10.23.45.mp4", "VID_20240501_WA0007.mp4",
+  // "IMG_20240501_103045.mp4" — these used to fall through and show as a
+  // raw hash/timestamp string.
   const base = name.replace(/\.[^.]+$/, '').replace(/[-_]/g,' ');
+
   const subjects = ['English','Math','Urdu','Science','Social Studies','Islamiat','STEAM','Art','PE'];
-  const subject  = subjects.find(s => base.toLowerCase().includes(s.toLowerCase())) || '';
-  const levelMatch = base.match(/\b[Ll](?:evel\s*)?(\d+)\b/) || base.match(/\bL(\d+)\b/);
-  const unitMatch  = base.match(/\b[Uu](?:nit\s*)?(\d+)\b/)  || base.match(/\bU(\d+)\b/);
+  // Longest names first + word boundaries, so "Art" can't match inside another word.
+  const subject = subjects
+    .slice()
+    .sort((a,b) => b.length - a.length)
+    .find(s => new RegExp(`\\b${s.replace(/\s+/g,'\\s+')}\\b`,'i').test(base)) || '';
+
+  const levelMatch = base.match(/\bL(?:evel)?\s*-?\s*(\d{1,2})\b/i);
+  const unitMatch  = base.match(/\bU(?:nit)?\s*-?\s*(\d{1,2})\b/i);
   const level = levelMatch ? levelMatch[1] : '';
   const unit  = unitMatch  ? unitMatch[1]  : '';
-  let title = base;
-  if (subject) title = title.replace(new RegExp(subject,'i'),'').trim();
-  if (levelMatch) title = title.replace(levelMatch[0],'').trim();
-  if (unitMatch)  title = title.replace(unitMatch[0],'').trim();
-  title = title.replace(/\s+/g,' ').trim() || name.replace(/\.[^.]+$/,'');
-  return { subject, level, unit, title };
+
+  let stripped = base;
+  if (subject)    stripped = stripped.replace(new RegExp(subject.replace(/\s+/g,'\\s+'),'i'),'');
+  if (levelMatch) stripped = stripped.replace(levelMatch[0],'');
+  if (unitMatch)  stripped = stripped.replace(unitMatch[0],'');
+
+  // Strip common WhatsApp/camera/screen-recorder export noise so real words
+  // underneath (if any) survive: "WA0007", "IMG"/"VID"/"PXL", "WhatsApp Video",
+  // "Screen Recording", long numeric timestamps (20240501103045), bare dates.
+  stripped = stripped
+    .replace(/\bWA\d{3,6}\b/gi,'')
+    .replace(/\bWhatsApp\s*(Video|Image)?\b/gi,'')
+    .replace(/\b(IMG|VID|PXL|MOV|DCIM|REC|VN)\b/gi,'')
+    .replace(/\bScreen\s*Recording\b/gi,'')
+    .replace(/\bat\b/gi,'')
+    .replace(/\b\d{1,2}\.\d{2}\.\d{2}\b/g,'')      // times like 10.23.45
+    .replace(/\b\d{4}-\d{2}-\d{2}\b/g,'')           // dates like 2024-05-01
+    .replace(/\b\d{8,}\b/g,'')                      // long numeric timestamps
+    .replace(/\s+/g,' ')
+    .trim();
+
+  // If nothing readable is left (empty, or mostly a hash/hex/id string with
+  // no real word in it), don't show that raw junk as the lesson title.
+  const hasReadableWord = /[a-zA-Z]{3,}/.test(stripped);
+  let title, needsReview = false;
+
+  if (stripped && hasReadableWord) {
+    title = stripped;
+  } else {
+    needsReview = true;
+    const parts = [];
+    if (subject) parts.push(subject);
+    if (level)   parts.push('Level ' + level);
+    if (unit)    parts.push('Unit ' + unit);
+    title = parts.length ? parts.join(' · ') : 'Untitled video — tap to rename';
+  }
+
+  return { subject, level, unit, title, needsReview };
 }
 
 function populateUnitFilter() {
@@ -854,7 +905,7 @@ function renderVideoList() {
     <div class="vid-card ${done?'completed':''}" onclick="openVideo(${i})">
       <div class="vid-thumb">${done ? '✅' : '🎬'}</div>
       <div class="vid-info">
-        <div class="vid-title">${v.title}</div>
+        <div class="vid-title">${v.title}${v.needsReview ? ' <span style="font-size:10px;font-weight:800;color:#d97706;background:#fef3c7;padding:2px 6px;border-radius:8px;vertical-align:middle">✏️ needs title</span>' : ''}</div>
         <div class="vid-meta">
           ${v.subject ? `<span>📚 ${v.subject}</span>` : ''}
           ${v.level   ? `<span>Level ${v.level}</span>` : ''}
