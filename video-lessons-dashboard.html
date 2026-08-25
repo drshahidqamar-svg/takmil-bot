@@ -157,6 +157,12 @@ tr:hover td{background:var(--bg)}
     </select>
   </div>
   <div class="fg">
+    <label>Unit</label>
+    <select class="fs" id="f-unit">
+      <option value="">— All Units —</option>
+    </select>
+  </div>
+  <div class="fg">
     <label>Status</label>
     <select class="fs" id="f-status">
       <option value="">— All —</option>
@@ -253,6 +259,7 @@ async function loadData() {
   const to      = document.getElementById('f-to').value;
   const school  = document.getElementById('f-school').value;
   const subject = document.getElementById('f-subject').value;
+  const unit    = document.getElementById('f-unit').value;
   const status  = document.getElementById('f-status').value;
 
   if (!from || !to) { showToast('Select a date range'); return; }
@@ -269,8 +276,17 @@ async function loadData() {
     const data = await res.json();
     let rows   = data.logs || [];
 
+    // Populate the Unit dropdown from real units present in this result set
+    // (scoped to the selected subject, if any), keeping the current
+    // selection if it still applies.
+    const forUnits = subject
+      ? rows.filter(r => (r.subject||'').toLowerCase() === subject.toLowerCase())
+      : rows;
+    populateUnitFilter(forUnits);
+
     // Client-side filters
     if (subject) rows = rows.filter(r => (r.subject||'').toLowerCase() === subject.toLowerCase());
+    if (unit)    rows = rows.filter(r => String(r.unit||'') === unit);
     if (status === 'completed') rows = rows.filter(r => r.completed);
     if (status === 'partial')   rows = rows.filter(r => !r.completed && parseFloat(r.max_pct||0) > 0);
 
@@ -281,6 +297,21 @@ async function loadData() {
     document.getElementById('table-wrap').innerHTML =
       `<div class="center-msg" style="color:var(--red)">Error: ${e.message}</div>`;
   }
+}
+
+// ── UNIT FILTER ───────────────────────────────────────────────────────────────
+function populateUnitFilter(rows) {
+  const units = [...new Set(rows.map(r => r.unit).filter(Boolean).map(String))]
+    .sort((a,b) => (parseInt(a)||0) - (parseInt(b)||0));
+  const sel = document.getElementById('f-unit');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— All Units —</option>';
+  units.forEach(u => {
+    const o = document.createElement('option');
+    o.value = u; o.textContent = 'Unit ' + u;
+    sel.appendChild(o);
+  });
+  if (cur && units.includes(cur)) sel.value = cur;
 }
 
 // ── SUMMARY ───────────────────────────────────────────────────────────────────

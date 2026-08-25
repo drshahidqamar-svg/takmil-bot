@@ -154,6 +154,7 @@ app.get('/picture-questions',    (req, res) => res.sendFile(path.join(__dirname,
 app.get('/teacher-feedback',     (req, res) => res.sendFile(path.join(__dirname, 'takmil-feedback.html')));
 app.get('/teacher-attendance',   (req, res) => res.sendFile(path.join(__dirname, 'teacher-attendance.html')));
 app.get('/students-admin',       requireRole(['admin']), (req, res) => res.sendFile(path.join(__dirname, 'students-admin.html')));
+app.get('/teachers-admin',       requireRole(['admin']), (req, res) => res.sendFile(path.join(__dirname, 'teachers-admin.html')));
 app.get('/attendance-results',   (req, res) => res.sendFile(path.join(__dirname, 'attendance-results.html')));
 app.get('/teacher-lessons',      (req, res) => res.sendFile(path.join(__dirname, 'teacher-lessons.html')));
 app.get('/video-lessons-dashboard', (req, res) => res.sendFile(path.join(__dirname, 'video-lessons-dashboard.html')));
