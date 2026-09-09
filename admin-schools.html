@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TAKMIL — Add School</title>
+<style>
+  :root{
+    --green:#1a5c38; --green-dk:#0f3d22; --gold:#c9952a;
+    --bg:#f0f9f4; --text:#0f3d22; --text2:#5a7263; --border:#dbe8e0;
+  }
+  *{box-sizing:border-box}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:var(--bg); color:var(--text); margin:0; padding:0 16px 60px;
+  }
+  header{
+    max-width:760px; margin:0 auto; padding:24px 0 8px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .logo{
+    font-size:18px; font-weight:900; color:#fff; background:var(--green);
+    padding:7px 16px; border-radius:8px; letter-spacing:1px;
+  }
+  .logo span{color:var(--gold)}
+  h1{font-size:19px; margin:0; color:var(--green-dk)}
+  .sub{color:var(--text2); font-size:13px; margin:2px 0 0}
+  .nav-link{margin-left:auto; font-size:13px; color:var(--green); text-decoration:none; font-weight:700}
+
+  main{max-width:760px; margin:0 auto}
+  .card{
+    background:#fff; border-radius:14px; padding:20px;
+    box-shadow:0 2px 14px rgba(15,61,34,.08); margin-top:16px;
+  }
+  .card h2{font-size:15px; margin:0 0 14px; color:var(--green-dk)}
+  label{display:block; font-size:12.5px; font-weight:700; color:var(--text2); margin:14px 0 4px}
+  label:first-of-type{margin-top:0}
+  input{
+    width:100%; padding:11px 12px; border:1.5px solid var(--border);
+    border-radius:8px; font-size:15px; font-family:inherit; color:var(--text);
+  }
+  input:focus{outline:none; border-color:var(--green)}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .row3{display:grid; grid-template-columns:1fr 1fr 110px; gap:12px}
+  .hint{font-size:12px; color:var(--text2); margin-top:5px}
+  .divider{border:none; border-top:1px solid var(--border); margin:20px 0}
+
+  button{
+    background:var(--green); color:#fff; border:none; border-radius:8px;
+    padding:11px 20px; font-size:14px; font-weight:700; cursor:pointer;
+  }
+  button:hover{background:var(--green-dk)}
+  button:disabled{opacity:.5; cursor:not-allowed}
+
+  .msg{
+    margin-top:14px; padding:10px 12px; border-radius:8px; font-size:13.5px; font-weight:600;
+    display:none;
+  }
+  .msg.ok{display:block; background:#e3f5ea; color:var(--green-dk)}
+  .msg.err{display:block; background:#fde8e8; color:#b91c1c}
+
+  #recent{margin-top:10px}
+  .rrow{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;
+  }
+  .rrow:last-child{border-bottom:none}
+  .rrow-name{font-weight:700}
+  .rrow-id{color:var(--text2); font-family:monospace; font-size:12px}
+  .empty{color:var(--text2); font-size:13px; padding:8px 0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TAK<span>MIL</span></div>
+  <div>
+    <h1>Add School</h1>
+    <p class="sub">Create a new school and (optionally) link its first teacher</p>
+  </div>
+  <a class="nav-link" href="/admin-teachers">Manage Teachers →</a>
+</header>
+
+<main>
+  <div class="card">
+    <h2>School details</h2>
+
+    <label for="name">School name *</label>
+    <input id="name" type="text" placeholder="e.g. Kamar Khel Bazgara">
+
+    <label for="identifier">
+      Identifier *
+      <span class="hint" style="display:inline;font-weight:400">— unique code used across the system</span>
+    </label>
+    <input id="identifier" type="text" placeholder="e.g. KamarKhelBazgara_O_W24KPK">
+    <p class="hint">Follow your existing naming convention (school name + type + batch/region code) so it matches other schools. This must be unique.</p>
+
+    <div class="row2">
+      <div>
+        <label for="region">Region</label>
+        <input id="region" type="text" placeholder="e.g. KPK">
+      </div>
+      <div>
+        <label for="province">Province</label>
+        <input id="province" type="text" placeholder="e.g. Khyber Pakhtunkhwa">
+      </div>
+    </div>
+
+    <label for="district">District</label>
+    <input id="district" type="text" placeholder="Optional">
+
+    <hr class="divider">
+    <h2>Teacher (optional — can also be added later on the Manage Teachers page)</h2>
+
+    <label for="teacherName">Teacher name</label>
+    <input id="teacherName" type="text" placeholder="Optional">
+
+    <div class="row3">
+      <div>
+        <label for="phone">Teacher phone number</label>
+        <input id="phone" type="text" placeholder="+923XXXXXXXXX">
+      </div>
+      <div></div>
+      <div>
+        <label for="pin">PIN (4 digits)</label>
+        <input id="pin" type="text" maxlength="4" inputmode="numeric">
+      </div>
+    </div>
+    <p class="hint">PIN auto-fills with the phone's last 4 digits — edit if you need something different.</p>
+
+    <div style="margin-top:18px">
+      <button id="saveBtn">Create School</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>Recently added schools</h2>
+    <div id="recent"><div class="empty">Loading…</div></div>
+  </div>
+</main>
+
+<script>
+const msgEl = document.getElementById('msg');
+
+function showMsg(text, ok){
+  msgEl.textContent = text;
+  msgEl.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+function esc(s){ return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let pinManuallyEdited = false;
+document.getElementById('pin').addEventListener('input', () => { pinManuallyEdited = true; });
+document.getElementById('phone').addEventListener('input', (e) => {
+  if (pinManuallyEdited) return;
+  const digits = e.target.value.replace(/[^0-9]/g, '');
+  document.getElementById('pin').value = digits.slice(-4);
+});
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const name       = document.getElementById('name').value.trim();
+  const identifier = document.getElementById('identifier').value.trim();
+  const region      = document.getElementById('region').value.trim();
+  const province    = document.getElementById('province').value.trim();
+  const district    = document.getElementById('district').value.trim();
+  const teacherName = document.getElementById('teacherName').value.trim();
+  const phone       = document.getElementById('phone').value.trim();
+  const pin         = document.getElementById('pin').value.trim();
+
+  if (!name)       { showMsg('School name is required.', false); return; }
+  if (!identifier) { showMsg('Identifier is required.', false); return; }
+  if (pin && !/^\d{4}$/.test(pin)) { showMsg('PIN must be exactly 4 digits.', false); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  try {
+    const res = await fetch('/api/admin/schools/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name, identifier,
+        region: region || undefined,
+        province: province || undefined,
+        district: district || undefined,
+        teacherName: teacherName || undefined,
+        teacherPhone: phone || undefined,
+        pin: pin || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (res.status === 401) { location.href = '/login?next=' + encodeURIComponent(location.pathname); return; }
+    if (!res.ok) { showMsg(data.error || 'Failed to create school.', false); return; }
+
+    showMsg(`Created "${data.school.name}" (${data.school.identifier})` +
+      (data.school.teacher_phone ? ` with teacher ${data.school.teacher_phone}, PIN ${data.school.school_pin}.` : '.'), true);
+
+    // Reset form
+    ['name','identifier','region','province','district','teacherName','phone','pin'].forEach(id => document.getElementById(id).value = '');
+    pinManuallyEdited = false;
+    loadRecent();
+  } catch(e) {
+    showMsg('Network error — please try again.', false);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create School';
+  }
+});
+
+async function loadRecent(){
+  const el = document.getElementById('recent');
+  try {
+    const res = await fetch('/api/admin/schools/list');
+    if (res.status === 401) { location.href = '/login?next=' + encodeURIComponent(location.pathname); return; }
+    if (res.status === 403) { el.innerHTML = '<div class="empty">You don\'t have admin access.</div>'; return; }
+    const data = await res.json();
+    const schools = data.schools || [];
+    if (!schools.length) { el.innerHTML = '<div class="empty">No schools yet.</div>'; return; }
+    el.innerHTML = schools.slice(0, 10).map(s => `
+      <div class="rrow">
+        <div>
+          <div class="rrow-name">${esc(s.name)}</div>
+          <div class="rrow-id">${esc(s.identifier)}${s.region ? ' · ' + esc(s.region) : ''}</div>
+        </div>
+        <div>${s.teacher_phone ? esc(s.teacher_phone) : '<span class="empty" style="padding:0">No teacher yet</span>'}</div>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty">Couldn\'t load recent schools.</div>';
+  }
+}
+
+loadRecent();
+</script>
+</body>
+</html>

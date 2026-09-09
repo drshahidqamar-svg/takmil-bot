@@ -593,6 +593,72 @@ router.post('/api/admin/teachers', requireRole(['admin']), async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── New school onboarding (admin-only) ────────────────────────────────────────
+// Creates a brand-new school row (with identifier + region), and optionally
+// links its first teacher's phone + PIN in the same step.
+router.get('/admin-schools', requireRole(['admin']), (req, res) => {
+  res.sendFile(path.join(__dirname, '../admin-schools.html'));
+});
+
+router.get('/api/admin/schools/list', requireRole(['admin']), async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    const params = [];
+    let where = '';
+    if (q.length >= 2) { params.push(`%${q}%`); where = `WHERE identifier ILIKE $1 OR name ILIKE $1`; }
+    const r = await db.pool.query(`
+      SELECT identifier, name, region, province, district, teacher_phone, created_at
+      FROM schools
+      ${where}
+      ORDER BY created_at DESC
+      LIMIT 50
+    `, params);
+    res.json({ schools: r.rows });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/api/admin/schools/create', requireRole(['admin']), async (req, res) => {
+  try {
+    const { name, identifier, region, province, district, teacherPhone, pin, teacherName } = req.body;
+    if (!name || !identifier) {
+      return res.status(400).json({ error: 'name and identifier are required' });
+    }
+
+    // These columns already exist in production (used throughout the app) —
+    // this is just a safety net in case a fresh DB hasn't been migrated yet.
+    await db.pool.query(`ALTER TABLE schools ADD COLUMN IF NOT EXISTS identifier VARCHAR(150)`).catch(()=>{});
+    await db.pool.query(`ALTER TABLE schools ADD COLUMN IF NOT EXISTS region VARCHAR(100)`).catch(()=>{});
+    await db.pool.query(`ALTER TABLE schools ADD COLUMN IF NOT EXISTS teacher_phone VARCHAR(20)`).catch(()=>{});
+    await db.pool.query(`ALTER TABLE schools ADD COLUMN IF NOT EXISTS school_pin VARCHAR(4)`).catch(()=>{});
+
+    const existing = await db.pool.query('SELECT id FROM schools WHERE identifier = $1', [identifier.trim()]);
+    if (existing.rows.length) {
+      return res.status(409).json({ error: `A school with identifier "${identifier}" already exists.` });
+    }
+
+    let teacherPhoneVal = null, finalPin = null;
+    if (teacherPhone && teacherPhone.trim()) {
+      teacherPhoneVal = teacherPhone.trim();
+      const digitsOnly = teacherPhoneVal.replace(/[^0-9]/g, '');
+      finalPin = (pin && String(pin).trim()) ? String(pin).trim().slice(-4) : digitsOnly.slice(-4);
+      if (!/^\d{4}$/.test(finalPin)) {
+        return res.status(400).json({ error: 'PIN must be exactly 4 digits' });
+      }
+    }
+
+    const r = await db.pool.query(`
+      INSERT INTO schools (name, identifier, region, province, district, teacher_phone, school_pin)
+      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      RETURNING identifier, name, region, province, district, teacher_phone, school_pin
+    `, [name.trim(), identifier.trim(), region || null, province || null, district || null, teacherPhoneVal, finalPin]);
+
+    res.json({ success: true, school: r.rows[0], teacherName: teacherName || null });
+  } catch(err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'That identifier is already in use.' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/admin/ops', async (req, res) => {
   const { phone, name, role } = req.body;
   if (!phone || !name) return res.status(400).json({ error: 'phone and name required' });
