@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TAKMIL — Manage Teachers</title>
+<style>
+  :root{
+    --green:#1a5c38; --green-dk:#0f3d22; --gold:#c9952a;
+    --bg:#f0f9f4; --text:#0f3d22; --text2:#5a7263; --border:#dbe8e0;
+  }
+  *{box-sizing:border-box}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:var(--bg); color:var(--text); margin:0; padding:0 16px 60px;
+  }
+  header{
+    max-width:760px; margin:0 auto; padding:24px 0 8px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .logo{
+    font-size:18px; font-weight:900; color:#fff; background:var(--green);
+    padding:7px 16px; border-radius:8px; letter-spacing:1px;
+  }
+  .logo span{color:var(--gold)}
+  h1{font-size:19px; margin:0; color:var(--green-dk)}
+  .sub{color:var(--text2); font-size:13px; margin:2px 0 0}
+
+  main{max-width:760px; margin:0 auto}
+  .card{
+    background:#fff; border-radius:14px; padding:20px;
+    box-shadow:0 2px 14px rgba(15,61,34,.08); margin-top:16px;
+  }
+  label{display:block; font-size:12.5px; font-weight:700; color:var(--text2); margin:0 0 4px}
+  input{
+    width:100%; padding:11px 12px; border:1.5px solid var(--border);
+    border-radius:8px; font-size:15px; font-family:inherit; color:var(--text);
+  }
+  input:focus{outline:none; border-color:var(--green)}
+
+  #searchBox{position:relative}
+  #results{
+    margin-top:10px; border-radius:10px; overflow:hidden;
+    border:1px solid var(--border);
+  }
+  .row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px; border-bottom:1px solid var(--border); gap:10px;
+    background:#fff;
+  }
+  .row:last-child{border-bottom:none}
+  .row-info{min-width:0}
+  .row-name{font-weight:700; font-size:14px; color:var(--text)}
+  .row-meta{font-size:12px; color:var(--text2); margin-top:2px}
+  .pill{
+    display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
+    border-radius:20px; margin-left:6px;
+  }
+  .pill-set{background:#e3f5ea; color:var(--green)}
+  .pill-unset{background:#fdeee0; color:#b45309}
+  button{
+    background:var(--green); color:#fff; border:none; border-radius:8px;
+    padding:9px 16px; font-size:13.5px; font-weight:700; cursor:pointer;
+    white-space:nowrap;
+  }
+  button:hover{background:var(--green-dk)}
+  button.secondary{background:#eef4f0; color:var(--text)}
+  button.secondary:hover{background:#e2ece5}
+  button:disabled{opacity:.5; cursor:not-allowed}
+
+  .empty{padding:24px; text-align:center; color:var(--text2); font-size:13.5px}
+
+  /* Edit panel */
+  #editPanel{display:none}
+  #editPanel.open{display:block}
+  .field-row{display:grid; grid-template-columns:1fr 110px; gap:10px; margin-top:12px}
+  .actions{display:flex; gap:10px; margin-top:16px}
+  .hint{font-size:12px; color:var(--text2); margin-top:5px}
+  .msg{
+    margin-top:14px; padding:10px 12px; border-radius:8px; font-size:13.5px; font-weight:600;
+    display:none;
+  }
+  .msg.ok{display:block; background:#e3f5ea; color:var(--green-dk)}
+  .msg.err{display:block; background:#fde8e8; color:#b91c1c}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TAK<span>MIL</span></div>
+  <div>
+    <h1>Manage Teachers</h1>
+    <p class="sub">Search a school, then set or update the teacher's phone &amp; PIN</p>
+  </div>
+</header>
+
+<main>
+  <div class="card" id="searchBox">
+    <label for="q">Search by school name or identifier</label>
+    <input id="q" type="text" placeholder="e.g. KamarKhelBazgara or Darel_A_W24GB" autocomplete="off">
+    <div id="results"></div>
+  </div>
+
+  <div class="card" id="editPanel">
+    <div id="editTitle" style="font-weight:700; font-size:15px; margin-bottom:4px"></div>
+    <div id="editSub" class="hint" style="margin-bottom:14px"></div>
+
+    <label for="phone">Teacher phone number</label>
+    <input id="phone" type="text" placeholder="+923XXXXXXXXX">
+
+    <div class="field-row">
+      <div>
+        <label for="teacherName">Teacher name (optional, for your reference)</label>
+        <input id="teacherName" type="text" placeholder="Optional">
+      </div>
+      <div>
+        <label for="pin">PIN (4 digits)</label>
+        <input id="pin" type="text" maxlength="4" inputmode="numeric">
+      </div>
+    </div>
+    <p class="hint">PIN auto-fills with the phone's last 4 digits — edit if you need something different.</p>
+
+    <div class="actions">
+      <button id="saveBtn">Save Teacher</button>
+      <button class="secondary" id="cancelBtn" type="button">Cancel</button>
+    </div>
+
+    <div class="msg" id="msg"></div>
+  </div>
+</main>
+
+<script>
+const resultsEl = document.getElementById('results');
+const qEl       = document.getElementById('q');
+const panel     = document.getElementById('editPanel');
+const msgEl     = document.getElementById('msg');
+let current = null; // currently selected school row
+
+function esc(s){ return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let debounceTimer;
+qEl.addEventListener('input', () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(runSearch, 250);
+});
+
+async function runSearch(){
+  const q = qEl.value.trim();
+  if (q.length < 2) { resultsEl.innerHTML = ''; return; }
+  resultsEl.innerHTML = '<div class="empty">Searching…</div>';
+  try {
+    const res = await fetch('/api/admin/teachers/search?q=' + encodeURIComponent(q));
+    if (res.status === 401) { location.href = '/login?next=' + encodeURIComponent(location.pathname); return; }
+    if (res.status === 403) { resultsEl.innerHTML = '<div class="empty">You don\'t have admin access.</div>'; return; }
+    const data = await res.json();
+    renderResults(data.schools || []);
+  } catch(e) {
+    resultsEl.innerHTML = '<div class="empty">Search failed — try again.</div>';
+  }
+}
+
+function renderResults(schools){
+  if (!schools.length) { resultsEl.innerHTML = '<div class="empty">No matching schools.</div>'; return; }
+  resultsEl.innerHTML = schools.map(s => `
+    <div class="row">
+      <div class="row-info">
+        <div class="row-name">${esc(s.name)}</div>
+        <div class="row-meta">${esc(s.identifier || '—')} · ${esc(s.region || 'No region')}
+          <span class="pill ${s.teacher_phone ? 'pill-set' : 'pill-unset'}">
+            ${s.teacher_phone ? esc(s.teacher_phone) : 'No teacher set'}
+          </span>
+        </div>
+      </div>
+      <button type="button" data-id="${esc(s.identifier)}">${s.teacher_phone ? 'Update' : 'Add'}</button>
+    </div>
+  `).join('');
+
+  resultsEl.querySelectorAll('button[data-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const school = schools.find(s => s.identifier === btn.dataset.id);
+      openEdit(school);
+    });
+  });
+}
+
+function openEdit(school){
+  current = school;
+  document.getElementById('editTitle').textContent = school.name;
+  document.getElementById('editSub').textContent =
+    `${school.identifier} · ${school.region || 'No region'}`;
+  document.getElementById('phone').value = school.teacher_phone || '';
+  document.getElementById('teacherName').value = '';
+  document.getElementById('pin').value = school.school_pin || '';
+  msgEl.className = 'msg';
+  msgEl.textContent = '';
+  panel.classList.add('open');
+  panel.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+document.getElementById('cancelBtn').addEventListener('click', () => {
+  panel.classList.remove('open');
+  current = null;
+});
+
+// Auto-fill PIN from phone's last 4 digits, but only if the user hasn't
+// manually typed something different into the PIN field first.
+let pinManuallyEdited = false;
+document.getElementById('pin').addEventListener('input', () => { pinManuallyEdited = true; });
+document.getElementById('phone').addEventListener('input', (e) => {
+  if (pinManuallyEdited) return;
+  const digits = e.target.value.replace(/[^0-9]/g, '');
+  document.getElementById('pin').value = digits.slice(-4);
+});
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  if (!current) return;
+  const phone = document.getElementById('phone').value.trim();
+  const pin   = document.getElementById('pin').value.trim();
+  const teacherName = document.getElementById('teacherName').value.trim();
+
+  if (!phone) { showMsg('Phone number is required.', false); return; }
+  if (pin && !/^\d{4}$/.test(pin)) { showMsg('PIN must be exactly 4 digits.', false); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch('/api/admin/teachers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identifier: current.identifier,
+        teacherPhone: phone,
+        pin: pin || undefined,
+        teacherName: teacherName || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showMsg(data.error || 'Failed to save.', false); return; }
+    showMsg(`Saved — ${data.school.name} is now linked to ${data.school.teacher_phone} (PIN ${data.school.school_pin}).`, true);
+    pinManuallyEdited = false;
+    runSearch(); // refresh the list so the pill updates
+  } catch(e) {
+    showMsg('Network error — please try again.', false);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Teacher';
+  }
+});
+
+function showMsg(text, ok){
+  msgEl.textContent = text;
+  msgEl.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+</script>
+</body>
+</html>

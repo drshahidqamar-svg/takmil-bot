@@ -545,6 +545,54 @@ router.post('/admin/schools', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Teacher registration (admin-only) ─────────────────────────────────────────
+// Lets an admin attach/update a teacher's phone + PIN on an EXISTING school row.
+// Does not create new schools — that's the /admin/schools route above.
+router.get('/admin-teachers', requireRole(['admin']), (req, res) => {
+  res.sendFile(path.join(__dirname, '../admin-teachers.html'));
+});
+
+router.get('/api/admin/teachers/search', requireRole(['admin']), async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    if (q.length < 2) return res.json({ schools: [] });
+    const r = await db.pool.query(`
+      SELECT identifier, name, region, province, teacher_phone, school_pin
+      FROM schools
+      WHERE identifier ILIKE $1 OR name ILIKE $1
+      ORDER BY name
+      LIMIT 25
+    `, [`%${q}%`]);
+    res.json({ schools: r.rows });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/api/admin/teachers', requireRole(['admin']), async (req, res) => {
+  try {
+    const { identifier, teacherName, teacherPhone, pin } = req.body;
+    if (!identifier || !teacherPhone) {
+      return res.status(400).json({ error: 'identifier and teacherPhone are required' });
+    }
+    const digitsOnly = teacherPhone.replace(/[^0-9]/g, '');
+    const finalPin = (pin && String(pin).trim())
+      ? String(pin).trim().slice(-4)
+      : digitsOnly.slice(-4);
+    if (!/^\d{4}$/.test(finalPin)) {
+      return res.status(400).json({ error: 'PIN must be exactly 4 digits' });
+    }
+    const r = await db.pool.query(`
+      UPDATE schools
+      SET teacher_phone = $1, school_pin = $2
+      WHERE identifier = $3
+      RETURNING identifier, name, region, teacher_phone, school_pin
+    `, [teacherPhone.trim(), finalPin, identifier]);
+    if (!r.rows.length) {
+      return res.status(404).json({ error: `No school found with identifier "${identifier}"` });
+    }
+    res.json({ success: true, school: r.rows[0], teacherName: teacherName || null });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 router.post('/admin/ops', async (req, res) => {
   const { phone, name, role } = req.body;
   if (!phone || !name) return res.status(400).json({ error: 'phone and name required' });
@@ -1192,51 +1240,6 @@ router.get('/api/schools', async (req, res) => {
     const r = await db.pool.query('SELECT id, name, identifier, region FROM schools ORDER BY name ASC');
     res.json({ schools: r.rows });
   } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-
-
-// ── TEACHER PHONE ADMIN ROUTES (auto-added) ──────────────────────────────────
-// Lets an admin update teacher_phone on an existing school without raw SQL.
-// Note: GET /admin/schools/list already exists above and returns teacher_phone.
-
-// Search schools by name/identifier (used by the teachers-admin.html search box)
-router.get('/admin/schools/search', async (req, res) => {
-  try {
-    const q = '%' + (req.query.q || '') + '%';
-    const result = await db.pool.query(
-      `SELECT id, name, identifier, region, province, teacher_phone, contact_name
-       FROM schools
-       WHERE name ILIKE $1 OR identifier ILIKE $1
-       ORDER BY name LIMIT 100`,
-      [q]
-    );
-    res.json(result.rows);
-  } catch(err) { res.status(500).json({ error: err.message }); }
-});
-
-// Update a single school's teacher phone (+ optional contact name)
-router.put('/admin/schools/:id/teacher-phone', async (req, res) => {
-  try {
-    const { teacher_phone, contact_name } = req.body;
-    if (!teacher_phone || !teacher_phone.trim()) {
-      return res.status(400).json({ error: 'teacher_phone is required' });
-    }
-    const phone = teacher_phone.trim();
-    if (!/^\+\d{10,15}$/.test(phone)) {
-      return res.status(400).json({ error: 'Phone must be in international format, e.g. +923001234567' });
-    }
-    const result = await db.pool.query(
-      `UPDATE schools
-       SET teacher_phone = $1,
-           contact_name  = COALESCE($2, contact_name)
-       WHERE id = $3
-       RETURNING id, name, identifier, region, teacher_phone, contact_name`,
-      [phone, contact_name || null, req.params.id]
-    );
-    if (!result.rows.length) return res.status(404).json({ error: 'School not found' });
-    res.json(result.rows[0]);
-  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 module.exports = { router };
