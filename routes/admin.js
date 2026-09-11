@@ -593,6 +593,88 @@ router.post('/api/admin/teachers', requireRole(['admin']), async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Bulk teacher upload (admin-only) ──────────────────────────────────────────
+// Accepts { rows: [{ identifier?, schoolName?, teacherName?, teacherPhone, pin? }] }
+// Each row is matched to ONE existing school (by identifier, or by name if the
+// name is unambiguous) and its teacher_phone/school_pin updated. Never creates
+// schools, and never updates more than one row per input row — a name that
+// matches more than one school is reported as an error rather than guessed at.
+router.post('/api/admin/teachers/bulk', requireRole(['admin']), async (req, res) => {
+  try {
+    const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
+    if (!rows.length) return res.status(400).json({ error: 'No rows provided' });
+    if (rows.length > 500) return res.status(400).json({ error: 'Max 500 rows per upload — split into batches' });
+
+    const results = [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i] || {};
+      const identifierIn = (row.identifier || '').trim();
+      const schoolNameIn = (row.schoolName || row.name || '').trim();
+      const teacherName  = (row.teacherName || '').trim();
+      const teacherPhone = (row.teacherPhone || row.phone || '').trim();
+      const pinIn         = (row.pin || '').trim();
+      const label = identifierIn || schoolNameIn || `row ${i + 1}`;
+
+      if (!teacherPhone || (!identifierIn && !schoolNameIn)) {
+        results.push({ row: i + 1, label, success: false, error: 'Missing school identifier/name or phone number' });
+        continue;
+      }
+
+      const digitsOnly = teacherPhone.replace(/[^0-9]/g, '');
+      const finalPin = pinIn ? pinIn.slice(-4) : digitsOnly.slice(-4);
+      if (!/^\d{4}$/.test(finalPin)) {
+        results.push({ row: i + 1, label, success: false, error: 'PIN must be 4 digits' });
+        continue;
+      }
+
+      try {
+        // Resolve to exactly one school's identifier before writing anything.
+        let resolvedIdentifier = null;
+        if (identifierIn) {
+          const chk = await db.pool.query('SELECT identifier FROM schools WHERE identifier = $1', [identifierIn]);
+          if (!chk.rows.length) {
+            results.push({ row: i + 1, label, success: false, error: `No school with identifier "${identifierIn}"` });
+            continue;
+          }
+          resolvedIdentifier = chk.rows[0].identifier;
+        } else {
+          const chk = await db.pool.query('SELECT identifier FROM schools WHERE LOWER(name) = LOWER($1)', [schoolNameIn]);
+          if (!chk.rows.length) {
+            results.push({ row: i + 1, label, success: false, error: `No school named "${schoolNameIn}"` });
+            continue;
+          }
+          if (chk.rows.length > 1) {
+            results.push({ row: i + 1, label, success: false, error: `"${schoolNameIn}" matches ${chk.rows.length} schools — use identifier instead` });
+            continue;
+          }
+          resolvedIdentifier = chk.rows[0].identifier;
+        }
+
+        const r = await db.pool.query(`
+          UPDATE schools SET teacher_phone = $1, school_pin = $2
+          WHERE identifier = $3
+          RETURNING identifier, name, teacher_phone, school_pin
+        `, [teacherPhone, finalPin, resolvedIdentifier]);
+
+        results.push({
+          row: i + 1, label, success: true,
+          identifier: r.rows[0].identifier, school: r.rows[0].name,
+          teacherName: teacherName || null, phone: r.rows[0].teacher_phone, pin: r.rows[0].school_pin,
+        });
+      } catch (e) {
+        results.push({ row: i + 1, label, success: false, error: e.message });
+      }
+    }
+
+    const succeeded = results.filter(r => r.success).length;
+    res.json({ success: true, total: rows.length, succeeded, failed: rows.length - succeeded, results });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/admin-teachers-bulk', requireRole(['admin']), (req, res) => {
+  res.sendFile(path.join(__dirname, '../admin-teachers-bulk.html'));
+});
+
 // ── New school onboarding (admin-only) ────────────────────────────────────────
 // Creates a brand-new school row (with identifier + region), and optionally
 // links its first teacher's phone + PIN in the same step.
